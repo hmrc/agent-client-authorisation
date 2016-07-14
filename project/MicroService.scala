@@ -1,3 +1,4 @@
+import de.heikoseeberger.sbtheader.{AutomateHeaderPlugin, HeaderPlugin}
 import sbt.Keys._
 import sbt.Tests.{SubProcess, Group}
 import sbt._
@@ -32,9 +33,9 @@ trait MicroService {
       fork in Test := false,
       retrieveManaged := true,
       evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
-    )
+    ).settings(HeaderPlugin.settingsFor(IntegrationTest))
     .configs(IntegrationTest)
-    .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
+    .settings(inConfig(IntegrationTest)(Defaults.itSettings ++ AutomateHeaderPlugin.automateFor(IntegrationTest)): _*)
     .settings(
       Keys.fork in IntegrationTest := false,
       unmanagedSourceDirectories in IntegrationTest <<= (baseDirectory in IntegrationTest)(base => Seq(base / "it")),
