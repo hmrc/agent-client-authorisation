@@ -1,4 +1,5 @@
 import de.heikoseeberger.sbtheader.{AutomateHeaderPlugin, HeaderPlugin}
+import play.PlayImport.PlayKeys._
 import sbt.Keys._
 import sbt.Tests.{SubProcess, Group}
 import sbt._
@@ -25,6 +26,7 @@ trait MicroService {
     .settings(scalaSettings: _*)
     .settings(publishingSettings: _*)
     .settings(defaultSettings(): _*)
+    .settings(routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._"))
     .settings(
       targetJvm := "jvm-1.8",
       scalaVersion := "2.11.8",

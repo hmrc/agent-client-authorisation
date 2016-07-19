@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import play.api.mvc.Controller
-import uk.gov.hmrc.agentclientauthorisation.controllers.MicroserviceHelloWorld
+import uk.gov.hmrc.agentclientauthorisation.controllers.{AuthorisationRequestController, MicroserviceHelloWorld}
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
@@ -47,7 +47,8 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[MicroserviceHelloWorld] -> new MicroserviceHelloWorld()
+    classOf[MicroserviceHelloWorld] -> new MicroserviceHelloWorld(),
+    classOf[AuthorisationRequestController] -> new AuthorisationRequestController()
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]
