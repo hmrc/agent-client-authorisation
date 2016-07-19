@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, AuthorisationRequestRequest}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -26,7 +26,11 @@ import scala.concurrent.Future
 
 class AuthorisationRequestController extends BaseController {
 
-  def createRequest(agentCode: AgentCode) = TODO
+  def createRequest(agentCode: AgentCode) = Action.async(parse.json) { implicit request =>
+    withJsonBody[AuthorisationRequestRequest] { authRequest =>
+      Future successful Created //TODO Location header?
+    }
+  }
 
   def getRequests(agentCode: AgentCode) = Action.async { implicit request =>
     Future successful Ok(Json.toJson(Set.empty[AuthorisationRequest]))

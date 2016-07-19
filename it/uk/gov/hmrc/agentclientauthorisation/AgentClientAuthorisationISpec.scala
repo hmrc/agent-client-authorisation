@@ -17,10 +17,9 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import org.joda.time.DateTime
-import org.scalatest.{Inspectors, Inside}
-import org.scalatestplus.play.OneServerPerSuite
+import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, StubUtils, StartAndStopWireMock, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -46,8 +45,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
   }
 
   "POST /request" should {
-    "return 401 when the requester is not authenticated" ignore {
-      responseForPost("/request", "").status shouldBe 401
+    "return 401 when the requester is not authenticated" in {
+      given().agentAdmin(me).isNotLoggedIn()
+      responseForCreateRequest("").status shouldBe 401
     }
   }
 
@@ -65,8 +65,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
       }
 
       note("we should be able to add 2 new requests")
-      responseForPost("/request", """{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567890"}""").status shouldBe 401
-      responseForPost("/request", """{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567891"}""").status shouldBe 401
+      responseForCreateRequest("""{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567890"}""").status shouldBe 201
+      responseForCreateRequest("""{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567891"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
       val requests = responseForGetRequests.json.as[Set[AuthorisationRequest]]
@@ -83,6 +83,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
     new Resource(s"/agent-client-authorisation/sa/agent/$agentCode/requests", port).get()
   }
 
-  def responseForPost(path: String, body: String): HttpResponse = ???
+  def responseForCreateRequest(body: String)(implicit agentCode: AgentCode): HttpResponse =
+    new Resource(s"/agent-client-authorisation/sa/agent/$agentCode/requests", port).postAsJson(body)
 
 }

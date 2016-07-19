@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import play.api.Play.current
-import play.api.libs.json.{Json, Writes}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WS, WSRequestHolder, WSResponse}
 import play.api.mvc.Results
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
@@ -33,9 +33,9 @@ object Http {
     request.get()
   }
 
-  def post[A](url: String, body: A, headers: Seq[(String, String)] = Seq.empty)
-             (implicit writes: Writes[A], hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    request.post(Json.toJson(body))
+  def post(url: String, body: String, headers: Seq[(String, String)] = Seq.empty)
+             (implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+    request.withHeaders(headers: _*).post(body)
   }
 
   def postEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
@@ -59,5 +59,8 @@ class Resource(path: String, port: Int) {
   private def url() = s"http://localhost:$port$path"
 
   def get()(implicit hc: HeaderCarrier = HeaderCarrier()) = Http.get(url)(hc)
+
+  def postAsJson(body: String)(implicit hc: HeaderCarrier = HeaderCarrier()) =
+    Http.post(url, body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
 
 }

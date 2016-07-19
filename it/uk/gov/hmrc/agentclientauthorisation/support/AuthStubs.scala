@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.http.HeaderNames
 import uk.gov.hmrc.domain.SaAgentReference
 
 trait AuthStubs[A] {
@@ -80,12 +81,17 @@ trait AuthStubs[A] {
     andHasSaAgentReferenceWithEnrolment(ref, enrolmentState = "Pending")
 
   def isNotLoggedIn(): A = {
+    // /authorise/... response is forwarded in AuthorisationFilter as is (if status is 401 or 403), which does not have
+    // Content-length by default. That kills Play's WS lib, which is used in tests. (Somehow it works in the filter though.)
+    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(401)))
     this
   }
 
   def isLoggedIn(): A = {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{

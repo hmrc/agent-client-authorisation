@@ -18,12 +18,16 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json
-import uk.gov.hmrc.domain.{SaUtr, AgentCode}
+import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 
-case class AuthorisationRequest(id: String, agent: AgentCode, client: SaUtr, requestDate: DateTime)
-case class AuthorisationRequestRequest(agentCode: AgentCode, client: SaUtr)
+case class AuthorisationRequest(id: String, agent: AgentCode, clientSaUtr: SaUtr, requestDate: DateTime)
+case class AuthorisationRequestRequest(agentCode: AgentCode, clientSaUtr: SaUtr)
 
 
 object AuthorisationRequest {
   implicit val format = Json.format[AuthorisationRequest]
+}
+
+object AuthorisationRequestRequest {
+  implicit val format = Json.format[AuthorisationRequestRequest]
 }
