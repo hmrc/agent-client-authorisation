@@ -51,7 +51,7 @@ trait ResetMongoBeforeTest extends BeforeAndAfterEach {
   }
 
   def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit = {
-     Awaiting.await(mongo().drop())
+    Awaiting.await(mongo().drop())
   }
 }
 

@@ -20,10 +20,60 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.HeaderNames
 import uk.gov.hmrc.domain.SaAgentReference
 
-trait AuthStubs[A] {
-  me: A =>
-
+trait WiremockAware {
   def wiremockBaseUrl: String
+}
+
+trait BasicUserAuthStubs[A] {
+  me: A with WiremockAware =>
+
+  def isNotLoggedIn(): A = {
+    // /authorise/... response is forwarded in AuthorisationFilter as is (if status is 401 or 403), which does not have
+    // Content-length by default. That kills Play's WS lib, which is used in tests. (Somehow it works in the filter though.)
+    stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(401)))
+    this
+  }
+
+}
+
+trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
+  me: A with WiremockAware =>
+
+  def oid: String
+
+  def isLoggedIn(): A = {
+    stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody( // TODO add SA account
+      s"""
+         |{
+         |  "new-session":"/auth/oid/$oid/session",
+         |  "enrolments":"/auth/oid/$oid/enrolments",
+         |  "uri":"/auth/oid/$oid",
+         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
+         |  "credentials":{
+         |    "gatewayId":"0000001592621267"
+         |  },
+         |  "accounts":{
+         |  },
+         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
+         |  "credentialStrength":"strong",
+         |  "confidenceLevel":50,
+         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
+         |  "levelOfAssurance":"1",
+         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |}
+       """.stripMargin
+    )))
+    this
+  }
+}
+
+trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
+  me: A with WiremockAware =>
+
   def oid: String
   def agentCode: String
   protected var saAgentReference: Option[SaAgentReference] = None
@@ -79,15 +129,6 @@ trait AuthStubs[A] {
 
   def andHasSaAgentReferenceWithPendingEnrolment(ref: String): A =
     andHasSaAgentReferenceWithEnrolment(ref, enrolmentState = "Pending")
-
-  def isNotLoggedIn(): A = {
-    // /authorise/... response is forwarded in AuthorisationFilter as is (if status is 401 or 403), which does not have
-    // Content-length by default. That kills Play's WS lib, which is used in tests. (Somehow it works in the filter though.)
-    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(401)))
-    this
-  }
 
   def isLoggedIn(): A = {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))

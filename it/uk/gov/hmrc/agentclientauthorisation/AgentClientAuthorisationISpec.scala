@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
-import uk.gov.hmrc.agentclientauthorisation.support.{SecuredEndpointBehaviours, AppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -34,20 +34,23 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
   }
 
   "POST /request" should {
-    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(""))
+    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest("""{"clientSaUtr": "1234567899"}"""))
   }
 
   "/request" should {
     "create and retrieve authorisation requests" in {
+      dropMongoDb()
       given().agentAdmin(me).isLoggedIn()
 
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
       note("there should be no requests")
-      inside (responseForGetRequests) { case resp =>
-        resp.status shouldBe 200
-        resp.json.as[Set[AuthorisationRequest]] shouldBe 'empty
+      eventually {
+        inside(responseForGetRequests) { case resp =>
+          resp.status shouldBe 200
+          resp.json.as[Set[AuthorisationRequest]] shouldBe 'empty
+        }
       }
 
       note("we should be able to add 2 new requests")
