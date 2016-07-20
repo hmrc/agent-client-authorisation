@@ -22,25 +22,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-//
-//case class AuthorisationStatus(value: String)
-//object Pending extends AuthorisationStatus("Pending")
-//object Rejected extends AuthorisationStatus("Rejected")
-//object Accepted extends AuthorisationStatus("Accepted")
-//object Cancelled extends AuthorisationStatus("Cancelled")
-//object Expired extends AuthorisationStatus("Expired")
-//
-//
-//
 sealed trait AuthorisationStatus
-//object Pending extends AuthorisationStatus("Pending")
-//object Rejected extends AuthorisationStatus("Rejected")
-//object Accepted extends AuthorisationStatus("Accepted")
-//object Cancelled extends AuthorisationStatus("Cancelled")
-//object Expired extends AuthorisationStatus("Expired")
-//
-//
-
 case object Pending extends AuthorisationStatus
 case object Rejected extends AuthorisationStatus
 case object Accepted extends AuthorisationStatus
@@ -72,17 +54,10 @@ object AuthorisationStatus {
   }
 
 }
-//
-//object AuthorisationStatus {
-//  def unapply(status: AuthorisationStatus) : Option[String] = Some(status.toString)
-//  def apply(status: String)
-//}
-
 
 case class AgentClientAuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, requestDate: DateTime, regime: String = "sa", status: AuthorisationStatus = Pending)
 
 case class AgentClientAuthorisationHttpRequest(clientSaUtr: SaUtr)
-
 
 object AgentClientAuthorisationRequest {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
