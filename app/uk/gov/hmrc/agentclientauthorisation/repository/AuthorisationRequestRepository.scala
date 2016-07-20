@@ -41,7 +41,8 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
     with AuthorisationRequestRepository {
 
   override def indexes: Seq[Index] = Seq(
-    Index(Seq("agentCode" -> IndexType.Ascending))
+    Index(Seq("agentCode" -> IndexType.Ascending)),
+    Index(Seq("requestDate" -> IndexType.Ascending))
   )
 
   override def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
