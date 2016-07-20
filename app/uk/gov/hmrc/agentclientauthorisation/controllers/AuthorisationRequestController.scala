@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequestRequest
+import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationHttpRequest
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -29,7 +29,7 @@ import scala.concurrent.Future
 class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository) extends BaseController {
 
   def createRequest(agentCode: AgentCode) = Action.async(parse.json) { implicit request =>
-    withJsonBody[AuthorisationRequestRequest] { authRequest =>
+    withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
       // TODO Audit
       authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr)
       Future successful Created //TODO Location header?

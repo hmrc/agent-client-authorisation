@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationRequest
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
@@ -28,24 +28,24 @@ import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait AuthorisationRequestRepository extends Repository[AuthorisationRequest, BSONObjectID] {
+trait AuthorisationRequestRepository extends Repository[AgentClientAuthorisationRequest, BSONObjectID] {
 
-  def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AuthorisationRequest]
+  def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AgentClientAuthorisationRequest]
 
-  def list(agentCode: AgentCode): Future[List[AuthorisationRequest]]
+  def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]]
 
 }
 
 class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[AuthorisationRequest, BSONObjectID]("authorisationRequests", mongo, AuthorisationRequest.mongoFormats, ReactiveMongoFormats.objectIdFormats)
+  extends ReactiveRepository[AgentClientAuthorisationRequest, BSONObjectID]("authorisationRequests", mongo, AgentClientAuthorisationRequest.mongoFormats, ReactiveMongoFormats.objectIdFormats)
     with AuthorisationRequestRepository {
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("agentCode" -> IndexType.Ascending))
   )
 
-  override def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AuthorisationRequest] = withCurrentTime { now =>
-    val r = AuthorisationRequest(
+  override def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
+    val r = AgentClientAuthorisationRequest(
       id = BSONObjectID.generate,
       agentCode = agentCode,
       clientSaUtr = clientSaUtr,
@@ -54,6 +54,6 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
     insert(r).map(_ => r)
   }
 
-  override def list(agentCode: AgentCode): Future[List[AuthorisationRequest]] =
+  override def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]] =
     find("agentCode" -> agentCode)
 }

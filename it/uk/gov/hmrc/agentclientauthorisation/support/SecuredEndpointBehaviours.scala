@@ -34,8 +34,8 @@ trait SecuredEndpointBehaviours {
       request.status shouldBe 401
     }
 
-    "return 401 when user is an agent, but not subscribed to SA" ignore { // TODO is this needed
-      given().agentAdmin(me).isLoggedIn().andHasNoSaAgentReference()
+    "return 401 when user is an agent, but not subscribed to SA" ignore { // TODO enable! (double-check with George)
+      given().agentAdmin(me).isLoggedIn().andIsNotEnrolledForSA()
       request.status shouldBe 401
     }
   }

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
-import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationRequest
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
@@ -49,7 +49,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
       eventually {
         inside(responseForGetRequests) { case resp =>
           resp.status shouldBe 200
-          resp.json.as[Set[AuthorisationRequest]] shouldBe 'empty
+          resp.json.as[Set[AgentClientAuthorisationRequest]] shouldBe 'empty
         }
       }
 
@@ -59,10 +59,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
-        val requests = responseForGetRequests.json.as[Set[AuthorisationRequest]]
+        val requests = responseForGetRequests.json.as[Set[AgentClientAuthorisationRequest]]
         requests should have size 2
         forAll (requests) { request =>
-          inside (request) { case AuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate) =>
+          inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate, _, _) =>
             requestDate.getMillis should beRecent
           }
         }
@@ -71,10 +71,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
   }
 
   def responseForGetRequests(implicit agentCode: AgentCode): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/sa/agent/$agentCode/requests", port).get()
+    new Resource(s"/agent-client-authorisation/agent/$agentCode/requests", port).get()
   }
 
   def responseForCreateRequest(body: String)(implicit agentCode: AgentCode): HttpResponse =
-    new Resource(s"/agent-client-authorisation/sa/agent/$agentCode/requests", port).postAsJson(body)
+    new Resource(s"/agent-client-authorisation/agent/$agentCode/requests", port).postAsJson(body)
 
 }

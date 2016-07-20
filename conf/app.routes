@@ -1,5 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.agentclientauthorisation.controllers.MicroserviceHelloWorld.hello
-GET        /sa/agent/:agentCode/requests                 @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests(agentCode: uk.gov.hmrc.domain.AgentCode)
-POST       /sa/agent/:agentCode/requests                 @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest(agentCode: uk.gov.hmrc.domain.AgentCode)
+GET        /agent/:agentCode/requests                 @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests(agentCode: uk.gov.hmrc.domain.AgentCode)
+POST       /agent/:agentCode/requests                 @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest(agentCode: uk.gov.hmrc.domain.AgentCode)
