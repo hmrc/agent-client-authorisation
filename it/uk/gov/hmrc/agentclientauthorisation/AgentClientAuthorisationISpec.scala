@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import org.joda.time.DateTime
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource}
@@ -24,7 +25,7 @@ import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspectors with Inside {
+class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspectors with Inside with Eventually {
 
   private implicit val me = AgentCode("ABCDEF12345678")
 
@@ -55,8 +56,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
     "create and retrieve authorisation requests" in {
       given().agentAdmin(me).isLoggedIn()
 
-      val now = DateTime.now().getMillis
-      val beRecent = be <= now and be >= (now - 10)
+      val testStartTime = DateTime.now().getMillis
+      val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
       note("there should be no requests")
       inside (responseForGetRequests) { case resp =>
@@ -65,15 +66,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspe
       }
 
       note("we should be able to add 2 new requests")
-      responseForCreateRequest("""{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567890"}""").status shouldBe 201
-      responseForCreateRequest("""{"agentCode": "ABCDEF123456", "clientSaUtr": "1234567891"}""").status shouldBe 201
+      responseForCreateRequest("""{"clientSaUtr": "1234567890"}""").status shouldBe 201
+      responseForCreateRequest("""{"clientSaUtr": "1234567891"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
-      val requests = responseForGetRequests.json.as[Set[AuthorisationRequest]]
-      requests should have size 2
-      forAll (requests) { request =>
-        inside (request) { case AuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate) =>
-          requestDate.getMillis should beRecent
+      eventually { // MongoDB is slow sometimes
+        val requests = responseForGetRequests.json.as[Set[AuthorisationRequest]]
+        requests should have size 2
+        forAll (requests) { request =>
+          inside (request) { case AuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate) =>
+            requestDate.getMillis should beRecent
+          }
         }
       }
     }

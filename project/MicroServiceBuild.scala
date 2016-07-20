@@ -68,7 +68,8 @@ private object AppDependencies {
         "org.scalatestplus" %% "play" % "1.2.0" % scope,
         "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope
       )
     }.test
   }

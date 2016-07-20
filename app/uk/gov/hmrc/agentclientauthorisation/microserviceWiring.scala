@@ -17,7 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import play.api.mvc.Controller
+import play.modules.reactivemongo.{ReactiveMongoPlugin, MongoDbConnection}
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AuthorisationRequestController, MicroserviceHelloWorld}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AuthorisationRequestMongoRepository, AuthorisationRequestRepository}
+import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
@@ -37,9 +40,18 @@ object MicroserviceAuthConnector extends AuthConnector with ServicesConfig {
   override val authBaseUrl = baseUrl("auth")
 }
 
-trait ServiceRegistry extends ServicesConfig {
+trait LazyMongoDbConnection {
+  import play.api.Play.current
+
+  lazy val mongoConnector: MongoConnector = ReactiveMongoPlugin.mongoConnector
+
+  implicit lazy val db = mongoConnector.db
+}
+
+trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
+  lazy val authorisationRequestRepository = new AuthorisationRequestMongoRepository
 
 }
 
@@ -48,7 +60,7 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[MicroserviceHelloWorld] -> new MicroserviceHelloWorld(),
-    classOf[AuthorisationRequestController] -> new AuthorisationRequestController()
+    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository)
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]

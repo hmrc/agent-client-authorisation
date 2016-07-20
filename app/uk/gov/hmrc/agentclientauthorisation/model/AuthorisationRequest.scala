@@ -18,14 +18,18 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-case class AuthorisationRequest(id: String, agent: AgentCode, clientSaUtr: SaUtr, requestDate: DateTime)
-case class AuthorisationRequestRequest(agentCode: AgentCode, clientSaUtr: SaUtr)
+case class AuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, requestDate: DateTime)
+case class AuthorisationRequestRequest(clientSaUtr: SaUtr)
 
 
 object AuthorisationRequest {
-  implicit val format = Json.format[AuthorisationRequest]
+  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
+  implicit val jsonFormats = Json.format[AuthorisationRequest]
+  val mongoFormats = ReactiveMongoFormats.mongoEntity(jsonFormats)
 }
 
 object AuthorisationRequestRequest {

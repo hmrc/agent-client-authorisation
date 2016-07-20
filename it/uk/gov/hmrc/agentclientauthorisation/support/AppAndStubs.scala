@@ -16,23 +16,43 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.scalatest.Suite
+import org.scalatest.{BeforeAndAfterEach, Suite}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
+import uk.gov.hmrc.mongo.{Awaiting => MongoAwaiting, MongoSpecSupport}
 import uk.gov.hmrc.play.http.HeaderCarrier
 
-trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite {
+import scala.concurrent.ExecutionContext
+
+trait AppAndStubs extends StartAndStopWireMock with StubUtils with MongoSpecSupport with ResetMongoBeforeTest with OneServerPerSuite {
   me: Suite =>
 
   private val configAuthHost = "microservice.services.auth.host"
   private val configAuthPort = "microservice.services.auth.port"
+  private val configMongoDbUri = "mongodb.uri"
 
   implicit val hc = HeaderCarrier()
 
   override implicit lazy val app: FakeApplication = FakeApplication(
     additionalConfiguration = Map(
       configAuthHost -> wiremockHost,
-      configAuthPort -> wiremockPort
+      configAuthPort -> wiremockPort,
+      configMongoDbUri -> mongoUri
     )
   )
 }
+
+trait ResetMongoBeforeTest extends BeforeAndAfterEach {
+  me: Suite with MongoSpecSupport =>
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    dropMongoDb()
+  }
+
+  def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit = {
+     Awaiting.await(mongo().drop())
+  }
+}
+
+object Awaiting extends MongoAwaiting
