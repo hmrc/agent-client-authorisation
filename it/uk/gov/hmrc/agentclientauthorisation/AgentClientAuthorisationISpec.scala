@@ -20,36 +20,21 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{SecuredEndpointBehaviours, AppAndStubs, Resource}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspectors with Inside with Eventually {
+class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val me = AgentCode("ABCDEF12345678")
 
-  // TODO shouldn't auth stuff be written as a behaviour?
   "GET /request/:agentCode" should {
-    "return 401 when the requester is not authenticated" in {
-      given().agentAdmin(me).isNotLoggedIn()
-      responseForGetRequests.status shouldBe 401
-    }
-
-    "return 401 when user is not an agent" ignore {
-      ??? // do we need this?
-    }
-
-    "return 401 when user is an agent, but not subscribed to SA" ignore {
-      ??? // do we need this?
-    }
+    behave like anEndpointAccessibleForAgentsOnly(responseForGetRequests)
   }
 
   "POST /request" should {
-    "return 401 when the requester is not authenticated" in {
-      given().agentAdmin(me).isNotLoggedIn()
-      responseForCreateRequest("").status shouldBe 401
-    }
+    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(""))
   }
 
   "/request" should {
