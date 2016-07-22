@@ -44,6 +44,10 @@ class SaLookupServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
       await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("Mr First Last")
     }
 
+    "return name when there is a match on postcode case-insensitive" is pending
+
+    "return name when there is a match on postcode space-insensitive" is pending
+
     "return None when the taxpayer was found but the postcode doesn't match" in {
       val cesaTaxpayer = CesaTaxpayer(
         name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
