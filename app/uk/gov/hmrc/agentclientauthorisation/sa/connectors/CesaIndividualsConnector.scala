@@ -23,9 +23,9 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 import scala.concurrent.Future
 
 class CesaIndividualsConnector(http: HttpGet, cesaBaseUrl: String) {
-  implicit val readsCesaDesignatoryDetailsName = Json.reads[CesaDesignatoryDetailsName]
-  implicit val readsCesaDesignatoryDetailsAddress = Json.reads[CesaDesignatoryDetailsAddress]
-  implicit val readsCesaTaxpayer = Json.reads[CesaTaxpayer]
+  private implicit val readsCesaDesignatoryDetailsName = Json.reads[CesaDesignatoryDetailsName]
+  private implicit val readsCesaDesignatoryDetailsAddress = Json.reads[CesaDesignatoryDetailsAddress]
+  private implicit val readsCesaTaxpayer = Json.reads[CesaTaxpayer]
 
   def url(path: String) = s"$cesaBaseUrl$path"
 
@@ -36,8 +36,11 @@ class CesaIndividualsConnector(http: HttpGet, cesaBaseUrl: String) {
 case class CesaDesignatoryDetailsName(
   title: Option[String],
   forename: Option[String],
-  surname: Option[String]
-)
+  surname: Option[String]) {
+
+  override def toString: String =
+    Seq(title, forename, surname).flatten.mkString(" ")
+}
 
 case class CesaDesignatoryDetailsAddress(
   postcode: Option[String]
