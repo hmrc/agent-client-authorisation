@@ -28,6 +28,8 @@ import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
 import uk.gov.hmrc.play.http.hooks.HttpHook
 import uk.gov.hmrc.play.http.ws._
+import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
+import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 
 object WSHttp extends WSGet with WSPut with WSPost with WSDelete with WSPatch with AppName {
   override val hooks: Seq[HttpHook] = NoneRequired
@@ -54,6 +56,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
   // Instantiate services here
   lazy val authorisationRequestRepository = new AuthorisationRequestMongoRepository
   lazy val cesaIndividualsConnector = new CesaIndividualsConnector(WSHttp, baseUrl("cesa"))
+  lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
 
 }
 
@@ -61,7 +64,8 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository)
+    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository),
+    classOf[SaLookupController] -> new SaLookupController(saLookupService)
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]
