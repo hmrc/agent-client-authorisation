@@ -17,9 +17,9 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import play.api.mvc.Controller
-import play.modules.reactivemongo.{MongoDbConnection, ReactiveMongoPlugin}
-import uk.gov.hmrc.agentclientauthorisation.controllers.{AuthorisationRequestController, MicroserviceHelloWorld}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AuthorisationRequestMongoRepository, AuthorisationRequestRepository}
+import play.modules.reactivemongo.ReactiveMongoPlugin
+import uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController
+import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
@@ -61,7 +61,6 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[MicroserviceHelloWorld] -> new MicroserviceHelloWorld(),
     classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository)
   )
 
