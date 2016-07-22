@@ -25,6 +25,8 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
 
   "GET /sa/lookup/:saUtr/:postcode" should {
     "return name when there is a match" in {
+      given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
+
       val saUtr = SaUtr("1234567890")
       CesaStubs.saTaxpayerExists(saUtr)
 
@@ -34,6 +36,8 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
     }
 
     "return 404 when there is no match" in {
+      given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
+
       val saUtr = SaUtr("1234567890")
       CesaStubs.saTaxpayerExists(saUtr)
 
@@ -42,6 +46,19 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
       response.body shouldBe ""
     }
 
-    "return 401 when the logged in user does not have an activated IR-SA-AGENT enrolment" is pending
+    "return 401 when the logged in user does not have an activated IR-SA-AGENT enrolment" in {
+      given().agentAdmin(me).isLoggedIn().andHasNoIrSaAgentEnrolment()
+
+      val saUtr = SaUtr("1234567890")
+      CesaStubs.saTaxpayerExists(saUtr)
+
+      val matchResponse = new Resource("/agent-client-authorisation/sa/lookup/1234567890/AA1%201AA", port).get()
+      matchResponse.status shouldBe 401
+      matchResponse.body shouldBe ""
+
+      val noMatchResponse = new Resource("/agent-client-authorisation/sa/lookup/1234567890/ZA1%201AA", port).get()
+      noMatchResponse.status shouldBe 401
+      noMatchResponse.body shouldBe ""
+    }
   }
 }

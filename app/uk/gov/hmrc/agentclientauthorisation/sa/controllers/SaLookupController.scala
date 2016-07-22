@@ -18,18 +18,33 @@ package uk.gov.hmrc.agentclientauthorisation.sa.controllers
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import play.api.mvc.Action
+import play.api.mvc.{Action, Result}
+import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-class SaLookupController(saLookupService: SaLookupService) extends BaseController {
-  def lookup(saUtr: SaUtr, postcode: String) = Action.async { implicit request =>
+import scala.concurrent.Future
+
+class SaLookupController(authConnector: AuthConnector, saLookupService: SaLookupService)
+  extends BaseController {
+
+  def authoriseAndLookup(saUtr: SaUtr, postcode: String) = Action.async { implicit request =>
+    // perhaps authorisation would be better implemented using action composition?
+    authConnector.hasActivatedIrSaEnrolment().flatMap { authorised =>
+      if (authorised)
+        lookup(saUtr, postcode)
+      else
+        Future successful Unauthorized
+    }
+  }
+
+  private def lookup(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Result] =
     saLookupService.lookupByUtrAndPostcode(saUtr, postcode).map {
       case Some(name) =>
         Ok(Json.obj("name" -> name))
       case None =>
         NotFound
     }
-  }
 }

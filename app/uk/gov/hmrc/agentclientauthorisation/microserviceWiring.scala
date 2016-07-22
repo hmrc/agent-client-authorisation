@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation
 
+import java.net.URL
+
 import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController
@@ -55,8 +57,9 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
   lazy val authorisationRequestRepository = new AuthorisationRequestMongoRepository
-  lazy val cesaIndividualsConnector = new CesaIndividualsConnector(WSHttp, baseUrl("cesa"))
+  lazy val cesaIndividualsConnector = new CesaIndividualsConnector(baseUrl("cesa"), WSHttp)
   lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
+  lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
 
 }
 
@@ -65,7 +68,7 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository),
-    classOf[SaLookupController] -> new SaLookupController(saLookupService)
+    classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService)
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]

@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.Future
 
-class CesaIndividualsConnector(http: HttpGet, cesaBaseUrl: String) {
+class CesaIndividualsConnector(cesaBaseUrl: String, http: HttpGet) {
   private implicit val readsCesaDesignatoryDetailsName = Json.reads[CesaDesignatoryDetailsName]
   private implicit val readsCesaDesignatoryDetailsAddress = Json.reads[CesaDesignatoryDetailsAddress]
   private implicit val readsCesaTaxpayer = Json.reads[CesaTaxpayer]
