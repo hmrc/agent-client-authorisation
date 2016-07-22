@@ -24,22 +24,30 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 
-trait AppAndStubs extends StartAndStopWireMock with StubUtils with MongoSpecSupport with ResetMongoBeforeTest with OneServerPerSuite {
+trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite {
   me: Suite =>
-
-  private val configAuthHost = "microservice.services.auth.host"
-  private val configAuthPort = "microservice.services.auth.port"
-  private val configMongoDbUri = "mongodb.uri"
 
   implicit val hc = HeaderCarrier()
 
   override implicit lazy val app: FakeApplication = FakeApplication(
-    additionalConfiguration = Map(
-      configAuthHost -> wiremockHost,
-      configAuthPort -> wiremockPort,
-      configMongoDbUri -> mongoUri
-    )
+    additionalConfiguration = additionalConfiguration
   )
+
+  protected def additionalConfiguration: Map[String, Any] = {
+    Map(
+      "microservice.services.auth.host" -> wiremockHost,
+      "microservice.services.auth.port" -> wiremockPort,
+      "microservice.services.cesa.host" -> wiremockHost,
+      "microservice.services.cesa.port" -> wiremockPort
+    )
+  }
+}
+
+trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest {
+  me: Suite =>
+
+  override protected def additionalConfiguration =
+    super.additionalConfiguration + ("mongodb.uri" -> mongoUri)
 }
 
 trait ResetMongoBeforeTest extends BeforeAndAfterEach {

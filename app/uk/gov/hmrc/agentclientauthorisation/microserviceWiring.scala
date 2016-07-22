@@ -17,9 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import play.api.mvc.Controller
-import play.modules.reactivemongo.{ReactiveMongoPlugin, MongoDbConnection}
+import play.modules.reactivemongo.{MongoDbConnection, ReactiveMongoPlugin}
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AuthorisationRequestController, MicroserviceHelloWorld}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AuthorisationRequestMongoRepository, AuthorisationRequestRepository}
+import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -52,6 +53,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
   lazy val authorisationRequestRepository = new AuthorisationRequestMongoRepository
+  lazy val cesaIndividualsConnector = new CesaIndividualsConnector(WSHttp, baseUrl("cesa"))
 
 }
 

@@ -20,12 +20,12 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationRequest
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with AppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val me = AgentCode("ABCDEF12345678")
 
