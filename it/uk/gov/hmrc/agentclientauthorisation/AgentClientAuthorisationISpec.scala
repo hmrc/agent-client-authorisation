@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
+import play.api.libs.json.JsArray
 import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationRequest
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
@@ -49,7 +50,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       eventually {
         inside(responseForGetRequests) { case resp =>
           resp.status shouldBe 200
-          resp.json.as[Set[AgentClientAuthorisationRequest]] shouldBe 'empty
+          (resp.json \ "_embedded" \ "requests").as[JsArray].value shouldBe 'empty
         }
       }
 
@@ -59,7 +60,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
-        val requests = responseForGetRequests.json.as[Set[AgentClientAuthorisationRequest]]
+        val requests = (responseForGetRequests.json \ "_embedded" \ "requests").as[Set[AgentClientAuthorisationRequest]]
         requests should have size 2
         forAll (requests) { request =>
           inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate, _, _) =>

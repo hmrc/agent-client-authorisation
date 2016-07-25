@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import play.api.hal.{HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationHttpRequest
+import play.api.mvc.hal.halWriter
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -37,7 +39,18 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   }
 
   def getRequests(agentCode: AgentCode) = Action.async { implicit request =>
-    authorisationRequestRepository.list(agentCode).map(Json.toJson(_)).map(Ok(_))
+    authorisationRequestRepository.list(agentCode).map(toHalResource(agentCode, _)).map(Ok(_)(halWriter))
+  }
+
+  private def toHalResource(agentCode: AgentCode, requests: List[AgentClientAuthorisationRequest]): HalResource = {
+    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests(agentCode).url)))
+    val requestResources: Vector[HalResource] = requests.map(toHalResource(agentCode, _)).toVector
+    HalResource(links, JsObject(Seq.empty), Vector("requests" -> requestResources))
+  }
+
+  private def toHalResource(agentCode: AgentCode, request: AgentClientAuthorisationRequest): HalResource = {
+    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests(agentCode).url}/${request.id}")))
+    HalResource(links, Json.toJson(request).as[JsObject])
   }
 
 }
