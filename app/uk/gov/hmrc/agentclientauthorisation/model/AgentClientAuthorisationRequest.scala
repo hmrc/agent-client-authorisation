@@ -55,9 +55,15 @@ object AuthorisationStatus {
 
 }
 
-case class AgentClientAuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, requestDate: DateTime, regime: String = "sa", status: AuthorisationStatus = Pending)
+case class StatusChangeEvent(time: DateTime, status: AuthorisationStatus)
+
+case class AgentClientAuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, regime: String = "sa", events: List[StatusChangeEvent])
 
 case class AgentClientAuthorisationHttpRequest(clientSaUtr: SaUtr)
+
+object StatusChangeEvent {
+  implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
+}
 
 object AgentClientAuthorisationRequest {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats

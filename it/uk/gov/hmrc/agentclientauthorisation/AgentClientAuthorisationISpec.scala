@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import play.api.libs.json.JsArray
-import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.model.{Pending, StatusChangeEvent, AgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
@@ -63,7 +63,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         val requests = (responseForGetRequests.json \ "_embedded" \ "requests").as[Set[AgentClientAuthorisationRequest]]
         requests should have size 2
         forAll (requests) { request =>
-          inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), requestDate, _, _) =>
+          inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890") | SaUtr("1234567891"), "sa", List(StatusChangeEvent(requestDate, Pending))) =>
             requestDate.getMillis should beRecent
           }
         }
