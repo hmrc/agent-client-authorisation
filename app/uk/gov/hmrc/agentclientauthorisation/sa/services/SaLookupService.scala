@@ -28,12 +28,17 @@ class SaLookupService(cesaIndividualsConnector: CesaIndividualsConnector) {
   {
     cesaIndividualsConnector.taxpayer(saUtr).map { maybeTaxpayer: Option[CesaTaxpayer] =>
       maybeTaxpayer match {
-        case Some(taxPayer) if taxPayer.address.postcode.contains(postcode)
+        case Some(taxPayer) if postcodeMatches(taxPayer.address.postcode, postcode)
         => Some(name(taxPayer))
         case _
         => None
       }
     }
+  }
+
+  def postcodeMatches(postcode: Option[String], toCheck: String) = {
+    postcode.flatMap(value => Some(value.toLowerCase.replaceAll(" ", "") == toCheck.toLowerCase.replaceAll(" ", "")))
+            .getOrElse(false)
   }
 
   def name(cesaTaxpayer: CesaTaxpayer): String = cesaTaxpayer.name.toString
