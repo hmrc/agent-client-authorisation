@@ -36,6 +36,9 @@ class SaLookupService(cesaIndividualsConnector: CesaIndividualsConnector) {
     }
   }
 
+  def utrAndPostcodeMatch(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Boolean] =
+    lookupByUtrAndPostcode(saUtr, postcode).map(_.isDefined)
+
   def postcodeMatches(postcode: Option[String], toCheck: String) = {
     postcode.flatMap(value => Some(value.toLowerCase.replaceAll(" ", "") == toCheck.toLowerCase.replaceAll(" ", "")))
             .getOrElse(false)

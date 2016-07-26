@@ -36,55 +36,65 @@ class SaLookupServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
 
   "lookupByUtrAndPostcode" should {
     "return name for a match" in {
-      val cesaTaxpayer = CesaTaxpayer(
-        name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
-        address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
-
+      givenTaxpayerExists()
       await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("Mr First Last")
     }
 
     "return name when there is a match on postcode case-insensitive" in {
-      val cesaTaxpayer = CesaTaxpayer(
-        name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
-        address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
-
+      givenTaxpayerExists()
       await(service.lookupByUtrAndPostcode(saUtr, "aa1 1aa")) shouldBe Some("Mr First Last")
     }
 
     "return name when there is a match on postcode space-insensitive" in {
-      val cesaTaxpayer = CesaTaxpayer(
-        name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
-        address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
-
+      givenTaxpayerExists()
       await(service.lookupByUtrAndPostcode(saUtr, "AA11a a")) shouldBe Some("Mr First Last")
     }
 
     "return None when the taxpayer was found but the postcode doesn't match" in {
-      val cesaTaxpayer = CesaTaxpayer(
-        name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
-        address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
-
+      givenTaxpayerExists()
       await(service.lookupByUtrAndPostcode(saUtr, "BA1 1AA")) shouldBe None
     }
 
     "return None when the taxpayer was not found" in {
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful None)
-
+      givenTaxpayerDoesNotExist()
       await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe None
     }
 
     "return empty string for a match when the taxpayer has None in all name fields" in {
-      val cesaTaxpayer = CesaTaxpayer(
-        name = CesaDesignatoryDetailsName(title = None, forename = None, surname = None),
-        address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
-      when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
+      givenTaxpayerExistsWithNameFieldsNone()
 
       await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("")
     }
+  }
+
+  "utrAndPostcodeMatch" should {
+    "be true when a taxpayer is found and the postcode matches" in {
+      givenTaxpayerExists()
+      await(service.utrAndPostcodeMatch(saUtr, "AA1 1AA")) shouldBe true
+    }
+
+    "be false when the taxpayer was found but the postcode doesn't match" in {
+      givenTaxpayerExists()
+      await(service.utrAndPostcodeMatch(saUtr, "BA1 1AA")) shouldBe false
+    }
+  }
+
+  def givenTaxpayerExists(): Unit = {
+    val cesaTaxpayer = CesaTaxpayer(
+      name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),
+      address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
+    when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
+  }
+
+  def givenTaxpayerExistsWithNameFieldsNone(): Unit = {
+    val cesaTaxpayer = CesaTaxpayer(
+      name = CesaDesignatoryDetailsName(title = None, forename = None, surname = None),
+      address = CesaDesignatoryDetailsAddress(postcode = Some("AA1 1AA")))
+    when(connector.taxpayer(saUtr)).thenReturn(Future successful Some(cesaTaxpayer))
+  }
+
+  def givenTaxpayerDoesNotExist(): Unit = {
+    when(connector.taxpayer(saUtr)).thenReturn(Future successful None)
   }
 
   override protected def beforeEach() = {
