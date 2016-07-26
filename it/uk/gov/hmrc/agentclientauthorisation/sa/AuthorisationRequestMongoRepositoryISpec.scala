@@ -90,7 +90,6 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       inside(list head) {
         case AgentClientAuthorisationRequest(_, `agentCode`, `saUtr1`, "sa", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
-        case e => e
       }
 
       inside(list(1)) {
