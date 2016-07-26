@@ -24,18 +24,20 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.UserDetailsConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
+import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
+import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.mongo.MongoConnector
+import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
 import uk.gov.hmrc.play.http.hooks.HttpHook
 import uk.gov.hmrc.play.http.ws._
-import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
-import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 
-object WSHttp extends WSGet with WSPut with WSPost with WSDelete with WSPatch with AppName {
-  override val hooks: Seq[HttpHook] = NoneRequired
+object WSHttp extends WSGet with WSPut with WSPost with WSDelete with WSPatch with AppName with HttpAuditing {
+  override val hooks: Seq[HttpHook] = Seq(AuditingHook)
+  override val auditConnector = MicroserviceAuditConnector
 }
 
 object MicroserviceAuditConnector extends AuditConnector with RunMode {
