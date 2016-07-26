@@ -38,6 +38,8 @@ trait AuthorisationRequestRepository extends Repository[AgentClientAuthorisation
 
   def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]]
 
+  def list(clientSaUtr: SaUtr): Future[List[AgentClientAuthorisationRequest]]
+
 }
 
 class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
@@ -63,9 +65,11 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
   }
 
 
-
   override def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]] =
     find("agentCode" -> agentCode)
+
+  override def list(clientSaUtr: SaUtr): Future[List[AgentClientAuthorisationRequest]] =
+    find("clientSaUtr" -> clientSaUtr)
 
   override def update(id: BSONObjectID, status: AuthorisationStatus): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
