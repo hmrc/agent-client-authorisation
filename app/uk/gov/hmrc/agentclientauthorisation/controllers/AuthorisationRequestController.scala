@@ -28,21 +28,21 @@ import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
+import scala.concurrent.Future
+
 class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService)
   extends BaseController {
 
   def createRequest(agentCode: AgentCode) = Action.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
-      saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) map { utrAndPostcodeMatch =>
+      saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
           // TODO Audit
-          //TODO fix race condition, probably with authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr) map { _ => Created }
-          authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr)
-          Created //TODO Location header?
+          authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr) map { _ => Created }
         } else {
           // TODO Audit including postcode as well as UTR (don't think we are allowed to log postcode)
           Logger.warn(s"createRequest not authorised because postcode does not match for UTR ${authRequest.clientSaUtr}")
-          Forbidden("No SA taxpayer found with the given UTR and postcode")
+          Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
         }
       }
     }

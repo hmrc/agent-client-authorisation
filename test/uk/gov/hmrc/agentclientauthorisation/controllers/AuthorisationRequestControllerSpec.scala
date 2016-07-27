@@ -59,5 +59,17 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
       status(result) shouldBe 403
     }
+
+    "propagate exceptions when the repository fails" in {
+      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
+      when(repository.create(any[AgentCode], any[SaUtr])).thenReturn(Future failed new RuntimeException("dummy exception"))
+
+      val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
+        AgentClientAuthorisationHttpRequest(SaUtr("54321"), "AA1 1AA"))
+
+      intercept[RuntimeException] {
+        await(controller.createRequest(agentCode)(FakeRequest().withBody(body)))
+      }.getMessage shouldBe "dummy exception"
+    }
   }
 }
