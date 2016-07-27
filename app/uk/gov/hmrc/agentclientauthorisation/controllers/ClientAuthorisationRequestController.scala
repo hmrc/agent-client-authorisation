@@ -30,20 +30,7 @@ import scala.concurrent.Future
 
 class ClientAuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository) extends BaseController {
 
-  def getRequests(saUtr: SaUtr) = Action.async { implicit request =>
-    authorisationRequestRepository.list(saUtr).map(toHalResource(saUtr, _)).map(Ok(_)(halWriter))
+  def getRequests(saUtr: SaUtr)= Action.async { implicit request =>
+    authorisationRequestRepository.list(saUtr).map(requests => Ok(Json.toJson(requests)))
   }
-
-
-  private def toHalResource(saUtr: SaUtr, requests: List[AgentClientAuthorisationRequest]): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.ClientAuthorisationRequestController.getRequests(saUtr).url)))
-    val requestResources: Vector[HalResource] = requests.map(toHalResource(saUtr, _)).toVector
-    HalResource(links, JsObject(Seq.empty), Vector("requests" -> requestResources))
-  }
-
-  private def toHalResource(saUtr: SaUtr, request: AgentClientAuthorisationRequest): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.ClientAuthorisationRequestController.getRequests(saUtr).url}/${request.id}")))
-    HalResource(links, Json.toJson(request).as[JsObject])
-  }
-
 }

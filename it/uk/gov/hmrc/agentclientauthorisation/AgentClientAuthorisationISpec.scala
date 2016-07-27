@@ -73,7 +73,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
   "/sa/:saUtr/requests" should {
     "retrieve authorisation requests" in {
-//      dropMongoDb()
+      dropMongoDb()
 
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
@@ -84,19 +84,20 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       eventually {
         inside(responseForClientGetRequests) { case resp =>
           resp.status shouldBe 200
-          (resp.json \ "_embedded" \ "requests").as[JsArray].value shouldBe 'empty
+          resp.json.as[JsArray].value shouldBe 'empty
         }
       }
 
       note("we should be able to add 2 new requests")
       given().agentAdmin(me).isLoggedIn()
       responseForCreateRequest("""{"clientSaUtr": "1234567890"}""").status shouldBe 201
-      responseForCreateRequest("""{"clientSaUtr": "1234567890"}""").status shouldBe 201
+      responseForCreateRequest("""{"clientSaUtr": "1234567891"}""").status shouldBe 201
 
       given().client().isLoggedIn()
       note("the freshly added authorisation requests should be available")
-      eventually { val requests = (responseForClientGetRequests.json \ "_embedded" \ "requests").as[Set[AgentClientAuthorisationRequest]]
-        requests should have size 2
+      eventually {
+        val requests = responseForClientGetRequests.json.as[Set[AgentClientAuthorisationRequest]]
+        requests should have size 1
         forAll (requests) { request =>
           inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890"), "sa", List(StatusChangeEvent(requestDate, Pending))) =>
             requestDate.getMillis should beRecent
