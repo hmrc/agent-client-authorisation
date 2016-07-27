@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.Logger
 import play.api.hal.{HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
@@ -40,8 +39,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
           // TODO Audit
           authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr) map { _ => Created }
         } else {
-          // TODO Audit including postcode as well as UTR (don't think we are allowed to log postcode)
-          Logger.warn(s"createRequest not authorised because postcode does not match for UTR ${authRequest.clientSaUtr}")
+          // TODO Audit failure including UTR and postcode
           Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
         }
       }
