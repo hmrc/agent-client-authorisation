@@ -3,4 +3,6 @@
 GET     /agent/:agentCode/requests                @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests(agentCode: uk.gov.hmrc.domain.AgentCode)
 POST    /agent/:agentCode/requests                @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest(agentCode: uk.gov.hmrc.domain.AgentCode)
 
+GET     /sa/:saUtr/requests                       @uk.gov.hmrc.agentclientauthorisation.controllers.ClientAuthorisationRequestController.getRequests(saUtr: uk.gov.hmrc.domain.SaUtr)
+
 GET     /sa/lookup/:saUtr/:postcode               @uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController.authoriseAndLookup(saUtr: uk.gov.hmrc.domain.SaUtr, postcode: String)
