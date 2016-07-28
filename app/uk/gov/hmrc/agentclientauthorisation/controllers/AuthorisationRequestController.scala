@@ -23,10 +23,11 @@ import play.api.mvc.Action
 import play.api.mvc.hal.halWriter
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{SaClientRequest, AgentRequest, AuthActions}
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
+import uk.gov.hmrc.agentclientauthorisation.model.{EnrichedAgentClientAuthorisationRequest, AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{SaUtr, AgentCode}
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
@@ -49,16 +50,42 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   }
 
   def getRequests() = onlyForAgents.async { implicit request =>
-    authorisationRequestRepository.list(request.agentCode).map(toHalResource).map(Ok(_)(halWriter))
+    authorisationRequestRepository.list(request.agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
   }
 
-  private def toHalResource(requests: List[AgentClientAuthorisationRequest]): HalResource = {
+  private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
+    for {
+      names <- namesByUtr(requests.map(_.clientSaUtr).distinct)
+    } yield {
+      requests map(enrich(_, names))
+    }
+  }
+
+  private def enrich(request: AgentClientAuthorisationRequest, names: Map[SaUtr, Option[String]]): EnrichedAgentClientAuthorisationRequest = {
+    EnrichedAgentClientAuthorisationRequest(
+      id = request.id.stringify,
+      agentCode = request.agentCode,
+      clientSaUtr = request.clientSaUtr,
+      clientFullName = names(request.clientSaUtr),
+      regime = request.regime,
+      events = request.events
+    )
+  }
+
+  private def namesByUtr(utrs: List[SaUtr])(implicit hc: HeaderCarrier): Future[Map[SaUtr, Option[String]]] = {
+    val eventuallyNames = Future sequence (utrs.map(saLookupService.lookupByUtr))
+    eventuallyNames.map({ nameList =>
+      (utrs zip nameList).toMap
+    })
+  }
+
+  private def toHalResource(requests: List[EnrichedAgentClientAuthorisationRequest]): HalResource = {
     val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url)))
     val requestResources: Vector[HalResource] = requests.map(toHalResource).toVector
     HalResource(links, JsObject(Seq.empty), Vector("requests" -> requestResources))
   }
 
-  private def toHalResource(request: AgentClientAuthorisationRequest): HalResource = {
+  private def toHalResource(request: EnrichedAgentClientAuthorisationRequest): HalResource = {
     val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url}/${request.id}")))
     HalResource(links, Json.toJson(request).as[JsObject])
   }

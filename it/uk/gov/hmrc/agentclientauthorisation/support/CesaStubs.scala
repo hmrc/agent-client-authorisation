@@ -20,19 +20,19 @@ import uk.gov.hmrc.domain.SaUtr
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 object CesaStubs {
-  def saTaxpayerExists(saUtr: SaUtr) = {
+  def saTaxpayerExists(saUtr: SaUtr, title: String = "Mr") = {
     stubFor(get(urlEqualTo(s"/self-assessment/individual/$saUtr/designatory-details/taxpayer"))
       .willReturn(
         aResponse()
           .withStatus(200)
-          .withBody("""{
+          .withBody(s"""{
             |    "address": {
             |        "postcode": "AA1 1AA"
             |    },
             |    "name": {
             |        "forename": "First",
             |        "surname": "Last",
-            |        "title": "Mr"
+            |        "title": "$title"
             |    }
             |}""".stripMargin)))
   }

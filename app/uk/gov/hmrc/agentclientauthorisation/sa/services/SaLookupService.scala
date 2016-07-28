@@ -24,6 +24,11 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import scala.concurrent.Future
 
 class SaLookupService(cesaIndividualsConnector: CesaIndividualsConnector) {
+
+  def lookupByUtr(saUtr: SaUtr)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    cesaIndividualsConnector.taxpayer(saUtr).map(_.map(name))
+  }
+
   def lookupByUtrAndPostcode(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
   {
     cesaIndividualsConnector.taxpayer(saUtr).map { maybeTaxpayer: Option[CesaTaxpayer] =>

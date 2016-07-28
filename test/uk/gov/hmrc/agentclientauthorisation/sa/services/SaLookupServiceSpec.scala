@@ -79,6 +79,18 @@ class SaLookupServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
     }
   }
 
+  "lookupByUtr" should {
+    "be None if the given SA UTR was not found" in {
+      givenTaxpayerDoesNotExist()
+      await(service.lookupByUtr(saUtr)) shouldBe None
+    }
+
+    "be Some(name) when the given SA UTR was found" in {
+      givenTaxpayerExists()
+      await(service.lookupByUtr(saUtr)) shouldBe Some("Mr First Last")
+    }
+  }
+
   def givenTaxpayerExists(): Unit = {
     val cesaTaxpayer = CesaTaxpayer(
       name = CesaDesignatoryDetailsName(title = Some("Mr"), forename = Some("First"), surname = Some("Last")),

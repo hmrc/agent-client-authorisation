@@ -57,7 +57,20 @@ object AuthorisationStatus {
 
 case class StatusChangeEvent(time: DateTime, status: AuthorisationStatus)
 
-case class AgentClientAuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, regime: String = "sa", events: List[StatusChangeEvent])
+case class AgentClientAuthorisationRequest(
+  id: BSONObjectID,
+  agentCode: AgentCode,
+  clientSaUtr: SaUtr,
+  regime: String = "sa",
+  events: List[StatusChangeEvent])
+
+case class EnrichedAgentClientAuthorisationRequest(
+  id: String,
+  agentCode: AgentCode,
+  clientSaUtr: SaUtr,
+  clientFullName: Option[String],
+  regime: String = "sa",
+  events: List[StatusChangeEvent])
 
 case class AgentClientAuthorisationHttpRequest(agentCode: AgentCode, clientSaUtr: SaUtr, clientPostcode: String)
 
@@ -69,6 +82,10 @@ object AgentClientAuthorisationRequest {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonFormats = Json.format[AgentClientAuthorisationRequest]
   val mongoFormats = ReactiveMongoFormats.mongoEntity(jsonFormats)
+}
+
+object EnrichedAgentClientAuthorisationRequest {
+  implicit val format = Json.format[EnrichedAgentClientAuthorisationRequest]
 }
 
 object AgentClientAuthorisationHttpRequest {
