@@ -59,7 +59,7 @@ case class StatusChangeEvent(time: DateTime, status: AuthorisationStatus)
 
 case class AgentClientAuthorisationRequest(id: BSONObjectID, agentCode: AgentCode, clientSaUtr: SaUtr, regime: String = "sa", events: List[StatusChangeEvent])
 
-case class AgentClientAuthorisationHttpRequest(clientSaUtr: SaUtr, clientPostcode: String)
+case class AgentClientAuthorisationHttpRequest(agentCode: AgentCode, clientSaUtr: SaUtr, clientPostcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

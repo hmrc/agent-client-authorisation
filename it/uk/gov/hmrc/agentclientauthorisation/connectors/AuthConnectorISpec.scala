@@ -20,6 +20,7 @@ import java.net.URL
 
 import uk.gov.hmrc.agentclientauthorisation.WSHttp
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, EnrolmentStates}
+import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -63,8 +64,18 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         await(newAuthConnector().hasActivatedIrSaEnrolment)
       }
     }
-
-    def newAuthConnector() = new AuthConnector(new URL(wiremockBaseUrl), WSHttp)
   }
+
+  "currentAccounts" should {
+    "return current accounts" in {
+      given()
+        .agentAdmin("ABCDEF123456")
+        .isLoggedIn()
+
+      await(newAuthConnector().currentAccounts()) shouldBe Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None)
+    }
+  }
+
+  def newAuthConnector() = new AuthConnector(new URL(wiremockBaseUrl), WSHttp)
 
 }

@@ -30,16 +30,16 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   private implicit val me = AgentCode("ABCDEF12345678")
 
-  "GET /request/:agentCode" should {
+  "GET /requests" should {
     behave like anEndpointAccessibleForAgentsOnly(responseForGetRequests)
   }
 
-  "POST /request" should {
+  "POST /requests" should {
     val clientSaUtr = SaUtr("1234567899")
-    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(s"""{"clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${me.value}", "clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
   }
 
-  "/request" should {
+  "/requests" should {
     "create and retrieve authorisation requests" in {
       dropMongoDb()
       given().agentAdmin(me).isLoggedIn()
@@ -60,8 +60,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
 
       note("we should be able to add 2 new requests")
-      responseForCreateRequest(s"""{"clientSaUtr": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
-      responseForCreateRequest(s"""{"clientSaUtr": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$me", "clientSaUtr": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$me", "clientSaUtr": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
@@ -76,11 +76,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  def responseForGetRequests(implicit agentCode: AgentCode): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/agent/$agentCode/requests", port).get()
+  def responseForGetRequests(): HttpResponse = {
+    new Resource(s"/agent-client-authorisation/requests", port).get()
   }
 
-  def responseForCreateRequest(body: String)(implicit agentCode: AgentCode): HttpResponse =
-    new Resource(s"/agent-client-authorisation/agent/$agentCode/requests", port).postAsJson(body)
+  def responseForCreateRequest(body: String): HttpResponse =
+    new Resource(s"/agent-client-authorisation/requests", port).postAsJson(body)
 
 }

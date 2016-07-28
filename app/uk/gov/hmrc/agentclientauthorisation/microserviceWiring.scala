@@ -67,7 +67,7 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository, saLookupService),
+    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository, saLookupService, authConnector),
     classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService)
   )
 

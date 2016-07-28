@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import play.api.libs.json.{JsValue, Json}
+import uk.gov.hmrc.domain.{SaUtr, AgentCode}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,12 +42,22 @@ private[connectors] object Enrolments {
   implicit val formats = Json.format[Enrolments]
 }
 
+case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
+
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
   def hasActivatedIrSaEnrolment()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] =
     currentAuthority
       .flatMap(enrolments)
       .map(_.activatedSaEnrolment.isDefined)
+
+  def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
+    currentAuthority() map { json =>
+      Accounts(
+        agent = (json \ "accounts" \ "agent" \ "agentCode").asOpt[AgentCode],
+        sa = (json \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
+      )
+    }
 
   private def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[JsValue] =
     httpGetAs[JsValue]("/auth/authority")

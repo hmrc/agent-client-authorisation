@@ -23,6 +23,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.JsValue
 import play.api.mvc.Result
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationHttpRequest
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
@@ -30,12 +31,14 @@ import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach {
   val repository = mock[AuthorisationRequestRepository]
   val saLookupService = mock[SaLookupService]
-  val controller = new AuthorisationRequestController(repository, saLookupService)
+  val authConnector = mock[AuthConnector]
+  val controller = new AuthorisationRequestController(repository, saLookupService, authConnector)
 
   implicit val hc = HeaderCarrier()
 
@@ -50,26 +53,32 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
   "createRequest" should {
     "return a 403 when the UTR and postcode don't match" in {
+      givenAgentIsLoggedIn()
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(false))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(SaUtr("54321"), "BB2 2BB"))
+        AgentClientAuthorisationHttpRequest(agentCode, SaUtr("54321"), "BB2 2BB"))
 
-      val result: Result = await(controller.createRequest(agentCode)(FakeRequest().withBody(body)))
+      val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
 
       status(result) shouldBe 403
     }
 
     "propagate exceptions when the repository fails" in {
+      givenAgentIsLoggedIn()
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
       when(repository.create(any[AgentCode], any[SaUtr])).thenReturn(Future failed new RuntimeException("dummy exception"))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(SaUtr("54321"), "AA1 1AA"))
+        AgentClientAuthorisationHttpRequest(agentCode, SaUtr("54321"), "AA1 1AA"))
 
       intercept[RuntimeException] {
-        await(controller.createRequest(agentCode)(FakeRequest().withBody(body)))
+        await(controller.createRequest()(FakeRequest().withBody(body)))
       }.getMessage shouldBe "dummy exception"
     }
+  }
+
+  def givenAgentIsLoggedIn(): Unit = {
+    when(authConnector.currentAccounts()(any(), any())).thenReturn(Future successful Accounts(Some(agentCode), None))
   }
 }

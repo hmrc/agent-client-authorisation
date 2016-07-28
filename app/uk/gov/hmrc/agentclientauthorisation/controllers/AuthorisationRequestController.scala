@@ -21,6 +21,8 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
 import play.api.mvc.hal.halWriter
+import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{SaClientRequest, AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
@@ -29,15 +31,15 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService)
-  extends BaseController {
+class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService, override val authConnector: AuthConnector)
+  extends BaseController with AuthActions {
 
-  def createRequest(agentCode: AgentCode) = Action.async(parse.json) { implicit request =>
+  def createRequest() = onlyForAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
       saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
           // TODO Audit
-          authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr) map { _ => Created }
+          authorisationRequestRepository.create(request.agentCode, authRequest.clientSaUtr) map { _ => Created }
         } else {
           // TODO Audit failure including UTR and postcode
           Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
@@ -46,18 +48,18 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
-  def getRequests(agentCode: AgentCode) = Action.async { implicit request =>
-    authorisationRequestRepository.list(agentCode).map(toHalResource(agentCode, _)).map(Ok(_)(halWriter))
+  def getRequests() = onlyForAgents.async { implicit request =>
+    authorisationRequestRepository.list(request.agentCode).map(toHalResource).map(Ok(_)(halWriter))
   }
 
-  private def toHalResource(agentCode: AgentCode, requests: List[AgentClientAuthorisationRequest]): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests(agentCode).url)))
-    val requestResources: Vector[HalResource] = requests.map(toHalResource(agentCode, _)).toVector
+  private def toHalResource(requests: List[AgentClientAuthorisationRequest]): HalResource = {
+    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url)))
+    val requestResources: Vector[HalResource] = requests.map(toHalResource).toVector
     HalResource(links, JsObject(Seq.empty), Vector("requests" -> requestResources))
   }
 
-  private def toHalResource(agentCode: AgentCode, request: AgentClientAuthorisationRequest): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests(agentCode).url}/${request.id}")))
+  private def toHalResource(request: AgentClientAuthorisationRequest): HalResource = {
+    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url}/${request.id}")))
     HalResource(links, Json.toJson(request).as[JsObject])
   }
 
