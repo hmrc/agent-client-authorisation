@@ -35,13 +35,18 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "POST /request" should {
-    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest("""{"clientSaUtr": "1234567899"}"""))
+    val clientSaUtr = SaUtr("1234567899")
+    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(s"""{"clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
   }
 
   "/request" should {
     "create and retrieve authorisation requests" in {
       dropMongoDb()
       given().agentAdmin(me).isLoggedIn()
+      val client1SaUtr = SaUtr("1234567890")
+      val client2SaUtr = SaUtr("1234567891")
+      CesaStubs.saTaxpayerExists(client1SaUtr)
+      CesaStubs.saTaxpayerExists(client2SaUtr)
 
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
@@ -55,8 +60,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
 
       note("we should be able to add 2 new requests")
-      responseForCreateRequest("""{"clientSaUtr": "1234567890"}""").status shouldBe 201
-      responseForCreateRequest("""{"clientSaUtr": "1234567891"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"clientSaUtr": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"clientSaUtr": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes

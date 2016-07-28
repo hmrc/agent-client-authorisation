@@ -23,18 +23,26 @@ import play.api.mvc.Action
 import play.api.mvc.hal.halWriter
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
+import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository) extends BaseController {
+class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService)
+  extends BaseController {
 
   def createRequest(agentCode: AgentCode) = Action.async(parse.json) { implicit request =>
-    withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
-      // TODO Audit
-      authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr)
-      Future successful Created //TODO Location header?
+    withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
+      saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
+        if (utrAndPostcodeMatch) {
+          // TODO Audit
+          authorisationRequestRepository.create(agentCode, authRequest.clientSaUtr) map { _ => Created }
+        } else {
+          // TODO Audit failure including UTR and postcode
+          Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
+        }
+      }
     }
   }
 
