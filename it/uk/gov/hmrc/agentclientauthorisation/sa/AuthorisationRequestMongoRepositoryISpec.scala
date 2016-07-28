@@ -143,7 +143,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
         AgentCode("should-not-show-up") -> SaUtr("another-client")
       )
 
-      val requests = listByClientSaUtr(clientSaUtr)
+      val requests = listByClientSaUtr(clientSaUtr).sortBy(_.agentCode.value)
 
       requests.size shouldBe 2
 
