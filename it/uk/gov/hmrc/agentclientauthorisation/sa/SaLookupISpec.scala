@@ -23,14 +23,14 @@ import uk.gov.hmrc.play.test.UnitSpec
 class SaLookupISpec extends UnitSpec with AppAndStubs {
   private val me = AgentCode("ABCDEF12345678")
 
-  "GET /sa/lookup/:saUtr/:postcode" should {
+  "GET /lookup/sa/:saUtr/:postcode" should {
     "return name when there is a match" in {
       given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
 
       val saUtr = SaUtr("1234567890")
       CesaStubs.saTaxpayerExists(saUtr)
 
-      val response = new Resource("/agent-client-authorisation/sa/lookup/1234567890/AA1%201AA", port).get()
+      val response = new Resource("/agent-client-authorisation/lookup/sa/1234567890/AA1%201AA", port).get()
       response.status shouldBe 200
       (response.json \ "name").as[String] shouldBe "Mr First Last"
     }
@@ -41,7 +41,7 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
       val saUtr = SaUtr("1234567890")
       CesaStubs.saTaxpayerExists(saUtr)
 
-      val response = new Resource("/agent-client-authorisation/sa/lookup/1234567890/ZA1%201AA", port).get()
+      val response = new Resource("/agent-client-authorisation/lookup/sa/1234567890/ZA1%201AA", port).get()
       response.status shouldBe 404
       response.body shouldBe ""
     }
@@ -52,11 +52,11 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
       val saUtr = SaUtr("1234567890")
       CesaStubs.saTaxpayerExists(saUtr)
 
-      val matchResponse = new Resource("/agent-client-authorisation/sa/lookup/1234567890/AA1%201AA", port).get()
+      val matchResponse = new Resource("/agent-client-authorisation/lookup/sa/1234567890/AA1%201AA", port).get()
       matchResponse.status shouldBe 401
       matchResponse.body shouldBe ""
 
-      val noMatchResponse = new Resource("/agent-client-authorisation/sa/lookup/1234567890/ZA1%201AA", port).get()
+      val noMatchResponse = new Resource("/agent-client-authorisation/lookup/sa/1234567890/ZA1%201AA", port).get()
       noMatchResponse.status shouldBe 401
       noMatchResponse.body shouldBe ""
     }
