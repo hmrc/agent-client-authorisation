@@ -29,6 +29,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val me = AgentCode("ABCDEF12345678")
+  private implicit val saUtr = SaUtr("1234567890")
 
   "GET /request/:agentCode" should {
     behave like anEndpointAccessibleForAgentsOnly(responseForGetRequests)
@@ -70,9 +71,48 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
     }
   }
+  "/sa/:saUtr/requests" should {
+    "retrieve authorisation requests" in {
+      dropMongoDb()
+
+      val testStartTime = DateTime.now().getMillis
+      val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
+
+
+      note("there should be no requests")
+      given().client().isLoggedIn()
+      eventually {
+        inside(responseForClientGetRequests) { case resp =>
+          resp.status shouldBe 200
+          resp.json.as[JsArray].value shouldBe 'empty
+        }
+      }
+
+      note("we should be able to add 2 new requests")
+      given().agentAdmin(me).isLoggedIn()
+      responseForCreateRequest("""{"clientSaUtr": "1234567890"}""").status shouldBe 201
+      responseForCreateRequest("""{"clientSaUtr": "1234567891"}""").status shouldBe 201
+
+      given().client().isLoggedIn()
+      note("the freshly added authorisation requests should be available")
+      eventually {
+        val requests = responseForClientGetRequests.json.as[Set[AgentClientAuthorisationRequest]]
+        requests should have size 1
+        forAll (requests) { request =>
+          inside (request) { case AgentClientAuthorisationRequest(_, me, SaUtr("1234567890"), "sa", List(StatusChangeEvent(requestDate, Pending))) =>
+            requestDate.getMillis should beRecent
+          }
+        }
+      }
+    }
+  }
 
   def responseForGetRequests(implicit agentCode: AgentCode): HttpResponse = {
     new Resource(s"/agent-client-authorisation/agent/$agentCode/requests", port).get()
+  }
+
+  def responseForClientGetRequests(implicit saUtr: SaUtr): HttpResponse = {
+    new Resource(s"/agent-client-authorisation/sa/$saUtr/requests", port).get()
   }
 
   def responseForCreateRequest(body: String)(implicit agentCode: AgentCode): HttpResponse =

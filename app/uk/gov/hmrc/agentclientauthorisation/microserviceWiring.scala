@@ -20,7 +20,7 @@ import java.net.URL
 
 import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
-import uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController
+import uk.gov.hmrc.agentclientauthorisation.controllers.{AuthorisationRequestController, ClientAuthorisationRequestController}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
 import uk.gov.hmrc.mongo.MongoConnector
@@ -66,10 +66,13 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 trait ControllerRegistry {
   registry: ServiceRegistry =>
 
-  private lazy val controllers = Map[Class[_], Controller](
-    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository),
-    classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService)
-  )
+  private lazy val controllers: Map[Class[_], Controller] = Seq(
+    new AuthorisationRequestController(authorisationRequestRepository),
+    new SaLookupController(authConnector, saLookupService),
+    new ClientAuthorisationRequestController(authorisationRequestRepository))
+    .map(instance => instance.getClass -> instance)
+    .toMap
+
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]
 }

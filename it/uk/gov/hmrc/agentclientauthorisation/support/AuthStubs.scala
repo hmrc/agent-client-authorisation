@@ -46,6 +46,8 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   def isLoggedIn(): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/read/sa/.*")).willReturn(aResponse().withStatus(200).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/write/sa/.*")).willReturn(aResponse().withStatus(200).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody( // TODO add SA account
       s"""
          |{
@@ -57,6 +59,10 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    "gatewayId":"0000001592621267"
          |  },
          |  "accounts":{
+         |    "sa": {
+         |      "link": "/sa/individual/1234567890",
+         |      "utr": "1234567890"
+         |    },
          |  },
          |  "lastUpdated":"2016-06-20T10:44:29.634Z",
          |  "credentialStrength":"strong",
