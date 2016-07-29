@@ -19,14 +19,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Action
-import play.api.mvc.hal.halWriter
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{SaClientRequest, AgentRequest, AuthActions}
-import uk.gov.hmrc.agentclientauthorisation.model.{EnrichedAgentClientAuthorisationRequest, AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
+import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
-import uk.gov.hmrc.domain.{SaUtr, AgentCode}
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
