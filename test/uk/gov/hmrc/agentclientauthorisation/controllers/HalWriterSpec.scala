@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{HalLinks, HalResource}
+import play.api.hal.{HalLink, HalLinks, HalResource}
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -81,11 +81,113 @@ class HalWriterSpec extends UnitSpec {
           |}
         """.stripMargin)
     }
+
+    "write multiple heterogeneous elements to several arrays of size 1" in {
+      val res = HalResource(
+        HalLinks.empty,
+        teddyBear,
+        Vector("likes" -> Vector(duplo), "hates" -> Vector(ball)))
+
+      val json = Json.toJson(res)(HalWriter.halWrites)
+
+      json shouldBe Json.parse(
+        """
+          |{
+          |  "name": "Theodore Bear",
+          |  "minAge": 0,
+          |  "_embedded": {
+          |    "likes": [
+          |      {
+          |        "name": "Lego Duplo",
+          |        "minAge": 1
+          |      }
+          |    ],
+          |    "hates": [
+          |      {
+          |        "name": "Ball",
+          |        "minAge": 3
+          |      }
+          |    ]
+          |  }
+          |}
+        """.stripMargin)
+    }
+
+    "do not litter the JSON if there's not any resources" in {
+      val res = toSimpleHalResource(teddyBear)
+
+      val json = Json.toJson(res)(HalWriter.halWrites)
+
+      json shouldBe Json.parse(
+        """
+          |{
+          |  "name": "Theodore Bear",
+          |  "minAge": 0
+          |}
+        """.stripMargin)
+    }
+
+    "add _links section if there are any links" in {
+      val res = toHalResourceWithLink(teddyBear, "bear")
+
+      val json = Json.toJson(res)(HalWriter.halWrites)
+
+      json shouldBe Json.parse(
+        """
+          |{
+          |  "name": "Theodore Bear",
+          |  "minAge": 0,
+          |  "_links": {
+          |    "self": { "href": "/toys/bear" }
+          |  }
+          |}
+        """.stripMargin)
+    }
+
+    "add _links even if there are embedded resources as well" in {
+      val res = HalResource(HalLinks(Vector(HalLink("self", "/toys/bear"))), teddyBear, Vector(
+        "has" -> Vector(toHalResourceWithLink(ball, "ball"), toHalResourceWithLink(duplo, "duplo"))
+      ))
+
+      val json = Json.toJson(res)(HalWriter.halWrites)
+
+      json shouldBe Json.parse(
+        """
+          |{
+          |  "name": "Theodore Bear",
+          |  "minAge": 0,
+          |  "_links": {
+          |    "self": { "href": "/toys/bear" }
+          |  },
+          |  "_embedded": {
+          |    "has": [
+          |      {
+          |        "name": "Ball",
+          |        "minAge": 3,
+          |        "_links": {
+          |          "self": { "href": "/toys/ball" }
+          |        }
+          |      },
+          |      {
+          |        "name": "Lego Duplo",
+          |        "minAge": 1,
+          |        "_links": {
+          |          "self": { "href": "/toys/duplo" }
+          |        }
+          |      }
+          |    ]
+          |  }
+          |}
+        """.stripMargin)
+
+    }
   }
 
   implicit def toyToJson(toy: Toy): JsObject = Json.toJson(toy).asInstanceOf[JsObject]
 
   implicit def toSimpleHalResource(toy: Toy): HalResource = HalResource(HalLinks.empty, toyToJson(toy))
+
+  def toHalResourceWithLink(toy: Toy, id: String): HalResource = HalResource(HalLinks(Vector(HalLink("self", s"/toys/$id"))), toyToJson(toy))
 
 }
 
