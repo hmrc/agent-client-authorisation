@@ -85,7 +85,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val requests = addRequests(agentCode -> saUtr1, agentCode -> saUtr2)
       update(requests.last.id, Accepted)
 
-      val list = listByAgentCode(agentCode)
+      val list = listByAgentCode(agentCode).sortBy(_.clientSaUtr.value)
 
       inside(list head) {
         case AgentClientAuthorisationRequest(_, `agentCode`, `saUtr1`, "sa", List(StatusChangeEvent(date, Pending))) =>
