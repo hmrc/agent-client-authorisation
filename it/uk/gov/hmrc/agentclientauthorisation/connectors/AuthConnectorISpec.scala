@@ -83,7 +83,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .isLoggedIn()
         .andHasIrSaAgentEnrolment()
 
-      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), true)
+      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), s"http://localhost:$wiremockPort/user-details/id/556737e15500005500eaf68e", true)
     }
 
     "return accounts and that user does not have active SA agent enrolment" in {
@@ -92,7 +92,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .isLoggedIn()
         .andHasIrSaAgentEnrolment(EnrolmentStates.pending)
 
-      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), false)
+      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), s"http://localhost:$wiremockPort/user-details/id/556737e15500005500eaf68e", false)
     }
   }
 

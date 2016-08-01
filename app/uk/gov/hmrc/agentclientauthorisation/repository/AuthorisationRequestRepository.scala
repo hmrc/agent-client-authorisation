@@ -32,7 +32,7 @@ import scala.concurrent.Future
 
 trait AuthorisationRequestRepository extends Repository[AgentClientAuthorisationRequest, BSONObjectID] {
 
-  def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AgentClientAuthorisationRequest]
+  def create(agentCode: AgentCode, clientSaUtr: SaUtr, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest]
 
   def update(id:BSONObjectID, status:AuthorisationStatus): Future[AgentClientAuthorisationRequest]
 
@@ -52,12 +52,13 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
     Index(Seq("requestDate" -> IndexType.Ascending))
   )
 
-  override def create(agentCode: AgentCode, clientSaUtr: SaUtr): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
+  override def create(agentCode: AgentCode, clientSaUtr: SaUtr, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
 
     val request = AgentClientAuthorisationRequest(
       id = BSONObjectID.generate,
       agentCode = agentCode,
       clientSaUtr = clientSaUtr,
+      agentUserDetailsLink = agentUserDetailsLink,
       events = List(StatusChangeEvent(now, Pending))
     )
 

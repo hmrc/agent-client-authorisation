@@ -84,6 +84,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
         (firstRequest \ "clientSaUtr") shouldBe JsString(client1SaUtr.utr) // TODO consider renaming this to clientRegimeId
         (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
+        (firstRequest \ "agentName") shouldBe JsString("Agent name")
+        (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
         (firstRequest \ "regime") shouldBe JsString("sa")
         ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
@@ -92,6 +94,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
         (secondRequest \ "clientSaUtr") shouldBe JsString(client2SaUtr.utr)
         (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
+        (firstRequest \ "agentName") shouldBe JsString("Agent name")
+        (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
         (secondRequest \ "regime") shouldBe JsString("sa")
         ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")

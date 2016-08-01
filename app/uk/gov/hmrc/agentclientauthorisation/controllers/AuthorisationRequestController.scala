@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, UserDetails, UserDetailsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest}
@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService, override val authConnector: AuthConnector)
+class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService, override val authConnector: AuthConnector, userDetailsConnector: UserDetailsConnector)
   extends BaseController with AuthActions {
 
   def createRequest() = onlyForSaAgents.async(parse.json) { implicit request =>
@@ -39,7 +39,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
       saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
           // TODO Audit
-          authorisationRequestRepository.create(request.agentCode, authRequest.clientSaUtr) map { _ => Created }
+          authorisationRequestRepository.create(request.agentCode, authRequest.clientSaUtr, request.userDetailsLink) map { _ => Created }
         } else {
           // TODO Audit failure including UTR and postcode
           Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
@@ -55,17 +55,25 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
     for {
       names <- namesByUtr(requests.map(_.clientSaUtr).distinct)
+      agentUserDetails <- userDetails(requests)
+      requestsWithNames = requests zip agentUserDetails
     } yield {
-      requests map(enrich(_, names))
+      requestsWithNames map(r => enrich(r._1, names, r._2))
     }
   }
 
-  private def enrich(request: AgentClientAuthorisationRequest, names: Map[SaUtr, Option[String]]): EnrichedAgentClientAuthorisationRequest = {
+  def userDetails(requests: List[AgentClientAuthorisationRequest]): Future[List[UserDetails]] = {
+    Future sequence requests.map(r => userDetailsConnector.userDetails(r.agentUserDetailsLink))
+  }
+
+  private def enrich(request: AgentClientAuthorisationRequest, names: Map[SaUtr, Option[String]], agentUserDetails: UserDetails): EnrichedAgentClientAuthorisationRequest = {
     EnrichedAgentClientAuthorisationRequest(
       id = request.id.stringify,
       agentCode = request.agentCode,
       clientSaUtr = request.clientSaUtr,
       clientFullName = names(request.clientSaUtr),
+      agentName = agentUserDetails.agentName,
+      agentFriendlyName = agentUserDetails.agentFriendlyName,
       regime = request.regime,
       events = request.events
     )
