@@ -53,9 +53,11 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   }
 
   private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
+    val eventuallyNames = namesByUtr(requests.map(_.clientSaUtr).distinct)
+    val eventuallyAgentDetails = userDetails(requests)
     for {
-      names <- namesByUtr(requests.map(_.clientSaUtr).distinct)
-      agentUserDetails <- userDetails(requests)
+      names <- eventuallyNames
+      agentUserDetails <-  eventuallyAgentDetails
       requestsWithNames = requests zip agentUserDetails
     } yield {
       requestsWithNames map(r => enrich(r._1, names, r._2))
