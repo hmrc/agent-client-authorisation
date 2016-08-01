@@ -19,9 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
-import org.skyscreamer.jsonassert.{JSONCompareMode, JSONCompare}
-import play.api.libs.json.{JsString, JsArray}
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest, Pending, StatusChangeEvent}
+import play.api.Logger
+import play.api.libs.json.{JsArray, JsString}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
@@ -31,8 +30,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   private implicit val agentCode = AgentCode("ABCDEF12345678")
 
+  private val getRequestsUrl = "/agent-client-authorisation/requests"
+  private val createRequestUrl = "/agent-client-authorisation/requests"
+
   "GET /requests" should {
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForGetRequests)
+    behave like anEndpointAccessibleForSaAgentsOnly(responseForGetRequests())
   }
 
   "POST /requests" should {
@@ -54,7 +56,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       note("there should be no requests")
       eventually {
-        inside(responseForGetRequests) { case resp =>
+        inside(responseForGetRequests()) { case resp =>
           resp.status shouldBe 200
           (resp.json \ "_embedded" \ "requests").as[JsArray].value shouldBe 'empty
         }
@@ -66,7 +68,13 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
-        val requestsArray = (responseForGetRequests.json \ "_embedded" \ "requests").as[JsArray]
+        val responseJson = responseForGetRequests().json
+
+        Logger.info(s"responseJson = $responseJson")
+        val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
+        selfLinkHref shouldBe getRequestsUrl
+
+        val requestsArray = (responseJson \ "_embedded" \ "requests").as[JsArray]
         val requests = requestsArray.value.sortBy(j => (j \ "clientSaUtr").as[String])
         requests should have size 2
 
@@ -79,7 +87,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (firstRequest \ "regime") shouldBe JsString("sa")
         ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
-        (firstRequest \ "events").as[JsArray].value should have size(1)
+        (firstRequest \ "events").as[JsArray].value should have size 1
 
         (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
         (secondRequest \ "clientSaUtr") shouldBe JsString(client2SaUtr.utr)
@@ -87,16 +95,16 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (secondRequest \ "regime") shouldBe JsString("sa")
         ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
-        (secondRequest \ "events").as[JsArray].value should have size(1)
+        (secondRequest \ "events").as[JsArray].value should have size 1
       }
     }
   }
 
   def responseForGetRequests(): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/requests", port).get()
+    new Resource(getRequestsUrl, port).get()
   }
 
   def responseForCreateRequest(body: String): HttpResponse =
-    new Resource(s"/agent-client-authorisation/requests", port).postAsJson(body)
+    new Resource(createRequestUrl, port).postAsJson(body)
 
 }
