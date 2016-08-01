@@ -61,7 +61,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
   lazy val cesaIndividualsConnector = new CesaIndividualsConnector(baseUrl("cesa"), WSHttp)
   lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
-  lazy val userDetailsConnector = new UserDetailsConnector()
+  lazy val userDetailsConnector = new UserDetailsConnector(WSHttp)
 
 }
 

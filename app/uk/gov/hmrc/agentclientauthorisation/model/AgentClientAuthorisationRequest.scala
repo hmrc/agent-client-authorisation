@@ -71,7 +71,7 @@ case class EnrichedAgentClientAuthorisationRequest(
   clientSaUtr: SaUtr,
   clientFullName: Option[String],
   agentName: String,
-  agentFriendlyName: String,
+  agentFriendlyName: Option[String],
   regime: String = "sa",
   events: List[StatusChangeEvent])
 

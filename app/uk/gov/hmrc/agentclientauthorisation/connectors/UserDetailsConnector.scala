@@ -16,12 +16,28 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
+import play.api.libs.json.Json
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
+
 import scala.concurrent.Future
 
-case class UserDetails(agentName: String, agentFriendlyName: String)
-class UserDetailsConnector {
+case class UserDetails(name: String, lastName: Option[String], agentFriendlyName: Option[String]) {
 
-  def userDetails(url: String): Future[UserDetails] = {
-    Future successful UserDetails("Agent name", "DDCW Accountancy Ltd")
+  val agentName: String = {
+    (name, lastName) match {
+      case (_, Some(_)) => s"$name ${lastName.get}"
+      case (_, None) => name
+    }
+  }
+}
+
+object UserDetails {
+  lazy implicit val formats = Json.format[UserDetails]
+}
+
+class UserDetailsConnector(http: HttpGet) {
+
+  def userDetails(url: String)(implicit hc: HeaderCarrier): Future[UserDetails] = {
+    http.GET[UserDetails](url)
   }
 }

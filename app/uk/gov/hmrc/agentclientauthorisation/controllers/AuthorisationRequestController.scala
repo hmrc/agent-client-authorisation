@@ -62,7 +62,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
-  def userDetails(requests: List[AgentClientAuthorisationRequest]): Future[List[UserDetails]] = {
+  def userDetails(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[UserDetails]] = {
     Future sequence requests.map(r => userDetailsConnector.userDetails(r.agentUserDetailsLink))
   }
 

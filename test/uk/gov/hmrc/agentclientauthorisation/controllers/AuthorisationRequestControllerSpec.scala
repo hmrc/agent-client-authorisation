@@ -95,6 +95,6 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
   def givenAgentIsLoggedInAndHasActiveSaEnrolment(): Unit = {
     when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), "user-details-link", hasActivatedIrSaEnrolment = true))
-    when(userDetailsConnector.userDetails("user-details-link")).thenReturn(UserDetails("Name", "Friendly name"))
+    when(userDetailsConnector.userDetails(Matchers.eq("user-details-link"))(any[HeaderCarrier])).thenReturn(UserDetails("Name", Some("agent"), Some("Friendly name")))
   }
 }
