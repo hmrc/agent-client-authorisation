@@ -20,11 +20,12 @@ import org.mockito.Matchers.{any, anyString}
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsArray, JsValue}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.AgentClientAuthorisationHttpRequest
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationRequest, AgentClientAuthorisationHttpRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
@@ -75,6 +76,19 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       intercept[RuntimeException] {
         await(controller.createRequest()(FakeRequest().withBody(body)))
       }.getMessage shouldBe "dummy exception"
+    }
+  }
+
+  "getRequests" should {
+    "return an array of requests even if there is only one" in {
+      givenAgentIsLoggedIn()
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, SaUtr("1"), "sa", List.empty)
+      when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+      when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
+
+      val result: Result = await(controller.getRequests()(FakeRequest()))
+      status(result) shouldBe 200
+      (jsonBodyOf(result) \ "_embedded" \ "requests") shouldBe a[JsArray]
     }
   }
 
