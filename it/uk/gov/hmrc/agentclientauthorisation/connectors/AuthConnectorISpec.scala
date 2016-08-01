@@ -76,6 +76,26 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
     }
   }
 
+  "currentUserInfo" should {
+    "return accounts and that user has active SA agent enrolment" in {
+      given()
+        .agentAdmin("ABCDEF123456")
+        .isLoggedIn()
+        .andHasIrSaAgentEnrolment()
+
+      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), true)
+    }
+
+    "return accounts and that user does not have active SA agent enrolment" in {
+      given()
+        .agentAdmin("ABCDEF123456")
+        .isLoggedIn()
+        .andHasIrSaAgentEnrolment(EnrolmentStates.pending)
+
+      await(newAuthConnector().currentUserInfo()) shouldBe UserInfo(Accounts(agent = Some(AgentCode("ABCDEF123456")), sa = None), false)
+    }
+  }
+
   def newAuthConnector() = new AuthConnector(new URL(wiremockBaseUrl), WSHttp)
 
 }

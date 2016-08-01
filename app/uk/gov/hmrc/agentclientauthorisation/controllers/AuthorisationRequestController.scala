@@ -34,7 +34,7 @@ import scala.concurrent.Future
 class AuthorisationRequestController(authorisationRequestRepository: AuthorisationRequestRepository, saLookupService: SaLookupService, override val authConnector: AuthConnector)
   extends BaseController with AuthActions {
 
-  def createRequest() = onlyForAgents.async(parse.json) { implicit request =>
+  def createRequest() = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
       saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
@@ -48,7 +48,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
-  def getRequests() = onlyForAgents.async { implicit request =>
+  def getRequests() = onlyForSaAgents.async { implicit request =>
     authorisationRequestRepository.list(request.agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
   }
 

@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 trait SecuredEndpointBehaviours {
   this: UnitSpec with AppAndStubs =>
 
-  def anEndpointAccessibleForAgentsOnly(request: => HttpResponse)(implicit me: AgentCode): Unit = {
+  def anEndpointAccessibleForSaAgentsOnly(request: => HttpResponse)(implicit me: AgentCode): Unit = {
     "return 401 when the requester is not authenticated" in {
       given().user().isNotLoggedIn()
       request.status shouldBe 401
@@ -34,7 +34,7 @@ trait SecuredEndpointBehaviours {
       request.status shouldBe 401
     }
 
-    "return 401 when user is an agent, but not subscribed to SA" ignore { // TODO enable! (double-check with George)
+    "return 401 when user is an agent, but not subscribed to SA" in {
       given().agentAdmin(me).isLoggedIn().andIsNotEnrolledForSA()
       request.status shouldBe 401
     }

@@ -24,7 +24,7 @@ import play.api.libs.json.{JsArray, JsValue}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{UserInfo, Accounts, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationRequest, AgentClientAuthorisationHttpRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
@@ -54,7 +54,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
   "createRequest" should {
     "return a 403 when the UTR and postcode don't match" in {
-      givenAgentIsLoggedIn()
+      givenAgentIsLoggedInAndHasActiveSaEnrolment()
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(false))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
@@ -66,7 +66,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     }
 
     "propagate exceptions when the repository fails" in {
-      givenAgentIsLoggedIn()
+      givenAgentIsLoggedInAndHasActiveSaEnrolment()
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
       when(repository.create(any[AgentCode], any[SaUtr])).thenReturn(Future failed new RuntimeException("dummy exception"))
 
@@ -81,7 +81,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
   "getRequests" should {
     "return an array of requests even if there is only one" in {
-      givenAgentIsLoggedIn()
+      givenAgentIsLoggedInAndHasActiveSaEnrolment()
       val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, SaUtr("1"), "sa", List.empty)
       when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
       when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
@@ -92,7 +92,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     }
   }
 
-  def givenAgentIsLoggedIn(): Unit = {
-    when(authConnector.currentAccounts()(any(), any())).thenReturn(Future successful Accounts(Some(agentCode), None))
+  def givenAgentIsLoggedInAndHasActiveSaEnrolment(): Unit = {
+    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), true))
   }
 }

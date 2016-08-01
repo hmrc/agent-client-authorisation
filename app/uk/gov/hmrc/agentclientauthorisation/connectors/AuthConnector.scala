@@ -43,6 +43,7 @@ private[connectors] object Enrolments {
 }
 
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
+case class UserInfo(accounts: Accounts, hasActivatedIrSaEnrolment: Boolean)
 
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
@@ -52,15 +53,28 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
       .map(_.activatedSaEnrolment.isDefined)
 
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
-    currentAuthority() map { json =>
-      Accounts(
-        agent = (json \ "accounts" \ "agent" \ "agentCode").asOpt[AgentCode],
-        sa = (json \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
+    currentAuthority() map authorityAsAccounts
+
+  def currentUserInfo()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserInfo] = {
+    for {
+      authority <- currentAuthority()
+      enrolments <- enrolments(authority)
+    } yield {
+      UserInfo(
+        accounts = authorityAsAccounts(authority),
+        hasActivatedIrSaEnrolment = enrolments.activatedSaEnrolment.isDefined
       )
     }
+  }
 
   private def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[JsValue] =
     httpGetAs[JsValue]("/auth/authority")
+
+  private def authorityAsAccounts(authority: JsValue): Accounts =
+    Accounts(
+      agent = (authority \ "accounts" \ "agent" \ "agentCode").asOpt[AgentCode],
+      sa = (authority \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
+    )
 
   private def enrolments(authorityJson: JsValue)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
     httpGetAs[Set[AuthEnrolment]](enrolmentsRelativeUrl(authorityJson)).map(Enrolments(_))

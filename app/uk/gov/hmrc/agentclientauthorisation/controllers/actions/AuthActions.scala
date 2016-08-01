@@ -28,12 +28,12 @@ trait AuthActions {
 
   def authConnector: AuthConnector
 
-  val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
+  val withUserInfo = new ActionBuilder[RequestWithUserInfo] with ActionRefiner[Request, RequestWithUserInfo] {
 
-    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithAccounts[A]]] = {
+    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithUserInfo[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
-      authConnector.currentAccounts()
-        .map(new RequestWithAccounts(_, request))
+      authConnector.currentUserInfo()
+        .map(ui => new RequestWithUserInfo(ui.accounts, ui.hasActivatedIrSaEnrolment, request))
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
@@ -42,17 +42,17 @@ trait AuthActions {
     }
   }
 
-  val onlyForAgents = withAccounts andThen new ActionRefiner[RequestWithAccounts, AgentRequest] {
-    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, AgentRequest[A]]] =
-      Future successful (request.accounts.agent match {
-        case None => Left(Results.Unauthorized)
-        case Some(agentCode) => Right(new AgentRequest(agentCode, request))
+  val onlyForSaAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, AgentRequest] {
+    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, AgentRequest[A]]] =
+      Future successful ((request.accounts.agent, request.hasActivatedIrSaEnrolment) match {
+        case (Some(agentCode), true) => Right(new AgentRequest(agentCode, request))
+        case _ => Left(Results.Unauthorized)
       })
   }
 
   // not tested yet
-  val saClientsOrAgents = withAccounts andThen new ActionRefiner[RequestWithAccounts, Request] {
-    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, Request[A]]] = {
+  val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
+    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {
       Future successful (request.accounts match {
         case Accounts(Some(agentCode), _) => Right(new AgentRequest(agentCode, request))
         case Accounts(None, Some(saUtr)) => Right(new SaClientRequest(saUtr, request))
@@ -63,6 +63,6 @@ trait AuthActions {
 
 }
 
-class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extends WrappedRequest[A](request)
+class RequestWithUserInfo[A](val accounts: Accounts, val hasActivatedIrSaEnrolment: Boolean, request: Request[A]) extends WrappedRequest[A](request)
 class AgentRequest[A](val agentCode: AgentCode, request: Request[A]) extends WrappedRequest[A](request)
 class SaClientRequest[A](val saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)

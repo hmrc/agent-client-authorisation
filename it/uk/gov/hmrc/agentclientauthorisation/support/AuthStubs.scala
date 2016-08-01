@@ -67,6 +67,11 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |}
        """.stripMargin
     )))
+    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |[]
+         """.stripMargin
+    )))
     this
   }
 }

@@ -32,18 +32,18 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private implicit val agentCode = AgentCode("ABCDEF12345678")
 
   "GET /requests" should {
-    behave like anEndpointAccessibleForAgentsOnly(responseForGetRequests)
+    behave like anEndpointAccessibleForSaAgentsOnly(responseForGetRequests)
   }
 
   "POST /requests" should {
     val clientSaUtr = SaUtr("1234567899")
-    behave like anEndpointAccessibleForAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${agentCode.value}", "clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${agentCode.value}", "clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
   }
 
   "/requests" should {
     "create and retrieve authorisation requests" in {
       dropMongoDb()
-      given().agentAdmin(agentCode).isLoggedIn()
+      given().agentAdmin(agentCode).isLoggedIn().andHasIrSaAgentEnrolment()
       val client1SaUtr = SaUtr("1234567890")
       val client2SaUtr = SaUtr("1234567891")
       CesaStubs.saTaxpayerExists(client1SaUtr)
