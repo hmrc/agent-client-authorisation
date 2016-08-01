@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{HalLink, HalLinks, HalResource}
+import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
@@ -79,13 +79,14 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   }
 
   private def toHalResource(requests: List[EnrichedAgentClientAuthorisationRequest]): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url)))
     val requestResources: Vector[HalResource] = requests.map(toHalResource).toVector
-    HalResource(links, JsObject(Seq.empty), Vector("requests" -> requestResources))
+
+    Hal.embedded("requests", requestResources:_*) ++
+      HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests().url)
   }
 
   private def toHalResource(request: EnrichedAgentClientAuthorisationRequest): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests.url}/${request.id}")))
+    val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests().url}/${request.id}")))
     HalResource(links, Json.toJson(request).as[JsObject])
   }
 
