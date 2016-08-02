@@ -22,7 +22,7 @@ Verb | Path | Description
 
 ###Client Oriented API
 
-Verb | Path | Responses | Description
+Verb | Path | Description
 ---|---|---|---
 ```GET```| ```/requests```| Retrieve the authorisation requests for the client
 ```POST```| ```/requests```| Accept or Reject an authorisation request
@@ -36,7 +36,7 @@ Status  | Meaning
 ```Accepted``` | The client has accepted the reuqest. Only the client can set this status
 ```Rejected``` | The client has rejected the reuqest. Only the client can set this status
 ```Cancel``` | The agent has cancelled the request. Only the agent can set this status (can an agent do this after the request has been accepted)
-```Expired```|kml
+```Expired```| The request has not been actioned and the request is no longer available for decisioning
 
 
 ###Authorisation Request Model
@@ -96,6 +96,7 @@ Status | Meaning
 500 | All 5xx reponses are transposed to 500
 
 ####POST /requests/:request-id/:status
+Used to cancel the agents request, canceling an 'Expired' request has no effect
 
 Path Parameters | Example Value
 ---|---
@@ -169,6 +170,7 @@ TODO add a curl axample
 ```
 
 ####POST /requests/:request-id/:status
+Used to accept and reject an authorisation request. Accepting an already 'accepted' request has no effect, any other status update to a decisioned request is Forbidden.
 
 Path Parameters | Example Value
 ---|---
