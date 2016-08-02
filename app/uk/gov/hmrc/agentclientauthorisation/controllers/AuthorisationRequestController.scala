@@ -36,10 +36,10 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
 
   def createRequest() = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
-      saLookupService.utrAndPostcodeMatch(authRequest.clientSaUtr, authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
+      saLookupService.utrAndPostcodeMatch(SaUtr(authRequest.clientRegimeId), authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
           // TODO Audit
-          authorisationRequestRepository.create(request.agentCode, authRequest.clientSaUtr, request.userDetailsLink) map { _ => Created }
+          authorisationRequestRepository.create(request.agentCode, authRequest.clientRegimeId, request.userDetailsLink) map { _ => Created }
         } else {
           // TODO Audit failure including UTR and postcode
           Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
@@ -72,13 +72,12 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     EnrichedAgentClientAuthorisationRequest(
       id = request.id.stringify,
       agentCode = request.agentCode,
-      clientSaUtr = request.clientSaUtr,
+      regime = request.regime,
+      clientRegimeId = request.clientRegimeId,
       clientFullName = names(request.clientSaUtr),
       agentName = agentUserDetails.agentName,
       agentFriendlyName = agentUserDetails.agentFriendlyName,
-      regime = request.regime,
-      events = request.events
-    )
+      events = request.events)
   }
 
   private def namesByUtr(utrs: List[SaUtr])(implicit hc: HeaderCarrier): Future[Map[SaUtr, Option[String]]] = {

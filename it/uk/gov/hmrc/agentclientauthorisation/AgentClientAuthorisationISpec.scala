@@ -38,8 +38,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "POST /requests" should {
-    val clientSaUtr = SaUtr("1234567899")
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${agentCode.value}", "clientSaUtr": "$clientSaUtr", "clientPostcode": "AA1 1AA"}"""))
+    val clientRegimeId = SaUtr("1234567899")
+    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${agentCode.value}", "clientRegimeId": "$clientRegimeId", "clientPostcode": "AA1 1AA"}"""))
   }
 
   "/requests" should {
@@ -64,8 +64,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
 
       note("we should be able to add 2 new requests")
-      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientSaUtr": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
-      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientSaUtr": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientRegimeId": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientRegimeId": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
@@ -76,14 +76,14 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         selfLinkHref shouldBe getRequestsUrl
 
         val requestsArray = (responseJson \ "_embedded" \ "requests").as[JsArray]
-        val requests = requestsArray.value.sortBy(j => (j \ "clientSaUtr").as[String])
+        val requests = requestsArray.value.sortBy(j => (j \ "clientRegimeId").as[String])
         requests should have size 2
 
         val firstRequest = requests head
         val secondRequest = requests(1)
 
         (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
-        (firstRequest \ "clientSaUtr") shouldBe JsString(client1SaUtr.utr) // TODO consider renaming this to clientRegimeId
+        (firstRequest \ "clientRegimeId") shouldBe JsString(client1SaUtr.utr)
         (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
         (firstRequest \ "agentName") shouldBe JsString("Agent Name")
         (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
@@ -93,7 +93,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (firstRequest \ "events").as[JsArray].value should have size 1
 
         (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
-        (secondRequest \ "clientSaUtr") shouldBe JsString(client2SaUtr.utr)
+        (secondRequest \ "clientRegimeId") shouldBe JsString(client2SaUtr.utr)
         (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
         (firstRequest \ "agentName") shouldBe JsString("Agent Name")
         (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
