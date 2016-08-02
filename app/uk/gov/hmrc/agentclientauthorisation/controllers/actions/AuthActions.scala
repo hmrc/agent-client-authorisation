@@ -50,6 +50,15 @@ trait AuthActions {
       })
   }
 
+  val onlyForSaClients = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
+    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, SaClientRequest[A]]] = {
+      Future successful (request.userInfo.accounts.sa match {
+        case Some(saUtr) => Right(new SaClientRequest(saUtr, request))
+        case _ => Left(Results.Unauthorized)
+      })
+    }
+  }
+
   // not tested yet
   val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {

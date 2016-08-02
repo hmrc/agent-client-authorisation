@@ -107,6 +107,15 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
+
+  "/requests/:id/accept" should {
+    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
+  }
+
+  def responseForAcceptRequest(requestId: String): HttpResponse = {
+    new Resource(s"/agent-client-authorisation/requests/$requestId/accept", port).postEmpty()
+  }
+
   def responseForGetRequests(): HttpResponse = {
     new Resource(getRequestsUrl, port).get()
   }

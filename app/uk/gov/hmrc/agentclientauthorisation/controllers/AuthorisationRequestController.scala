@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Action
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, UserDetails, UserDetailsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
@@ -55,6 +56,10 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
 
   def getRequests() = onlyForSaAgents.async { implicit request =>
     authorisationRequestRepository.list(request.agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+  }
+
+  def acceptRequest(requestId: String) = onlyForSaClients.async { implicit request =>
+    Future successful Ok
   }
 
   private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
