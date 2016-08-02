@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector, UserInfo}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector, Enrolments, UserInfo}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -29,6 +29,7 @@ trait AuthActions {
   def authConnector: AuthConnector
 
   val withUserInfo = new ActionBuilder[RequestWithUserInfo] with ActionRefiner[Request, RequestWithUserInfo] {
+
 
     protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithUserInfo[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)

@@ -25,14 +25,14 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SaLookupController(authConnector: AuthConnector, saLookupService: SaLookupService)
   extends BaseController {
 
   def authoriseAndLookup(saUtr: SaUtr, postcode: String) = Action.async { implicit request =>
     // perhaps authorisation would be better implemented using action composition?
-    authConnector.hasActivatedIrSaEnrolment().flatMap { authorised =>
+    authConnector.containsEnrolment("IR-SA-AGENT")(_.isActivated).flatMap { authorised =>
       if (authorised)
         lookup(saUtr, postcode)
       else
