@@ -78,7 +78,11 @@ case class EnrichedAgentClientAuthorisationRequest(
   agentFriendlyName: Option[String],
   events: List[StatusChangeEvent])
 
-case class AgentClientAuthorisationHttpRequest(agentCode: AgentCode, clientRegimeId: String, clientPostcode: String)
+case class AgentClientAuthorisationHttpRequest(
+  agentCode: AgentCode,
+  regime: String,
+  clientRegimeId: String,
+  clientPostcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

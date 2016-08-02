@@ -59,11 +59,24 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(false))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, "54321", "BB2 2BB"))
+        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "BB2 2BB"))
 
       val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
 
       status(result) shouldBe 403
+    }
+
+    "return a 501 Not Implemented when the regime is not 'sa'" in {
+      givenAgentIsLoggedInAndHasActiveSaEnrolment()
+      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
+
+      val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
+        AgentClientAuthorisationHttpRequest(agentCode, "vat", "54321", "AA1 1AA"))
+
+      val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
+
+      status(result) shouldBe 501
+      (jsonBodyOf(result) \ "message").as[String] shouldBe "This service does not currently support the 'vat' tax regime"
     }
 
     "propagate exceptions when the repository fails" in {
@@ -72,7 +85,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       when(repository.create(any[AgentCode], anyString, anyString, Matchers.eq("user-details-link"))).thenReturn(Future failed new RuntimeException("dummy exception"))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, "54321", "AA1 1AA"))
+        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "AA1 1AA"))
 
       intercept[RuntimeException] {
         await(controller.createRequest()(FakeRequest().withBody(body)))
