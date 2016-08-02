@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector}
-import uk.gov.hmrc.domain.{SaUtr, AgentCode}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector, UserInfo}
+import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -33,7 +33,7 @@ trait AuthActions {
     protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithUserInfo[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
       authConnector.currentUserInfo()
-        .map(ui => new RequestWithUserInfo(ui.accounts, ui.hasActivatedIrSaEnrolment, request))
+        .map(ui => new RequestWithUserInfo(ui, request))
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
@@ -44,8 +44,8 @@ trait AuthActions {
 
   val onlyForSaAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, AgentRequest] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, AgentRequest[A]]] =
-      Future successful ((request.accounts.agent, request.hasActivatedIrSaEnrolment) match {
-        case (Some(agentCode), true) => Right(new AgentRequest(agentCode, request))
+      Future successful ((request.userInfo.accounts.agent, request.userInfo.hasActivatedIrSaEnrolment) match {
+        case (Some(agentCode), true) => Right(new AgentRequest(agentCode,request.userInfo.userDetailsLink, request))
         case _ => Left(Results.Unauthorized)
       })
   }
@@ -53,8 +53,8 @@ trait AuthActions {
   // not tested yet
   val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {
-      Future successful (request.accounts match {
-        case Accounts(Some(agentCode), _) => Right(new AgentRequest(agentCode, request))
+      Future successful (request.userInfo.accounts match {
+        case Accounts(Some(agentCode), _) => Right(new AgentRequest(agentCode,  request.userInfo.userDetailsLink, request))
         case Accounts(None, Some(saUtr)) => Right(new SaClientRequest(saUtr, request))
         case _ => Left(Results.Unauthorized)
       })
@@ -63,6 +63,6 @@ trait AuthActions {
 
 }
 
-class RequestWithUserInfo[A](val accounts: Accounts, val hasActivatedIrSaEnrolment: Boolean, request: Request[A]) extends WrappedRequest[A](request)
-class AgentRequest[A](val agentCode: AgentCode, request: Request[A]) extends WrappedRequest[A](request)
+class RequestWithUserInfo[A](val userInfo: UserInfo, request: Request[A]) extends WrappedRequest[A](request)
+class AgentRequest[A](val agentCode: AgentCode, val userDetailsLink: String, request: Request[A]) extends WrappedRequest[A](request)
 class SaClientRequest[A](val saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)

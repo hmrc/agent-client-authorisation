@@ -26,7 +26,7 @@ import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with UserDetailsStub with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val agentCode = AgentCode("ABCDEF12345678")
 
@@ -45,7 +45,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/requests" should {
     "create and retrieve authorisation requests" in {
       dropMongoDb()
-      given().agentAdmin(agentCode).isLoggedIn().andHasIrSaAgentEnrolment()
+      val agent = given().agentAdmin(agentCode).isLoggedIn().andHasIrSaAgentEnrolment()
+      userExists(agent)
       val client1SaUtr = SaUtr("1234567890")
       val client2SaUtr = SaUtr("1234567891")
       CesaStubs.saTaxpayerExists(client1SaUtr)
@@ -84,6 +85,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
         (firstRequest \ "clientSaUtr") shouldBe JsString(client1SaUtr.utr) // TODO consider renaming this to clientRegimeId
         (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
+        (firstRequest \ "agentName") shouldBe JsString("Agent Name")
+        (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
         (firstRequest \ "regime") shouldBe JsString("sa")
         ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
@@ -92,6 +95,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
         (secondRequest \ "clientSaUtr") shouldBe JsString(client2SaUtr.utr)
         (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
+        (firstRequest \ "agentName") shouldBe JsString("Agent Name")
+        (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
         (secondRequest \ "regime") shouldBe JsString("sa")
         ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
         ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")

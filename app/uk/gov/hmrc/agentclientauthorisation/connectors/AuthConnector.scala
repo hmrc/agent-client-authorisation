@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.domain.{SaUtr, AgentCode}
+import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,7 +43,7 @@ private[connectors] object Enrolments {
 }
 
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
-case class UserInfo(accounts: Accounts, hasActivatedIrSaEnrolment: Boolean)
+case class UserInfo(accounts: Accounts, userDetailsLink: String, hasActivatedIrSaEnrolment: Boolean)
 
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
@@ -62,7 +62,8 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
     } yield {
       UserInfo(
         accounts = authorityAsAccounts(authority),
-        hasActivatedIrSaEnrolment = enrolments.activatedSaEnrolment.isDefined
+        hasActivatedIrSaEnrolment = enrolments.activatedSaEnrolment.isDefined,
+        userDetailsLink = (authority \ "userDetailsLink").as[String]
       )
     }
   }
