@@ -17,24 +17,44 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.libs.json.{JsObject, Json}
 
 trait UserDetailsStub extends StubUtils {
   me: StartAndStopWireMock =>
 
-  def userExists(user: AgentAdmin): Unit =
-    stubFor(get(urlPathEqualTo(s"/user-details/id/${user.oid}"))
+  def userExists(user: BaseUser): Unit = {
+
+    val lastNameJson: JsObject = user.lastName.map(n => Json.obj("lastName" -> n)).getOrElse(Json.obj())
+
+    val agentFriendlyNameJson = (user match {
+      case agentAdmin: AgentAdmin =>
+        agentAdmin.agentFriendlyName.map { n =>
+          Json.obj("agentFriendlyName" -> n)
+        }
+      case _ => None
+    }).getOrElse(Json.obj())
+
+    val bodyJson =
+      lastNameJson ++
+      agentFriendlyNameJson ++
+      Json.obj(
+        "name" -> user.name,
+        "email" -> "agentassistant@example.com")
+
+
+    stubFor(get(urlPathEqualTo(userDetailsPath(user)))
       .willReturn(aResponse()
         .withStatus(200)
         .withHeader("Content-Type", "application/json")
-        .withBody(s"""
-                      |{
-                      |  "name": "Agent",
-                      |  "lastName": "Name",
-                      |  "email": "agentassistant@example.com",
-                      |  "agentFriendlyName": "DDCW Accountancy Ltd"
-                      |}
-                      |""".stripMargin)
+        .withBody(bodyJson.toString)
       )
     )
+  }
 
+  def userDetailsUrl(user: BaseUser): String =
+    user.wiremockBaseUrl + userDetailsPath(user)
+
+  private def userDetailsPath(user: BaseUser): String = {
+    s"/user-details/id/${user.oid}"
+  }
 }
