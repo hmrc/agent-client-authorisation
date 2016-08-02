@@ -60,7 +60,7 @@ case class StatusChangeEvent(time: DateTime, status: AuthorisationStatus)
 case class AgentClientAuthorisationRequest(
   id: BSONObjectID,
   agentCode: AgentCode,
-  regime: String = "sa",
+  regime: String,
   clientRegimeId: String,
   agentUserDetailsLink: String,
   events: List[StatusChangeEvent]) {
@@ -71,7 +71,7 @@ case class AgentClientAuthorisationRequest(
 case class EnrichedAgentClientAuthorisationRequest(
   id: String,
   agentCode: AgentCode,
-  regime: String = "sa",
+  regime: String,
   clientRegimeId: String,
   clientFullName: Option[String],
   agentName: String,

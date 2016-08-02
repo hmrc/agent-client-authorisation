@@ -47,7 +47,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val agentCode = AgentCode("1")
       val clientRegimeId = "1A"
 
-      inside(addRequest((agentCode, clientRegimeId, "user-details"))) {
+      inside(addRequest((agentCode, "sa", clientRegimeId, "user-details"))) {
         case event: AgentClientAuthorisationRequest =>
           event.agentCode shouldBe agentCode
           event.clientRegimeId shouldBe clientRegimeId
@@ -62,7 +62,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
     "create a new StatusChangedEvent" in {
 
-      val created = addRequest((AgentCode("2"), "2A", "user-details"))
+      val created = addRequest((AgentCode("2"), "sa", "2A", "user-details"))
       val updated = update(created.id, Accepted)
 
       inside(updated) {
@@ -80,21 +80,21 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
     "return previously created and updated elements" in {
 
       val agentCode = AgentCode("3")
-      val regimeId1 = "3A"
-      val regimeId2 = "3B"
+      val saUtr1 = "SAUTR3A"
+      val vrn2 = "VRN3B"
 
-      val requests = addRequests((agentCode, regimeId1, "user-details-1"), (agentCode, regimeId2, "user-details-2"))
+      val requests = addRequests((agentCode, "sa", saUtr1, "user-details-1"), (agentCode, "vat", vrn2, "user-details-2"))
       update(requests.last.id, Accepted)
 
       val list = listByAgentCode(agentCode).sortBy(_.clientRegimeId)
 
       inside(list head) {
-        case AgentClientAuthorisationRequest(_, `agentCode`, "sa", `regimeId1`, "user-details-1", List(StatusChangeEvent(date, Pending))) =>
+        case AgentClientAuthorisationRequest(_, `agentCode`, "sa", `saUtr1`, "user-details-1", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(list(1)) {
-        case AgentClientAuthorisationRequest(_, `agentCode`, "sa", `regimeId2`, "user-details-2", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
+        case AgentClientAuthorisationRequest(_, `agentCode`, "vat", `vrn2`, "user-details-2", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
           date1 shouldBe now
           date2 shouldBe now
       }
@@ -102,7 +102,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
     "return elements only for the given agent code" in {
 
-      addRequests((AgentCode("123A"), "1234567890", "user-details"), (AgentCode("123B"), "1234567891", "user-details"))
+      addRequests((AgentCode("123A"), "sa", "1234567890", "user-details"), (AgentCode("123B"), "sa", "1234567891", "user-details"))
 
       inside( listByAgentCode(AgentCode("123B")) loneElement ) {
         case AgentClientAuthorisationRequest(_, AgentCode("123B"), "sa", "1234567891", "user-details", List(StatusChangeEvent(date, Pending))) =>
@@ -125,7 +125,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val agentCode = AgentCode("4")
       val userDetailsLink = "user-details"
 
-      addRequest((agentCode, regimeId, userDetailsLink))
+      addRequest((agentCode, "sa", regimeId, userDetailsLink))
 
       inside(listByClientRegimeId(regimeId) loneElement) {
         case AgentClientAuthorisationRequest(_, `agentCode`, "sa", `regimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
@@ -137,37 +137,37 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
       val firstAgent = AgentCode("5")
       val secondAgent = AgentCode("6")
-      val clientRegimeId = "5A"
+      val clientSaUtr = "5A"
       val userDetailsLink = "user-details"
 
 
       addRequests(
-        (firstAgent, clientRegimeId, userDetailsLink),
-        (secondAgent, clientRegimeId, userDetailsLink),
-        (AgentCode("should-not-show-up"), "another-client", userDetailsLink)
+        (firstAgent, "sa", clientSaUtr, userDetailsLink),
+        (secondAgent, "sa", clientSaUtr, userDetailsLink),
+        (AgentCode("should-not-show-up"), "sa", "another-client", userDetailsLink)
       )
 
-      val requests = listByClientRegimeId(clientRegimeId).sortBy(_.agentCode.value)
+      val requests = listByClientRegimeId(clientSaUtr).sortBy(_.agentCode.value)
 
       requests.size shouldBe 2
 
       inside(requests head) {
-        case AgentClientAuthorisationRequest(_, `firstAgent`, "sa", `clientRegimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case AgentClientAuthorisationRequest(_, `firstAgent`, "sa", `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case AgentClientAuthorisationRequest(_, `secondAgent`, "sa", `clientRegimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case AgentClientAuthorisationRequest(_, `secondAgent`, "sa", `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
   }
 
 
-  private type Request = (AgentCode, String, String)
+  private type Request = (AgentCode, String, String, String)
 
   private def addRequests(requests: Request*) = {
-    await(Future sequence requests.map { case (code: AgentCode, clientRegimeId: String, userDetailsLink: String) => repository.create(code, clientRegimeId, userDetailsLink) })
+    await(Future sequence requests.map { case (code: AgentCode, regime: String, clientRegimeId: String, userDetailsLink: String) => repository.create(code, regime, clientRegimeId, userDetailsLink) })
   }
 
   private def addRequest(requests: Request) = addRequests(requests) head

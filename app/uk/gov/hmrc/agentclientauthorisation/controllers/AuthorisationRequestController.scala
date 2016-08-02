@@ -39,7 +39,9 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
       saLookupService.utrAndPostcodeMatch(SaUtr(authRequest.clientRegimeId), authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
         if (utrAndPostcodeMatch) {
           // TODO Audit
-          authorisationRequestRepository.create(request.agentCode, authRequest.clientRegimeId, request.userDetailsLink) map { _ => Created }
+          //TODO get regume from authRequest instead of hard coding it, and/or check whether regime is "sa" and bail (NotImplemented status?) if not
+          val regime = "sa"
+          authorisationRequestRepository.create(request.agentCode, regime, authRequest.clientRegimeId, request.userDetailsLink) map { _ => Created }
         } else {
           // TODO Audit failure including UTR and postcode
           Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
