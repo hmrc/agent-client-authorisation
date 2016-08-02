@@ -64,8 +64,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
 
       note("we should be able to add 2 new requests")
-      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientRegimeId": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
-      responseForCreateRequest(s"""{"agentCode": "$agentCode", "clientRegimeId": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$agentCode", "regime": "sa", "clientRegimeId": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
+      responseForCreateRequest(s"""{"agentCode": "$agentCode", "regime": "sa", "clientRegimeId": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
 
       note("the freshly added authorisation requests should be available")
       eventually { // MongoDB is slow sometimes
