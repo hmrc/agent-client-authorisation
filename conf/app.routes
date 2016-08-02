@@ -1,5 +1,6 @@
 # microservice specific routes
 
+GET     /requests/:requestId               @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequest(requestId: String)
 POST    /requests/:requestId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.acceptRequest(requestId: String)
 GET     /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests()
 POST    /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest()

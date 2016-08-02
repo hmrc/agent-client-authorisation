@@ -30,7 +30,7 @@ trait SecuredEndpointBehaviours {
     }
 
     "return 401 when user is not an agent" in {
-      given().client().isLoggedIn()
+      given().client().isLoggedIn("0123456789")
       request.status shouldBe 401
     }
 
