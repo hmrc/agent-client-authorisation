@@ -83,6 +83,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         val secondRequest = requests(1)
 
         (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
+        (firstRequest \ "regime") shouldBe JsString("sa")
         (firstRequest \ "clientRegimeId") shouldBe JsString(client1SaUtr.utr)
         (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
         (firstRequest \ "agentName") shouldBe JsString("Agent Name")
@@ -93,6 +94,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
         (firstRequest \ "events").as[JsArray].value should have size 1
 
         (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
+        (secondRequest \ "regime") shouldBe JsString("sa")
         (secondRequest \ "clientRegimeId") shouldBe JsString(client2SaUtr.utr)
         (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
         (firstRequest \ "agentName") shouldBe JsString("Agent Name")
