@@ -25,7 +25,7 @@ Verb | Path | Description
 Verb | Path | Description
 ---|---|---|---
 ```GET```| ```/requests```| Retrieve the authorisation requests for the client
-```POST```| ```/requests```| Accept or Reject an authorisation request
+```POST```| ```/requests/:status```| Accept or Reject an authorisation request
 
 
 ###Authorisation Request Statuses
