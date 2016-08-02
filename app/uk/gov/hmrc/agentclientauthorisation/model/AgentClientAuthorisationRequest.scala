@@ -60,22 +60,29 @@ case class StatusChangeEvent(time: DateTime, status: AuthorisationStatus)
 case class AgentClientAuthorisationRequest(
   id: BSONObjectID,
   agentCode: AgentCode,
-  clientSaUtr: SaUtr,
-  regime: String = "sa",
+  regime: String,
+  clientRegimeId: String,
   agentUserDetailsLink: String,
-  events: List[StatusChangeEvent])
+  events: List[StatusChangeEvent]) {
+  // this will have to change to an Option[SaUtr] when we support regimes other than "sa"
+  val clientSaUtr = SaUtr(clientRegimeId)
+}
 
 case class EnrichedAgentClientAuthorisationRequest(
   id: String,
   agentCode: AgentCode,
-  clientSaUtr: SaUtr,
+  regime: String,
+  clientRegimeId: String,
   clientFullName: Option[String],
   agentName: String,
   agentFriendlyName: Option[String],
-  regime: String = "sa",
   events: List[StatusChangeEvent])
 
-case class AgentClientAuthorisationHttpRequest(agentCode: AgentCode, clientSaUtr: SaUtr, clientPostcode: String)
+case class AgentClientAuthorisationHttpRequest(
+  agentCode: AgentCode,
+  regime: String,
+  clientRegimeId: String,
+  clientPostcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

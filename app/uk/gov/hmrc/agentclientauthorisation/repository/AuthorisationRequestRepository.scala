@@ -22,7 +22,7 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationRequest, AuthorisationStatus, Pending, StatusChangeEvent}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository, Repository}
 
@@ -32,13 +32,13 @@ import scala.concurrent.Future
 
 trait AuthorisationRequestRepository extends Repository[AgentClientAuthorisationRequest, BSONObjectID] {
 
-  def create(agentCode: AgentCode, clientSaUtr: SaUtr, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest]
+  def create(agentCode: AgentCode, regime: String, clientRegimeId: String, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest]
 
   def update(id:BSONObjectID, status:AuthorisationStatus): Future[AgentClientAuthorisationRequest]
 
   def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]]
 
-  def list(clientSaUtr: SaUtr): Future[List[AgentClientAuthorisationRequest]]
+  def list(regime: String, clientRegimeId: String): Future[List[AgentClientAuthorisationRequest]]
 
 }
 
@@ -48,16 +48,17 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("agentCode" -> IndexType.Ascending)),
-    Index(Seq("clientSaUtr" -> IndexType.Ascending)),
+    Index(Seq("clientRegimeId" -> IndexType.Ascending)),
     Index(Seq("requestDate" -> IndexType.Ascending))
   )
 
-  override def create(agentCode: AgentCode, clientSaUtr: SaUtr, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
+  override def create(agentCode: AgentCode, regime: String, clientRegimeId: String, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
 
     val request = AgentClientAuthorisationRequest(
       id = BSONObjectID.generate,
       agentCode = agentCode,
-      clientSaUtr = clientSaUtr,
+      regime = regime,
+      clientRegimeId = clientRegimeId,
       agentUserDetailsLink = agentUserDetailsLink,
       events = List(StatusChangeEvent(now, Pending))
     )
@@ -69,8 +70,8 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
   override def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]] =
     find("agentCode" -> agentCode)
 
-  override def list(clientSaUtr: SaUtr): Future[List[AgentClientAuthorisationRequest]] =
-    find("clientSaUtr" -> clientSaUtr)
+  override def list(regime: String, clientRegimeId: String): Future[List[AgentClientAuthorisationRequest]] =
+    find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
 
   override def update(id: BSONObjectID, status: AuthorisationStatus): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
@@ -91,8 +92,8 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
 //"""{
 //  [
 //
-//    { _id: "", agentCode: "", clientSaUtr: "", events: [{ time: 123456789, name: "Requested" }, { time: 123456789, name: "Requested" }]},
-//    { _id: "", agentCode: "", clientSaUtr: "", events: [{ time: 123456789, status: "pending" }, { time: 123456789, status: "accepted" }]},
+//    { _id: "", agentCode: "", clientRegimeId: "", events: [{ time: 123456789, name: "Requested" }, { time: 123456789, name: "Requested" }]},
+//    { _id: "", agentCode: "", clientRegimeId: "", events: [{ time: 123456789, status: "pending" }, { time: 123456789, status: "accepted" }]},
 //
 //  ]
 //}""""

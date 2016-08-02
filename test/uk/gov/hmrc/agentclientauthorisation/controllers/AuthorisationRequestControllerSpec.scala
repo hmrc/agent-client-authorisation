@@ -59,20 +59,33 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(false))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, SaUtr("54321"), "BB2 2BB"))
+        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "BB2 2BB"))
 
       val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
 
       status(result) shouldBe 403
     }
 
+    "return a 501 Not Implemented when the regime is not 'sa'" in {
+      givenAgentIsLoggedInAndHasActiveSaEnrolment()
+      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
+
+      val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
+        AgentClientAuthorisationHttpRequest(agentCode, "vat", "54321", "AA1 1AA"))
+
+      val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
+
+      status(result) shouldBe 501
+      (jsonBodyOf(result) \ "message").as[String] shouldBe "This service does not currently support the 'vat' tax regime"
+    }
+
     "propagate exceptions when the repository fails" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
       when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
-      when(repository.create(any[AgentCode], any[SaUtr], Matchers.eq("user-details-link"))).thenReturn(Future failed new RuntimeException("dummy exception"))
+      when(repository.create(any[AgentCode], anyString, anyString, Matchers.eq("user-details-link"))).thenReturn(Future failed new RuntimeException("dummy exception"))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, SaUtr("54321"), "AA1 1AA"))
+        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "AA1 1AA"))
 
       intercept[RuntimeException] {
         await(controller.createRequest()(FakeRequest().withBody(body)))
@@ -83,7 +96,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
   "getRequests" should {
     "return an array of requests even if there is only one" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, SaUtr("1"), "sa", "user-details-link", List.empty)
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
       when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
       when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
 
