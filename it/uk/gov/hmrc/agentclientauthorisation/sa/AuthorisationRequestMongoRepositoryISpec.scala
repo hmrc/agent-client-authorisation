@@ -114,21 +114,29 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
   "AuthorisationRequestRepository listing by clientSaUtr" should {
 
-    "return an empty list when there is no such SaUtr" in {
-
-      listByClientRegimeId("no-such-id") shouldBe Nil
-    }
-
-    "return a single agent request" in {
-
+    "return an empty list when there is no such regime-regimeId pair" in {
+      val regime = "sa"
       val regimeId = "4A"
       val agentCode = AgentCode("4")
       val userDetailsLink = "user-details"
 
-      addRequest((agentCode, "sa", regimeId, userDetailsLink))
+      addRequest((agentCode, regime, regimeId, userDetailsLink))
 
-      inside(listByClientRegimeId(regimeId) loneElement) {
-        case AgentClientAuthorisationRequest(_, `agentCode`, "sa", `regimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+      listByClientRegimeId(regime, "no-such-id") shouldBe Nil
+      listByClientRegimeId("different-regime", regimeId) shouldBe Nil
+    }
+
+    "return a single agent request" in {
+
+      val regime = "sa"
+      val regimeId = "4A"
+      val agentCode = AgentCode("4")
+      val userDetailsLink = "user-details"
+
+      addRequest((agentCode, regime, regimeId, userDetailsLink))
+
+      inside(listByClientRegimeId(regime, regimeId) loneElement) {
+        case AgentClientAuthorisationRequest(_, `agentCode`, `regime`, `regimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -137,27 +145,28 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
       val firstAgent = AgentCode("5")
       val secondAgent = AgentCode("6")
+      val regime = "sa"
       val clientSaUtr = "5A"
       val userDetailsLink = "user-details"
 
 
       addRequests(
-        (firstAgent, "sa", clientSaUtr, userDetailsLink),
-        (secondAgent, "sa", clientSaUtr, userDetailsLink),
+        (firstAgent, regime, clientSaUtr, userDetailsLink),
+        (secondAgent, regime, clientSaUtr, userDetailsLink),
         (AgentCode("should-not-show-up"), "sa", "another-client", userDetailsLink)
       )
 
-      val requests = listByClientRegimeId(clientSaUtr).sortBy(_.agentCode.value)
+      val requests = listByClientRegimeId(regime, clientSaUtr).sortBy(_.agentCode.value)
 
       requests.size shouldBe 2
 
       inside(requests head) {
-        case AgentClientAuthorisationRequest(_, `firstAgent`, "sa", `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case AgentClientAuthorisationRequest(_, `firstAgent`, `regime`, `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case AgentClientAuthorisationRequest(_, `secondAgent`, "sa", `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case AgentClientAuthorisationRequest(_, `secondAgent`, `regime`, `clientSaUtr`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -174,7 +183,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
   private def listByAgentCode(agentCode: AgentCode) = await(repository.list(agentCode))
 
-  private def listByClientRegimeId(regimeId: String) = await(repository.list(regimeId))
+  private def listByClientRegimeId(regime: String, regimeId: String) = await(repository.list(regime, regimeId))
 
   private def update(id:BSONObjectID, status:AuthorisationStatus) = await(repository.update(id, status))
 }
