@@ -46,7 +46,7 @@ trait SecuredEndpointBehaviours {
       request.status shouldBe 401
     }
 
-    "return 401 when user is an agent" in {
+    "return 401 when user has no SA account" in {
       given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
       request.status shouldBe 401
     }

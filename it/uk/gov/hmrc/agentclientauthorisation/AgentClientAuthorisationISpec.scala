@@ -143,8 +143,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       val acceptedJson = responseForGetRequest(id).json
 
-      val acceptedRequest = requests(acceptedJson)
-      (acceptedRequest.value.head \ "events")(1) \ "status" shouldBe JsString("Accepted")
+      (acceptedJson \ "events")(1) \ "status" shouldBe JsString("Accepted")
     }
 
     "return not found for an unknown request" in {

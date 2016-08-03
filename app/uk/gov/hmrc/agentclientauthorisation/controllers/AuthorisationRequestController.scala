@@ -62,7 +62,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   def getRequest(requestId: String) = onlyForSaClients.async { implicit request =>
     val id = BSONObjectID(requestId)
     authorisationRequestRepository.findById(id).flatMap {
-      case Some(r) if r.clientSaUtr == request.saUtr => enrich(List(r)).map(toHalResource).map(Ok(_)(halWriter))
+      case Some(r) if r.clientSaUtr == request.saUtr => enrich(List(r)).map(_.head).map(toHalResource).map(Ok(_)(halWriter))
       case Some(r) => Future successful Forbidden
       case None => Future successful NotFound
     }
