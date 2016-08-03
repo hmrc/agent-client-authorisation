@@ -21,11 +21,17 @@ import java.net.URL
 import uk.gov.hmrc.agentclientauthorisation.WSHttp
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, EnrolmentStates}
 import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuthConnectorISpec extends UnitSpec with AppAndStubs {
+
+  def hasEnroledAndActived(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
+    newAuthConnector().containsEnrolment("IR-SA-AGENT")(_.isActivated)
+  }
 
   "hasActivatedIrSaEnrolment" should {
     "return false if there is no IR-SA-AGENT enrolment" in {
@@ -34,7 +40,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .isLoggedIn()
         .andHasNoIrSaAgentEnrolment()
 
-      await(newAuthConnector().hasActivatedIrSaEnrolment) shouldBe false
+      await(hasEnroledAndActived) shouldBe false
     }
 
     "return false if there is a Pending IR-SA-AGENT enrolment" in {
@@ -43,7 +49,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .isLoggedIn()
         .andHasIrSaAgentEnrolment(EnrolmentStates.pending)
 
-      await(newAuthConnector().hasActivatedIrSaEnrolment) shouldBe false
+      await(hasEnroledAndActived) shouldBe false
     }
 
     "return true if there is an Activated IR-SA-AGENT enrolment" in {
@@ -52,7 +58,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .isLoggedIn()
         .andHasIrSaAgentEnrolment()
 
-      await(newAuthConnector().hasActivatedIrSaEnrolment) shouldBe true
+      await(hasEnroledAndActived) shouldBe true
     }
 
     "return a failed future if any errors happen" in {
@@ -61,10 +67,11 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .andGettingEnrolmentsFailsWith500()
 
       an[Exception] shouldBe thrownBy {
-        await(newAuthConnector().hasActivatedIrSaEnrolment)
+        await(hasEnroledAndActived)
       }
     }
   }
+
 
   "currentAccounts" should {
     "return current accounts" in {
