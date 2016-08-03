@@ -23,12 +23,8 @@ import scala.concurrent.Future
 
 case class UserDetails(name: String, lastName: Option[String], agentFriendlyName: Option[String]) {
 
-  val agentName: String = {
-    (name, lastName) match {
-      case (_, Some(_)) => s"$name ${lastName.get}"
-      case (_, None) => name
-    }
-  }
+  val agentName: String = lastName map (s"$name " + _) getOrElse name
+
 }
 
 object UserDetails {

@@ -23,6 +23,7 @@ import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 private[connectors] case class AuthEnrolment(key: String, state: String) {
   val isActivated: Boolean = state equalsIgnoreCase "Activated"
@@ -32,10 +33,14 @@ private[connectors] object AuthEnrolment {
   implicit val format = Json.format[AuthEnrolment]
 }
 
-private[connectors] case class Enrolments(enrolments: Set[AuthEnrolment]) {
-  def activatedSaEnrolment: Option[AuthEnrolment] = getActivatedEnrolment("IR-SA-AGENT")
 
-  private def getActivatedEnrolment(key: String): Option[AuthEnrolment] = enrolments.find(e => e.key == key && e.isActivated)
+private[connectors] case class Enrolments(enrolments: Set[AuthEnrolment]) {
+
+  def find(regimeId:String): Option[AuthEnrolment] = enrolments.find(_.key == regimeId)
+
+  final def findMatching(regimeId:String)(matchingCriteria: AuthEnrolment => Boolean): Option[AuthEnrolment] = {
+    enrolments.find(enrolment => enrolment.key == regimeId).filter(matchingCriteria)
+  }
 }
 
 private[connectors] object Enrolments {
@@ -47,10 +52,14 @@ case class UserInfo(accounts: Accounts, userDetailsLink: String, hasActivatedIrS
 
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
-  def hasActivatedIrSaEnrolment()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] =
-    currentAuthority
-      .flatMap(enrolments)
-      .map(_.activatedSaEnrolment.isDefined)
+  final def containsEnrolment(enrolmentName:String)
+                             (matchingCriteria: AuthEnrolment => Boolean)
+                             (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
+    enrolments() map (_.findMatching(enrolmentName)(matchingCriteria) isDefined)
+  }
+
+  private def enrolments()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
+    currentAuthority flatMap enrolments
 
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
     currentAuthority() map authorityAsAccounts
@@ -62,7 +71,7 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
     } yield {
       UserInfo(
         accounts = authorityAsAccounts(authority),
-        hasActivatedIrSaEnrolment = enrolments.activatedSaEnrolment.isDefined,
+        hasActivatedIrSaEnrolment = enrolments.findMatching("IR-SA-AGENT")(_.isActivated) isDefined,
         userDetailsLink = (authority \ "userDetailsLink").as[String]
       )
     }

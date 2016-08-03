@@ -83,17 +83,3 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
   override def isInsertion(newRecordId: BSONObjectID, oldRecord: AgentClientAuthorisationRequest): Boolean =
     newRecordId != oldRecord.id
 }
-
-
-
-
-
-
-//"""{
-//  [
-//
-//    { _id: "", agentCode: "", clientRegimeId: "", events: [{ time: 123456789, name: "Requested" }, { time: 123456789, name: "Requested" }]},
-//    { _id: "", agentCode: "", clientRegimeId: "", events: [{ time: 123456789, status: "pending" }, { time: 123456789, status: "accepted" }]},
-//
-//  ]
-//}""""

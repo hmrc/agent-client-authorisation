@@ -23,15 +23,14 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class SaLookupService(cesaIndividualsConnector: CesaIndividualsConnector) {
+class SaLookupService(cesa: CesaIndividualsConnector) {
 
   def lookupByUtr(saUtr: SaUtr)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    cesaIndividualsConnector.taxpayer(saUtr).map(_.map(name))
+    cesa taxpayer(saUtr) map(_.map(name))
   }
 
-  def lookupByUtrAndPostcode(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
-  {
-    cesaIndividualsConnector.taxpayer(saUtr).map { maybeTaxpayer: Option[CesaTaxpayer] =>
+  def lookupByUtrAndPostcode(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    cesa.taxpayer(saUtr).map { maybeTaxpayer: Option[CesaTaxpayer] =>
       maybeTaxpayer match {
         case Some(taxPayer) if postcodeMatches(taxPayer.address.postcode, postcode)
         => Some(name(taxPayer))
@@ -46,7 +45,7 @@ class SaLookupService(cesaIndividualsConnector: CesaIndividualsConnector) {
 
   def postcodeMatches(postcode: Option[String], toCheck: String) = {
     postcode.flatMap(value => Some(value.toLowerCase.replaceAll(" ", "") == toCheck.toLowerCase.replaceAll(" ", "")))
-            .getOrElse(false)
+      .getOrElse(false)
   }
 
   def name(cesaTaxpayer: CesaTaxpayer): String = cesaTaxpayer.name.toString
