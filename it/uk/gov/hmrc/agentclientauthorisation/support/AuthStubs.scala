@@ -35,7 +35,44 @@ trait BasicUserAuthStubs[A] {
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(401)))
     this
   }
+}
 
+trait UnknownUserAuthStubs[A] extends BasicUserAuthStubs[A] {
+  me: A with WiremockAware =>
+
+  def oid: String
+
+  def isLoggedIn(): A = {
+    stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "new-session":"/auth/oid/$oid/session",
+         |  "enrolments":"/auth/oid/$oid/enrolments",
+         |  "uri":"/auth/oid/$oid",
+         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
+         |  "credentials":{
+         |    "gatewayId":"0000001234567890"
+         |  },
+         |  "accounts":{
+         |  },
+         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
+         |  "credentialStrength":"strong",
+         |  "confidenceLevel":50,
+         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
+         |  "levelOfAssurance":"1",
+         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |}
+       """.stripMargin
+    )))
+    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |[]
+         """.stripMargin
+    )))
+    this
+  }
 }
 
 trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {

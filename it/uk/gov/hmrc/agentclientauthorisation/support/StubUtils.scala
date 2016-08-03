@@ -30,8 +30,8 @@ trait StubUtils {
       agentAdmin(agentCode.value)
     }
 
-    def user(): UnknownUser = {
-      new UnknownUser
+    def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {
+      new UnknownUser(oid)
     }
 
     def client(oid: String = "556737e15500005500eaf68f"): Client = {
@@ -51,8 +51,8 @@ trait StubUtils {
                    override val oid: String)
     extends BaseUser with AgentAuthStubs[AgentAdmin]
 
-  class UnknownUser
-    extends BaseUser with BasicUserAuthStubs[UnknownUser]
+  class UnknownUser(override val oid: String)
+    extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
   class Client(override val oid: String)
     extends BaseUser with ClientUserAuthStubs[Client]

@@ -34,7 +34,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private val createRequestUrl = "/agent-client-authorisation/requests"
 
   "GET /requests" should {
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForGetRequests())
+    behave like anEndpointAccessibleForSaAgentsOrSaClients(responseForGetRequests())
   }
 
   "POST /requests" should {

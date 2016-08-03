@@ -22,7 +22,7 @@ import play.api.libs.json.{JsObject, Json}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, UserDetails, UserDetailsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions, SaClientRequest}
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
@@ -55,8 +55,13 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
-  def getRequests() = onlyForSaAgents.async { implicit request =>
-    authorisationRequestRepository.list(request.agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+  def getRequests() = saClientsOrAgents.async { implicit request =>
+    request match {
+      case AgentRequest(agentCode, _, _) =>
+        authorisationRequestRepository.list(agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+      case SaClientRequest(saUtr, _) =>
+        authorisationRequestRepository.list("sa", saUtr.value).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+    }
   }
 
   def getRequest(requestId: String) = onlyForSaClients.async { implicit request =>

@@ -45,6 +45,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
   implicit val hc = HeaderCarrier()
 
   val agentCode = AgentCode("123456789012")
+  val clientSaUtr = SaUtr("1234567890")
 
   override protected def beforeEach() = {
     super.beforeEach()
@@ -93,21 +94,55 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     }
   }
 
-  "getRequests" should {
-    "return an array of requests even if there is only one" in {
-      givenAgentIsLoggedInAndHasActiveSaEnrolment()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-      when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
-      when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
+  "getRequests" when {
+    "called by an agent" should {
+      "return an array of requests even if there is only one" in {
+        givenAgentIsLoggedInAndHasActiveSaEnrolment()
+        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
+        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
 
-      val result: Result = await(controller.getRequests()(FakeRequest()))
-      status(result) shouldBe 200
-      (jsonBodyOf(result) \ "_embedded" \ "requests") shouldBe a[JsArray]
+        val result: Result = await(controller.getRequests()(FakeRequest()))
+        status(result) shouldBe 200
+        (jsonBodyOf(result) \ "_embedded" \ "requests") shouldBe a[JsArray]
+      }
+
+      "return only requests made by the logged in agent" in {
+        givenAgentIsLoggedInAndHasActiveSaEnrolment()
+        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
+        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(repository.list(agentCode)).thenReturn(Future successful List(aRequest))
+
+        val result: Result = await(controller.getRequests()(FakeRequest()))
+        status(result) shouldBe 200
+        val requestsJson = jsonBodyOf(result) \ "_embedded" \ "requests"
+        (requestsJson(0) \ "id").as[String] shouldBe aRequest.id.stringify
+        requestsJson.value.size shouldBe 1
+      }
+    }
+
+    "called by a client" should {
+      "return only requests made to the logged in client" in {
+        givenClientIsLoggedIn()
+        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
+        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(repository.list("sa", clientSaUtr.value)).thenReturn(Future successful List(aRequest))
+
+        val result: Result = await(controller.getRequests()(FakeRequest()))
+        status(result) shouldBe 200
+        val requestsJson = jsonBodyOf(result) \ "_embedded" \ "requests"
+        (requestsJson(0) \ "id").as[String] shouldBe aRequest.id.stringify
+        requestsJson.value.size shouldBe 1
+      }
     }
   }
 
   def givenAgentIsLoggedInAndHasActiveSaEnrolment(): Unit = {
     when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), "user-details-link", hasActivatedIrSaEnrolment = true))
     when(userDetailsConnector.userDetails(Matchers.eq("user-details-link"))(any[HeaderCarrier])).thenReturn(UserDetails("Name", Some("agent"), Some("Friendly name")))
+  }
+
+  def givenClientIsLoggedIn(): Unit = {
+    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(None, Some(clientSaUtr)), "user-details-link", hasActivatedIrSaEnrolment = false))
   }
 }

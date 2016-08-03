@@ -73,5 +73,5 @@ trait AuthActions {
 }
 
 class RequestWithUserInfo[A](val userInfo: UserInfo, request: Request[A]) extends WrappedRequest[A](request)
-class AgentRequest[A](val agentCode: AgentCode, val userDetailsLink: String, request: Request[A]) extends WrappedRequest[A](request)
-class SaClientRequest[A](val saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)
+case class AgentRequest[A](agentCode: AgentCode, userDetailsLink: String, request: Request[A]) extends WrappedRequest[A](request)
+case class SaClientRequest[A](saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)

@@ -51,4 +51,16 @@ trait SecuredEndpointBehaviours {
       request.status shouldBe 401
     }
   }
+
+  def anEndpointAccessibleForSaAgentsOrSaClients(request: => HttpResponse)(implicit me: AgentCode): Unit = {
+    "return 401 when the requester is not authenticated" in {
+      given().user().isNotLoggedIn()
+      request.status shouldBe 401
+    }
+
+    "return 401 when user is neither an agent nor client" in {
+      given().user().isLoggedIn()
+      request.status shouldBe 401
+    }
+  }
 }
