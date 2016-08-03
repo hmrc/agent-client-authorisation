@@ -17,7 +17,7 @@ Verb | Path | Description
 ```GET```| ```/requests```| Retrieve the authorisation requests for the logged-in agency
 ```POST```| ```/requests```|  Created a new authorisation request for the designated client
 ```POST```| ```/requests/:request-id/cancel```| Cancel an previous authorisation request
-```GET```| ```/lookup/:regime/:regime-id/:postcode```| Look up a clients full name
+```GET```| ```/client/:regime/:regime-id/:postcode```| Look up a clients full name
 
 
 ###Client Oriented API
@@ -25,12 +25,14 @@ Verb | Path | Description
 Verb | Path | Description
 ---|---|---|---
 ```GET```| ```/requests```| Retrieve the authorisation requests for the client
-```POST```| ```/requests/:status```| Accept or Reject an authorisation request
+```GET```| ```/requests/:request-id```| Retrieve the authorisation request
+```POST```| ```/requests/:request-id/:status```| Accept or Reject an authorisation request where status can be [accept, reject]
 
 
 ###Authorisation Request Statuses
+TODO: Check the language used for these
 
-Status  | Meaning
+Statuses  | Meaning
 ------- | -------
 ```Pending``` | The request has been created, it has not yet Expired nor been Accepted or Rejected by the client. Only the service can set this status
 ```Accepted``` | The client has accepted the reuqest. Only the client can set this status
@@ -40,13 +42,21 @@ Status  | Meaning
 
 
 ###Authorisation Request Model
+TODO make HAL compatible
+Only valid state transitions for the user viewing the request (accept, reject, cancel) will be present.
+
 ```
 {
   "link": "/url/to/detail/this/request",
-  "status": "Pending",
-  "agentCode" : "123456789",
+  "status": "Accepted",
+  "created": "2016-06-27T01:55:28+00.00",
+  "lastUpdated": "2016-07-02T01:55:28+00.00",
   "regime" : "sa",
-  "clientRegimeId" : "123456789",
+  "agentCode" : "123456789",  
+  "agentFriendlyName" : "Sally Huges Accountants",
+  "agentName" : "Bob McCratchet",  
+  "clientRegimeId" : "123456789",  
+  "clientFullName" : "John Smith", 
   "accept" : "/url/to/accept/this/request",
   "reject" : "/url/to/reject/this/request"
   "cancel" : "/url/to/cancel/this/request"
@@ -63,19 +73,23 @@ Status | Meaning
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
 500 | All 5xx reponses are transposed to 500
 
+####request parameters
+*Note: This is just indicative - until we have some verified customer need*
+
+Parameter | Meaning
+---|---
+status | filter requests by status == 'Accepted'
+clientRegimeId | filter requests by regimeId
+regime | filter requests by regime
+agentCode | filter requests by regime
+created | filter requests by time created
+
+
 ```
 Example Response
 TODO add a curl axample
 {
-"clients": [
-    {
-       "clientId" : "111", 
-       "requests": [{RequestModel}, {RequestModel}]}]
-    },
-    {
-       "clientId" : "222", 
-       "requests": [{RequestModel}, {RequestModel}]}]
-    },
+	"requests": [{RequestModel}, {RequestModel}]}]
 }
 ```
 
@@ -84,23 +98,31 @@ TODO add a curl axample
 Body Parameters | Example Value
 ---|---
 ```regime``` | 'sa'
-```client-regime-id``` | "SA_UTR"
-```agent-code``` | "123456789"
-```postcode``` | "BN29UH"
+```clientRegimeId``` | "1234567890"
+```agentCode``` | "123456789"
+```postcode``` | "N167PJ"
 
 Status | Meaning
 ---|---
 201 | Created, creation of duplicate requests is not prohibited
+400 | Missing data from the post request body
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
 403 | The request will not be fulfilled (the agent must have the requisite active enrolments and the client must be registered for that tax regime)
+403 | Postcode matching fails
 500 | All 5xx reponses are transposed to 500
+
+```
+Example Response
+TODO add a curl axample
+add location headers etc
+```
 
 ####POST /requests/:request-id/:status
 Used to cancel the agents request, canceling an 'Expired' request has no effect
 
 Path Parameters | Example Value
 ---|---
-```request-id``` | '213456tde45'
+```requestId``` | '213456tde45'
 ```status``` | cancel (this is the only valid status change the agent can make)
 
 Status | Meaning
@@ -108,23 +130,24 @@ Status | Meaning
 200 | Ok
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
 403 | The request will not be fulfilled (see below)
+404 | The status was not a valid value
 500 | All 5xx reponses are transposed to 500
 
-Reasons for 403 response my include
+Reasons for 403 response may include
  
  * The agent does not have the requisite active enrolments 
  * The client is not registered for that tax regime
- * The agent has tried to update the status of a request to anything other than 'Cancelled'
  * The agent has tried to cancel a request that is not in the 'Pending' state
+ * The agent has tried to update the status of a request to anything other than 'Cancelled'
  * The cancel request has been made by anyone other than the originating agentCode
 
 
-####GET /lookup/:regime/:regime-id/:postcode
+####GET /client/:regime/:regime-id/:postcode
 
 Path Parameter | Example Value
 ---|---
 ```regime``` | 'sa'
-```client-regime-id``` | "SA_UTR"
+```regime id``` | "SA_UTR"
 ```postcode``` | "BN29UH"
 
 Status | Meaning
@@ -146,6 +169,7 @@ Client API Details
 ---
 
 ####GET /requests
+*Note: query parameters could be included if needed by clients*
 
 Status | Meaning
 ---|---
@@ -157,15 +181,7 @@ Status | Meaning
 Example Response
 TODO add a curl axample
 {
-"requests": [
-    {
-       "id" : "111", 
-       "requests": [{RequestModel}, {RequestModel}]}]
-    },
-    {
-       "id" : "222", 
-       "requests": [{RequestModel}, {RequestModel}]}]
-    },
+	"requests": [{RequestModel}, {RequestModel}]}]
 }
 ```
 
@@ -174,7 +190,7 @@ Used to accept and reject an authorisation request. Accepting an already 'accept
 
 Path Parameters | Example Value
 ---|---
-```request-id``` | '213456tde45'
+```request id``` | '213456tde45'
 ```status``` | accept or reject
 
 Status | Meaning
@@ -189,5 +205,5 @@ Reasons for 403 response my include
  * The client is not registered for that tax regime
  * The client has tried to update the status of a request to anything other than 'Accepted' or 'Rejected'
  * The request is not in the 'Pending' state
- * The request has either been 'Cancelled' or has 'Exired'
- * The accept request was not made by the designated client of the request
+ * The request has either been 'Cancelled' or has 'Expired'
+ * The accept request was not made for the designated client of the request
