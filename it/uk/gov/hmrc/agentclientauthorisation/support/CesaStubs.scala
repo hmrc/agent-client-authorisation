@@ -18,10 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.domain.SaUtr
 import com.github.tomakehurst.wiremock.client.WireMock._
+import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 
 object CesaStubs {
   def saTaxpayerExists(saUtr: SaUtr, title: String = "Mr") = {
-    stubFor(get(urlEqualTo(s"/self-assessment/individual/$saUtr/designatory-details/taxpayer"))
+    stubFor(get(urlEqualTo(s"/self-assessment/individual/${encodePathSegment(saUtr.value)}/designatory-details/taxpayer"))
       .willReturn(
         aResponse()
           .withStatus(200)

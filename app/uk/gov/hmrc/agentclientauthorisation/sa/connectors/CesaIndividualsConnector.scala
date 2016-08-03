@@ -21,6 +21,7 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.Future
+import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 
 class CesaIndividualsConnector(cesaBaseUrl: String, http: HttpGet) {
   private implicit val readsCesaDesignatoryDetailsName = Json.reads[CesaDesignatoryDetailsName]
@@ -30,7 +31,7 @@ class CesaIndividualsConnector(cesaBaseUrl: String, http: HttpGet) {
   def url(path: String) = s"$cesaBaseUrl$path"
 
   def taxpayer(utr: SaUtr)(implicit hc: HeaderCarrier): Future[Option[CesaTaxpayer]] =
-    http.GET[Option[CesaTaxpayer]](url(s"/self-assessment/individual/$utr/designatory-details/taxpayer"))
+    http.GET[Option[CesaTaxpayer]](url(s"/self-assessment/individual/${encodePathSegment(utr.value)}/designatory-details/taxpayer"))
 }
 
 case class CesaDesignatoryDetailsName(
