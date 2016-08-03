@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.sa.connectors
 
-import uk.gov.hmrc.agentclientauthorisation.{MicroserviceGlobal, WSHttp}
+import com.github.tomakehurst.wiremock.client.WireMock._
+import uk.gov.hmrc.agentclientauthorisation.MicroserviceGlobal
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CesaStubs}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -39,6 +40,14 @@ class CesaIndividualsConnectorISpec extends UnitSpec with AppAndStubs with Servi
       val saUtr = SaUtr("1234567890")
       val maybeCesaTaxpayer: Option[CesaTaxpayer] = await(connector.taxpayer(saUtr))
       maybeCesaTaxpayer shouldBe None
+    }
+
+    "encode URL path parameters to protect against path traversal vulnerabilities" in {
+      val saUtr = SaUtr("../../evil")
+      CesaStubs.saTaxpayerExists(saUtr)
+      await(connector.taxpayer(saUtr))
+
+      verify(getRequestedFor(urlEqualTo(s"/self-assessment/individual/..%2F..%2Fevil/designatory-details/taxpayer")))
     }
   }
 }
