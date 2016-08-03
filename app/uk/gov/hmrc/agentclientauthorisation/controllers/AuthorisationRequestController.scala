@@ -19,9 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, UserDetails, UserDetailsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
@@ -57,6 +59,25 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     authorisationRequestRepository.list(request.agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
   }
 
+  def getRequest(requestId: String) = onlyForSaClients.async { implicit request =>
+    val id = BSONObjectID(requestId)
+    authorisationRequestRepository.findById(id).flatMap {
+      case Some(r) if r.clientSaUtr == request.saUtr => enrich(List(r)).map(_.head).map(toHalResource).map(Ok(_)(halWriter))
+      case Some(r) => Future successful Forbidden
+      case None => Future successful NotFound
+    }
+  }
+
+
+  def acceptRequest(requestId: String) = onlyForSaClients.async { implicit request =>
+    val id = BSONObjectID(requestId)
+    authorisationRequestRepository.findById(id).flatMap {
+      case Some(r) if r.clientSaUtr == request.saUtr => authorisationRequestRepository.update(id, model.Accepted).map(_ => Ok)
+      case Some(r) => Future successful Forbidden
+      case None => Future successful NotFound
+    }
+  }
+
   private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
     val eventuallyNames = namesByUtr(requests.map(_.clientSaUtr).distinct)
     val eventuallyAgentDetails = userDetails(requests)
@@ -86,7 +107,7 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   }
 
   private def namesByUtr(utrs: List[SaUtr])(implicit hc: HeaderCarrier): Future[Map[SaUtr, Option[String]]] = {
-    val eventuallyNames = Future sequence (utrs.map(saLookupService.lookupByUtr))
+    val eventuallyNames = Future sequence utrs.map(saLookupService.lookupByUtr)
     eventuallyNames.map({ nameList =>
       (utrs zip nameList).toMap
     })
