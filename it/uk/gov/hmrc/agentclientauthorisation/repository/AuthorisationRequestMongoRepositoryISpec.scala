@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.sa
+package uk.gov.hmrc.agentclientauthorisation.repository
 
 import org.joda.time.DateTime
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
-import reactivemongo.bson.BSONObjectID
+import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.bson.{BSONArray, BSONDocument, BSONObjectID}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.mongo.MongoSpecSupport
@@ -109,6 +109,14 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
           date shouldBe now
       }
     }
+
+    "be able to read and parse old documents, created on 4th Aug 2016" in {
+      dropMongoDb()
+      val coll = mongo().collection[BSONCollection]("authorisationRequests")
+      await(coll.insert(sampleDocumentOn4thAug2016)).ok shouldBe true
+
+      await(listByAgentCode(sampleDocumentOn4thAug2016AgentCode)).loneElement shouldBe sampleDocumentOn4thAug2016Request
+    }
   }
 
 
@@ -186,4 +194,42 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
   private def listByClientRegimeId(regime: String, regimeId: String) = await(repository.list(regime, regimeId))
 
   private def update(id:BSONObjectID, status:AuthorisationStatus) = await(repository.update(id, status))
+
+  /**
+    * {
+    * "_id":ObjectId("57a1fed04c00006800dee8d3"),
+    * "agentCode":"AB2016C08D04",
+    * "regime":"sa",
+    * "clientRegimeId":"1234567890",
+    * "agentUserDetailsLink":"http://localhost:9978/user-details/id/989898989898989898",
+    * "events":[
+    * {
+    * "time":NumberLong("1470234320583"),
+    * "status":"Pending"
+    * }
+    * ]
+    * }
+    */
+  private val sampleDocumentOn4thAug2016 = BSONDocument(
+    "_id" -> BSONObjectID("57a1fed04c00006800dee8d3"),
+    "agentCode" -> "AB2016C08D04",
+    "regime" -> "sa",
+    "clientRegimeId" -> "1234567890",
+    "agentUserDetailsLink" -> "http://localhost:9978/user-details/id/989898989898989898",
+    "events" -> BSONArray(
+      BSONDocument(
+        "time" -> 1470234320583L,
+        "status" -> "Pending"
+      )
+    )
+  )
+  private val sampleDocumentOn4thAug2016AgentCode = AgentCode("AB2016C08D04")
+  private val sampleDocumentOn4thAug2016Request = AgentClientAuthorisationRequest(
+    id = BSONObjectID("57a1fed04c00006800dee8d3"),
+    agentCode = sampleDocumentOn4thAug2016AgentCode,
+    regime = "sa",
+    clientRegimeId = "1234567890",
+    agentUserDetailsLink = "http://localhost:9978/user-details/id/989898989898989898",
+    events = List(StatusChangeEvent(new DateTime(1470234320583L), Pending))
+  )
 }
