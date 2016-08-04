@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, UserDetai
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter.halWriter
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions, SaClientRequest}
 import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, EnrichedAgentClientAuthorisationRequest}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest, AuthorisationStatus, EnrichedAgentClientAuthorisationRequest}
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.SaUtr
@@ -73,11 +73,14 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
+  def acceptRequest(requestId: String) = updateRequestAsClient(requestId, model.Accepted)
 
-  def acceptRequest(requestId: String) = onlyForSaClients.async { implicit request =>
+  def rejectRequest(requestId: String) = updateRequestAsClient(requestId, model.Rejected)
+
+  private def updateRequestAsClient(requestId: String, newStatus: AuthorisationStatus) = onlyForSaClients.async { implicit request =>
     val id = BSONObjectID(requestId)
     authorisationRequestRepository.findById(id).flatMap {
-      case Some(r) if r.clientSaUtr == request.saUtr => authorisationRequestRepository.update(id, model.Accepted).map(_ => Ok)
+      case Some(r) if r.clientSaUtr == request.saUtr && r.events.last.status == model.Pending => authorisationRequestRepository.update(id, newStatus).map(_ => Ok)
       case Some(r) => Future successful Forbidden
       case None => Future successful NotFound
     }

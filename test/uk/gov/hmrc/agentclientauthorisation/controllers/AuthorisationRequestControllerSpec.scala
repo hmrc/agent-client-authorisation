@@ -16,17 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.mockito.Matchers
+import org.joda.time.DateTime
+import org.mockito.{Mockito, Matchers}
 import org.mockito.Matchers.{any, anyString}
-import org.mockito.Mockito.{reset, when}
+import org.mockito.Mockito._
+import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsArray, JsValue}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector, _}
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, AgentClientAuthorisationRequest}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestRepository
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
@@ -137,12 +140,94 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     }
   }
 
+  "acceptRequest" should {
+    "update status to Accepted if the request is Pending and was made to the client" in {
+      givenClientIsLoggedIn()
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+      when(repository.update(aRequest.id, Accepted)).thenReturn(Future successful aRequest)
+
+      val result: Result = await(controller.acceptRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 200
+
+      verify(repository).update(aRequest.id, Accepted)
+    }
+
+    "respond 403 and not update status if the request is Pending but was made to a different client" in {
+      givenClientIsLoggedIn()
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+
+      val result: Result = await(controller.acceptRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 403
+
+      verify(repository, never).update(aRequest.id, Accepted)
+    }
+
+    "respond 403 and not update status if the request is not Pending" in {
+      givenClientIsLoggedIn()
+      val events: List[StatusChangeEvent] = List(
+        StatusChangeEvent(DateTime.now.minusDays(1), Pending),
+        StatusChangeEvent(DateTime.now, Rejected))
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", events)
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+
+      val result: Result = await(controller.acceptRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 403
+
+      verify(repository, never).update(aRequest.id, Accepted)
+    }
+  }
+
+  "rejectRequest" should {
+    "update status to Rejected" in {
+      givenClientIsLoggedIn()
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+      when(repository.update(aRequest.id, Rejected)).thenReturn(Future successful aRequest)
+
+      val result: Result = await(controller.rejectRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 200
+
+      verify(repository).update(aRequest.id, Rejected)
+    }
+
+    "respond 403 and not update status if the request is Pending but was made to a different client" in {
+      givenClientIsLoggedIn()
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+
+      val result: Result = await(controller.rejectRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 403
+
+      verify(repository, never).update(aRequest.id, Rejected)
+    }
+
+    "respond 403 and not update status if the request is not Pending" in {
+      givenClientIsLoggedIn()
+      val events: List[StatusChangeEvent] = List(
+        StatusChangeEvent(DateTime.now.minusDays(1), Pending),
+        StatusChangeEvent(DateTime.now, Accepted))
+      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", events)
+      when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
+
+      val result: Result = await(controller.rejectRequest(aRequest.id.stringify)(FakeRequest()))
+      status(result) shouldBe 403
+
+      verify(repository, never).update(aRequest.id, Rejected)
+    }
+  }
+
   def givenAgentIsLoggedInAndHasActiveSaEnrolment(): Unit = {
-    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), "user-details-link", hasActivatedIrSaEnrolment = true))
+    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), "user-details-link", hasActivatedIrSaAgentEnrolment = true))
     when(userDetailsConnector.userDetails(Matchers.eq("user-details-link"))(any[HeaderCarrier])).thenReturn(UserDetails("Name", Some("agent"), Some("Friendly name")))
   }
 
   def givenClientIsLoggedIn(): Unit = {
-    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(None, Some(clientSaUtr)), "user-details-link", hasActivatedIrSaEnrolment = false))
+    whenUserInfoIsRequested.thenReturn(Future successful UserInfo(Accounts(None, Some(clientSaUtr)), "user-details-link", hasActivatedIrSaAgentEnrolment = false))
+  }
+
+  def whenUserInfoIsRequested(): OngoingStubbing[Future[UserInfo]] = {
+    when(authConnector.currentUserInfo()(any(), any()))
   }
 }

@@ -2,6 +2,7 @@
 
 GET     /requests/:requestId               @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequest(requestId: String)
 POST    /requests/:requestId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.acceptRequest(requestId: String)
+POST    /requests/:requestId/reject        @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.rejectRequest(requestId: String)
 GET     /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests()
 POST    /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest()
 

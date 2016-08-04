@@ -28,9 +28,7 @@ trait AuthActions {
 
   def authConnector: AuthConnector
 
-  val withUserInfo = new ActionBuilder[RequestWithUserInfo] with ActionRefiner[Request, RequestWithUserInfo] {
-
-
+  private val withUserInfo = new ActionBuilder[RequestWithUserInfo] with ActionRefiner[Request, RequestWithUserInfo] {
     protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithUserInfo[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
       authConnector.currentUserInfo()
@@ -45,7 +43,7 @@ trait AuthActions {
 
   val onlyForSaAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, AgentRequest] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, AgentRequest[A]]] =
-      Future successful ((request.userInfo.accounts.agent, request.userInfo.hasActivatedIrSaEnrolment) match {
+      Future successful ((request.userInfo.accounts.agent, request.userInfo.hasActivatedIrSaAgentEnrolment) match {
         case (Some(agentCode), true) => Right(new AgentRequest(agentCode,request.userInfo.userDetailsLink, request))
         case _ => Left(Results.Unauthorized)
       })
@@ -60,12 +58,11 @@ trait AuthActions {
     }
   }
 
-  // not tested yet
   val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {
-      Future successful (request.userInfo.accounts match {
-        case Accounts(Some(agentCode), _) => Right(new AgentRequest(agentCode,  request.userInfo.userDetailsLink, request))
-        case Accounts(None, Some(saUtr)) => Right(new SaClientRequest(saUtr, request))
+      Future successful (request.userInfo match {
+        case UserInfo(Accounts(Some(agentCode), _), _, true) => Right(new AgentRequest(agentCode,  request.userInfo.userDetailsLink, request))
+        case UserInfo(Accounts(None, Some(saUtr)), _, _) => Right(new SaClientRequest(saUtr, request))
         case _ => Left(Results.Unauthorized)
       })
     }

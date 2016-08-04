@@ -48,7 +48,7 @@ private[connectors] object Enrolments {
 }
 
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
-case class UserInfo(accounts: Accounts, userDetailsLink: String, hasActivatedIrSaEnrolment: Boolean)
+case class UserInfo(accounts: Accounts, userDetailsLink: String, hasActivatedIrSaAgentEnrolment: Boolean)
 
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
@@ -71,7 +71,7 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
     } yield {
       UserInfo(
         accounts = authorityAsAccounts(authority),
-        hasActivatedIrSaEnrolment = enrolments.findMatching("IR-SA-AGENT")(_.isActivated) isDefined,
+        hasActivatedIrSaAgentEnrolment = enrolments.findMatching("IR-SA-AGENT")(_.isActivated) isDefined,
         userDetailsLink = (authority \ "userDetailsLink").as[String]
       )
     }

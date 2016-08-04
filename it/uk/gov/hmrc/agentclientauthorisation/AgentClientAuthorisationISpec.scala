@@ -141,30 +141,38 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val accept = responseForAcceptRequest(id)
       accept.status shouldBe 200
 
-      val acceptedJson = responseForGetRequest(id).json
+      val authRequestJson = responseForGetRequest(id).json
 
-      (acceptedJson \ "events")(1) \ "status" shouldBe JsString("Accepted")
+      (authRequestJson \ "events")(1) \ "status" shouldBe JsString("Accepted")
     }
 
-    "return not found for an unknown request" in {
-      val accept = responseForAcceptRequest("some-request-id")
-      accept.status shouldBe 404
-    }
+    behave like aClientStatusChange(responseForAcceptRequest)
+  }
 
-    "return forbidden for a request for a different user" in {
-      val (client1SaUtr, client2SaUtr) = createRequests
+  "/requests/:id/reject" should {
+    "mark the request as rejected" in {
+      val (client1SaUtr, _) = createRequests
       val responseJson = responseForGetRequests().json
 
       given().client().isLoggedIn(client1SaUtr.utr)
 
-      val id: String = requestId(responseJson, client2SaUtr)
-      val accept = responseForAcceptRequest(id)
-      accept.status shouldBe 403
+      val id: String = requestId(responseJson, client1SaUtr)
+      responseForRejectRequest(id).status shouldBe 200
+
+      val authRequestJson = responseForGetRequest(id).json
+
+      (authRequestJson \ "events")(1) \ "status" shouldBe JsString("Rejected")
     }
+
+    behave like aClientStatusChange(responseForRejectRequest)
   }
 
   def responseForAcceptRequest(requestId: String): HttpResponse = {
     new Resource(s"/agent-client-authorisation/requests/$requestId/accept", port).postEmpty()
+  }
+
+  def responseForRejectRequest(requestId: String): HttpResponse = {
+    new Resource(s"/agent-client-authorisation/requests/$requestId/reject", port).postEmpty()
   }
 
   def responseForGetRequest(requestId: String ): HttpResponse = {
@@ -178,4 +186,33 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   def responseForCreateRequest(body: String): HttpResponse =
     new Resource(createRequestUrl, port).postAsJson(body)
 
+
+  def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
+    "return not found for an unknown request" in {
+      doStatusChangeRequest("some-request-id").status shouldBe 404
+    }
+
+    "return forbidden for a request for a different user" in {
+      val (client1SaUtr, client2SaUtr) = createRequests
+      val responseJson = responseForGetRequests().json
+
+      given().client().isLoggedIn(client1SaUtr.utr)
+
+      val id: String = requestId(responseJson, client2SaUtr)
+      doStatusChangeRequest(id).status shouldBe 403
+    }
+
+    "return forbidden for a request not in Pending status" in {
+      val (client1SaUtr, _) = createRequests
+      val responseJson = responseForGetRequests().json
+
+      given().client().isLoggedIn(client1SaUtr.utr)
+
+      val id: String = requestId(responseJson, client1SaUtr)
+      doStatusChangeRequest(id).status shouldBe 200
+      eventually {
+        doStatusChangeRequest(id).status shouldBe 403
+      }
+    }
+  }
 }
