@@ -42,12 +42,16 @@ Statuses  | Meaning
 
 
 ###Authorisation Request Model
-TODO make HAL compatible
 Only valid state transitions for the user viewing the request (accept, reject, cancel) will be present.
 
 ```
 {
-  "link": "/url/to/detail/this/request",
+  "_links": {
+    "self": {"href": "/url/of/this/request"},
+    "accept": {"href": "/url/to/accept/this/request"},
+    "reject": {"href": "/url/to/reject/this/request"},
+    "cancel": {"href": "/url/to/cancel/this/request"}
+  },
   "status": "Accepted",
   "created": "2016-06-27T01:55:28+00.00",
   "lastUpdated": "2016-07-02T01:55:28+00.00",
@@ -56,10 +60,7 @@ Only valid state transitions for the user viewing the request (accept, reject, c
   "agentFriendlyName" : "Sally Huges Accountants",
   "agentName" : "Bob McCratchet",  
   "clientRegimeId" : "123456789",  
-  "clientFullName" : "John Smith", 
-  "accept" : "/url/to/accept/this/request",
-  "reject" : "/url/to/reject/this/request"
-  "cancel" : "/url/to/cancel/this/request"
+  "clientFullName" : "John Smith"
 }
 ```
 
