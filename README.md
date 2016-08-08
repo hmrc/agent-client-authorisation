@@ -37,7 +37,7 @@ Statuses  | Meaning
 ```Pending``` | The request has been created, it has not yet Expired nor been Accepted or Rejected by the client. Only the service can set this status
 ```Accepted``` | The client has accepted the reuqest. Only the client can set this status
 ```Rejected``` | The client has rejected the reuqest. Only the client can set this status
-```Cancel``` | The agent has cancelled the request. Only the agent can set this status (can an agent do this after the request has been accepted)
+```Cancelled``` | The agent has cancelled the request. Only the agent can set this status (can an agent do this after the request has been accepted)
 ```Expired```| The request has not been actioned and the request is no longer available for decisioning
 
 
