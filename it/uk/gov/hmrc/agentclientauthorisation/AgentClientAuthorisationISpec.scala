@@ -50,41 +50,53 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val (client1SaUtr: SaUtr, client2SaUtr: SaUtr) = createRequests
 
       note("the freshly added authorisation requests should be available")
-      eventually { // MongoDB is slow sometimes
+      val (responseJson, requestsArray) = eventually { // MongoDB is slow sometimes
         val responseJson = responseForGetRequests().json
 
         Logger.info(s"responseJson = $responseJson")
-        val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
-        selfLinkHref shouldBe getRequestsUrl
 
         val requestsArray = requests(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
         requestsArray should have size 2
-
-        val firstRequest = requestsArray head
-        val secondRequest = requestsArray(1)
-
-        (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
-        (firstRequest \ "regime") shouldBe JsString("sa")
-        (firstRequest \ "clientRegimeId") shouldBe JsString(client1SaUtr.utr)
-        (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
-        (firstRequest \ "agentName") shouldBe JsString("Agent Name")
-        (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
-        (firstRequest \ "regime") shouldBe JsString("sa")
-        ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
-        ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
-        (firstRequest \ "events").as[JsArray].value should have size 1
-
-        (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
-        (secondRequest \ "regime") shouldBe JsString("sa")
-        (secondRequest \ "clientRegimeId") shouldBe JsString(client2SaUtr.utr)
-        (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
-        (secondRequest \ "agentName") shouldBe JsString("Agent Name")
-        (secondRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
-        (secondRequest \ "regime") shouldBe JsString("sa")
-        ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
-        ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
-        (secondRequest \ "events").as[JsArray].value should have size 1
+        (responseJson, requestsArray)
       }
+
+      val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
+      selfLinkHref shouldBe getRequestsUrl
+
+      val firstRequest = requestsArray head
+      val secondRequest = requestsArray(1)
+
+      val alphanumeric = "[0-9A-Za-z]+"
+
+      val firstRequestId = (firstRequest \ "id").as[String]
+      firstRequestId should fullyMatch regex alphanumeric
+      (firstRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/requests/$firstRequestId"
+      (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
+      (firstRequest \ "regime") shouldBe JsString("sa")
+      (firstRequest \ "clientRegimeId") shouldBe JsString(client1SaUtr.utr)
+      (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
+      (firstRequest \ "agentName") shouldBe JsString("Agent Name")
+      (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
+      (firstRequest \ "regime") shouldBe JsString("sa")
+      ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
+      ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
+      (firstRequest \ "events").as[JsArray].value should have size 1
+
+      val secondRequestId = (secondRequest \ "id").as[String]
+      secondRequestId should fullyMatch regex alphanumeric
+      (secondRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/requests/$secondRequestId"
+      (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
+      (secondRequest \ "regime") shouldBe JsString("sa")
+      (secondRequest \ "clientRegimeId") shouldBe JsString(client2SaUtr.utr)
+      (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
+      (secondRequest \ "agentName") shouldBe JsString("Agent Name")
+      (secondRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
+      (secondRequest \ "regime") shouldBe JsString("sa")
+      ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
+      ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
+      (secondRequest \ "events").as[JsArray].value should have size 1
+
+      firstRequestId should not be secondRequestId
     }
   }
 
