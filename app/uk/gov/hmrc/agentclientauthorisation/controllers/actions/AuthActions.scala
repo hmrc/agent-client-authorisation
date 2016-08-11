@@ -44,7 +44,7 @@ trait AuthActions {
   val onlyForSaAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, AgentRequest] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, AgentRequest[A]]] =
       Future successful ((request.userInfo.accounts.agent, request.userInfo.hasActivatedIrSaAgentEnrolment) match {
-        case (Some(agentCode), true) => Right(new AgentRequest(agentCode,request.userInfo.userDetailsLink, request))
+        case (Some(agentCode), true) => Right(AgentRequest(agentCode, request.userInfo.userDetailsLink, request))
         case _ => Left(Results.Unauthorized)
       })
   }
@@ -52,7 +52,7 @@ trait AuthActions {
   val onlyForSaClients = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, SaClientRequest] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, SaClientRequest[A]]] = {
       Future successful (request.userInfo.accounts.sa match {
-        case Some(saUtr) => Right(new SaClientRequest(saUtr, request))
+        case Some(saUtr) => Right(SaClientRequest(saUtr, request))
         case _ => Left(Results.Unauthorized)
       })
     }
@@ -61,8 +61,8 @@ trait AuthActions {
   val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
     override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {
       Future successful (request.userInfo match {
-        case UserInfo(Accounts(Some(agentCode), _), _, true) => Right(new AgentRequest(agentCode,  request.userInfo.userDetailsLink, request))
-        case UserInfo(Accounts(None, Some(saUtr)), _, _) => Right(new SaClientRequest(saUtr, request))
+        case UserInfo(Accounts(Some(agentCode), _), _, true) => Right(AgentRequest(agentCode, request.userInfo.userDetailsLink, request))
+        case UserInfo(Accounts(None, Some(saUtr)), _, _) => Right(SaClientRequest(saUtr, request))
         case _ => Left(Results.Unauthorized)
       })
     }

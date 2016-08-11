@@ -35,6 +35,28 @@ class SaLookupISpec extends UnitSpec with AppAndStubs {
       (response.json \ "name").as[String] shouldBe "Mr First Last"
     }
 
+    "return name when there is a match ignoring postcode case" in {
+      given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
+
+      val saUtr = SaUtr("1234567890")
+      CesaStubs.saTaxpayerExists(saUtr)
+
+      val response = new Resource("/agent-client-authorisation/lookup/sa/1234567890/aa1%201aa", port).get()
+      response.status shouldBe 200
+      (response.json \ "name").as[String] shouldBe "Mr First Last"
+    }
+
+    "return name when there is a match postcode with no white space" in {
+      given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
+
+      val saUtr = SaUtr("1234567890")
+      CesaStubs.saTaxpayerExists(saUtr)
+
+      val response = new Resource("/agent-client-authorisation/lookup/sa/1234567890/aa11aa", port).get()
+      response.status shouldBe 200
+      (response.json \ "name").as[String] shouldBe "Mr First Last"
+    }
+
     "return 404 when there is no match" in {
       given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
 
