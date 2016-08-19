@@ -60,7 +60,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
   "createRequest" should {
     "return a 403 when the UTR and postcode don't match" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
-      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(false))
+      when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
         AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "BB2 2BB"))
@@ -72,7 +72,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
     "return a 501 Not Implemented when the regime is not 'sa'" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
-      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
+      when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
         AgentClientAuthorisationHttpRequest(agentCode, "vat", "54321", "AA1 1AA"))
@@ -85,7 +85,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
     "propagate exceptions when the repository fails" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
-      when(saLookupService.utrAndPostcodeMatch(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(true))
+      when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
       when(repository.create(any[AgentCode], anyString, anyString, Matchers.eq("user-details-link"))).thenReturn(Future failed new RuntimeException("dummy exception"))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
@@ -102,7 +102,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       "return an array of requests even if there is only one" in {
         givenAgentIsLoggedInAndHasActiveSaEnrolment()
         val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
         when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))
@@ -113,7 +113,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       "return only requests made by the logged in agent" in {
         givenAgentIsLoggedInAndHasActiveSaEnrolment()
         val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
         when(repository.list(agentCode)).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))
@@ -128,7 +128,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       "return only requests made to the logged in client" in {
         givenClientIsLoggedIn()
         val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupByUtr(any[SaUtr])(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
         when(repository.list("sa", clientSaUtr.value)).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))

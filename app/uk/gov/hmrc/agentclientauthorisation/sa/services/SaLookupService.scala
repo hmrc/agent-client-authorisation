@@ -25,28 +25,25 @@ import scala.concurrent.Future
 
 class SaLookupService(cesa: CesaIndividualsConnector) {
 
-  def lookupByUtr(saUtr: SaUtr)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    cesa taxpayer(saUtr) map(_.map(name))
-  }
-
-  def lookupByUtrAndPostcode(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    cesa.taxpayer(saUtr).map { maybeTaxpayer: Option[CesaTaxpayer] =>
-      maybeTaxpayer match {
-        case Some(taxPayer) if postcodeMatches(taxPayer.address.postcode, postcode)
-        => Some(name(taxPayer))
-        case _
-        => None
-      }
+  def lookupNameByUtrAndPostcode(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    cesa.taxpayer(saUtr).map {
+      _.filter(taxPayer => postcodeMatches(taxPayer.address.postcode, postcode)) map name
     }
   }
 
-  def utrAndPostcodeMatch(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Boolean] =
-    lookupByUtrAndPostcode(saUtr, postcode).map(_.isDefined)
-
-  def postcodeMatches(postcode: Option[String], toCheck: String) = {
-    postcode.flatMap(value => Some(value.toLowerCase.replaceAll(" ", "") == toCheck.toLowerCase.replaceAll(" ", "")))
-      .getOrElse(false)
+  def lookupNamesByUtr(utrs: List[SaUtr])(implicit hc: HeaderCarrier): Future[Map[SaUtr, Option[String]]] = {
+    val eventuallyNames = Future sequence utrs.map(lookupByUtr)
+    eventuallyNames.map( names => (utrs zip names).toMap )
   }
 
-  def name(cesaTaxpayer: CesaTaxpayer): String = cesaTaxpayer.name.toString
+  private def lookupByUtr(saUtr: SaUtr)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    cesa taxpayer(saUtr) map(_.map(name))
+  }
+
+
+  private def postcodeMatches(postcode: Option[String], toCheck: String) =
+    postcode.flatMap(value => Some(value.toLowerCase.replaceAll(" ", "") == toCheck.toLowerCase.replaceAll(" ", ""))) .getOrElse(false)
+
+
+  private def name(cesaTaxpayer: CesaTaxpayer): String = cesaTaxpayer.name.toString
 }

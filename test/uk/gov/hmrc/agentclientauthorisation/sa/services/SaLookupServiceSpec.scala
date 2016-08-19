@@ -37,57 +37,45 @@ class SaLookupServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
   "lookupByUtrAndPostcode" should {
     "return name for a match" in {
       givenTaxpayerExists()
-      await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("Mr First Last")
+      await(service.lookupNameByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("Mr First Last")
     }
 
     "return name when there is a match on postcode case-insensitive" in {
       givenTaxpayerExists()
-      await(service.lookupByUtrAndPostcode(saUtr, "aa1 1aa")) shouldBe Some("Mr First Last")
+      await(service.lookupNameByUtrAndPostcode(saUtr, "aa1 1aa")) shouldBe Some("Mr First Last")
     }
 
     "return name when there is a match on postcode space-insensitive" in {
       givenTaxpayerExists()
-      await(service.lookupByUtrAndPostcode(saUtr, "AA11a a")) shouldBe Some("Mr First Last")
+      await(service.lookupNameByUtrAndPostcode(saUtr, "AA11a a")) shouldBe Some("Mr First Last")
     }
 
     "return None when the taxpayer was found but the postcode doesn't match" in {
       givenTaxpayerExists()
-      await(service.lookupByUtrAndPostcode(saUtr, "BA1 1AA")) shouldBe None
+      await(service.lookupNameByUtrAndPostcode(saUtr, "BA1 1AA")) shouldBe None
     }
 
     "return None when the taxpayer was not found" in {
       givenTaxpayerDoesNotExist()
-      await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe None
+      await(service.lookupNameByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe None
     }
 
     "return empty string for a match when the taxpayer has None in all name fields" in {
       givenTaxpayerExistsWithNameFieldsNone()
 
-      await(service.lookupByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("")
+      await(service.lookupNameByUtrAndPostcode(saUtr, "AA1 1AA")) shouldBe Some("")
     }
   }
 
-  "utrAndPostcodeMatch" should {
-    "be true when a taxpayer is found and the postcode matches" in {
-      givenTaxpayerExists()
-      await(service.utrAndPostcodeMatch(saUtr, "AA1 1AA")) shouldBe true
-    }
-
-    "be false when the taxpayer was found but the postcode doesn't match" in {
-      givenTaxpayerExists()
-      await(service.utrAndPostcodeMatch(saUtr, "BA1 1AA")) shouldBe false
-    }
-  }
-
-  "lookupByUtr" should {
+  "lookupNamesByUtr" should {
     "be None if the given SA UTR was not found" in {
       givenTaxpayerDoesNotExist()
-      await(service.lookupByUtr(saUtr)) shouldBe None
+      await(service.lookupNamesByUtr(List(saUtr))) shouldBe Map(saUtr -> None)
     }
 
     "be Some(name) when the given SA UTR was found" in {
       givenTaxpayerExists()
-      await(service.lookupByUtr(saUtr)) shouldBe Some("Mr First Last")
+      await(service.lookupNamesByUtr(List(saUtr))) shouldBe Map(saUtr -> Some("Mr First Last"))
     }
   }
 
