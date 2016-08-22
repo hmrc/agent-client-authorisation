@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.connectors.UserDetails
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -96,6 +97,18 @@ object AgentClientAuthorisationRequest {
 
 object EnrichedAgentClientAuthorisationRequest {
   implicit val format = Json.format[EnrichedAgentClientAuthorisationRequest]
+
+  def from(request: AgentClientAuthorisationRequest, names: Map[SaUtr, Option[String]], agentUserDetails: UserDetails): EnrichedAgentClientAuthorisationRequest = {
+    EnrichedAgentClientAuthorisationRequest(
+      id = request.id.stringify,
+      agentCode = request.agentCode,
+      regime = request.regime,
+      clientRegimeId = request.clientRegimeId,
+      clientFullName = names(request.clientSaUtr),
+      agentName = agentUserDetails.agentName,
+      agentFriendlyName = agentUserDetails.agentFriendlyName,
+      events = request.events)
+  }
 }
 
 object AgentClientAuthorisationHttpRequest {

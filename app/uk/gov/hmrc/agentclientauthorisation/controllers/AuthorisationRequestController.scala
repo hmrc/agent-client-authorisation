@@ -38,19 +38,10 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
 
   def createRequest() = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest: AgentClientAuthorisationHttpRequest =>
-      saLookupService.utrAndPostcodeMatch(SaUtr(authRequest.clientRegimeId), authRequest.clientPostcode) flatMap { utrAndPostcodeMatch =>
-        if (utrAndPostcodeMatch) {
-          // TODO Audit
-          if (authRequest.regime == "sa") {
-            authorisationRequestRepository.create(request.agentCode, authRequest.regime, authRequest.clientRegimeId, request.userDetailsLink) map { _ => Created }
-          }
-          else {
-            Future successful NotImplemented(Json.obj("message" -> s"This service does not currently support the '${authRequest.regime}' tax regime"))
-          }
-        } else {
-          // TODO Audit failure including UTR and postcode
-          Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
-        }
+      saLookupService.lookupNameByUtrAndPostcode(SaUtr(authRequest.clientRegimeId), authRequest.clientPostcode) flatMap {
+        case Some(name) if authRequest.regime == "sa" => authorisationRequestRepository.create(request.agentCode, authRequest.regime, authRequest.clientRegimeId, request.userDetailsLink) map { _ => Created }
+        case Some(name) if authRequest.regime != "sa" => Future successful NotImplemented(Json.obj("message" -> s"This service does not currently support the '${authRequest.regime}' tax regime"))
+        case None => Future successful Forbidden("No SA taxpayer found with the given UTR and postcode")
       }
     }
   }
@@ -58,16 +49,16 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
   def getRequests() = saClientsOrAgents.async { implicit request =>
     request match {
       case AgentRequest(agentCode, _, _) =>
-        authorisationRequestRepository.list(agentCode).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+        authorisationRequestRepository.list(agentCode).flatMap(toEnrichedRequest).map(toHalResource).map(Ok(_)(halWriter))
       case SaClientRequest(saUtr, _) =>
-        authorisationRequestRepository.list("sa", saUtr.value).flatMap(enrich).map(toHalResource).map(Ok(_)(halWriter))
+        authorisationRequestRepository.list("sa", saUtr.value).flatMap(toEnrichedRequest).map(toHalResource).map(Ok(_)(halWriter))
     }
   }
 
   def getRequest(requestId: String) = onlyForSaClients.async { implicit request =>
     val id = BSONObjectID(requestId)
     authorisationRequestRepository.findById(id).flatMap {
-      case Some(r) if r.clientSaUtr == request.saUtr => enrich(List(r)).map(_.head).map(toHalResource).map(Ok(_)(halWriter))
+      case Some(r) if r.clientSaUtr == request.saUtr => toEnrichedRequest(List(r)).map(_.head).map(toHalResource).map(Ok(_)(halWriter))
       case Some(r) => Future successful Forbidden
       case None => Future successful NotFound
     }
@@ -86,39 +77,20 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     }
   }
 
-  private def enrich(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
-    val eventuallyNames = namesByUtr(requests.map(_.clientSaUtr).distinct)
+  private def toEnrichedRequest(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[EnrichedAgentClientAuthorisationRequest]] = {
+    val eventuallyNames = saLookupService lookupNamesByUtr requests.map(_.clientSaUtr).distinct
     val eventuallyAgentDetails = userDetails(requests)
     for {
       names <- eventuallyNames
       agentUserDetails <-  eventuallyAgentDetails
       requestsWithNames = requests zip agentUserDetails
     } yield {
-      requestsWithNames map(r => enrich(r._1, names, r._2))
+      requestsWithNames map(r => EnrichedAgentClientAuthorisationRequest.from(r._1, names, r._2))
     }
   }
 
-  def userDetails(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[UserDetails]] = {
+  private def userDetails(requests: List[AgentClientAuthorisationRequest])(implicit hc: HeaderCarrier): Future[List[UserDetails]] = {
     Future sequence requests.map(r => userDetailsConnector.userDetails(r.agentUserDetailsLink))
-  }
-
-  private def enrich(request: AgentClientAuthorisationRequest, names: Map[SaUtr, Option[String]], agentUserDetails: UserDetails): EnrichedAgentClientAuthorisationRequest = {
-    EnrichedAgentClientAuthorisationRequest(
-      id = request.id.stringify,
-      agentCode = request.agentCode,
-      regime = request.regime,
-      clientRegimeId = request.clientRegimeId,
-      clientFullName = names(request.clientSaUtr),
-      agentName = agentUserDetails.agentName,
-      agentFriendlyName = agentUserDetails.agentFriendlyName,
-      events = request.events)
-  }
-
-  private def namesByUtr(utrs: List[SaUtr])(implicit hc: HeaderCarrier): Future[Map[SaUtr, Option[String]]] = {
-    val eventuallyNames = Future sequence utrs.map(saLookupService.lookupByUtr)
-    eventuallyNames.map({ nameList =>
-      (utrs zip nameList).toMap
-    })
   }
 
   private def toHalResource(requests: List[EnrichedAgentClientAuthorisationRequest]): HalResource = {
@@ -132,5 +104,4 @@ class AuthorisationRequestController(authorisationRequestRepository: Authorisati
     val links = HalLinks(Vector(HalLink("self", s"${uk.gov.hmrc.agentclientauthorisation.controllers.routes.AuthorisationRequestController.getRequests().url}/${request.id}")))
     HalResource(links, Json.toJson(request).as[JsObject])
   }
-
 }

@@ -41,7 +41,7 @@ class SaLookupController(authConnector: AuthConnector, saLookupService: SaLookup
   }
 
   private def lookup(saUtr: SaUtr, postcode: String)(implicit hc: HeaderCarrier): Future[Result] =
-    saLookupService.lookupByUtrAndPostcode(saUtr, postcode).map {
+    saLookupService.lookupNameByUtrAndPostcode(saUtr, postcode).map {
       case Some(name) =>
         Ok(Json.obj("name" -> name))
       case None =>
