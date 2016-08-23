@@ -17,7 +17,7 @@ Verb | Path | Description
 ```GET```| ```/requests```| Retrieve the authorisation requests for the logged-in agency
 ```POST```| ```/requests```|  Created a new authorisation request for the designated client
 ```POST```| ```/requests/:request-id/cancel```| Cancel an previous authorisation request
-```GET```| ```/client/:regime/:regime-id/:postcode```| Look up a clients full name
+```GET```| ```/clients/:regime/:regime-id?postcode=:postcode```| Look up a clients full name
 
 
 ###Client Oriented API
@@ -143,7 +143,7 @@ Reasons for 403 response may include
  * The cancel request has been made by anyone other than the originating agentCode
 
 
-####GET /client/:regime/:regime-id/:postcode
+####GET /clients/:regime/:regime-id?postcode=:postcode
 
 Path Parameter | Example Value
 ---|---
