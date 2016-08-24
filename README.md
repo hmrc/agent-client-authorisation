@@ -10,6 +10,10 @@ This code is open source software licensed under the [Apache 2.0 License]("http:
 API Overview
 ===
 
+###Note
+
+The API described here is our current API design. The actual API implemented by the code in this repository does not yet match the API design described here.
+
 ###Agent Oriented API
 
 Verb | Path | Description
