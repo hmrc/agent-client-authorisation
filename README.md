@@ -10,6 +10,10 @@ This code is open source software licensed under the [Apache 2.0 License]("http:
 API Overview
 ===
 
+###Note
+
+The API described here is our current API design. The actual API implemented by the code in this repository does not yet match the API design described here.
+
 ###Agent Oriented API
 
 Verb | Path | Description
@@ -17,7 +21,7 @@ Verb | Path | Description
 ```GET```| ```/requests```| Retrieve the authorisation requests for the logged-in agency
 ```POST```| ```/requests```|  Created a new authorisation request for the designated client
 ```POST```| ```/requests/:request-id/cancel```| Cancel an previous authorisation request
-```GET```| ```/client/:regime/:regime-id/:postcode```| Look up a clients full name
+```GET```| ```/clients/:regime/:regime-id```| Look up a clients full name
 
 
 ###Client Oriented API
@@ -143,13 +147,17 @@ Reasons for 403 response may include
  * The cancel request has been made by anyone other than the originating agentCode
 
 
-####GET /client/:regime/:regime-id/:postcode
+####GET /clients/:regime/:regime-id
 
 Path Parameter | Example Value
 ---|---
 ```regime``` | 'sa'
 ```regime id``` | "SA_UTR"
-```postcode``` | "BN29UH"
+
+Header | Example value
+```X-Postcode``` | "BN29UH"
+
+The postcode is a security token to allow HMRC to check that the caller is in possession of a known fact about the client before HMRC reveals the client's name to the caller.
 
 Status | Meaning
 ---|---
