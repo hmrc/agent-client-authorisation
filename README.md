@@ -13,9 +13,10 @@ API Overview (Iteration 1 - Agent Led)
 
 Verb | Path | Description
 ---|---|---|---
-```GET```| ```/agent-client-authorisation/requests```| Retrieve the authorisation requests for the logged-in agency or client
-```POST```| ```/agent-client-authorisation/requests```|  Created a new authorisation request for the designated recipient
-```POST```| ```/agent-client-authorisation/requests/:request-id/:status```| Attempt to alter the request status to a new state
+```GET```| ```/agent-client-authorisation/invitations```| Retrieve the authorisation requests for the logged-in agency or client
+```POST```| ```/agent-client-authorisation/invitations```|  Created a new authorisation request for the designated recipient
+```POST```| ```/agent-client-authorisation/invitations/:request-id/:status```| Attempt to alter the request status to a new state
+```GET```| ```/agent-client-authorisation```| ??? Sensible entry point TBC agent-details or next steps. Informtion about the agency and the options that are available to the agency  ???
 
 
 ###Authorisation Request Statuses
@@ -23,12 +24,12 @@ TODO: Check the language used for these
 
 Statuses  | Meaning
 ------- | -------
-```pending``` | The request has been created, it has not been Accepted or Rejected by the recipient. Only the service can set this status
+```pending``` | The request has been created, it has not been accepted or rejected by the recipient. Only the service can set this status
 ```accepted``` | The recipient has accepted the request. Only the recipient can set this status
 ```rejected``` | The recipient has rejected the request. Only the recipient can set this status
 ```cancelled``` | The agency has cancelled the request. Only the agency can set this status 
 
-###Authorisation Request Model
+###Authorisation Invitation Model
 Only valid state transitions for the user viewing the request (accept, reject, cancel) will be present.
 
 ```
@@ -42,15 +43,14 @@ Only valid state transitions for the user viewing the request (accept, reject, c
   "created": "2016-06-27T01:55:28+00.00",
   "lastUpdated": "2016-07-02T01:55:28+00.00",
   "regime" : "sa",
-  "arn" : "123456789",  
   "agencyName" : "Sally Hughes Accountants",
   "agentName" : "Bob McCratchet",  
-  "clientRegimeId" : "123456789",  
-  "clientFullName" : "John Smith"
+  "clientRegimeId" : "123456789"
 }
 ```
 
-###GET /agent-client-authorisation/requests
+###GET /agent-client-authorisation/agencies/:id/invitations
+###GET /agent-client-authorisation/customer;sa=utr
 
 Status | Meaning
 ---|---
@@ -76,7 +76,7 @@ TODO add a curl axample
 }
 ```
 
-####POST /agent-client-authorisation/requests
+####POST /agent-client-authorisation/agencies/:id/invitations
 
 Body Parameters | Example Value
 ---|---
@@ -105,7 +105,7 @@ TODO add a curl axample
 add location headers etc
 ```
 
-####POST /agent-client-authorisation/requests/:request-id/:status
+####PUT /agent-client-authorisation/agencies/:id/invitations/:invitation-id/:status
 Used to cancel the request
 
 Path Parameters | Example Value
