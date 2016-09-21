@@ -7,30 +7,15 @@ Agent Client Authorisation
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")
 
-API Overview
+API Overview (Iteration 1 - Agent Led)
 ===
 
-###Note
-
-The API described here is our current API design. The actual API implemented by the code in this repository does not yet match the API design described here.
-
-###Agent Oriented API
 
 Verb | Path | Description
 ---|---|---|---
-```GET```| ```/requests```| Retrieve the authorisation requests for the logged-in agency
-```POST```| ```/requests```|  Created a new authorisation request for the designated client
-```POST```| ```/requests/:request-id/cancel```| Cancel an previous authorisation request
-```GET```| ```/clients/:regime/:regime-id```| Look up a clients full name
-
-
-###Client Oriented API
-
-Verb | Path | Description
----|---|---|---
-```GET```| ```/requests```| Retrieve the authorisation requests for the client
-```GET```| ```/requests/:request-id```| Retrieve the authorisation request
-```POST```| ```/requests/:request-id/:status```| Accept or Reject an authorisation request where status can be [accept, reject]
+```GET```| ```/agent-client-authorisation/requests```| Retrieve the authorisation requests for the logged-in agency or client
+```POST```| ```/agent-client-authorisation/requests```|  Created a new authorisation request for the designated recipient
+```POST```| ```/agent-client-authorisation/requests/:request-id/:status```| Attempt to alter the request status to a new state
 
 
 ###Authorisation Request Statuses
@@ -38,12 +23,10 @@ TODO: Check the language used for these
 
 Statuses  | Meaning
 ------- | -------
-```Pending``` | The request has been created, it has not yet Expired nor been Accepted or Rejected by the client. Only the service can set this status
-```Accepted``` | The client has accepted the reuqest. Only the client can set this status
-```Rejected``` | The client has rejected the reuqest. Only the client can set this status
-```Cancelled``` | The agent has cancelled the request. Only the agent can set this status (can an agent do this after the request has been accepted)
-```Expired```| The request has not been actioned and the request is no longer available for decisioning
-
+```pending``` | The request has been created, it has not been Accepted or Rejected by the recipient. Only the service can set this status
+```accepted``` | The recipient has accepted the request. Only the recipient can set this status
+```rejected``` | The recipient has rejected the request. Only the recipient can set this status
+```cancelled``` | The agency has cancelled the request. Only the agency can set this status 
 
 ###Authorisation Request Model
 Only valid state transitions for the user viewing the request (accept, reject, cancel) will be present.
@@ -56,38 +39,33 @@ Only valid state transitions for the user viewing the request (accept, reject, c
     "reject": {"href": "/url/to/reject/this/request"},
     "cancel": {"href": "/url/to/cancel/this/request"}
   },
-  "status": "Accepted",
   "created": "2016-06-27T01:55:28+00.00",
   "lastUpdated": "2016-07-02T01:55:28+00.00",
   "regime" : "sa",
-  "agentCode" : "123456789",  
-  "agentFriendlyName" : "Sally Huges Accountants",
+  "arn" : "123456789",  
+  "agencyName" : "Sally Hughes Accountants",
   "agentName" : "Bob McCratchet",  
   "clientRegimeId" : "123456789",  
   "clientFullName" : "John Smith"
 }
 ```
 
-Agent Oriented API Detail
----
-###GET /requests
+###GET /agent-client-authorisation/requests
 
 Status | Meaning
 ---|---
 200 | Ok, return 0 or more client request (0 being an empty list of clients)
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
-500 | All 5xx reponses are transposed to 500
+500 | All 5xx responses are transposed to 500
 
 ####request parameters
 *Note: This is just indicative - until we have some verified customer need*
-
+*ATTENTION!! Does auth convert ggAgentCodes to ARNs??*
 Parameter | Meaning
 ---|---
-status | filter requests by status == 'Accepted'
+status | filter requests by status == 'accepted'
 clientRegimeId | filter requests by regimeId
 regime | filter requests by regime
-agentCode | filter requests by regime
-created | filter requests by time created
 
 
 ```
@@ -98,23 +76,28 @@ TODO add a curl axample
 }
 ```
 
-####POST /requests
+####POST /agent-client-authorisation/requests
 
 Body Parameters | Example Value
 ---|---
 ```regime``` | 'sa'
 ```clientRegimeId``` | "1234567890"
-```agentCode``` | "123456789"
-```postcode``` | "N167PJ"
 
 Status | Meaning
 ---|---
-201 | Created, creation of duplicate requests is not prohibited
-400 | Missing data from the post request body
+201 | Created, creation of duplicate requests is allowed
+400 | Missing data from the post request body (JSON)
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
-403 | The request will not be fulfilled (the agent must have the requisite active enrolments and the client must be registered for that tax regime)
-403 | Postcode matching fails
-500 | All 5xx reponses are transposed to 500
+403 | The request will not be fulfilled (TBC: the agent must have the requisite active enrolments and/or the client must be registered for that tax regime)
+500 | All 5xx responses are transposed to 500
+
+```
+Example Request
+{
+  "regime" : "sa",
+  "clientRegimeId" : "123456789"
+}
+```
 
 ```
 Example Response
@@ -122,13 +105,13 @@ TODO add a curl axample
 add location headers etc
 ```
 
-####POST /requests/:request-id/:status
-Used to cancel the agents request, canceling an 'Expired' request has no effect
+####POST /agent-client-authorisation/requests/:request-id/:status
+Used to cancel the request
 
 Path Parameters | Example Value
 ---|---
 ```requestId``` | '213456tde45'
-```status``` | cancel (this is the only valid status change the agent can make)
+```status``` | cancelled (this is the only valid status change the agent can make)
 
 Status | Meaning
 ---|---
@@ -136,83 +119,12 @@ Status | Meaning
 401 | The agent must be authenticated and authorised (logged-in) to use this resource
 403 | The request will not be fulfilled (see below)
 404 | The status was not a valid value
-500 | All 5xx reponses are transposed to 500
+500 | All 5xx responses are transposed to 500
 
 Reasons for 403 response may include
  
- * The agent does not have the requisite active enrolments 
+ * The agency does not have the requisite active enrolments 
  * The client is not registered for that tax regime
- * The agent has tried to cancel a request that is not in the 'Pending' state
- * The agent has tried to update the status of a request to anything other than 'Cancelled'
- * The cancel request has been made by anyone other than the originating agentCode
-
-
-####GET /clients/:regime/:regime-id
-
-Path Parameter | Example Value
----|---
-```regime``` | 'sa'
-```regime id``` | "SA_UTR"
-
-Header | Example value
-```X-Postcode``` | "BN29UH"
-
-The postcode is a security token to allow HMRC to check that the caller is in possession of a known fact about the client before HMRC reveals the client's name to the caller.
-
-Status | Meaning
----|---
-200 | Ok
-401 | The agent must be authenticated and authorised (logged-in) to use this resource
-403 | The request will not be fulfilled. The combination regime, regime-id and postcode did not result in a valid match
-500 | All 5xx reponses are transposed to 500
-
-```
-Example Response
-TODO add a curl axample
-{
-    "fullName": "John Smith"
-}
-```
-
-Client API Details
----
-
-####GET /requests
-*Note: query parameters could be included if needed by clients*
-
-Status | Meaning
----|---
-200 | Ok
-401 | The client must be logged-in
-500 | All 5xx reponses are transposed to 500
-
-```
-Example Response
-TODO add a curl axample
-{
-	"requests": [{RequestModel}, {RequestModel}]}]
-}
-```
-
-####POST /requests/:request-id/:status
-Used to accept and reject an authorisation request. Accepting an already 'accepted' request has no effect, any other status update to a decisioned request is Forbidden.
-
-Path Parameters | Example Value
----|---
-```request id``` | '213456tde45'
-```status``` | accept or reject
-
-Status | Meaning
----|---
-200 | Ok
-401 | The client must be logged-in
-403 | The request will be not fulfilled or is no longer available for decisioning (see below)
-500 | All 5xx reponses are transposed to 500
-
-Reasons for 403 response my include
- 
- * The client is not registered for that tax regime
+ * The agency has tried to update the status of a request to anything other than 'Cancelled'
  * The client has tried to update the status of a request to anything other than 'Accepted' or 'Rejected'
- * The request is not in the 'Pending' state
- * The request has either been 'Cancelled' or has 'Expired'
- * The accept request was not made for the designated client of the request
+ * The cancel request has been made by anyone other than the originating agentCode
