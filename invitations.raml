@@ -1,0 +1,145 @@
+#%RAML 1.0
+title: Invitations API
+baseUri: https://gov.uk/agent-client-authorisation/
+version: v1
+mediaType: application/json
+types:
+  Status:
+    description: The statuses that an Invitation can have
+    type: string
+    enum: [ pending, accepted, rejected, cancelled ]
+  Invitation:
+    type: object
+    description: |
+         An invitation represents a request from an Agency to a Customer to permit the Agency to act on the
+         Customer's behalf when dealing wtih HMRC
+    properties:
+      created: 
+        type: datetime-only
+      lastUpdated:
+        type: datetime-only
+      regime:
+        description: The tax regime for which authorisation is being requested. N.B. this list will expand.
+        type: string
+        enum: [ sa ]
+      agencyName:
+        description: Name of the Agency requesting authorisation.
+        type: string
+      agentName:
+        description: Name of the Agent requesting authorisation.
+        type: string
+      status:
+        type: Status  
+
+/agencies/{arn}/invitations:
+    get: 
+      description: Get the list of invitations for this agency.
+      queryParameters:
+        status:
+          description: filter invitations by status.
+          type: Status
+      responses:
+        200:
+          description: A list of invitations.
+          body: Invitation[]
+        204:
+          description: No requests matched the search criteria.
+        401:
+          description: The caller must be authenticated and authorised (logged-in) to use this resource
+    post:
+      description: Create a new invitation.
+      body: 
+        type: Status
+      responses:
+        201:
+          description: The invitation was successfully created.
+          headers:
+            Location:
+              example: /agencies/A123456/invitation/INV123456
+        401:
+          description: The caller must be authenticated and authorised (logged-in) to use this resource
+        403:
+          description: |
+            The request will not be fulfilled. Reasons for this may include
+               * The agency does not have the requisite active enrolments 
+               * The client is not registered for that tax regime
+    /{invitationId}:
+      delete:
+        description: Cancel an invitation.
+        responses:
+          204:
+            description: Invitation has been cancelled.
+          401:
+            description: The caller must be authenticated and authorised (logged-in) to use this resource
+          404:
+            description: The invitation with the specified id does not exist.
+      get:
+        description: Retrieve an invitation.
+        responses:
+          200:
+            description: Returns the invitation.
+            body:
+              type: Invitation
+          401:
+            description: The caller must be authenticated and authorised (logged-in) to use this resource
+          404:
+            description: The invitation with the specified id does not exist.
+      uriParameters:
+        invitationId:
+          description: The id of the invitation.
+          type: string
+
+/customers/{id}/invitations:
+    get:
+      queryParameters:
+        status:
+          description: filter invitations by status.
+          type: Status
+      responses:
+        200:
+          description: A list of invitations.
+          body: Invitation[]
+        204:
+          description: No requests matched the search criteria.
+        401:
+          description: The caller must be authenticated and authorised (logged-in) to use this resource
+    uriParameters:
+      id:
+        description: Customer identifier.
+        type: string
+    /{invitationId}:
+      get:
+        description: Retrieve an invitation.
+        responses:
+          200:
+            description: Returns the invitation.
+            body:
+              type: Invitation
+          401:
+            description: The caller must be authenticated and authorised (logged-in) to use this resource
+          404:
+            description: The invitation with the specified id does not exist.
+      uriParameters:
+        invitationId:
+          description: The id of the invitation.
+          type: string
+      /accept:
+        description: Accept an invitation.
+        put:
+          responses:
+            204:
+              description: Invitation has been accepted.
+            401:
+              description: The caller must be authenticated and authorised (logged-in) to use this resource
+            404:
+              description: The invitation with the specified id does not exist.
+      /reject:
+        description: Accept an invitation.
+        put:
+          responses:
+            204:
+              description: Invitation has been rejected.
+            401:
+              description: The caller must be authenticated and authorised (logged-in) to use this resource
+            404:
+              description: The invitation with the specified id does not exist.
