@@ -23,9 +23,11 @@ types:
          Customer's behalf when dealing wtih HMRC
     properties:
       created: 
-        type: datetime-only
+        type: datetime
+        format: rfc2616
       lastUpdated:
-        type: datetime-only
+        type: datetime
+        format: rfc2616
       regime:
         description: The tax regime for which authorisation is being requested. N.B. this list will expand.
         type: string
@@ -51,7 +53,7 @@ types:
           customerRegimeId: "123456789",
           status: "accepted"
 
-/agencies/{arn}/invitations:
+/agencies/{mtdArn}/invitations/sent:
     get:
       description: Get the list of invitations for this agency.
       queryParameters:
@@ -74,7 +76,7 @@ types:
     post:
       description: Create a new invitation.
       body:
-        type: Status
+        type: Invitation
         example: 
           newInvitation: |
             {
@@ -86,7 +88,7 @@ types:
           description: The invitation was successfully created.
           headers:
             Location:
-              example: /agencies/A123456/invitation/INV123456
+              example: /agencies/A123456/invitations/sent/INV123456
         401:
           description: The caller must be authenticated and authorised (logged-in) to use this resource
         403:
@@ -94,6 +96,10 @@ types:
             The request will not be fulfilled. Reasons for this may include
                * The agency does not have the requisite active enrolments
                * The customer is not registered for that tax regime
+      uriParameters:
+        mtdArn:
+          description: The MTD platform Agent Reference Number
+          type: string
     /{invitationId}:
       delete:
         description: Cancel an invitation.
@@ -135,7 +141,7 @@ types:
           description: The id of the invitation.
           type: string
 
-/customers/{id}/invitations:
+/customers/{id}/invitations/received:
     get:
       queryParameters:
         status:
