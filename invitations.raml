@@ -5,7 +5,15 @@ version: v1
 mediaType: application/json
 types:
   Status:
-    description: The statuses that an Invitation can have
+    description: |
+      The statuses that an Invitation can have
+
+        Status  | Meaning
+        ------- | -------
+        ```pending``` | The invitation has been created, it has not been accepted or rejected by the Customer. Only the service can set this status
+        ```accepted``` | The Customer has accepted the invitation. Only the Customer can set this status
+        ```rejected``` | The Customer has rejected the invitation. Only the Customer can set this status
+        ```cancelled``` | The Agency has cancelled the invitation. Only the Agency can set this status
     type: string
     enum: [ pending, accepted, rejected, cancelled ]
   Invitation:
@@ -22,6 +30,9 @@ types:
         description: The tax regime for which authorisation is being requested. N.B. this list will expand.
         type: string
         enum: [ sa ]
+      customerRegimeId:
+        description: The identifier of the Customer within the regime, e.g. UTR for SA.
+        type: string
       agencyName:
         description: Name of the Agency requesting authorisation.
         type: string
@@ -29,27 +40,47 @@ types:
         description: Name of the Agent requesting authorisation.
         type: string
       status:
-        type: Status  
+        type: Status
+    example:
+      accepted:
+          created: "2016-06-27T01:55:28+00.00",
+          lastUpdated: "2016-07-02T01:55:28+00.00",
+          regime: "sa",
+          agencyName: "Sally Hughes Accountants",
+          agentName: "Bob McCratchet",
+          customerRegimeId: "123456789",
+          status: "accepted"
 
 /agencies/{arn}/invitations:
-    get: 
+    get:
       description: Get the list of invitations for this agency.
       queryParameters:
         status:
           description: filter invitations by status.
           type: Status
+        customerRegimeId:
+          type: string
+        regime:
+          type: string
+          enum: [ sa ]
       responses:
         200:
           description: A list of invitations.
           body: Invitation[]
         204:
-          description: No requests matched the search criteria.
+          description: No invitations matched the search criteria.
         401:
           description: The caller must be authenticated and authorised (logged-in) to use this resource
     post:
       description: Create a new invitation.
-      body: 
+      body:
         type: Status
+        example: 
+          newInvitation: |
+            {
+              "regime" : "sa",
+              "customerRegimeId" : "123456789"
+            }
       responses:
         201:
           description: The invitation was successfully created.
@@ -61,8 +92,8 @@ types:
         403:
           description: |
             The request will not be fulfilled. Reasons for this may include
-               * The agency does not have the requisite active enrolments 
-               * The client is not registered for that tax regime
+               * The agency does not have the requisite active enrolments
+               * The customer is not registered for that tax regime
     /{invitationId}:
       delete:
         description: Cancel an invitation.
@@ -80,6 +111,21 @@ types:
             description: Returns the invitation.
             body:
               type: Invitation
+              example:
+                pending: |
+                  {
+                    "_links": {
+                      "self": {"href": "/url/of/this/invitation"},
+                      "cancel": {"href": "/url/to/cancel/this/invitation"}
+                    },
+                    "created": "2016-06-27T01:55:28+00.00",
+                    "lastUpdated": "2016-07-02T01:55:28+00.00",
+                    "regime" : "sa",
+                    "agencyName" : "Sally Hughes Accountants",
+                    "agentName" : "Bob McCratchet",
+                    "customerRegimeId" : "123456789",
+                    "status": "pending"
+                  }
           401:
             description: The caller must be authenticated and authorised (logged-in) to use this resource
           404:
@@ -100,7 +146,7 @@ types:
           description: A list of invitations.
           body: Invitation[]
         204:
-          description: No requests matched the search criteria.
+          description: No invitations matched the search criteria.
         401:
           description: The caller must be authenticated and authorised (logged-in) to use this resource
     uriParameters:
@@ -115,6 +161,22 @@ types:
             description: Returns the invitation.
             body:
               type: Invitation
+              example:
+                pending: |
+                  {
+                    "_links": {
+                      "self": {"href": "/url/of/this/invitation"},
+                      "accept": {"href": "/url/to/accept/this/invitation"},
+                      "reject": {"href": "/url/to/reject/this/invitation"}
+                    },
+                    "created": "2016-06-27T01:55:28+00.00",
+                    "lastUpdated": "2016-07-02T01:55:28+00.00",
+                    "regime" : "sa",
+                    "agencyName" : "Sally Hughes Accountants",
+                    "agentName" : "Bob McCratchet",
+                    "customerRegimeId" : "123456789",
+                    "status": "pending"
+                  }
           401:
             description: The caller must be authenticated and authorised (logged-in) to use this resource
           404:
