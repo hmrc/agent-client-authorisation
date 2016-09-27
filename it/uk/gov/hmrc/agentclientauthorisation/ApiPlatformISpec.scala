@@ -17,14 +17,17 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
+import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
   "/api/definition" should {
     "return the defintion JSON" in {
-      val definition = new Resource(s"/api/definition", port).get().json
+      val response: HttpResponse = new Resource(s"/agent-client-authorisation/api/definition", port).get()
+      response.status shouldBe 200
 
-      definition \ "api" should not be null
+      val definition = response.json
+      (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
     }
   }
 }
