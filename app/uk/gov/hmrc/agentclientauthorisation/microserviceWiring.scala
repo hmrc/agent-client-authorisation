@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongo
 import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
 import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
+import uk.gov.hmrc.api.controllers.DocumentationController
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
@@ -64,7 +65,6 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
   lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
   lazy val userDetailsConnector = new UserDetailsConnector(WSHttp)
-
 }
 
 trait ControllerRegistry {
@@ -72,7 +72,8 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository, saLookupService, authConnector, userDetailsConnector),
-    classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService)
+    classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService),
+    classOf[DocumentationController] -> DocumentationController
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]

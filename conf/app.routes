@@ -7,3 +7,6 @@ GET     /requests                          @uk.gov.hmrc.agentclientauthorisation
 POST    /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest()
 
 GET     /lookup/sa/:saUtr/:postcode        @uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController.authoriseAndLookup(saUtr: uk.gov.hmrc.domain.SaUtr, postcode: String)
+
+# Required by API Platform
+GET     /api/definition                    @uk.gov.hmrc.api.controllers.DocumentationController.definition()
