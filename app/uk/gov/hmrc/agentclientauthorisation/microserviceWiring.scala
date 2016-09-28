@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongo
 import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
 import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
 import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
+import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.api.controllers.DocumentationController
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -65,6 +66,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
   lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
   lazy val userDetailsConnector = new UserDetailsConnector(WSHttp)
+  lazy val slConnector = ServiceLocatorConnector(WSHttp)
 }
 
 trait ControllerRegistry {
