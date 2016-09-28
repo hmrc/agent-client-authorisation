@@ -28,18 +28,17 @@ types:
       lastUpdated:
         type: datetime
         format: rfc2616
+      arn:
+        description: The MTD platform Agent Reference Number
+        type: string
       regime:
         description: The tax regime for which authorisation is being requested. N.B. this list will expand.
-        type: string
-        enum: [ sa ]
+        type: Regime
       customerRegimeId:
         description: The identifier of the Customer within the regime, e.g. UTR for SA.
         type: string
-      agencyName:
-        description: Name of the Agency requesting authorisation.
-        type: string
-      agentName:
-        description: Name of the Agent requesting authorisation.
+      postcode:
+        description: The customer's postcode.
         type: string
       status:
         type: Status
@@ -47,13 +46,17 @@ types:
       accepted:
           created: "2016-06-27T01:55:28+00.00",
           lastUpdated: "2016-07-02T01:55:28+00.00",
+          arn: "123451234512345",
           regime: "sa",
-          agencyName: "Sally Hughes Accountants",
-          agentName: "Bob McCratchet",
           customerRegimeId: "123456789",
           status: "accepted"
+          postcode: "SW1A 0PW"
+  Regime:
+    description:
+    type: string
+    enum: [ sa, ct ]
 
-/agencies/{mtdArn}/invitations/sent:
+/agencies/{arn}/invitations/sent:
     get:
       description: Get the list of invitations for this agency.
       queryParameters:
@@ -63,16 +66,15 @@ types:
         customerRegimeId:
           type: string
         regime:
-          type: string
-          enum: [ sa ]
+          type: Regime
       responses:
         200:
           description: A list of invitations.
           body: Invitation[]
-        204:
-          description: No invitations matched the search criteria.
         401:
           description: The caller must be authenticated and authorised (logged-in) to use this resource
+        403:
+          description: The caller is not permitted to see this list of invitations.
     post:
       description: Create a new invitation.
       body:
@@ -81,7 +83,8 @@ types:
           newInvitation: |
             {
               "regime" : "sa",
-              "customerRegimeId" : "123456789"
+              "customerRegimeId" : "123456789",
+              "postcode": "SW1AA 0PW"
             }
       responses:
         201:
@@ -96,8 +99,9 @@ types:
             The request will not be fulfilled. Reasons for this may include
                * The agency does not have the requisite active enrolments
                * The customer is not registered for that tax regime
+               * The supplied postcode is not the customer's
       uriParameters:
-        mtdArn:
+        arn:
           description: The MTD platform Agent Reference Number
           type: string
     /{invitationId}:
@@ -108,6 +112,8 @@ types:
             description: Invitation has been cancelled.
           401:
             description: The caller must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The caller is not permitted to delete this invitation.
           404:
             description: The invitation with the specified id does not exist.
       get:
@@ -126,14 +132,15 @@ types:
                     },
                     "created": "2016-06-27T01:55:28+00.00",
                     "lastUpdated": "2016-07-02T01:55:28+00.00",
+                    "arn": "123451234512345",
                     "regime" : "sa",
-                    "agencyName" : "Sally Hughes Accountants",
-                    "agentName" : "Bob McCratchet",
                     "customerRegimeId" : "123456789",
                     "status": "pending"
                   }
           401:
             description: The caller must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The caller is not permitted to see this invitation.
           404:
             description: The invitation with the specified id does not exist.
       uriParameters:
@@ -151,10 +158,10 @@ types:
         200:
           description: A list of invitations.
           body: Invitation[]
-        204:
-          description: No invitations matched the search criteria.
         401:
           description: The caller must be authenticated and authorised (logged-in) to use this resource
+        403:
+          description: The caller is not permitted to see this invitation.
     uriParameters:
       id:
         description: Customer identifier.
@@ -177,14 +184,15 @@ types:
                     },
                     "created": "2016-06-27T01:55:28+00.00",
                     "lastUpdated": "2016-07-02T01:55:28+00.00",
+                    "arn": "123451234512345",
                     "regime" : "sa",
-                    "agencyName" : "Sally Hughes Accountants",
-                    "agentName" : "Bob McCratchet",
                     "customerRegimeId" : "123456789",
                     "status": "pending"
                   }
           401:
             description: The caller must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The caller is not permitted to see this invitation.
           404:
             description: The invitation with the specified id does not exist.
       uriParameters:
@@ -199,6 +207,8 @@ types:
               description: Invitation has been accepted.
             401:
               description: The caller must be authenticated and authorised (logged-in) to use this resource
+            403:
+              description: The caller is not permitted to accept this invitation.
             404:
               description: The invitation with the specified id does not exist.
       /reject:
@@ -209,5 +219,7 @@ types:
               description: Invitation has been rejected.
             401:
               description: The caller must be authenticated and authorised (logged-in) to use this resource
+            403:
+              description: The caller is not permitted to reject this invitation.
             404:
               description: The invitation with the specified id does not exist.
