@@ -125,7 +125,7 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def oid: String
-  def agentCode: String
+  def arn: String
   protected var saAgentReference: Option[SaAgentReference] = None
 
   def andGettingEnrolmentsFailsWith500(): A = {
@@ -190,8 +190,8 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   }
 
   def isLoggedIn(): A = {
-    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
-    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$arn")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$arn")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
@@ -204,8 +204,8 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
          |  },
          |  "accounts":{
          |    "agent":{
-         |      "link":"/agent/$agentCode",
-         |      "agentCode":"$agentCode",
+         |      "link":"/agent/$arn",
+         |      "agentCode":"$arn",
          |      "agentUserId":"ZMOQ1hrrP-9ZmnFw0kIA5vlc-mo",
          |      "agentUserRole":"admin",
          |      "payeReference":"HZ1234",

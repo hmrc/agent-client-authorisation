@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 trait SecuredEndpointBehaviours {
   this: UnitSpec with AppAndStubs =>
 
-  def anEndpointAccessibleForSaAgentsOnly(request: => HttpResponse)(implicit me: AgentCode): Unit = {
+  def anEndpointAccessibleForSaAgentsOnly(request: => HttpResponse)(implicit me: Arn): Unit = {
     "return 401 when the requester is not authenticated" in {
       given().user().isNotLoggedIn()
       request.status shouldBe 401
     }
 
     "return 401 when user is not an agent" in {
-      given().client().isLoggedIn("0123456789")
+      given().customer().isLoggedIn("0123456789")
       request.status shouldBe 401
     }
 
@@ -40,9 +40,9 @@ trait SecuredEndpointBehaviours {
     }
   }
 
-  def anEndpointAccessibleForSaClientsOnly(request: => HttpResponse)(implicit me: AgentCode): Unit = {
+  def anEndpointAccessibleForSaClientsOnly(request: => HttpResponse)(implicit me: Arn): Unit = {
     "return 401 when the requester is not authenticated" in {
-      given().client().isNotLoggedIn()
+      given().customer().isNotLoggedIn()
       request.status shouldBe 401
     }
 
@@ -52,7 +52,7 @@ trait SecuredEndpointBehaviours {
     }
   }
 
-  def anEndpointAccessibleForSaAgentsOrSaClients(request: => HttpResponse)(implicit me: AgentCode): Unit = {
+  def anEndpointAccessibleForSaAgentsOrSaClients(request: => HttpResponse)(implicit me: Arn): Unit = {
     "return 401 when the requester is not authenticated" in {
       given().user().isNotLoggedIn()
       request.status shouldBe 401

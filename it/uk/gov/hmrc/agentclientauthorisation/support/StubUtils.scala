@@ -16,25 +16,25 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 
 trait StubUtils {
   me: StartAndStopWireMock =>
 
   class PreconditionBuilder {
-    def agentAdmin(agentCode: String): AgentAdmin = {
-      new AgentAdmin(agentCode, oid = "556737e15500005500eaf68e")
+    def agentAdmin(arn: String): AgentAdmin = {
+      new AgentAdmin(arn, oid = "556737e15500005500eaf68e")
     }
 
-    def agentAdmin(agentCode: AgentCode): AgentAdmin = {
-      agentAdmin(agentCode.value)
+    def agentAdmin(arn: Arn): AgentAdmin = {
+      agentAdmin(arn.arn)
     }
 
     def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {
       new UnknownUser(oid)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f"): Client = {
+    def customer(oid: String = "556737e15500005500eaf68f"): Client = {
       new Client(oid)
     }
   }
@@ -47,7 +47,7 @@ trait StubUtils {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  class AgentAdmin(override val agentCode: String,
+  class AgentAdmin(override val arn: String,
                    override val oid: String)
     extends BaseUser with AgentAuthStubs[AgentAdmin]
 

@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.sa
 
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CesaStubs, Resource}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.test.UnitSpec
 
 class SaLookupISpec extends UnitSpec with AppAndStubs {
-  private val me = AgentCode("ABCDEF12345678")
+  private val me = Arn("ABCDEF12345678")
 
   "GET /lookup/sa/:saUtr/:postcode" should {
     "return name when there is a match" in {

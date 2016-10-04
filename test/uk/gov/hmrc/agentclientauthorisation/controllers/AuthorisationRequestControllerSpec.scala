@@ -47,8 +47,8 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
   implicit val hc = HeaderCarrier()
 
-  val agentCode = AgentCode("123456789012")
-  val clientSaUtr = SaUtr("1234567890")
+  val arn = Arn("123456789012")
+  val customerSaUtr = SaUtr("1234567890")
 
   override protected def beforeEach() = {
     super.beforeEach()
@@ -63,7 +63,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "BB2 2BB"))
+        AgentClientAuthorisationHttpRequest(arn, "sa", "54321", "BB2 2BB"))
 
       val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
 
@@ -75,7 +75,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, "vat", "54321", "AA1 1AA"))
+        AgentClientAuthorisationHttpRequest(arn, "vat", "54321", "AA1 1AA"))
 
       val result: Result = await(controller.createRequest()(FakeRequest().withBody(body)))
 
@@ -86,10 +86,10 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     "propagate exceptions when the repository fails" in {
       givenAgentIsLoggedInAndHasActiveSaEnrolment()
       when(saLookupService.lookupNameByUtrAndPostcode(any[SaUtr], anyString)(any[HeaderCarrier])).thenReturn(Future.successful(Some("name")))
-      when(repository.create(any[AgentCode], anyString, anyString, Matchers.eq("user-details-link"))).thenReturn(Future failed new RuntimeException("dummy exception"))
+      when(repository.create(any[Arn], anyString, anyString, Matchers.eq("AA1 1AA"))).thenReturn(Future failed new RuntimeException("dummy exception"))
 
       val body: JsValue = AgentClientAuthorisationHttpRequest.format.writes(
-        AgentClientAuthorisationHttpRequest(agentCode, "sa", "54321", "AA1 1AA"))
+        AgentClientAuthorisationHttpRequest(arn, "sa", "54321", "AA1 1AA"))
 
       intercept[RuntimeException] {
         await(controller.createRequest()(FakeRequest().withBody(body)))
@@ -101,9 +101,9 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
     "called by an agent" should {
       "return an array of requests even if there is only one" in {
         givenAgentIsLoggedInAndHasActiveSaEnrolment()
-        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
-        when(repository.list(any[AgentCode])).thenReturn(Future successful List(aRequest))
+        val aRequest = Invitation(BSONObjectID.generate, arn, "sa", "1", "A11 1AA", List.empty)
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.customerRegimeId) -> Some("name")))
+        when(repository.list(any[Arn])).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))
         status(result) shouldBe 200
@@ -112,38 +112,39 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
 
       "return only requests made by the logged in agent" in {
         givenAgentIsLoggedInAndHasActiveSaEnrolment()
-        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
-        when(repository.list(agentCode)).thenReturn(Future successful List(aRequest))
+        val aRequest = Invitation(BSONObjectID.generate, arn, "sa", "1", "A11 1AA", List.empty)
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.customerRegimeId) -> Some("name")))
+        when(repository.list(Arn("agentCode"))).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))
         status(result) shouldBe 200
         val requestsJson = jsonBodyOf(result) \ "_embedded" \ "requests"
-        (requestsJson(0) \ "id").as[String] shouldBe aRequest.id.stringify
+        (requestsJson(0) \ "id" \ "$oid").as[String] shouldBe aRequest.id.stringify
         requestsJson.value.size shouldBe 1
       }
     }
 
-    "called by a client" should {
-      "return only requests made to the logged in client" in {
+    "called by a customer" should {
+      "return only requests made to the logged in customer" in {
         givenClientIsLoggedIn()
-        val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "1", "user-details-link", List.empty)
-        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.clientRegimeId) -> Some("name")))
-        when(repository.list("sa", clientSaUtr.value)).thenReturn(Future successful List(aRequest))
+        val aRequest = Invitation(BSONObjectID.generate, arn, "sa", "1", "A11 1AA", List.empty)
+        when(saLookupService.lookupNamesByUtr(any[List[SaUtr]])(any[HeaderCarrier])).thenReturn(Future successful Map(SaUtr(aRequest.customerRegimeId) -> Some("name")))
+        when(repository.list("sa", customerSaUtr.value)).thenReturn(Future successful List(aRequest))
 
         val result: Result = await(controller.getRequests()(FakeRequest()))
         status(result) shouldBe 200
+        print(bodyOf(result))
         val requestsJson = jsonBodyOf(result) \ "_embedded" \ "requests"
-        (requestsJson(0) \ "id").as[String] shouldBe aRequest.id.stringify
+        (requestsJson(0) \ "id" \ "$oid").as[String] shouldBe aRequest.id.stringify
         requestsJson.value.size shouldBe 1
       }
     }
   }
 
   "acceptRequest" should {
-    "update status to Accepted if the request is Pending and was made to the client" in {
+    "update status to Accepted if the request is Pending and was made to the customer" in {
       givenClientIsLoggedIn()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", customerSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
       when(repository.update(aRequest.id, Accepted)).thenReturn(Future successful aRequest)
 
@@ -153,9 +154,9 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       verify(repository).update(aRequest.id, Accepted)
     }
 
-    "respond 403 and not update status if the request is Pending but was made to a different client" in {
+    "respond 403 and not update status if the request is Pending but was made to a different customer" in {
       givenClientIsLoggedIn()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
 
       val result: Result = await(controller.acceptRequest(aRequest.id.stringify)(FakeRequest()))
@@ -169,7 +170,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       val events: List[StatusChangeEvent] = List(
         StatusChangeEvent(DateTime.now.minusDays(1), Pending),
         StatusChangeEvent(DateTime.now, Rejected))
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", events)
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", customerSaUtr.value, "user-details-link", events)
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
 
       val result: Result = await(controller.acceptRequest(aRequest.id.stringify)(FakeRequest()))
@@ -182,7 +183,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
   "rejectRequest" should {
     "update status to Rejected" in {
       givenClientIsLoggedIn()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", customerSaUtr.value, "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
       when(repository.update(aRequest.id, Rejected)).thenReturn(Future successful aRequest)
 
@@ -192,9 +193,9 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       verify(repository).update(aRequest.id, Rejected)
     }
 
-    "respond 403 and not update status if the request is Pending but was made to a different client" in {
+    "respond 403 and not update status if the request is Pending but was made to a different customer" in {
       givenClientIsLoggedIn()
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", "2222222222", "user-details-link", List(StatusChangeEvent(DateTime.now, Pending)))
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
 
       val result: Result = await(controller.rejectRequest(aRequest.id.stringify)(FakeRequest()))
@@ -208,7 +209,7 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
       val events: List[StatusChangeEvent] = List(
         StatusChangeEvent(DateTime.now.minusDays(1), Pending),
         StatusChangeEvent(DateTime.now, Accepted))
-      val aRequest = AgentClientAuthorisationRequest(BSONObjectID.generate, agentCode, "sa", clientSaUtr.value, "user-details-link", events)
+      val aRequest = Invitation(BSONObjectID.generate, arn, "sa", customerSaUtr.value, "user-details-link", events)
       when(repository.findById(aRequest.id)).thenReturn(Future successful Some(aRequest))
 
       val result: Result = await(controller.rejectRequest(aRequest.id.stringify)(FakeRequest()))
@@ -219,12 +220,12 @@ class AuthorisationRequestControllerSpec extends UnitSpec with MockitoSugar with
   }
 
   def givenAgentIsLoggedInAndHasActiveSaEnrolment(): Unit = {
-    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(agentCode), None), "user-details-link", hasActivatedIrSaAgentEnrolment = true))
+    when(authConnector.currentUserInfo()(any(), any())).thenReturn(Future successful UserInfo(Accounts(Some(AgentCode("agentCode")), None), "user-details-link", hasActivatedIrSaAgentEnrolment = true))
     when(userDetailsConnector.userDetails(Matchers.eq("user-details-link"))(any[HeaderCarrier])).thenReturn(UserDetails("Name", Some("agent"), Some("Friendly name")))
   }
 
   def givenClientIsLoggedIn(): Unit = {
-    whenUserInfoIsRequested.thenReturn(Future successful UserInfo(Accounts(None, Some(clientSaUtr)), "user-details-link", hasActivatedIrSaAgentEnrolment = false))
+    whenUserInfoIsRequested.thenReturn(Future successful UserInfo(Accounts(None, Some(customerSaUtr)), "user-details-link", hasActivatedIrSaAgentEnrolment = false))
   }
 
   def whenUserInfoIsRequested(): OngoingStubbing[Future[UserInfo]] = {

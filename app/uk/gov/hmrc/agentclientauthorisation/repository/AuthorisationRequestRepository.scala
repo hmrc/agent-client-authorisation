@@ -21,8 +21,7 @@ import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.json.BSONFormats
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationRequest, AuthorisationStatus, Pending, StatusChangeEvent}
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository, Repository}
 
@@ -30,36 +29,36 @@ import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait AuthorisationRequestRepository extends Repository[AgentClientAuthorisationRequest, BSONObjectID] {
+trait AuthorisationRequestRepository extends Repository[Invitation, BSONObjectID] {
 
-  def create(agentCode: AgentCode, regime: String, clientRegimeId: String, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest]
+  def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation]
 
-  def update(id:BSONObjectID, status:AuthorisationStatus): Future[AgentClientAuthorisationRequest]
+  def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
 
-  def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]]
+  def list(arn: Arn): Future[List[Invitation]]
 
-  def list(regime: String, clientRegimeId: String): Future[List[AgentClientAuthorisationRequest]]
+  def list(regime: String, customerRegimeId: String): Future[List[Invitation]]
 
 }
 
 class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[AgentClientAuthorisationRequest, BSONObjectID]("authorisationRequests", mongo, AgentClientAuthorisationRequest.mongoFormats, ReactiveMongoFormats.objectIdFormats)
-    with AuthorisationRequestRepository with AtomicUpdate[AgentClientAuthorisationRequest] {
+  extends ReactiveRepository[Invitation, BSONObjectID]("authorisationRequests", mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
+    with AuthorisationRequestRepository with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
-    Index(Seq("agentCode" -> IndexType.Ascending)),
-    Index(Seq("clientRegimeId" -> IndexType.Ascending)),
+    Index(Seq("arn" -> IndexType.Ascending)),
+    Index(Seq("customerRegimeId" -> IndexType.Ascending)),
     Index(Seq("requestDate" -> IndexType.Ascending))
   )
 
-  override def create(agentCode: AgentCode, regime: String, clientRegimeId: String, agentUserDetailsLink: String): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
+  override def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
 
-    val request = AgentClientAuthorisationRequest(
+    val request = Invitation(
       id = BSONObjectID.generate,
-      agentCode = agentCode,
+      arn = arn,
       regime = regime,
-      clientRegimeId = clientRegimeId,
-      agentUserDetailsLink = agentUserDetailsLink,
+      customerRegimeId = customerRegimeId,
+      postcode = postcode,
       events = List(StatusChangeEvent(now, Pending))
     )
 
@@ -67,19 +66,19 @@ class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
   }
 
 
-  override def list(agentCode: AgentCode): Future[List[AgentClientAuthorisationRequest]] =
-    find("agentCode" -> agentCode)
+  override def list(arn: Arn): Future[List[Invitation]] =
+    find("arn" -> arn.arn)
 
-  override def list(regime: String, clientRegimeId: String): Future[List[AgentClientAuthorisationRequest]] =
-    find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
+  override def list(regime: String, customerRegimeId: String): Future[List[Invitation]] =
+    find("regime" -> regime, "customerRegimeId" -> customerRegimeId)
 
-  override def update(id: BSONObjectID, status: AuthorisationStatus): Future[AgentClientAuthorisationRequest] = withCurrentTime { now =>
+  override def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
     update.map(_.map(_.updateType.savedValue).get)
   }
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]) = BSONFormats.toBSON(Json.toJson(entity)).get
 
-  override def isInsertion(newRecordId: BSONObjectID, oldRecord: AgentClientAuthorisationRequest): Boolean =
+  override def isInsertion(newRecordId: BSONObjectID, oldRecord: Invitation): Boolean =
     newRecordId != oldRecord.id
 }
