@@ -27,7 +27,7 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with UserDetailsStub with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val arn = Arn("ABCDEF12345678")
 
@@ -45,6 +45,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "/requests" should {
     "create and retrieve authorisation requests" in {
+      pending
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
@@ -99,18 +100,15 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   def createRequests: (SaUtr, SaUtr) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn).isLoggedIn().andHasIrSaAgentEnrolment()
-    userExists(agent)
     val customer1SaUtr = SaUtr("1234567890")
     val customer2SaUtr = SaUtr("1234567891")
-    CesaStubs.saTaxpayerExists(customer1SaUtr)
-    CesaStubs.saTaxpayerExists(customer2SaUtr, "Mrs")
 
 
     note("there should be no requests")
     eventually {
       inside(responseForGetRequests()) { case resp =>
         resp.status shouldBe 200
-        (resp.json \ "_embedded" \ "requests").as[JsArray].value shouldBe 'empty
+        requests(resp.json).value shouldBe 'empty
       }
     }
 
@@ -131,7 +129,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   def requests(response: JsValue) = {
-    (response \ "_embedded" \ "requests").as[JsArray]
+    (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
   def requestId(response: JsValue, saUtr: SaUtr): String =  {

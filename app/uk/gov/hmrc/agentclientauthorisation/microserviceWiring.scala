@@ -20,12 +20,7 @@ import java.net.URL
 
 import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
-import uk.gov.hmrc.agentclientauthorisation.connectors.UserDetailsConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController
 import uk.gov.hmrc.agentclientauthorisation.repository.AuthorisationRequestMongoRepository
-import uk.gov.hmrc.agentclientauthorisation.sa.connectors.CesaIndividualsConnector
-import uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController
-import uk.gov.hmrc.agentclientauthorisation.sa.services.SaLookupService
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.api.controllers.DocumentationController
 import uk.gov.hmrc.mongo.MongoConnector
@@ -62,10 +57,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
   lazy val authorisationRequestRepository = new AuthorisationRequestMongoRepository
-  lazy val cesaIndividualsConnector = new CesaIndividualsConnector(baseUrl("cesa"), WSHttp)
-  lazy val saLookupService = new SaLookupService(cesaIndividualsConnector)
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
-  lazy val userDetailsConnector = new UserDetailsConnector(WSHttp)
   lazy val slConnector = ServiceLocatorConnector(WSHttp)
 }
 
@@ -73,8 +65,6 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[AuthorisationRequestController] -> new AuthorisationRequestController(authorisationRequestRepository, saLookupService, authConnector, userDetailsConnector),
-    classOf[SaLookupController] -> new SaLookupController(authConnector, saLookupService),
     classOf[DocumentationController] -> DocumentationController
   )
 
