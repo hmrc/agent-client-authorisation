@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.libs.json.Json
+import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.Future
 
 class InvitationsController(invitationsRepository: InvitationsRepository) extends BaseController {
 
@@ -35,7 +37,23 @@ class InvitationsController(invitationsRepository: InvitationsRepository) extend
 
   def getSentInvitations(arn: Arn) = Action.async {
     invitationsRepository.list(arn).map { invitations =>
-      Ok(Json.toJson(invitations))
+      Ok(Json.toJson(toHalResource(invitations, arn)))
     }
+  }
+
+  def getSentInvitation(arn: Arn, invitation: String) = Action.async {
+    Future successful NotImplemented
+  }
+
+  private def toHalResource(requests: List[Invitation], arn: Arn): HalResource = {
+    val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
+
+    Hal.embedded("invitations", requestResources:_*) ++
+      HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.InvitationsController.getSentInvitations(arn).url)
+  }
+
+  private def toHalResource(request: Invitation, arn: Arn): HalResource = {
+    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.InvitationsController.getSentInvitation(arn, request.id.stringify).url)))
+    HalResource(links, Json.toJson(request).as[JsObject])
   }
 }
