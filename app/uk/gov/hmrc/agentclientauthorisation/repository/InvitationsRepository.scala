@@ -29,7 +29,7 @@ import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait AuthorisationRequestRepository extends Repository[Invitation, BSONObjectID] {
+trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation]
 
@@ -41,14 +41,13 @@ trait AuthorisationRequestRepository extends Repository[Invitation, BSONObjectID
 
 }
 
-class AuthorisationRequestMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[Invitation, BSONObjectID]("authorisationRequests", mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
-    with AuthorisationRequestRepository with AtomicUpdate[Invitation] {
+class InvitationsMongoRepository(implicit mongo: () => DB)
+  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
+    with InvitationsRepository with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
-    Index(Seq("customerRegimeId" -> IndexType.Ascending)),
-    Index(Seq("requestDate" -> IndexType.Ascending))
+    Index(Seq("customerRegimeId" -> IndexType.Ascending))
   )
 
   override def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>

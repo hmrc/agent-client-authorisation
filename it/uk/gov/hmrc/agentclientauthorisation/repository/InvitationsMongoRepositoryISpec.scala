@@ -29,24 +29,24 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside {
+class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside {
 
   private val now = DateTime.now()
 
-  private def repository = new AuthorisationRequestMongoRepository() {
+  private def repository = new InvitationsMongoRepository() {
     override def withCurrentTime[A](f: (DateTime) => A): A = f(now)
   }
 
 
-  "AuthorisationRequestRepository create" should {
+  "InvitationsMongoRepository create" should {
 
     "create a new StatusChangedEvent of Pending" in {
 
       val arn = Arn("1")
       val customerRegimeId = "1A"
 
-      inside(addRequest((arn, "sa", customerRegimeId, "user-details"))) {
-        case event: Invitation =>
+      inside(addInvitation((arn, "sa", customerRegimeId, "user-details"))) {
+        case event =>
           event.arn shouldBe arn
           event.customerRegimeId shouldBe customerRegimeId
           event.regime shouldBe "sa"
@@ -59,7 +59,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
     "create a new StatusChangedEvent" in {
 
-      val created = addRequest((Arn("2"), "sa", "2A", "user-details"))
+      val created = addInvitation((Arn("2"), "sa", "2A", "user-details"))
       val updated = update(created.id, Accepted)
 
       inside(updated) {
@@ -80,7 +80,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val saUtr1 = "SAUTR3A"
       val vrn2 = "VRN3B"
 
-      val requests = addRequests((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
+      val requests = addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
       update(requests.last.id, Accepted)
 
       val list = listByArn(arn).sortBy(_.customerRegimeId)
@@ -99,7 +99,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
 
     "return elements only for the given agent code" in {
 
-      addRequests((Arn("123A"), "sa", "1234567890", "user-details"), (Arn("123B"), "sa", "1234567891", "user-details"))
+      addInvitations((Arn("123A"), "sa", "1234567890", "user-details"), (Arn("123B"), "sa", "1234567891", "user-details"))
 
       inside(listByArn(Arn("123B")) loneElement) {
         case Invitation(_, Arn("123B"), "sa", "1234567891", "user-details", List(StatusChangeEvent(date, Pending))) =>
@@ -118,7 +118,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val arn = Arn("4")
       val userDetailsLink = "user-details"
 
-      addRequest((arn, regime, regimeId, userDetailsLink))
+      addInvitation((arn, regime, regimeId, userDetailsLink))
 
       listByClientRegimeId(regime, "no-such-id") shouldBe Nil
       listByClientRegimeId("different-regime", regimeId) shouldBe Nil
@@ -131,7 +131,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val arn = Arn("4")
       val userDetailsLink = "user-details"
 
-      addRequest((arn, regime, regimeId, userDetailsLink))
+      addInvitation((arn, regime, regimeId, userDetailsLink))
 
       inside(listByClientRegimeId(regime, regimeId) loneElement) {
         case Invitation(_, `arn`, `regime`, `regimeId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
@@ -148,7 +148,7 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
       val userDetailsLink = "user-details"
 
 
-      addRequests(
+      addInvitations(
         (firstAgent, regime, customerSaUtr, userDetailsLink),
         (secondAgent, regime, customerSaUtr, userDetailsLink),
         (Arn("should-not-show-up"), "sa", "another-customer", userDetailsLink)
@@ -171,16 +171,16 @@ class AuthorisationRequestMongoRepositoryISpec extends UnitSpec with MongoSpecSu
   }
 
 
-  private type Request = (Arn, String, String, String)
+  private type Invitation = (Arn, String, String, String)
 
-  private def addRequests(requests: Request*) = {
-    await(Future sequence requests.map {
+  private def addInvitations(invitations: Invitation*) = {
+    await(Future sequence invitations.map {
       case (code: Arn, regime: String, customerRegimeId: String, userDetailsLink: String) =>
         repository.create(code, regime, customerRegimeId, userDetailsLink)
     })
   }
 
-  private def addRequest(requests: Request) = addRequests(requests) head
+  private def addInvitation(invitations: Invitation) = addInvitations(invitations) head
 
   private def listByArn(arn: Arn) = await(repository.list(arn))
 

@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.binders.SimpleObjectBinder
 
 object PathBinders {
-  implicit object AgentCodeBinder extends SimpleObjectBinder[AgentCode](AgentCode.apply, _.value)
+  implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.arn)
   implicit object SaUtrBinder extends SimpleObjectBinder[SaUtr](SaUtr.apply, _.value)
 }
