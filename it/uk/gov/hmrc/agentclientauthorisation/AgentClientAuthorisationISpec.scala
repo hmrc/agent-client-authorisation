@@ -97,6 +97,18 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     "should not create invitation if postcodes do not match" in {
       responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
     }
+
+    "should not create invitation if postcode is not in a valid format" in {
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+    }
+
+    "should create invitation if postcode has no spaces" in {
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
+    }
+
+    "should create invitation if postcode has more than one space" in {
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
+    }
   }
 
 

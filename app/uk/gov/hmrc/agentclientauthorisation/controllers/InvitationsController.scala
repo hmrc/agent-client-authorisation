@@ -32,11 +32,15 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
 
   def createInvitation(arn: Arn) = Action.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
-      if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
-        invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
-          .map(_ => Created)
+      if (validPostcode(authRequest.postcode)) {
+        if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
+          invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
+            .map(_ => Created)
+        } else {
+          Future successful Forbidden
+        }
       } else {
-        Future successful Forbidden
+        Future successful BadRequest
       }
     }
   }
@@ -62,4 +66,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.InvitationsController.getSentInvitation(arn, request.id.stringify).url)))
     HalResource(links, Json.toJson(request).as[JsObject])
   }
+
+  private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
+  private def validPostcode(postcode: String) = postcodeWithoutSpacesRegex.findFirstIn(postcode.replaceAll(" ", "")).isDefined
 }
