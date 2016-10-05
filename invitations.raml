@@ -20,7 +20,7 @@ types:
     type: object
     description: |
          An invitation represents a request from an Agency to a Customer to permit the Agency to act on the
-         Customer's behalf when dealing wtih HMRC
+         Customer's behalf when dealing with HMRC
     properties:
       created: 
         type: datetime
@@ -34,8 +34,8 @@ types:
       regime:
         description: The tax regime for which authorisation is being requested. N.B. this list will expand.
         type: Regime
-      customerRegimeId:
-        description: The identifier of the Customer within the regime, e.g. UTR for SA.
+      customerMtdId:
+        description: The MTD platform identifier for the customer.
         type: string
       postcode:
         description: The customer's postcode.
@@ -48,7 +48,7 @@ types:
           lastUpdated: "2016-07-02T01:55:28+00.00",
           arn: "123451234512345",
           regime: "sa",
-          customerRegimeId: "123456789",
+          customerMtdId: "123456789",
           status: "accepted"
           postcode: "SW1A 0PW"
   Regime:
@@ -63,7 +63,7 @@ types:
         status:
           description: filter invitations by status.
           type: Status
-        customerRegimeId:
+        customerMtdId:
           type: string
         regime:
           type: Regime
@@ -83,7 +83,7 @@ types:
           newInvitation: |
             {
               "regime" : "sa",
-              "customerRegimeId" : "123456789",
+              "customerMtdId" : "123456789",
               "postcode": "SW1AA 0PW"
             }
       responses:
@@ -134,7 +134,7 @@ types:
                     "lastUpdated": "2016-07-02T01:55:28+00.00",
                     "arn": "123451234512345",
                     "regime" : "sa",
-                    "customerRegimeId" : "123456789",
+                    "customerMtdId" : "123456789",
                     "status": "pending"
                   }
           401:
@@ -154,6 +154,9 @@ types:
         status:
           description: filter invitations by status.
           type: Status
+        regime:
+          description: filter invitations by tax regime.
+          type: Regime
       responses:
         200:
           description: A list of invitations.
@@ -164,7 +167,7 @@ types:
           description: The caller is not permitted to see this invitation.
     uriParameters:
       id:
-        description: Customer identifier.
+        description: The MTD Customer identifier.
         type: string
     /{invitationId}:
       get:
@@ -186,7 +189,7 @@ types:
                     "lastUpdated": "2016-07-02T01:55:28+00.00",
                     "arn": "123451234512345",
                     "regime" : "sa",
-                    "customerRegimeId" : "123456789",
+                    "customerId" : "123456789",
                     "status": "pending"
                   }
           401:
