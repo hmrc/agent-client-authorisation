@@ -40,11 +40,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "POST /requests" should {
     val customerRegimeId = SaUtr("1234567899")
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateRequest(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
-  "/requests" should {
-    "create and retrieve authorisation requests" in {
+  "/agencies/:arn/invitations" should {
+    "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
@@ -93,6 +93,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       firstRequestId should not be secondRequestId
     }
+
+    "should not create invitation if postcodes do not match" in {
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
+    }
   }
 
 
@@ -112,8 +116,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    responseForCreateRequest(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
-    responseForCreateRequest(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
     (customer1SaUtr, customer2SaUtr)
   }
 
@@ -152,7 +156,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     new Resource(getRequestsUrl, port).get()
   }
 
-  def responseForCreateRequest(body: String): HttpResponse =
+  def responseForCreateInvitation(body: String): HttpResponse =
     new Resource(createRequestUrl, port).postAsJson(body)
 
 

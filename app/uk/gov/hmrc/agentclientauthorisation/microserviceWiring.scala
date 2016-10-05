@@ -22,6 +22,7 @@ import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
+import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.api.controllers.DocumentationController
 import uk.gov.hmrc.mongo.MongoConnector
@@ -58,6 +59,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
   lazy val invitationsRepository = new InvitationsMongoRepository
+  lazy val postcodeService = new PostcodeService
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
   lazy val slConnector = ServiceLocatorConnector(WSHttp)
 }
@@ -66,7 +68,7 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[InvitationsController] -> new InvitationsController(invitationsRepository),
+    classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService),
     classOf[DocumentationController] -> DocumentationController
   )
 

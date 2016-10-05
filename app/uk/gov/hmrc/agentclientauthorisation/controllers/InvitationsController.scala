@@ -22,16 +22,22 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class InvitationsController(invitationsRepository: InvitationsRepository) extends BaseController {
+class InvitationsController(invitationsRepository: InvitationsRepository,
+                            postcodeService: PostcodeService) extends BaseController {
 
   def createInvitation(arn: Arn) = Action.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
-      invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
-        .map(_ => Created)
+      if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
+        invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
+          .map(_ => Created)
+      } else {
+        Future successful Forbidden
+      }
     }
   }
 
