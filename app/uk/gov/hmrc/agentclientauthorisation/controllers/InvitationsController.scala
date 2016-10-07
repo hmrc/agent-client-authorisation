@@ -38,23 +38,18 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
-      if (supportedRegime(authRequest.regime)) {
-        if (validPostcode(authRequest.postcode)) {
-          if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
-            invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
-              .map(invitation => Created.withHeaders(location(invitation)))
-          } else {
-            Future successful Forbidden
-          }
-        } else {
-          Future successful BadRequest
-        }
-      } else {
+      if (!supportedRegime(authRequest.regime))
         Future successful NotImplemented(errorResponseBody(
           code = "UNSUPPORTED_REGIME",
           message = s"""Unsupported regime "${authRequest.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""
         ))
-      }
+      else if (!validPostcode(authRequest.postcode))
+        Future successful BadRequest
+      else if (!postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode))
+        Future successful Forbidden
+      else
+        invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
+          .map(invitation => Created.withHeaders(location(invitation)))
     }
   }
 
