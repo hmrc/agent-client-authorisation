@@ -11,6 +11,10 @@ This code is open source software licensed under the [Apache 2.0 License]("http:
 
 [RAML documentation](invitations.raml)
 
+### Running the tests
+
+    sbt test it:test
+
 #### Unanswered Questions
 * ATTENTION!! Does auth convert ggAgentCodes to ARNs??
 

@@ -34,6 +34,8 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
                             override val authConnector: AuthConnector,
                             override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
 
+  private val SUPPORTED_REGIME = "mtd-sa"
+
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
       if (supportedRegime(authRequest.regime)) {
@@ -48,7 +50,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
           Future successful BadRequest
         }
       } else {
-        Future successful NotImplemented
+        Future successful NotImplemented(errorResponseBody(
+          code = "UNSUPPORTED_REGIME",
+          message = s"""Unsupported regime "${authRequest.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""
+        ))
       }
     }
   }
@@ -78,5 +83,11 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
   private def validPostcode(postcode: String) = postcodeWithoutSpacesRegex.findFirstIn(postcode.replaceAll(" ", "")).isDefined
 
-  private def supportedRegime(regime: String) = "mtd-sa" == regime
+  private def supportedRegime(regime: String) = SUPPORTED_REGIME == regime
+
+  private def errorResponseBody(code: String, message: String) =
+    Json.obj(
+      "code" -> code,
+      "message" -> message
+    )
 }

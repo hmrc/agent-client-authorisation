@@ -108,7 +108,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "should not create invitation for an unsupported regime" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""").status shouldBe 501
+      val response = responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""")
+      response.status shouldBe 501
+      (response.json \ "code").as[String] shouldBe "UNSUPPORTED_REGIME"
+      (response.json \ "message").as[String] shouldBe "Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""
     }
 
     "should create invitation if postcode has no spaces" in {
