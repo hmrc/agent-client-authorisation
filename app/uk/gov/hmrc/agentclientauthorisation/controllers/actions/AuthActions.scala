@@ -18,8 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AuthConnector, Enrolments, UserInfo}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -27,12 +28,13 @@ import scala.concurrent.Future
 trait AuthActions {
 
   def authConnector: AuthConnector
+  def agenciesFakeConnector: AgenciesFakeConnector
 
-  private val withUserInfo = new ActionBuilder[RequestWithUserInfo] with ActionRefiner[Request, RequestWithUserInfo] {
-    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithUserInfo[A]]] = {
+  private val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
+    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithAccounts[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
-      authConnector.currentUserInfo()
-        .map(ui => new RequestWithUserInfo(ui, request))
+      authConnector.currentAccounts()
+        .map(accounts => new RequestWithAccounts(accounts, request))
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
@@ -41,35 +43,33 @@ trait AuthActions {
     }
   }
 
-  val onlyForSaAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, AgentRequest] {
-    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, AgentRequest[A]]] =
-      Future successful ((request.userInfo.accounts.agent, request.userInfo.hasActivatedIrSaAgentEnrolment) match {
-        case (Some(agentCode), true) => Right(AgentRequest(agentCode, request.userInfo.userDetailsLink, request))
-        case _ => Left(Results.Unauthorized)
-      })
+  val onlyForSaAgents = withAccounts andThen new ActionRefiner[RequestWithAccounts, AgentRequest] {
+    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, AgentRequest[A]]] = {
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
+      request.accounts.agent match {
+        case Some(r) => agenciesFakeConnector.findArn(r).map {
+          case Some(arn) => Right(AgentRequest(arn, request))
+          case None => Left(Results.Unauthorized)
+        }
+        case None => Future successful Left(Results.Unauthorized)
+      }
+    }
   }
 
-  val onlyForSaClients = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, SaClientRequest] {
-    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, SaClientRequest[A]]] = {
-      Future successful (request.userInfo.accounts.sa match {
+
+
+  val onlyForSaClients = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
+    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, SaClientRequest[A]]] = {
+      Future successful (request.accounts.sa match {
         case Some(saUtr) => Right(SaClientRequest(saUtr, request))
         case _ => Left(Results.Unauthorized)
       })
     }
   }
 
-  val saClientsOrAgents = withUserInfo andThen new ActionRefiner[RequestWithUserInfo, Request] {
-    override protected def refine[A](request: RequestWithUserInfo[A]): Future[Either[Result, Request[A]]] = {
-      Future successful (request.userInfo match {
-        case UserInfo(Accounts(Some(agentCode), _), _, true) => Right(AgentRequest(agentCode, request.userInfo.userDetailsLink, request))
-        case UserInfo(Accounts(None, Some(saUtr)), _, _) => Right(SaClientRequest(saUtr, request))
-        case _ => Left(Results.Unauthorized)
-      })
-    }
-  }
 
 }
 
-class RequestWithUserInfo[A](val userInfo: UserInfo, request: Request[A]) extends WrappedRequest[A](request)
-case class AgentRequest[A](agentCode: AgentCode, userDetailsLink: String, request: Request[A]) extends WrappedRequest[A](request)
+class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extends WrappedRequest[A](request)
+case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 case class SaClientRequest[A](saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)

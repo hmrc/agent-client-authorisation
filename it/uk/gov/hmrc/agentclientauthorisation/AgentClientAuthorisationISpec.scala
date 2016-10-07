@@ -23,24 +23,25 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   private implicit val arn = Arn("ABCDEF12345678")
+  private implicit val agentCode = AgentCode("LMNOP123456")
 
   private val getRequestsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val createRequestUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
   "GET /requests" should {
-    behave like anEndpointAccessibleForSaAgentsOrSaClients(responseForGetRequests())
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetRequests())
   }
 
   "POST /requests" should {
     val customerRegimeId = SaUtr("1234567899")
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
   "/agencies/:arn/invitations" should {
@@ -95,18 +96,22 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "should not create invitation if postcodes do not match" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
     }
 
     "should not create invitation if postcode is not in a valid format" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
     }
 
     "should create invitation if postcode has no spaces" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
     }
   }
@@ -114,7 +119,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   def createRequests: (SaUtr, SaUtr) = {
     dropMongoDb()
-    val agent = given().agentAdmin(arn).isLoggedIn().andHasIrSaAgentEnrolment()
+    val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val customer1SaUtr = SaUtr("1234567890")
     val customer2SaUtr = SaUtr("1234567891")
 

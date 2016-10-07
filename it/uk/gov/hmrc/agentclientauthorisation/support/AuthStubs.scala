@@ -126,72 +126,27 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
 
   def oid: String
   def arn: String
+  def agentCode: String
   protected var saAgentReference: Option[SaAgentReference] = None
 
-  def andGettingEnrolmentsFailsWith500(): A = {
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(500)))
+  def andHasMtdBusinessPartnerRecord(): A = {
+    stubFor(get(urlPathEqualTo(s"/agencies-fake/agencies/agentcode/$agentCode"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(
+            s"""
+              |{
+              | "arn": "$arn"
+              |}
+            """.stripMargin)))
+
     this
   }
 
-  def andIsNotEnrolledForSA() = andHasNoIrSaAgentEnrolment()
-
-  def andHasNoSaAgentReference(): A = {
-    saAgentReference = None
-    andHasNoIrSaAgentEnrolment()
-  }
-
-  def andHasNoIrSaAgentEnrolment(): A = {
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"${EnrolmentStates.activated}"},
-         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"${EnrolmentStates.activated}"}]
-         """.stripMargin
-    )))
-    this
-  }
-
-  def andHasSaAgentReference(saAgentReference: SaAgentReference): A = {
-    andHasSaAgentReference(saAgentReference.value)
-  }
-
-  def andHasSaAgentReference(ref: String): A = {
-    saAgentReference = Some(SaAgentReference(ref))
-    this
-  }
-
-  def andHasSaAgentReferenceWithEnrolment(saAgentReference: SaAgentReference): A =
-    andHasSaAgentReferenceWithEnrolment(saAgentReference.value)
-
-  def andHasSaAgentReferenceWithEnrolment(ref: String, enrolmentState: String = EnrolmentStates.activated): A = {
-    andHasSaAgentReference(ref)
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"${EnrolmentStates.activated}"},
-         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"${EnrolmentStates.activated}"},
-         | {"key":"IR-SA-AGENT","identifiers":[{"key":"AnotherIdentifier", "value": "not the IR Agent Reference"}, {"key":"IRAgentReference","value":"$ref"}],"state":"$enrolmentState"}]
-         """.stripMargin
-    )))
-    this
-  }
-
-  def andHasSaAgentReferenceWithPendingEnrolment(saAgentReference: SaAgentReference): A =
-    andHasSaAgentReferenceWithPendingEnrolment(saAgentReference.value)
-
-  def andHasSaAgentReferenceWithPendingEnrolment(ref: String): A =
-    andHasSaAgentReferenceWithEnrolment(ref, enrolmentState = EnrolmentStates.pending)
-
-  def andHasIrSaAgentEnrolment(enrolmentState: String = EnrolmentStates.activated): A = {
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[{"key":"IR-SA-AGENT","identifiers":[],"state":"$enrolmentState"}]
-       """.stripMargin
-    )))
-    this
-  }
 
   def isLoggedIn(): A = {
-    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$arn")).willReturn(aResponse().withStatus(200)))
-    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$arn")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
@@ -204,8 +159,8 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
          |  },
          |  "accounts":{
          |    "agent":{
-         |      "link":"/agent/$arn",
-         |      "agentCode":"$arn",
+         |      "link":"/agent/$agentCode",
+         |      "agentCode":"$agentCode",
          |      "agentUserId":"ZMOQ1hrrP-9ZmnFw0kIA5vlc-mo",
          |      "agentUserRole":"admin",
          |      "payeReference":"HZ1234",

@@ -20,6 +20,8 @@ import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
@@ -28,9 +30,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.concurrent.Future
 
 class InvitationsController(invitationsRepository: InvitationsRepository,
-                            postcodeService: PostcodeService) extends BaseController {
+                            postcodeService: PostcodeService,
+                            override val authConnector: AuthConnector,
+                            override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
 
-  def createInvitation(arn: Arn) = Action.async(parse.json) { implicit request =>
+  def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
       if (validPostcode(authRequest.postcode)) {
         if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
@@ -45,7 +49,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     }
   }
 
-  def getSentInvitations(arn: Arn) = Action.async {
+  def getSentInvitations(arn: Arn) = onlyForSaAgents.async {
     invitationsRepository.list(arn).map { invitations =>
       Ok(Json.toJson(toHalResource(invitations, arn)))
     }

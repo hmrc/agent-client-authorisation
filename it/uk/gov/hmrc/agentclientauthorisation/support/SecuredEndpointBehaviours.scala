@@ -17,28 +17,21 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 trait SecuredEndpointBehaviours {
   this: UnitSpec with AppAndStubs =>
 
-  def anEndpointAccessibleForSaAgentsOnly(request: => HttpResponse)(implicit me: Arn): Unit = {
+  def anEndpointAccessibleForMtdAgentsOnly(request: => HttpResponse)(implicit me: Arn): Unit = {
     "return 401 when the requester is not authenticated" in {
-      pending
       given().user().isNotLoggedIn()
       request.status shouldBe 401
     }
 
-    "return 401 when user is not an agent" in {
-      pending
+    "return 401 when user is not an MTD agent" in {
       given().customer().isLoggedIn("0123456789")
-      request.status shouldBe 401
-    }
-
-    "return 401 when user is an agent, but not subscribed to SA" in {
-      pending
-      given().agentAdmin(me).isLoggedIn().andIsNotEnrolledForSA()
       request.status shouldBe 401
     }
   }
@@ -52,21 +45,8 @@ trait SecuredEndpointBehaviours {
 
     "return 401 when user has no SA account" in {
       pending
-      given().agentAdmin(me).isLoggedIn().andHasIrSaAgentEnrolment()
-      request.status shouldBe 401
-    }
-  }
-
-  def anEndpointAccessibleForSaAgentsOrSaClients(request: => HttpResponse)(implicit me: Arn): Unit = {
-    "return 401 when the requester is not authenticated" in {
-      pending
-      given().user().isNotLoggedIn()
-      request.status shouldBe 401
-    }
-
-    "return 401 when user is neither an agent nor client" in {
-      pending
-      given().user().isLoggedIn()
+      given().agentAdmin(me, AgentCode("12345")).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(me, AgentCode("12345")).isLoggedIn().andHasMtdBusinessPartnerRecord()
       request.status shouldBe 401
     }
   }
