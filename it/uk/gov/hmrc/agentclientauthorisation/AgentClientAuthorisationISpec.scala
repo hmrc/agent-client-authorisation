@@ -23,7 +23,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -40,7 +40,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "POST /requests" should {
-    val customerRegimeId = SaUtr("1234567899")
+    val customerRegimeId = "1234567899"
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
@@ -49,7 +49,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
-      val (customer1SaUtr: SaUtr, customer2SaUtr: SaUtr) = createRequests
+      val (customer1Id: String, customer2Id: String) = createRequests
 
       note("the freshly added authorisation requests should be available")
       val (responseJson, requestsArray) = eventually { // MongoDB is slow sometimes
@@ -75,7 +75,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       (firstRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$firstRequestId"
       (firstRequest \ "arn") shouldBe JsString(arn.arn)
       (firstRequest \ "regime") shouldBe JsString("sa")
-      (firstRequest \ "customerRegimeId") shouldBe JsString(customer1SaUtr.utr)
+      (firstRequest \ "customerRegimeId") shouldBe JsString(customer1Id)
       (firstRequest \ "regime") shouldBe JsString("sa")
       ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
@@ -86,7 +86,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       (secondRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$secondRequestId"
       (secondRequest \ "arn") shouldBe JsString(arn.arn)
       (secondRequest \ "regime") shouldBe JsString("sa")
-      (secondRequest \ "customerRegimeId") shouldBe JsString(customer2SaUtr.utr)
+      (secondRequest \ "customerRegimeId") shouldBe JsString(customer2Id)
       (secondRequest \ "regime") shouldBe JsString("sa")
       ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
@@ -117,11 +117,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
 
-  def createRequests: (SaUtr, SaUtr) = {
+  def createRequests: (String, String) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-    val customer1SaUtr = SaUtr("1234567890")
-    val customer2SaUtr = SaUtr("1234567891")
+    val customer1Id = "1234567890"
+    val customer2Id = "1234567891"
 
 
     note("there should be no requests")
@@ -133,9 +133,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
-    (customer1SaUtr, customer2SaUtr)
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}""").status shouldBe 201
+    (customer1Id, customer2Id)
   }
 
   "PUT /requests/:id/accept" is {
@@ -152,8 +152,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
-  def requestId(response: JsValue, saUtr: SaUtr): String =  {
-    val req = requests(response).value.filter(v => (v \ "customerRegimeId").as[String] == saUtr.utr).head
+  def requestId(response: JsValue, customerId: String): String =  {
+    val req = requests(response).value.filter(v => (v \ "customerRegimeId").as[String] == customerId).head
     (req \ "id").as[String]
   }
 
@@ -183,22 +183,22 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request for a different user" in {
-      val (customer1SaUtr, customer2SaUtr) = createRequests
+      val (customer1Id, customer2Id) = createRequests
       val responseJson = responseForGetRequests().json
 
-      given().customer().isLoggedIn(customer1SaUtr.utr)
+      given().customer().isLoggedIn(customer1Id)
 
-      val id: String = requestId(responseJson, customer2SaUtr)
+      val id: String = requestId(responseJson, customer2Id)
       doStatusChangeRequest(id).status shouldBe 403
     }
 
     "return forbidden for a request not in Pending status" in {
-      val (customer1SaUtr, _) = createRequests
+      val (customer1Id, _) = createRequests
       val responseJson = responseForGetRequests().json
 
-      given().customer().isLoggedIn(customer1SaUtr.utr)
+      given().customer().isLoggedIn(customer1Id)
 
-      val id: String = requestId(responseJson, customer1SaUtr)
+      val id: String = requestId(responseJson, customer1Id)
       doStatusChangeRequest(id).status shouldBe 200
       eventually {
         doStatusChangeRequest(id).status shouldBe 403
