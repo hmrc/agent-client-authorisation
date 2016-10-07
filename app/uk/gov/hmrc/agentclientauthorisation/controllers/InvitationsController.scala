@@ -42,7 +42,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
         if (validPostcode(authRequest.postcode)) {
           if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
             invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
-              .map(_ => Created)
+              .map(invitation => Created.withHeaders(location(invitation)))
           } else {
             Future successful Forbidden
           }
@@ -56,6 +56,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
         ))
       }
     }
+  }
+
+  private def location(invitation: Invitation) = {
+    "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
   def getSentInvitations(arn: Arn) = onlyForSaAgents.async {

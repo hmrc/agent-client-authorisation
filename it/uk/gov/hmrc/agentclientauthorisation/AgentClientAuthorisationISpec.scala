@@ -142,8 +142,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}""").status shouldBe 201
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}""").status shouldBe 201
+    checkCreatedResponse(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}"""))
+    checkCreatedResponse(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}"""))
     (customer1Id, customer2Id)
   }
 
@@ -185,6 +185,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   def responseForCreateInvitation(body: String): HttpResponse =
     new Resource(createRequestUrl, port).postAsJson(body)
 
+  def checkCreatedResponse(httpResponse: HttpResponse) = {
+    httpResponse.status shouldBe 201
+    httpResponse.header("location").get should startWith (s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+  }
 
   def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
     "return not found for an unknown request" in {
