@@ -32,6 +32,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
 
+  private val REGIME: String = "mtd-sa"
   private val getRequestsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val createRequestUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
@@ -41,7 +42,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "POST /requests" should {
     val customerRegimeId = "1234567899"
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
   "/agencies/:arn/invitations" should {
@@ -51,7 +52,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       val (customer1Id: String, customer2Id: String) = createRequests
 
-      note("the freshly added authorisation requests should be available")
+      note("the freshly added invitations should be available")
       val (responseJson, requestsArray) = eventually { // MongoDB is slow sometimes
         val responseJson = responseForGetRequests().json
 
@@ -74,9 +75,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       firstRequestId should fullyMatch regex alphanumeric
       (firstRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$firstRequestId"
       (firstRequest \ "arn") shouldBe JsString(arn.arn)
-      (firstRequest \ "regime") shouldBe JsString("sa")
+      (firstRequest \ "regime") shouldBe JsString(REGIME)
       (firstRequest \ "customerRegimeId") shouldBe JsString(customer1Id)
-      (firstRequest \ "regime") shouldBe JsString("sa")
+      (firstRequest \ "regime") shouldBe JsString(REGIME)
       ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
       (firstRequest \ "events").as[JsArray].value should have size 1
@@ -85,9 +86,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       secondRequestId should fullyMatch regex alphanumeric
       (secondRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$secondRequestId"
       (secondRequest \ "arn") shouldBe JsString(arn.arn)
-      (secondRequest \ "regime") shouldBe JsString("sa")
+      (secondRequest \ "regime") shouldBe JsString(REGIME)
       (secondRequest \ "customerRegimeId") shouldBe JsString(customer2Id)
-      (secondRequest \ "regime") shouldBe JsString("sa")
+      (secondRequest \ "regime") shouldBe JsString(REGIME)
       ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
       (secondRequest \ "events").as[JsArray].value should have size 1
@@ -97,22 +98,27 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+    }
+
+    "should not create invitation for an unsupported regime" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""").status shouldBe 501
     }
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
     }
   }
 
@@ -133,8 +139,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}""").status shouldBe 201
-    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}""").status shouldBe 201
     (customer1Id, customer2Id)
   }
 

@@ -36,15 +36,19 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
-      if (validPostcode(authRequest.postcode)) {
-        if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
-          invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
-            .map(_ => Created)
+      if (supportedRegime(authRequest.regime)) {
+        if (validPostcode(authRequest.postcode)) {
+          if (postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode)) {
+            invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
+              .map(_ => Created)
+          } else {
+            Future successful Forbidden
+          }
         } else {
-          Future successful Forbidden
+          Future successful BadRequest
         }
       } else {
-        Future successful BadRequest
+        Future successful NotImplemented
       }
     }
   }
@@ -73,4 +77,6 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
   private def validPostcode(postcode: String) = postcodeWithoutSpacesRegex.findFirstIn(postcode.replaceAll(" ", "")).isDefined
+
+  private def supportedRegime(regime: String) = "mtd-sa" == regime
 }
