@@ -16,24 +16,27 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
+import java.net.URL
+
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.{AgentCode, SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-case class UserDetails(name: String, lastName: Option[String], agentFriendlyName: Option[String]) {
-
-  val agentName: String = lastName map (s"$name " + _) getOrElse name
-
+case class Agency(arn: Arn)
+object Agency {
+  implicit val arnReads = new SimpleObjectReads[Arn]("arn", Arn.apply)
+  implicit val arnWrites = new SimpleObjectWrites[Arn](_.arn)
+  implicit val jsonFormats = Json.format[Agency]
 }
 
-object UserDetails {
-  lazy implicit val formats = Json.format[UserDetails]
-}
 
-class UserDetailsConnector(http: HttpGet) {
+class AgenciesFakeConnector(baseUrl: URL, httpGet: HttpGet) {
 
-  def userDetails(url: String)(implicit hc: HeaderCarrier): Future[UserDetails] = {
-    http.GET[UserDetails](url)
+  def findArn(agentCode: AgentCode)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
+    httpGet.GET[Option[Agency]](new URL(baseUrl, s"/agencies-fake/agencies/agentcode/$agentCode").toString)
+      .map(_.map(_.arn))
   }
 }

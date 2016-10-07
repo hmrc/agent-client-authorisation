@@ -18,64 +18,19 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
-private[connectors] case class AuthEnrolment(key: String, state: String) {
-  val isActivated: Boolean = state equalsIgnoreCase "Activated"
-}
-
-private[connectors] object AuthEnrolment {
-  implicit val format = Json.format[AuthEnrolment]
-}
-
-
-private[connectors] case class Enrolments(enrolments: Set[AuthEnrolment]) {
-
-  def find(regimeId:String): Option[AuthEnrolment] = enrolments.find(_.key == regimeId)
-
-  final def findMatching(regimeId:String)(matchingCriteria: AuthEnrolment => Boolean): Option[AuthEnrolment] = {
-    enrolments.find(enrolment => enrolment.key == regimeId).filter(matchingCriteria)
-  }
-}
-
-private[connectors] object Enrolments {
-  implicit val formats = Json.format[Enrolments]
-}
-
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
-case class UserInfo(accounts: Accounts, userDetailsLink: String, hasActivatedIrSaAgentEnrolment: Boolean)
 
 class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
 
-  final def containsEnrolment(enrolmentName:String)
-                             (matchingCriteria: AuthEnrolment => Boolean)
-                             (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
-    enrolments() map (_.findMatching(enrolmentName)(matchingCriteria) isDefined)
-  }
-
-  private def enrolments()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
-    currentAuthority flatMap enrolments
-
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
     currentAuthority() map authorityAsAccounts
-
-  def currentUserInfo()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserInfo] = {
-    for {
-      authority <- currentAuthority()
-      enrolments <- enrolments(authority)
-    } yield {
-      UserInfo(
-        accounts = authorityAsAccounts(authority),
-        hasActivatedIrSaAgentEnrolment = enrolments.findMatching("IR-SA-AGENT")(_.isActivated) isDefined,
-        userDetailsLink = (authority \ "userDetailsLink").as[String]
-      )
-    }
-  }
 
   private def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[JsValue] =
     httpGetAs[JsValue]("/auth/authority")
@@ -85,11 +40,6 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
       agent = (authority \ "accounts" \ "agent" \ "agentCode").asOpt[AgentCode],
       sa = (authority \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
     )
-
-  private def enrolments(authorityJson: JsValue)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
-    httpGetAs[Set[AuthEnrolment]](enrolmentsRelativeUrl(authorityJson)).map(Enrolments(_))
-
-  private def enrolmentsRelativeUrl(authorityJson: JsValue) = (authorityJson \ "enrolments").as[String]
 
   private def url(relativeUrl: String): URL = new URL(baseUrl, relativeUrl)
 

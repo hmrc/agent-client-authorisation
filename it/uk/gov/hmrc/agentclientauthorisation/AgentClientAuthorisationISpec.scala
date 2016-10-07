@@ -21,33 +21,35 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsString, JsValue}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with UserDetailsStub with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
-  private implicit val agentCode = AgentCode("ABCDEF12345678")
+  private implicit val arn = Arn("ABCDEF12345678")
+  private implicit val agentCode = AgentCode("LMNOP123456")
 
-  private val getRequestsUrl = "/agent-client-authorisation/requests"
-  private val createRequestUrl = "/agent-client-authorisation/requests"
+  private val getRequestsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+  private val createRequestUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
   "GET /requests" should {
-    behave like anEndpointAccessibleForSaAgentsOrSaClients(responseForGetRequests())
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetRequests())
   }
 
   "POST /requests" should {
-    val clientRegimeId = SaUtr("1234567899")
-    behave like anEndpointAccessibleForSaAgentsOnly(responseForCreateRequest(s"""{"agentCode": "${agentCode.value}", "clientRegimeId": "$clientRegimeId", "clientPostcode": "AA1 1AA"}"""))
+    val customerRegimeId = SaUtr("1234567899")
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.value}", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
-  "/requests" should {
-    "create and retrieve authorisation requests" in {
+  "/agencies/:arn/invitations" should {
+    "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
       val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
 
-      val (client1SaUtr: SaUtr, client2SaUtr: SaUtr) = createRequests
+      val (customer1SaUtr: SaUtr, customer2SaUtr: SaUtr) = createRequests
 
       note("the freshly added authorisation requests should be available")
       val (responseJson, requestsArray) = eventually { // MongoDB is slow sometimes
@@ -55,7 +57,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
         Logger.info(s"responseJson = $responseJson")
 
-        val requestsArray = requests(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
+        val requestsArray = requests(responseJson).value.sortBy(j => (j \ "customerRegimeId").as[String])
         requestsArray should have size 2
         (responseJson, requestsArray)
       }
@@ -68,29 +70,23 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       val alphanumeric = "[0-9A-Za-z]+"
 
-      val firstRequestId = (firstRequest \ "id").as[String]
+      val firstRequestId = (firstRequest \ "id" \ "$oid").as[String]
       firstRequestId should fullyMatch regex alphanumeric
-      (firstRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/requests/$firstRequestId"
-      (firstRequest \ "agentCode") shouldBe JsString(agentCode.value)
+      (firstRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$firstRequestId"
+      (firstRequest \ "arn") shouldBe JsString(arn.arn)
       (firstRequest \ "regime") shouldBe JsString("sa")
-      (firstRequest \ "clientRegimeId") shouldBe JsString(client1SaUtr.utr)
-      (firstRequest \ "clientFullName") shouldBe JsString("Mr First Last")
-      (firstRequest \ "agentName") shouldBe JsString("Agent Name")
-      (firstRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
+      (firstRequest \ "customerRegimeId") shouldBe JsString(customer1SaUtr.utr)
       (firstRequest \ "regime") shouldBe JsString("sa")
       ((firstRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((firstRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
       (firstRequest \ "events").as[JsArray].value should have size 1
 
-      val secondRequestId = (secondRequest \ "id").as[String]
+      val secondRequestId = (secondRequest \ "id" \ "$oid").as[String]
       secondRequestId should fullyMatch regex alphanumeric
-      (secondRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/requests/$secondRequestId"
-      (secondRequest \ "agentCode") shouldBe JsString(agentCode.value)
+      (secondRequest \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$secondRequestId"
+      (secondRequest \ "arn") shouldBe JsString(arn.arn)
       (secondRequest \ "regime") shouldBe JsString("sa")
-      (secondRequest \ "clientRegimeId") shouldBe JsString(client2SaUtr.utr)
-      (secondRequest \ "clientFullName") shouldBe JsString("Mrs First Last")
-      (secondRequest \ "agentName") shouldBe JsString("Agent Name")
-      (secondRequest \ "agentFriendlyName") shouldBe JsString("DDCW Accountancy Ltd")
+      (secondRequest \ "customerRegimeId") shouldBe JsString(customer2SaUtr.utr)
       (secondRequest \ "regime") shouldBe JsString("sa")
       ((secondRequest \ "events")(0) \ "time").as[Long] should beRecent
       ((secondRequest \ "events")(0) \ "status") shouldBe JsString("Pending")
@@ -98,104 +94,86 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       firstRequestId should not be secondRequestId
     }
+
+    "should not create invitation if postcodes do not match" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
+    }
+
+    "should not create invitation if postcode is not in a valid format" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+    }
+
+    "should create invitation if postcode has no spaces" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
+    }
+
+    "should create invitation if postcode has more than one space" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
+    }
   }
 
 
   def createRequests: (SaUtr, SaUtr) = {
     dropMongoDb()
-    val agent = given().agentAdmin(agentCode).isLoggedIn().andHasIrSaAgentEnrolment()
-    userExists(agent)
-    val client1SaUtr = SaUtr("1234567890")
-    val client2SaUtr = SaUtr("1234567891")
-    CesaStubs.saTaxpayerExists(client1SaUtr)
-    CesaStubs.saTaxpayerExists(client2SaUtr, "Mrs")
+    val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+    val customer1SaUtr = SaUtr("1234567890")
+    val customer2SaUtr = SaUtr("1234567891")
 
 
     note("there should be no requests")
     eventually {
       inside(responseForGetRequests()) { case resp =>
         resp.status shouldBe 200
-        (resp.json \ "_embedded" \ "requests").as[JsArray].value shouldBe 'empty
+        requests(resp.json).value shouldBe 'empty
       }
     }
 
     note("we should be able to add 2 new requests")
-    responseForCreateRequest(s"""{"agentCode": "$agentCode", "regime": "sa", "clientRegimeId": "$client1SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
-    responseForCreateRequest(s"""{"agentCode": "$agentCode", "regime": "sa", "clientRegimeId": "$client2SaUtr", "clientPostcode": "AA1 1AA"}""").status shouldBe 201
-    (client1SaUtr, client2SaUtr)
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer1SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
+    responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "$customer2SaUtr", "postcode": "AA1 1AA"}""").status shouldBe 201
+    (customer1SaUtr, customer2SaUtr)
   }
 
-  "POST /requests/:id/accept" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
+  "PUT /requests/:id/accept" is {
+    pending
+//    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
   }
 
-  "GET /requests/:id" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForGetRequest("request-id"))
+  "GET /requests/:id" is {
+    pending
+//    behave like anEndpointAccessibleForSaClientsOnly(responseForGetRequest("request-id"))
   }
 
   def requests(response: JsValue) = {
-    (response \ "_embedded" \ "requests").as[JsArray]
+    (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
   def requestId(response: JsValue, saUtr: SaUtr): String =  {
-    val req = requests(response).value.filter(v => (v \ "clientRegimeId").as[String] == saUtr.utr).head
+    val req = requests(response).value.filter(v => (v \ "customerRegimeId").as[String] == saUtr.utr).head
     (req \ "id").as[String]
   }
 
-  "/requests/:id/accept" should {
-    "mark the request as accepted" in {
-      val (client1SaUtr, _) = createRequests
-      val responseJson = responseForGetRequests().json
-
-      given().client().isLoggedIn(client1SaUtr.utr)
-
-      val id: String = requestId(responseJson, client1SaUtr)
-      val accept = responseForAcceptRequest(id)
-      accept.status shouldBe 200
-
-      val authRequestJson = responseForGetRequest(id).json
-
-      (authRequestJson \ "events")(1) \ "status" shouldBe JsString("Accepted")
-    }
-
-    behave like aClientStatusChange(responseForAcceptRequest)
-  }
-
-  "/requests/:id/reject" should {
-    "mark the request as rejected" in {
-      val (client1SaUtr, _) = createRequests
-      val responseJson = responseForGetRequests().json
-
-      given().client().isLoggedIn(client1SaUtr.utr)
-
-      val id: String = requestId(responseJson, client1SaUtr)
-      responseForRejectRequest(id).status shouldBe 200
-
-      val authRequestJson = responseForGetRequest(id).json
-
-      (authRequestJson \ "events")(1) \ "status" shouldBe JsString("Rejected")
-    }
-
-    behave like aClientStatusChange(responseForRejectRequest)
-  }
-
   def responseForAcceptRequest(requestId: String): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/requests/$requestId/accept", port).postEmpty()
+    new Resource(s"/agent-customer-authorisation/requests/$requestId/accept", port).postEmpty()
   }
 
   def responseForRejectRequest(requestId: String): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/requests/$requestId/reject", port).postEmpty()
+    new Resource(s"/agent-customer-authorisation/requests/$requestId/reject", port).postEmpty()
   }
 
   def responseForGetRequest(requestId: String ): HttpResponse = {
-    new Resource(s"/agent-client-authorisation/requests/$requestId", port).get()
+    new Resource(s"/agent-customer-authorisation/requests/$requestId", port).get()
   }
 
   def responseForGetRequests(): HttpResponse = {
     new Resource(getRequestsUrl, port).get()
   }
 
-  def responseForCreateRequest(body: String): HttpResponse =
+  def responseForCreateInvitation(body: String): HttpResponse =
     new Resource(createRequestUrl, port).postAsJson(body)
 
 
@@ -205,22 +183,22 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request for a different user" in {
-      val (client1SaUtr, client2SaUtr) = createRequests
+      val (customer1SaUtr, customer2SaUtr) = createRequests
       val responseJson = responseForGetRequests().json
 
-      given().client().isLoggedIn(client1SaUtr.utr)
+      given().customer().isLoggedIn(customer1SaUtr.utr)
 
-      val id: String = requestId(responseJson, client2SaUtr)
+      val id: String = requestId(responseJson, customer2SaUtr)
       doStatusChangeRequest(id).status shouldBe 403
     }
 
     "return forbidden for a request not in Pending status" in {
-      val (client1SaUtr, _) = createRequests
+      val (customer1SaUtr, _) = createRequests
       val responseJson = responseForGetRequests().json
 
-      given().client().isLoggedIn(client1SaUtr.utr)
+      given().customer().isLoggedIn(customer1SaUtr.utr)
 
-      val id: String = requestId(responseJson, client1SaUtr)
+      val id: String = requestId(responseJson, customer1SaUtr)
       doStatusChangeRequest(id).status shouldBe 200
       eventually {
         doStatusChangeRequest(id).status shouldBe 403

@@ -1,12 +1,9 @@
-# microservice specific routes
+# Agent routes
+POST     /agencies/:arn/invitations                     @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.createInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn)
+GET      /agencies/:arn/invitations/sent                @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitations(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn)
+GET      /agencies/:arn/invitations/sent/:invitation    @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 
-GET     /requests/:requestId               @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequest(requestId: String)
-POST    /requests/:requestId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.acceptRequest(requestId: String)
-POST    /requests/:requestId/reject        @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.rejectRequest(requestId: String)
-GET     /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.getRequests()
-POST    /requests                          @uk.gov.hmrc.agentclientauthorisation.controllers.AuthorisationRequestController.createRequest()
-
-GET     /lookup/sa/:saUtr/:postcode        @uk.gov.hmrc.agentclientauthorisation.sa.controllers.SaLookupController.authoriseAndLookup(saUtr: uk.gov.hmrc.domain.SaUtr, postcode: String)
+# Client routes
 
 # Required by API Platform
 GET     /api/definition                    @uk.gov.hmrc.api.controllers.DocumentationController.definition()

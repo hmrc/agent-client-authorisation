@@ -16,25 +16,26 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.domain.AgentCode
 
 trait StubUtils {
   me: StartAndStopWireMock =>
 
   class PreconditionBuilder {
-    def agentAdmin(agentCode: String): AgentAdmin = {
-      new AgentAdmin(agentCode, oid = "556737e15500005500eaf68e")
+    def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
+      new AgentAdmin(arn, oid = "556737e15500005500eaf68e", agentCode)
     }
 
-    def agentAdmin(agentCode: AgentCode): AgentAdmin = {
-      agentAdmin(agentCode.value)
+    def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
+      agentAdmin(arn.arn, agentCode.value)
     }
 
     def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {
       new UnknownUser(oid)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f"): Client = {
+    def customer(oid: String = "556737e15500005500eaf68f"): Client = {
       new Client(oid)
     }
   }
@@ -47,9 +48,11 @@ trait StubUtils {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  class AgentAdmin(override val agentCode: String,
-                   override val oid: String)
-    extends BaseUser with AgentAuthStubs[AgentAdmin]
+  class AgentAdmin(override val arn: String,
+                   override val oid: String,
+                   override val agentCode: String)
+    extends BaseUser with AgentAuthStubs[AgentAdmin] {
+  }
 
   class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]

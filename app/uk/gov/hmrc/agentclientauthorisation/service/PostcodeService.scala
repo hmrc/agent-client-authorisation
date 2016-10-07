@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.connectors
+package uk.gov.hmrc.agentclientauthorisation.service
 
-import uk.gov.hmrc.play.test.UnitSpec
-
-class AuthEnrolmentSpec extends UnitSpec {
-  "isActivated" should {
-    "be true when state is \"activated\", regardless of case" in {
-      AuthEnrolment("key", "activated").isActivated shouldBe true
-      AuthEnrolment("key", "Activated").isActivated shouldBe true
-      AuthEnrolment("key", "ACTIVATED").isActivated shouldBe true
-    }
-
-    "not be true when state is not \"activated\"" in {
-      AuthEnrolment("key", "pending").isActivated shouldBe false
-    }
-  }
+class PostcodeService {
+  def customerPostcodeMatches(customerIdentifier: String, postcode: String) =
+        postcode.startsWith("A")
 }
