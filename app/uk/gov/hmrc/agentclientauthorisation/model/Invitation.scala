@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.domain.{CtUtr, SaUtr, SimpleObjectReads, SimpleObjectWrites}
+import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 
@@ -64,15 +64,6 @@ case class Invitation(
   customerRegimeId: String,
   postcode: String,
   events: List[StatusChangeEvent]) {
-  val customerSaUtr = regime match {
-    case "sa" => Some(SaUtr(customerRegimeId))
-    case _ => None
-  }
-
-  val customerCtUtr = regime match {
-    case "ct" => Some(CtUtr(customerRegimeId))
-    case _ => None
-  }
 }
 
 case class AgentClientAuthorisationHttpRequest(
