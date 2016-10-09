@@ -1,0 +1,66 @@
+#%RAML 1.0 Library
+usage: A basic type in the agent client authorisation raml library
+
+types:
+
+  Regime:
+    description: The tax regime
+    type: string
+    enum: [ mtd-sa ]
+
+  AgentInvite:
+    displayName: Agent Led Invitation
+    description: Information provided by the agent to offer representation to HMRC
+    type: object
+    properties:
+      regime: Regime
+      customerRegimeId: string
+      postcode: string
+    example: |
+      {
+        "regime" : "mtd-sa",
+        "customerRegimeId" : "123456789",
+        "postcode": "SW1AA 0PW"
+      }
+
+  LinkItem:
+    displayName: Link Item
+    description: An object containing a href property of a traversable link to a related resource
+    type: object
+    properties:
+      href: string
+    example: |
+      {
+        "href" : "/agencies/A123456/invitations/sent"
+      }
+
+
+  LinkSection:
+    displayName: Link Section
+    description: Contains the LinkItems available from this resource
+    type: object
+    properties:
+      self: LinkItem
+      invitations?: LinkItem[]
+      cancel?: LinkItem
+      accept?: LinkItem
+      reject?: LinkItem
+    example: |
+      {
+        "self" : { "href" : "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"},
+        "cancel" : { "href" : "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"}
+      }
+
+
+  Status:
+    displayName: Statuses
+    enum: [ pending, accepted, rejected, cancelled ]
+    type: string
+    description: |
+      The status of the current invitation
+      Status  | Meaning
+      ------- | -------
+      ```pending``` | The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status
+      ```accepted``` | The client has accepted the invitation. Only the client can set this status
+      ```rejected``` | The client has rejected the invitation. Only the client can set this status
+      ```cancelled``` | The Agency has cancelled the invitation. Only the Agency can set this status

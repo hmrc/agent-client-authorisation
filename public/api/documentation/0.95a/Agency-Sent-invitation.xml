@@ -1,0 +1,167 @@
+<endpoint>
+    <name>Agency Sent Invitation</name>
+    <description>Retrieves a specific sent by an agency</description>
+    <section id="resource">
+        <title>Resource</title>
+        <resource>GET /agencies/{arn}/invitations/sent/{invitationId}</resource>
+    </section>
+    <section id="path-parameters">
+        <title>Path Parameters</title>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>ARN</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>2234567890</code></cell>
+                    <cell>The Agent Registration Number</cell>
+                </row>
+                <row>
+                    <cell><code>Invitation Id</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>A unique invitation id</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+    <section id="authorisation">
+        <title>Authorisation</title>
+        <authorisation>
+            <type>USER</type>
+            <scope>read:sent-invitations</scope>
+        </authorisation>
+    </section>
+    <section id="content-types">
+        <title>Accepted Media Types</title>
+        <list>
+            <item>
+                <code>application/vnd.hmrc.1.0+json</code>
+            </item>
+        </list>
+    </section>
+    <section id="sample-response">
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Meaning</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>pending</code></cell>
+                    <cell>The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status</cell>
+                </row>
+                <row>
+                    <cell><code>accepted</code></cell>
+                    <cell>The client has accepted the invitation. Only the client can set this status</cell>
+                </row>
+                <row>
+                    <cell><code>rejected</code></cell>
+                    <cell>The client has rejected the invitation. Only the client can set this status</cell>
+                </row>
+                <row>
+                    <cell><code>cancelled</code></cell>
+                    <cell>The agency has cancelled the invitation. Only the agency can set this status</cell>
+                </row>
+            </rows>
+        </table>
+
+        <title>Response</title>
+        <httpStatus>200 (OK)</httpStatus>
+        <json><![CDATA[{
+			"_links": {
+				"self": {
+					"href": "/agencies/{arn}/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+				},
+				"cancel": {
+					"href": "/agencies/{arn}/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+				}
+			},
+			"created": "2016-06-27T01:55:28+00.00",
+			"lastUpdated": "2016-07-02T01:55:28+00.00",
+			"arn": "123451234512345",
+			"regime": "mtd-sa",
+			"clientRegimeId": "123456789",
+			"status": "pending"
+		}]]></json>
+        <table>
+            <rows>
+
+                <row>
+                    <cell><code>_links["self"].href</code></cell>
+                    <cell><code>URI</code></cell>
+                    <cell><code>/url/to/cancel/this/invitation</code></cell>
+                    <cell>Link back to this resource</cell>
+                </row>
+                <row>
+                    <cell><code>_links["cancel"].href</code></cell>
+                    <cell><code>URI</code></cell>
+                    <cell><code>/url/to/cancel/this/invitation</code></cell>
+                    <cell>Link to cancel the invitation</cell>
+                </row>
+                <row>
+                    <cell><code>created</code></cell>
+                    <cell><code>datetime</code></cell>
+                    <cell><code>2016-06-27T01:55:28+00.00</code></cell>
+                    <cell>Creation time of the request (rfc2616 format)</cell>
+                </row>
+                <row>
+                    <cell><code>lastUpdated</code></cell>
+                    <cell><code>datetime</code></cell>
+                    <cell><code>2016-06-27T01:55:28+00.00</code></cell>
+                    <cell>Creation time of the request (rfc2616 format)</cell>
+                </row>
+                <row>
+                    <cell><code>ARN</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>2234567890</code></cell>
+                    <cell>The Agent Registration Number for the calling agency</cell>
+                </row>
+                <row>
+                    <cell><code>regime</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>mtd-sa</code></cell>
+                    <cell>The tax regime specified in the invitation</cell>
+                </row>
+                <row>
+                    <cell><code>clientRegimeId</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>1234567890</code></cell>
+                    <cell>Client's identification number for the specified tax regime</cell>
+                </row>
+                <row>
+                    <cell><code>status</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>pending</code></cell>
+                    <cell>The status of the request at the time the request was fufilled </cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+    <section id="error-responses">
+        <title>Error Scenarios</title>
+        <table>
+            <headings>
+                <cell>Error Scenario</cell>
+                <cell>HTTP Status</cell>
+                <cell>Code</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell>Not logged in</cell>
+                    <cell><code>401 (Unauthorised)</code></cell>
+                    <cell><code>The agency must be logged in</code></cell>
+                </row>
+                <row>
+                    <cell>Permission Denied</cell>
+                    <cell><code>403 (Forbidden)</code></cell>
+                    <cell><code>The agency is not permitted to see this invitations</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+</endpoint>

@@ -1,0 +1,144 @@
+<endpoint>
+    <name>Agency Creates and Invitation</name>
+    <description>Creates a new invitation between the agency and client</description>
+    <section id="resource">
+        <title>Resource</title>
+        <resource>POST /agencies/{arn}/invitations/sent</resource>
+    </section>
+    <section id="path-parameters">
+        <title>Path Parameters</title>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>ARN</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>2234567890</code></cell>
+                    <cell>The Agency Registration Number</cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+    <section id="authorisation">
+        <title>Authorisation</title>
+        <authorisation>
+            <type>USER</type>
+            <scope>write:sent-invitations</scope>
+        </authorisation>
+    </section>
+    <section id="content-types">
+        <title>Accepted Media Types</title>
+        <list>
+            <item>
+                <code>application/vnd.hmrc.1.0+json</code>
+            </item>
+        </list>
+    </section>
+    <section id="sample-request">
+        <json><![CDATA[{
+  "regime" : "mtd-sa",
+  "customerRegimeId" : "123456789",
+  "postcode": "SW1AA 0PW"
+}]]></json>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>regime</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>mtd-sa</code></cell>
+                    <cell>The tax regime of the customer within which the agency is offering representation</cell>
+                </row>
+                <row>
+                    <cell><code>customerRegimeId</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>1234567890</code></cell>
+                    <cell>Customer's identification number for the specified tax regime</cell>
+                </row>
+                <row>
+                    <cell><code>postcode (known fact)</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>BN699Q</code></cell>
+                    <cell>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the customer</cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+
+    <section id="sample-response">
+        <title>Response</title>
+        <httpStatus>201 (Created)</httpStatus>
+        <table>
+            <headings>
+                <cell>Header</cell>
+                <cell>Example</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>Location</code></cell>
+                    <cell><code>/agencies/{arn}/invitations/sent/{invitationId}</code></cell>
+                </row>
+            </rows>
+        </table>
+        <table>
+            <headings>
+                <cell>Path Parameters</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>ARN</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>The MTD platform Agent Reference Number</code></cell>
+                </row>
+                <row>
+                    <cell><code>Invitation Id</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>A unique invitation id</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+
+    <section id="error-responses">
+        <title>Error Scenarios</title>
+        <table>
+            <headings>
+                <cell>Error Scenario</cell>
+                <cell>HTTP Status</cell>
+                <cell>Code</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell>Not logged in</cell>
+                    <cell><code>401 (Unauthorised)</code></cell>
+                    <cell><code>The agency must be logged-in to use this resource</code></cell>
+                </row>
+                <row>
+                    <cell>Permission Denied</cell>
+                    <cell><code>403 (Forbidden)</code></cell>
+                    <cell>
+                        The request has been understood but will not be fulfilled, possible reasons may be: the agency
+                        has not subscribed to Agent Services, the customer is not registered for the tax regime
+                        contained in the invitation, the supplied postcode does not match that of the customer
+                    </cell>
+                </row>
+                <row>
+                    <cell>Not Found</cell>
+                    <cell><code>404 (Not Found)</code></cell>
+                    <cell><code>The invitation does not exist</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+</endpoint>

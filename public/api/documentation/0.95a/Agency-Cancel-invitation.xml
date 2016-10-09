@@ -1,0 +1,79 @@
+<endpoint>
+    <name>Agency Cancels and Invitation</name>
+    <description>Cancels an invitation</description>
+    <section id="resource">
+        <title>Resource</title>
+        <resource>DELETE /agencies/{arn}/invitations/sent/{invitationId}</resource>
+    </section>
+    <section id="path-parameters">
+        <title>Path Parameters</title>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>ARN</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>2234567890</code></cell>
+                    <cell>The Agent Registration Number</cell>
+                </row>
+                <row>
+                    <cell><code>Invitation Id</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code>invite123</code></cell>
+                    <cell><code>A unique invitation id</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+    <section id="authorisation">
+        <title>Authorisation</title>
+        <authorisation>
+            <type>USER</type>
+            <scope>write:sent-invitations</scope>
+        </authorisation>
+    </section>
+    <section id="content-types">
+        <title>Accepted Media Types</title>
+        <list>
+            <item>
+                <code>application/vnd.hmrc.1.0+json</code>
+            </item>
+        </list>
+    </section>
+    <section id="sample-response">
+        <title>Response</title>
+        <httpStatus>204 (Successful)</httpStatus>
+    </section>
+    <section id="error-responses">
+        <title>Error Scenarios</title>
+        <table>
+            <headings>
+                <cell>Error Scenario</cell>
+                <cell>HTTP Status</cell>
+                <cell>Code</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell>Not logged in</cell>
+                    <cell><code>401 (Unauthorised)</code></cell>
+                    <cell><code>The agency must be logged-in to use this resource</code></cell>
+                </row>
+                <row>
+                    <cell>Permission Denied</cell>
+                    <cell><code>403 (Forbidden)</code></cell>
+                    <cell><code>The agency is not permitted to see this list of invitations</code></cell>
+                </row>
+                <row>
+                    <cell>Not Found</cell>
+                    <cell><code>404 (Not Found)</code></cell>
+                    <cell><code>The invitation does not exist</code></cell>
+                </row>
+            </rows>
+        </table>
+    </section>
+</endpoint>

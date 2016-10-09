@@ -32,32 +32,32 @@
         "status": "PROTOTYPED",
         "endpoints": [
           {
-            "uriPattern": "/agencies/{mtdArn}/invitations/sent",
-            "endpointName": "Sent invitations",
+            "uriPattern": "/agencies/{id}/invitations/sent",
+            "endpointName": "Agency Sent invitations",
             "method": "GET",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
             "scope": "read:sent-invitations"
           },
           {
-            "uriPattern": "/agencies/{mtdArn}/invitations/sent",
-            "endpointName": "Create an invitation",
+            "uriPattern": "/agencies/{id}/invitations/sent",
+            "endpointName": "Agency Create an invitation",
             "method": "POST",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
-            "scope": "read:sent-invitations"
+            "scope": "write:sent-invitations"
           },
           {
-            "uriPattern": "/agencies/{mtdArn}/invitations/sent/{invitationId}",
-            "endpointName": "Retrieve invitation",
+            "uriPattern": "/agencies/{id}/invitations/sent/{invitationId}",
+            "endpointName": "Agency Sent invitation",
             "method": "GET",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
             "scope": "read:sent-invitations"
           },
           {
-            "uriPattern": "/agencies/{mtdArn}/invitations/sent/{invitationId}",
-            "endpointName": "Cancel invitation",
+            "uriPattern": "/agencies/{id}/invitations/sent/{invitationId}",
+            "endpointName": "Agency Cancel invitation",
             "method": "DELETE",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
@@ -65,7 +65,7 @@
           },
           {
             "uriPattern": "/customers/{id}/invitations/received",
-            "endpointName": "Retrieve invitations",
+            "endpointName": "Client Retrieve invitations",
             "method": "GET",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
@@ -73,7 +73,7 @@
           },
           {
             "uriPattern": "/customers/{id}/invitations/received/{invitationId}",
-            "endpointName": "Retrieve an invitation",
+            "endpointName": "Client Retrieve an invitation",
             "method": "GET",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
@@ -81,7 +81,7 @@
           },
           {
             "uriPattern": "/customers/{id}/invitations/received/{invitationId}/accept",
-            "endpointName": "Accept invitation",
+            "endpointName": "Client Accept invitation",
             "method": "PUT",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",
@@ -89,7 +89,7 @@
           },
           {
             "uriPattern": "/customers/{id}/invitations/received/{invitationId}/reject",
-            "endpointName": "Reject invitation",
+            "endpointName": "Client Reject invitation",
             "method": "PUT",
             "authType": "USER",
             "throttlingTier": "UNLIMITED",

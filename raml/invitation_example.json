@@ -1,0 +1,17 @@
+{
+  "_links": {
+    "self": {
+      "href": "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+    },
+    "cancel": {
+      "href": "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+    }
+  },
+  "created": "Sat, 8 Oct 2016 20:04:37 GMT",
+  "lastUpdated": "Sat, 8 Oct 2016 20:04:37 GMT",
+  "arn": "123451234512345",
+  "regime": "mtd-sa",
+  "clientRegimeId": "123456789",
+  "postcode": "EC19AB",
+  "status": "pending"
+}
