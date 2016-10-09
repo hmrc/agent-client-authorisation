@@ -8,6 +8,7 @@ types:
   LinkSection: atoms.LinkSection
   Regime:      atoms.Regime
   Status:      atoms.Status
+  Timestamp:   atoms.Timestamp
 
   Invitation:
     displayName: Invitation
@@ -17,19 +18,15 @@ types:
     type: object
     properties:
       _links: LinkSection
-      created:
-        type: datetime
-        format: rfc2616
-      lastUpdated:
-        type: datetime
-        format: rfc2616
+      created: Timestamp
+      lastUpdated: Timestamp
       arn:
         description: The Agent Registration Number
         type: string
       regime:
         description: The tax regime specified in the invitation
         type: Regime
-      customerRegimeId:
+      clientRegimeId:
         description: Client's identification number for the specified tax regime
         type: string
       postcode:

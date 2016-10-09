@@ -21,10 +21,10 @@
       },
       "arn": "123451234512345",
       "regime": "mtd-sa",
-      "customerRegimeId": "123456789",
+      "clientRegimeId": "123456789",
       "postcode": "NW66PJ",
-      "created": "Sat, 8 Oct 2016 20:04:37 GMT",
-      "lastUpdated": "Sun, 9 Oct 2016 20:04:37 GMT",
+      "created": "Sat, 08 Oct 2016 20:04:37 GMT",
+      "lastUpdated": "Sun, 09 Oct 2016 20:04:37 GMT",
       "status": "pending"
     }, {
       "_links": {
@@ -34,10 +34,10 @@
       },
       "arn": "123451234512345",
       "regime": "mtd-sa",
-      "customerRegimeId": "0987654321",
+      "clientRegimeId": "0987654321",
       "postcode": "BN699J",
-      "created": "Sat, 8 Oct 2016 20:04:37 GMT",
-      "lastUpdated": "Sun, 9 Oct 2016 20:04:37 GMT",
+      "created": "Sat, 08 Oct 2016 20:04:37 GMT",
+      "lastUpdated": "Sun, 09 Oct 2016 20:04:37 GMT",
       "status": "rejected"
     }]
   }
