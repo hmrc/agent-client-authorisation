@@ -22,8 +22,8 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
   "/api/definition" should {
-    "return the defintion JSON" in {
-      val response: HttpResponse = new Resource(s"/agent-client-authorisation/api/definition", port).get()
+    "return the definition JSON" in {
+      val response: HttpResponse = new Resource(s"/api/definition", port).get()
       response.status shouldBe 200
 
       val definition = response.json
