@@ -1,6 +1,6 @@
 <endpoint>
     <name>Agency Sent Invitation</name>
-    <description>Retrieves a specific sent by an agency</description>
+    <description>Retrieves a specific invitation sent by an agency</description>
     <section id="resource">
         <title>Resource</title>
         <resource>GET /agencies/{arn}/invitations/sent/{invitationId}</resource>
@@ -90,11 +90,10 @@
 		}]]></json>
         <table>
             <rows>
-
                 <row>
                     <cell><code>_links["self"].href</code></cell>
                     <cell><code>URI</code></cell>
-                    <cell><code>/url/to/cancel/this/invitation</code></cell>
+                    <cell><code>/url/to/this/invitation</code></cell>
                     <cell>Link back to this resource</cell>
                 </row>
                 <row>

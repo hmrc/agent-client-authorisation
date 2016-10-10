@@ -2,7 +2,7 @@
 title: Agent Client Authorisation API
 baseUri: https://gov.uk/agent-client-authorisation
 version: v1
-mediaType: application/hal+json
+mediaType: application/vnd.hmrc.1.0+json
 description: An API for agents and clients akin to the paper 64-8 form
 
 uses:
@@ -20,7 +20,7 @@ uses:
       status:
         description: filter invitations by status.
         type: invitations.Status
-      customerRegimeId:
+      clientRegimeId:
         type: string
       regime:
         type: invitations.Regime
@@ -73,7 +73,7 @@ uses:
         200:
           description: Returns the invitation.
           body:
-            type: invitations.Invitation            
+            type: invitations.Invitation
             example: !include raml/invitation_example.json
         401:
           description: The agent must be authenticated and authorised (logged-in) to use this resource
@@ -85,7 +85,7 @@ uses:
 /clients/{clientId}/invitations/received:
   uriParameters:
     clientId:
-      description: Customer identifier.
+      description: Client identifier.
       type: string
   get:
     queryParameters:
@@ -112,7 +112,7 @@ uses:
         401:
           description: The client must be authenticated and authorised (logged-in) to use this resource
         403:
-          description: The client is not permitted to see this invitation.
+          description: The client is not permitted to see these invitations.
         404:
           description: The invitation with the specified id does not exist.
     uriParameters:

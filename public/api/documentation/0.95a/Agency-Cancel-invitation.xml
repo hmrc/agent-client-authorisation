@@ -1,5 +1,5 @@
 <endpoint>
-    <name>Agency Cancels and Invitation</name>
+    <name>Agency Cancels an Invitation</name>
     <description>Cancels an invitation</description>
     <section id="resource">
         <title>Resource</title>
