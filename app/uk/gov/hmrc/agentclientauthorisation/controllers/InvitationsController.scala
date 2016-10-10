@@ -20,9 +20,10 @@ import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Action
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -57,13 +58,28 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
-  def getSentInvitations(arn: Arn) = onlyForSaAgents.async {
-    invitationsRepository.list(arn).map { invitations =>
-      Ok(Json.toJson(toHalResource(invitations, arn)))
+  def getSentInvitations(arn: Arn) = onlyForSaAgents.async { request =>
+    if (arn != request.arn) {
+      Future successful Forbidden
+    } else {
+      invitationsRepository.list(arn).map { invitations =>
+        Ok(Json.toJson(toHalResource(invitations, arn)))
+      }
     }
   }
 
-  def getSentInvitation(arn: Arn, invitation: String) = Action.async {
+  def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { request =>
+    if (arn != request.arn) {
+      Future successful Forbidden
+    } else {
+      invitationsRepository.findById(BSONObjectID(invitation)).map {
+        case Some(r) => Ok(Json.toJson(toHalResource(r, arn)))
+        case None => NotFound
+      }
+    }
+  }
+
+  def cancelInvitation(arn: Arn, invitation: String) = Action.async {
     Future successful NotImplemented
   }
 
@@ -71,12 +87,15 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
     Hal.embedded("invitations", requestResources:_*) ++
-      HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.InvitationsController.getSentInvitations(arn).url)
+      HalLink("self", routes.InvitationsController.getSentInvitations(arn).url)
   }
 
-  private def toHalResource(request: Invitation, arn: Arn): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", uk.gov.hmrc.agentclientauthorisation.controllers.routes.InvitationsController.getSentInvitation(arn, request.id.stringify).url)))
-    HalResource(links, Json.toJson(request).as[JsObject])
+  private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
+    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url)))
+    if (invitation.mostRecentEvent().status == Pending) {
+      links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
+    }
+    HalResource(links, Json.toJson(invitation).as[JsObject])
   }
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r

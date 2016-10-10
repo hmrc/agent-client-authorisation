@@ -64,6 +64,14 @@ case class Invitation(
   customerRegimeId: String,
   postcode: String,
   events: List[StatusChangeEvent]) {
+
+  def firstEvent(): StatusChangeEvent = {
+    events.head
+  }
+
+  def mostRecentEvent(): StatusChangeEvent = {
+    events.last
+  }
 }
 
 case class AgentClientAuthorisationHttpRequest(
@@ -82,8 +90,21 @@ object Arn {
 
 object Invitation {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
-  implicit val jsonFormats = Json.format[Invitation]
-  val mongoFormats = ReactiveMongoFormats.mongoEntity(jsonFormats)
+  implicit val jsonWrites = new Writes[Invitation] {
+    def writes(invitation: Invitation) = Json.obj(
+      "id" -> invitation.id.stringify,
+      "regime" -> invitation.regime,
+      "customerRegimeId" -> invitation.customerRegimeId,
+      "postcode" -> invitation.postcode,
+      "arn" -> invitation.arn.arn,
+      "created" -> invitation.firstEvent().time,
+      "lastUpdated" -> invitation.mostRecentEvent().time,
+      "status" -> invitation.mostRecentEvent().status
+
+    )
+
+  }
+  val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 
 object AgentClientAuthorisationHttpRequest {
