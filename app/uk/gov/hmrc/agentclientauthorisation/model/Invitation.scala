@@ -67,7 +67,6 @@ case class Invitation(
 }
 
 case class AgentClientAuthorisationHttpRequest(
-  arn: Arn,
   regime: String,
   customerRegimeId: String,
   postcode: String)
@@ -76,16 +75,17 @@ object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
-object Invitation {
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
+object Arn {
   implicit val arnReads = new SimpleObjectReads[Arn]("arn", Arn.apply)
   implicit val arnWrites = new SimpleObjectWrites[Arn](_.arn)
+}
+
+object Invitation {
+  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonFormats = Json.format[Invitation]
   val mongoFormats = ReactiveMongoFormats.mongoEntity(jsonFormats)
 }
 
 object AgentClientAuthorisationHttpRequest {
-  implicit val arnReads = new SimpleObjectReads[Arn]("arn", Arn.apply)
-  implicit val arnWrites = new SimpleObjectWrites[Arn](_.arn)
   implicit val format = Json.format[AgentClientAuthorisationHttpRequest]
 }

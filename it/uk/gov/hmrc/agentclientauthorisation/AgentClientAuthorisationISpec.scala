@@ -42,7 +42,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "POST /requests" should {
     val customerRegimeId = "1234567899"
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
   "/agencies/:arn/invitations" should {
@@ -98,17 +98,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
     }
 
     "should not create invitation for an unsupported regime" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val response = responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""")
+      val response = responseForCreateInvitation(s"""{"regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""")
       response.status shouldBe 501
       (response.json \ "code").as[String] shouldBe "UNSUPPORTED_REGIME"
       (response.json \ "message").as[String] shouldBe "Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""
@@ -116,12 +116,12 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
     }
   }
 
@@ -142,8 +142,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    checkCreatedResponse(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}"""))
-    checkCreatedResponse(responseForCreateInvitation(s"""{"arn": "${arn.arn}", "regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}"""))
+    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}"""))
+    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}"""))
     (customer1Id, customer2Id)
   }
 
