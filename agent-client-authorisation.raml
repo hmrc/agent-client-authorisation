@@ -1,0 +1,146 @@
+#%RAML 1.0
+title: Agent Client Authorisation API
+baseUri: https://gov.uk/agent-client-authorisation
+version: v1
+mediaType: application/vnd.hmrc.1.0+json
+description: An API for agents and clients akin to the paper 64-8 form
+
+uses:
+  invitations: raml/invitations.raml
+  atoms:       raml/atoms.raml
+
+/agencies/{arn}/invitations/sent:
+  uriParameters:
+    arn:
+      description: The MTD platform Agent Registration Number
+      type: string
+  get:
+    description: List of invitations sent by the agency (arn)
+    queryParameters:
+      status:
+        description: filter invitations by status.
+        type: invitations.Status
+      clientRegimeId:
+        type: string
+      regime:
+        type: invitations.Regime
+    responses:
+      200:
+        description: A list of invitations.
+        body: invitations.Invitation[]
+      401:
+        description: The agent must be authenticated and authorised (logged-in) to use this resource
+      403:
+        description: The agent is not permitted to see this list of invitations.
+  post:
+    description: Create a new invitation
+    body:
+      type: atoms.AgentInvite
+    responses:
+      201:
+        description: The invitation was successfully created.
+        headers:
+          Location:
+            example: /agencies/A123456/invitations/sent/INV123456
+      401:
+        description: The agent must be authenticated and authorised (logged-in) to use this resource
+      403:
+        description: |
+          The request will not be fulfilled. Reasons for this may include
+             * The agency does not have the requisite active enrolments
+             * The client is not registered for that tax regime
+             * The supplied postcode is not the client's
+
+  /{invitationId}:
+    uriParameters:
+      invitationId:
+        description: The id of the invitation.
+        type: string
+    get:
+      description: Retrieve an invitation.
+      responses:
+        200:
+          description: Returns the invitation.
+          body:
+            type: invitations.Invitation
+            example: !include raml/invitation_example.json
+        401:
+          description: The agent must be authenticated and authorised (logged-in) to use this resource
+        403:
+          description: The agent is not permitted to see this invitation.
+        404:
+          description: The invitation with the specified id does not exist.
+    /cancel:
+      description: Cancel an invitation.
+      put:
+        responses:
+          204:
+            description: Invitation has been cancelled.
+          401:
+            description: The agent must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The agent is not permitted to cancel this invitation, for example because it has already been accepted or rejected.
+          404:
+            description: The invitation with the specified id does not exist.
+
+/clients/{clientId}/invitations/received:
+  uriParameters:
+    clientId:
+      description: Client identifier.
+      type: string
+  get:
+    queryParameters:
+      status:
+        description: filter invitations by status.
+        type: atoms.Status
+    responses:
+      200:
+        description: A list of invitations.
+        body: invitations.Invitation[]
+      401:
+        description: The client must be authenticated and authorised (logged-in) to use this resource
+      403:
+        description: The client is not permitted to see these invitations.
+
+  /{invitationId}:
+    get:
+      description: Retrieve an invitation.
+      responses:
+        200:
+          description: Returns the invitation.
+          body:
+            type: invitations.Invitation
+        401:
+          description: The client must be authenticated and authorised (logged-in) to use this resource
+        403:
+          description: The client is not permitted to see this invitation.
+        404:
+          description: The invitation with the specified id does not exist.
+    uriParameters:
+      invitationId:
+        description: The id of the invitation.
+        type: string
+    /accept:
+      description: Accept an invitation.
+      put:
+        responses:
+          204:
+            description: Invitation has been accepted.
+          401:
+            description: The client must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The client is not permitted to accept this invitation.
+          404:
+            description: The invitation with the specified id does not exist.
+    /reject:
+      description: Reject an invitation.
+      put:
+        responses:
+          204:
+            description: Invitation has been rejected.
+          401:
+            description: The client must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The client is not permitted to reject this invitation.
+          404:
+            description: The invitation with the specified id does not exist.
