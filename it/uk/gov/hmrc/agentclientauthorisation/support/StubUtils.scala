@@ -35,7 +35,7 @@ trait StubUtils {
       new UnknownUser(oid)
     }
 
-    def customer(oid: String = "556737e15500005500eaf68f"): Client = {
+    def client(oid: String = "556737e15500005500eaf68f"): Client = {
       new Client(oid)
     }
   }

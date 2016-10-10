@@ -46,10 +46,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
         ))
       else if (!validPostcode(authRequest.postcode))
         Future successful BadRequest
-      else if (!postcodeService.customerPostcodeMatches(authRequest.customerRegimeId, authRequest.postcode))
+      else if (!postcodeService.clientPostcodeMatches(authRequest.clientRegimeId, authRequest.postcode))
         Future successful Forbidden
       else
-        invitationsRepository.create(arn, authRequest.regime, authRequest.customerRegimeId, authRequest.postcode)
+        invitationsRepository.create(arn, authRequest.regime, authRequest.clientRegimeId, authRequest.postcode)
           .map(invitation => Created.withHeaders(location(invitation)))
     }
   }

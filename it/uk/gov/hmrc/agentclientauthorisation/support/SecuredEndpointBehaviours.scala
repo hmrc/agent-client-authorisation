@@ -31,7 +31,7 @@ trait SecuredEndpointBehaviours {
     }
 
     "return 401 when user is not an MTD agent" in {
-      given().customer().isLoggedIn("0123456789")
+      given().client().isLoggedIn("0123456789")
       request.status shouldBe 401
     }
   }
@@ -39,7 +39,7 @@ trait SecuredEndpointBehaviours {
   def anEndpointAccessibleForSaClientsOnly(request: => HttpResponse)(implicit me: Arn): Unit = {
     "return 401 when the requester is not authenticated" in {
       pending
-      given().customer().isNotLoggedIn()
+      given().client().isNotLoggedIn()
       request.status shouldBe 401
     }
 

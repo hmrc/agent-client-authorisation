@@ -51,8 +51,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "POST /agencies/:arn/invitations" should {
-    val customerRegimeId = "1234567899"
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}"""))
+    val clientRegimeId = "1234567899"
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientRegimeId", "postcode": "AA1 1AA"}"""))
   }
 
   "GET /agencies/:arn/invitations/sent/:invitationId" should {
@@ -61,11 +61,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     "Return a created invitation" in {
       val testStartTime = DateTime.now().getMillis
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val customerRegimeId = "1234567899"
-      val location = responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}""").header("location")
+      val clientRegimeId = "1234567899"
+      val location = responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientRegimeId", "postcode": "AA1 1AA"}""").header("location")
 
       val invitation = new Resource(location.get, port).get().json
-      checkInvitation(customerRegimeId, invitation, testStartTime)
+      checkInvitation(clientRegimeId, invitation, testStartTime)
     }
 
     "Return 404 for an invitation that doesn't exist" in {
@@ -77,8 +77,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "Return 403 if accessing someone else's invitation" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val customerRegimeId = "1234567899"
-      val location = responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customerRegimeId", "postcode": "AA1 1AA"}""").header("location")
+      val clientRegimeId = "1234567899"
+      val location = responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientRegimeId", "postcode": "AA1 1AA"}""").header("location")
 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = new Resource(location.get, port).get()
@@ -89,7 +89,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val (customer1Id: String, customer2Id: String) = createInvitations
+      val (client1Id: String, client2Id: String) = createInvitations
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually { // MongoDB is slow sometimes
@@ -97,7 +97,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
         Logger.info(s"responseJson = $responseJson")
 
-        val requestsArray = requests(responseJson).value.sortBy(j => (j \ "customerRegimeId").as[String])
+        val requestsArray = requests(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
         requestsArray should have size 2
         (responseJson, requestsArray)
       }
@@ -108,25 +108,25 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val firstInvitation = invitationsArray head
       val secondInvitation = invitationsArray(1)
 
-      val firstInvitationId = checkInvitation(customer1Id, firstInvitation, testStartTime)
-      val secondInvitationId = checkInvitation(customer2Id, secondInvitation, testStartTime)
+      val firstInvitationId = checkInvitation(client1Id, firstInvitation, testStartTime)
+      val secondInvitationId = checkInvitation(client2Id, secondInvitation, testStartTime)
 
       firstInvitationId should not be secondInvitationId
     }
 
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "BAn 1AA"}""").status shouldBe 400
     }
 
     "should not create invitation for an unsupported regime" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val response = responseForCreateInvitation(s"""{"regime": "sa", "customerRegimeId": "9876543210", "postcode": "A11 1AA"}""")
+      val response = responseForCreateInvitation(s"""{"regime": "sa", "clientRegimeId": "9876543210", "postcode": "A11 1AA"}""")
       response.status shouldBe 501
       (response.json \ "code").as[String] shouldBe "UNSUPPORTED_REGIME"
       (response.json \ "message").as[String] shouldBe "Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""
@@ -134,17 +134,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "AA11AA"}""").status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "A A1 1A A"}""").status shouldBe 201
     }
   }
 
 
-  def checkInvitation(customer2Id: String, invitation: JsValue, testStartTime: Long): String = {
+  def checkInvitation(client2Id: String, invitation: JsValue, testStartTime: Long): String = {
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val alphanumeric = "[0-9A-Za-z]+"
     val invitationId = (invitation \ "id").as[String]
@@ -153,7 +153,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
-    (invitation \ "customerRegimeId") shouldBe JsString(customer2Id)
+    (invitation \ "clientRegimeId") shouldBe JsString(client2Id)
     (invitation \ "status") shouldBe JsString("Pending")
     (invitation \ "created").as[Long] should beRecent
     (invitation \ "lastUpdated").as[Long] should beRecent
@@ -163,8 +163,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   def createInvitations: (String, String) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-    val customer1Id = "1234567890"
-    val customer2Id = "1234567891"
+    val client1Id = "1234567890"
+    val client2Id = "1234567891"
 
 
     note("there should be no requests")
@@ -176,9 +176,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customer1Id", "postcode": "AA1 1AA"}"""))
-    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "customerRegimeId": "$customer2Id", "postcode": "AA1 1AA"}"""))
-    (customer1Id, customer2Id)
+    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
+    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client2Id", "postcode": "AA1 1AA"}"""))
+    (client1Id, client2Id)
   }
 
   "PUT /requests/:id/accept" is {
@@ -190,17 +190,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
-  def requestId(response: JsValue, customerId: String): String =  {
-    val req = requests(response).value.filter(v => (v \ "customerRegimeId").as[String] == customerId).head
+  def requestId(response: JsValue, clientId: String): String =  {
+    val req = requests(response).value.filter(v => (v \ "clientRegimeId").as[String] == clientId).head
     (req \ "id").as[String]
   }
 
   def responseForAcceptRequest(requestId: String): HttpResponse = {
-    new Resource(s"/agent-customer-authorisation/requests/$requestId/accept", port).postEmpty()
+    new Resource(s"/agent-client-authorisation/requests/$requestId/accept", port).postEmpty()
   }
 
   def responseForRejectRequest(requestId: String): HttpResponse = {
-    new Resource(s"/agent-customer-authorisation/requests/$requestId/reject", port).postEmpty()
+    new Resource(s"/agent-client-authorisation/requests/$requestId/reject", port).postEmpty()
   }
 
   def responseForGetInvitations(): HttpResponse = {
@@ -225,22 +225,22 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request for a different user" in {
-      val (customer1Id, customer2Id) = createInvitations
+      val (client1Id, client2Id) = createInvitations
       val responseJson = responseForGetInvitations().json
 
-      given().customer().isLoggedIn(customer1Id)
+      given().client().isLoggedIn(client1Id)
 
-      val id: String = requestId(responseJson, customer2Id)
+      val id: String = requestId(responseJson, client2Id)
       doStatusChangeRequest(id).status shouldBe 403
     }
 
     "return forbidden for a request not in Pending status" in {
-      val (customer1Id, _) = createInvitations
+      val (client1Id, _) = createInvitations
       val responseJson = responseForGetInvitations().json
 
-      given().customer().isLoggedIn(customer1Id)
+      given().client().isLoggedIn(client1Id)
 
-      val id: String = requestId(responseJson, customer1Id)
+      val id: String = requestId(responseJson, client1Id)
       doStatusChangeRequest(id).status shouldBe 200
       eventually {
         doStatusChangeRequest(id).status shouldBe 403

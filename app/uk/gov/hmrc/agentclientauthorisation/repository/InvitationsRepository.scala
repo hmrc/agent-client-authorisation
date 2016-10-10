@@ -31,13 +31,13 @@ import scala.concurrent.Future
 
 trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
-  def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation]
+  def create(arn: Arn, regime: String, clientRegimeId: String, postcode: String): Future[Invitation]
 
   def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
 
   def list(arn: Arn): Future[List[Invitation]]
 
-  def list(regime: String, customerRegimeId: String): Future[List[Invitation]]
+  def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
 
 }
 
@@ -47,16 +47,16 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
-    Index(Seq("customerRegimeId" -> IndexType.Ascending))
+    Index(Seq("clientRegimeId" -> IndexType.Ascending))
   )
 
-  override def create(arn: Arn, regime: String, customerRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
+  override def create(arn: Arn, regime: String, clientRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
       arn = arn,
       regime = regime,
-      customerRegimeId = customerRegimeId,
+      clientRegimeId = clientRegimeId,
       postcode = postcode,
       events = List(StatusChangeEvent(now, Pending))
     )
@@ -68,8 +68,8 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
   override def list(arn: Arn): Future[List[Invitation]] =
     find("arn" -> arn.arn)
 
-  override def list(regime: String, customerRegimeId: String): Future[List[Invitation]] =
-    find("regime" -> regime, "customerRegimeId" -> customerRegimeId)
+  override def list(regime: String, clientRegimeId: String): Future[List[Invitation]] =
+    find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
 
   override def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))

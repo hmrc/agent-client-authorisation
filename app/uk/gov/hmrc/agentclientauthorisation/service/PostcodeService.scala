@@ -17,6 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 class PostcodeService {
-  def customerPostcodeMatches(customerIdentifier: String, postcode: String) =
+  def clientPostcodeMatches(clientIdentifier: String, postcode: String) =
         postcode.startsWith("A")
 }
