@@ -113,7 +113,7 @@ uses:
         401:
           description: The client must be authenticated and authorised (logged-in) to use this resource
         403:
-          description: The client is not permitted to see this invitation.
+          description: The client is not permitted to reject this invitation, for example because it has already been accepted, rejected or cancelled.
         404:
           description: The invitation with the specified id does not exist.
     uriParameters:
@@ -129,7 +129,7 @@ uses:
           401:
             description: The client must be authenticated and authorised (logged-in) to use this resource
           403:
-            description: The client is not permitted to accept this invitation.
+            description: The client is not permitted to reject this invitation, for example because it has already been accepted, rejected or cancelled.
           404:
             description: The invitation with the specified id does not exist.
     /reject:

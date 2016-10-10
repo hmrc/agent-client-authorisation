@@ -42,7 +42,7 @@
     <section id="sample-response">
         <table>
             <headings>
-                <cell>Name</cell>
+                <cell>Status Name</cell>
                 <cell>Meaning</cell>
             </headings>
             <rows>
