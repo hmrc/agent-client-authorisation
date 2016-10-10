@@ -48,25 +48,14 @@ uses:
         description: |
           The request will not be fulfilled. Reasons for this may include
              * The agency does not have the requisite active enrolments
-             * The customer is not registered for that tax regime
-             * The supplied postcode is not the customer's
+             * The client is not registered for that tax regime
+             * The supplied postcode is not the client's
 
   /{invitationId}:
     uriParameters:
       invitationId:
         description: The id of the invitation.
         type: string
-    delete:
-      description: Cancel an invitation.
-      responses:
-        204:
-          description: Invitation has been cancelled.
-        401:
-          description: The agent must be authenticated and authorised (logged-in) to use this resource
-        403:
-          description: The agent is not permitted to delete this invitation.
-        404:
-          description: The invitation with the specified id does not exist.
     get:
       description: Retrieve an invitation.
       responses:
@@ -81,6 +70,18 @@ uses:
           description: The agent is not permitted to see this invitation.
         404:
           description: The invitation with the specified id does not exist.
+    /cancel:
+      description: Cancel an invitation.
+      put:
+        responses:
+          204:
+            description: Invitation has been cancelled.
+          401:
+            description: The agent must be authenticated and authorised (logged-in) to use this resource
+          403:
+            description: The agent is not permitted to cancel this invitation, for example because it has already been accepted or rejected.
+          404:
+            description: The invitation with the specified id does not exist.
 
 /clients/{clientId}/invitations/received:
   uriParameters:
@@ -99,7 +100,7 @@ uses:
       401:
         description: The client must be authenticated and authorised (logged-in) to use this resource
       403:
-        description: The client is not permitted to see this invitation.
+        description: The client is not permitted to see these invitations.
 
   /{invitationId}:
     get:
@@ -112,7 +113,7 @@ uses:
         401:
           description: The client must be authenticated and authorised (logged-in) to use this resource
         403:
-          description: The client is not permitted to see these invitations.
+          description: The client is not permitted to see this invitation.
         404:
           description: The invitation with the specified id does not exist.
     uriParameters:
@@ -132,7 +133,7 @@ uses:
           404:
             description: The invitation with the specified id does not exist.
     /reject:
-      description: Accept an invitation.
+      description: Reject an invitation.
       put:
         responses:
           204:
