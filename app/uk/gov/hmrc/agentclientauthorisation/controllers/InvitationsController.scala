@@ -19,10 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Action
+import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
@@ -58,24 +58,28 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
-  def getSentInvitations(arn: Arn) = onlyForSaAgents.async { request =>
-    if (arn != request.arn) {
-      Future successful Forbidden
-    } else {
+  def getSentInvitations(arn: Arn) = onlyForSaAgents.async { implicit request =>
+    forThisAgency(arn, {
       invitationsRepository.list(arn).map { invitations =>
         Ok(Json.toJson(toHalResource(invitations, arn)))
       }
-    }
+    })
   }
 
-  def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { request =>
-    if (arn != request.arn) {
-      Future successful Forbidden
-    } else {
+  def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
+    forThisAgency(arn, {
       invitationsRepository.findById(BSONObjectID(invitation)).map {
         case Some(r) => Ok(Json.toJson(toHalResource(r, arn)))
         case None => NotFound
       }
+    })
+  }
+
+  private def forThisAgency(arn: Arn, block: => Future[Result])(implicit request: AgentRequest[_]) = {
+    if (arn != request.arn) {
+      Future successful Forbidden
+    } else {
+      block
     }
   }
 
