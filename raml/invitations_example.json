@@ -23,8 +23,8 @@
       "regime": "mtd-sa",
       "clientRegimeId": "123456789",
       "postcode": "NW66PJ",
-      "created": "Sat, 08 Oct 2016 20:04:37 GMT",
-      "lastUpdated": "Sun, 09 Oct 2016 20:04:37 GMT",
+      "created": "2016-10-28T16:41:41.090Z",
+      "lastUpdated": "2016-11-28T16:41:41.090Z",
       "status": "pending"
     }, {
       "_links": {
@@ -36,8 +36,8 @@
       "regime": "mtd-sa",
       "clientRegimeId": "0987654321",
       "postcode": "BN699J",
-      "created": "Sat, 08 Oct 2016 20:04:37 GMT",
-      "lastUpdated": "Sun, 09 Oct 2016 20:04:37 GMT",
+      "created": "2016-10-28T16:41:41.090Z",
+      "lastUpdated": "2016-11-28T16:41:41.090Z",
       "status": "rejected"
     }]
   }
