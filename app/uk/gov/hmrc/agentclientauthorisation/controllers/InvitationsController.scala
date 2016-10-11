@@ -23,7 +23,7 @@ import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentClientAuthorisationHttpRequest, Arn, Invitation, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -58,9 +58,9 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
-  def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String]) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.list(arn, regime, clientRegimeId).map { invitations =>
+      invitationsRepository.list(arn, regime, clientRegimeId, status).map { invitations =>
         Ok(Json.toJson(toHalResource(invitations, arn)))
       }
     })
@@ -90,7 +90,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private def toHalResource(requests: List[Invitation], arn: Arn): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
-    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, None, None).url))
+    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, None, None, None).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 

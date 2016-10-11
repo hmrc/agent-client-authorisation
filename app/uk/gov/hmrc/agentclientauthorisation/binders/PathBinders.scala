@@ -16,11 +16,23 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import play.api.mvc.QueryStringBindable
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, InvitationStatus}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.binders.SimpleObjectBinder
 
 object PathBinders {
   implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.arn)
   implicit object SaUtrBinder extends SimpleObjectBinder[SaUtr](SaUtr.apply, _.value)
+
+  implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] = {
+      params.get(key) map {
+        case value :: _ => Right(InvitationStatus.apply(value))
+      }
+    }
+
+    override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
+  }
+
 }

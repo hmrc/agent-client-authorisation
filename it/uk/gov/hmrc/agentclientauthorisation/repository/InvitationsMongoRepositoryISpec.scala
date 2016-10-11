@@ -114,7 +114,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
       addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
 
-      val list = listByArn(arn, Some("sa"), None)
+      val list = listByArn(arn, Some("sa"), None, None)
 
       list.size shouldBe 1
       list.head.clientRegimeId shouldBe saUtr1
@@ -127,10 +127,23 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
       addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
 
-      val list = listByArn(arn, None, Some(saUtr1))
+      val list = listByArn(arn, None, Some(saUtr1), None)
 
       list.size shouldBe 1
       list.head.clientRegimeId shouldBe saUtr1
+    }
+    "return elements with the specified status" in {
+      val arn = Arn("3")
+      val saUtr1 = "SAUTR3A"
+      val vrn2 = "VRN3B"
+
+      val invitations = addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
+      update(invitations.head.id, Accepted)
+
+      val list = listByArn(arn, None, None, Some(Pending))
+
+      list.size shouldBe 1
+      list.head.clientRegimeId shouldBe vrn2
     }
   }
 
@@ -207,10 +220,10 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   private def addInvitation(invitations: Invitation) = addInvitations(invitations) head
 
-  private def listByArn(arn: Arn) = await(repository.list(arn, None, None))
+  private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None))
 
-  private def listByArn(arn: Arn, regime: Option[String], clientRegimeId: Option[String]) =
-                            await(repository.list(arn, regime, clientRegimeId))
+  private def listByArn(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) =
+                            await(repository.list(arn, regime, clientRegimeId, status))
 
   private def listByClientRegimeId(regime: String, regimeId: String) = await(repository.list(regime, regimeId))
 

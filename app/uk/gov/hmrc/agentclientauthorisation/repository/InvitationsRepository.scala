@@ -36,7 +36,7 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
 
-  def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String]): Future[List[Invitation]]
+  def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
 
   def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
 
@@ -67,10 +67,12 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
   }
 
 
-  override def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String]): Future[List[Invitation]] = {
+  override def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.arn),
                             "clientRegimeId" -> clientRegimeId,
-                            "regime" -> regime)
+                            "regime" -> regime,
+                            "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
+
       .filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
