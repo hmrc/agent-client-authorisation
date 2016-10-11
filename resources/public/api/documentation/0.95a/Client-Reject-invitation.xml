@@ -1,5 +1,5 @@
 <endpoint>
-    <name>Client Rejects an Agents Invitation</name>
+    <name>Client Reject Invitation</name>
     <description>Reject an invitation</description>
     <section id="resource">
         <title>Resource</title>

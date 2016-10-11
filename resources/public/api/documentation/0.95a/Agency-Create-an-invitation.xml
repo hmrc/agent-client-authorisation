@@ -1,5 +1,5 @@
 <endpoint>
-    <name>Agency Creates an Invitation</name>
+    <name>Agency Create an Invitation</name>
     <description>Creates a new invitation between the agency and client</description>
     <section id="resource">
         <title>Resource</title>
