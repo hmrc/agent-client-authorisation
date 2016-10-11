@@ -21,13 +21,16 @@ import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
-  "/api/definition" should {
+
+
+  "/public/api/definition" should {
     "return the definition JSON" in {
       val response: HttpResponse = new Resource(s"/api/definition", port).get()
       response.status shouldBe 200
 
       val definition = response.json
-      (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
+
+      (definition \ "api" \ "name"   ).as[String] shouldBe "Agent-client Authorisation"
     }
   }
 }
