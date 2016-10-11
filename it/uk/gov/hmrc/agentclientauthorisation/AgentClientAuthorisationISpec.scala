@@ -62,6 +62,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val invitation = invitations(response.json)
       invitation.value.size shouldBe 1
       invitation.value.head \ "clientRegimeId" shouldBe JsString(clientRegimeId)
+      response.json \ "_links" \ "self" \ "href" shouldBe JsString("/agent-client-authorisation/agencies/ABCDEF12345678/invitations/sent?clientRegimeId=1234567890")
     }
   }
 

@@ -61,7 +61,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.list(arn, regime, clientRegimeId, status).map { invitations =>
-        Ok(Json.toJson(toHalResource(invitations, arn)))
+        Ok(Json.toJson(toHalResource(invitations, arn, regime, clientRegimeId, status)))
       }
     })
   }
@@ -87,10 +87,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     Future successful NotImplemented
   }
 
-  private def toHalResource(requests: List[Invitation], arn: Arn): HalResource = {
+  private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
-    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, None, None, None).url))
+    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, regime, clientRegimeId, status).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 
