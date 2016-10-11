@@ -107,6 +107,31 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       }
     }
 
+    "return elements for the specified regime only" in {
+      val arn = Arn("3")
+      val saUtr1 = "SAUTR3A"
+      val vrn2 = "VRN3B"
+
+      addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
+
+      val list = listByArn(arn, Some("sa"), None)
+
+      list.size shouldBe 1
+      list.head.clientRegimeId shouldBe saUtr1
+    }
+
+    "return elements for the specified client only" in {
+      val arn = Arn("3")
+      val saUtr1 = "SAUTR3A"
+      val vrn2 = "VRN3B"
+
+      addInvitations((arn, "sa", saUtr1, "user-details-1"), (arn, "vat", vrn2, "user-details-2"))
+
+      val list = listByArn(arn, None, Some(saUtr1))
+
+      list.size shouldBe 1
+      list.head.clientRegimeId shouldBe saUtr1
+    }
   }
 
 
@@ -182,7 +207,10 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   private def addInvitation(invitations: Invitation) = addInvitations(invitations) head
 
-  private def listByArn(arn: Arn) = await(repository.list(arn))
+  private def listByArn(arn: Arn) = await(repository.list(arn, None, None))
+
+  private def listByArn(arn: Arn, regime: Option[String], clientRegimeId: Option[String]) =
+                            await(repository.list(arn, regime, clientRegimeId))
 
   private def listByClientRegimeId(regime: String, regimeId: String) = await(repository.list(regime, regimeId))
 

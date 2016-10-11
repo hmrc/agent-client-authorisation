@@ -58,9 +58,9 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
-  def getSentInvitations(arn: Arn) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.list(arn).map { invitations =>
+      invitationsRepository.list(arn, regime, clientRegimeId).map { invitations =>
         Ok(Json.toJson(toHalResource(invitations, arn)))
       }
     })
@@ -90,8 +90,8 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private def toHalResource(requests: List[Invitation], arn: Arn): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
-    Hal.embedded("invitations", requestResources:_*) ++
-      HalLink("self", routes.InvitationsController.getSentInvitations(arn).url)
+    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, None, None).url))
+    Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {

@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsString, JsValue}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
@@ -47,6 +47,21 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val response = responseForGetInvitations()
 
       response.status shouldBe 403
+    }
+
+    "return only invitations for the specified client" in {
+      val clientRegimeId = "1234567890"
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientRegimeId", "postcode": "AA1 1AA"}""").header("location")
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "AA1 1AA"}""").header("location")
+
+      val response = responseForGetInvitations(clientRegimeId)
+
+      response.status shouldBe 200
+      val invitation = invitations(response.json)
+      invitation.value.size shouldBe 1
+      invitation.value.head \ "clientRegimeId" shouldBe JsString(clientRegimeId)
     }
   }
 
@@ -97,7 +112,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
         Logger.info(s"responseJson = $responseJson")
 
-        val requestsArray = requests(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
+        val requestsArray = invitations(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
         requestsArray should have size 2
         (responseJson, requestsArray)
       }
@@ -171,7 +186,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     eventually {
       inside(responseForGetInvitations()) { case resp =>
         resp.status shouldBe 200
-        requests(resp.json).value shouldBe 'empty
+        invitations(resp.json).value shouldBe 'empty
       }
     }
 
@@ -186,12 +201,16 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 //    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
   }
 
-  def requests(response: JsValue) = {
-    (response \ "_embedded" \ "invitations").as[JsArray]
+  def invitations(response: JsValue) = {
+    val embedded = response \ "_embedded" \ "invitations"
+    embedded match {
+      case array: JsArray => array
+      case obj: JsObject => JsArray(Seq(obj))
+    }
   }
 
   def requestId(response: JsValue, clientId: String): String =  {
-    val req = requests(response).value.filter(v => (v \ "clientRegimeId").as[String] == clientId).head
+    val req = invitations(response).value.filter(v => (v \ "clientRegimeId").as[String] == clientId).head
     (req \ "id").as[String]
   }
 
@@ -205,6 +224,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   def responseForGetInvitations(): HttpResponse = {
     new Resource(getInvitationsUrl, port).get()
+  }
+
+  def responseForGetInvitations(clientRegimeId: String): HttpResponse = {
+    new Resource(getInvitationsUrl + s"?clientRegimeId=$clientRegimeId", port).get()
   }
 
   def responseForGetInvitation(invitationId: String = "none"): HttpResponse = {

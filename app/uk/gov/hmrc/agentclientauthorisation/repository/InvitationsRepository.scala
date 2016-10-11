@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -35,7 +36,7 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
 
-  def list(arn: Arn): Future[List[Invitation]]
+  def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String]): Future[List[Invitation]]
 
   def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
 
@@ -47,7 +48,8 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
-    Index(Seq("clientRegimeId" -> IndexType.Ascending))
+    Index(Seq("clientRegimeId" -> IndexType.Ascending)),
+    Index(Seq("regime" -> IndexType.Ascending))
   )
 
   override def create(arn: Arn, regime: String, clientRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
@@ -65,8 +67,15 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
   }
 
 
-  override def list(arn: Arn): Future[List[Invitation]] =
-    find("arn" -> arn.arn)
+  override def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String]): Future[List[Invitation]] = {
+    val searchOptions = Seq("arn" -> Some(arn.arn),
+                            "clientRegimeId" -> clientRegimeId,
+                            "regime" -> regime)
+      .filter(_._2.isDefined)
+      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
+
+    find(searchOptions: _*)
+  }
 
   override def list(regime: String, clientRegimeId: String): Future[List[Invitation]] =
     find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
