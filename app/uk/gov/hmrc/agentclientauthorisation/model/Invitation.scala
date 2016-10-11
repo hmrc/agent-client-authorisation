@@ -61,7 +61,7 @@ case class Invitation(
   id: BSONObjectID,
   arn: Arn,
   regime: String,
-  customerRegimeId: String,
+  clientRegimeId: String,
   postcode: String,
   events: List[StatusChangeEvent]) {
 
@@ -76,7 +76,7 @@ case class Invitation(
 
 case class AgentClientAuthorisationHttpRequest(
   regime: String,
-  customerRegimeId: String,
+  clientRegimeId: String,
   postcode: String)
 
 object StatusChangeEvent {
@@ -94,7 +94,7 @@ object Invitation {
     def writes(invitation: Invitation) = Json.obj(
       "id" -> invitation.id.stringify,
       "regime" -> invitation.regime,
-      "customerRegimeId" -> invitation.customerRegimeId,
+      "clientRegimeId" -> invitation.clientRegimeId,
       "postcode" -> invitation.postcode,
       "arn" -> invitation.arn.arn,
       "created" -> invitation.firstEvent().time,
