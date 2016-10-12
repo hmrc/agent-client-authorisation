@@ -3,4 +3,4 @@ GET        /api/definition                                       uk.gov.hmrc.api
 
 GET        /api/documentation/:version/:endpointName             uk.gov.hmrc.api.controllers.DocumentationController.documentation(version,endpointName)
 
-GET        /api/conf/:version/*file                              @uk.gov.hmrc.agentclientauthorisation.controllers.RamlController.raml(version, file)
+#GET        /api/conf/:version/*file                              @uk.gov.hmrc.agentclientauthorisation.controllers.RamlController.raml(version, file)
