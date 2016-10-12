@@ -14,20 +14,47 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.api
 
+import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.language.postfixOps
+
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
-  "/api/definition" should {
+
+
+  "/public/api/definition" should {
     "return the definition JSON" in {
       val response: HttpResponse = new Resource(s"/api/definition", port).get()
       response.status shouldBe 200
 
       val definition = response.json
+
       (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
+    }
+  }
+
+
+  "provide XML documentation for all endpoints in the definitions file" in new ApiTestSupport {
+
+    lazy override val runningPort: Int = port
+
+    forAllApiVersions() { case (version, endpoints) =>
+
+      info(s"Checking API XML documentation for version[$version] of the API")
+
+      endpoints foreach { endpoint =>
+
+        info(s"$version - ${endpoint.endPointName}")
+
+        withClue(s"\ndefinitions specifies endpoint '${endpoint endPointName}', it does not exist \ncheck the name in the corresponding XML documentation?)\n") {
+          val response = documentationFor(endpoint)
+          response.status shouldBe 200
+        }
+      }
     }
   }
 }

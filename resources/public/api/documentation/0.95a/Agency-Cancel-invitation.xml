@@ -1,9 +1,9 @@
 <endpoint>
-    <name>Agency Cancels an Invitation</name>
+    <name>Agency Cancel Invitation</name>
     <description>Cancels an invitation</description>
     <section id="resource">
         <title>Resource</title>
-        <resource>DELETE /agencies/{arn}/invitations/sent/{invitationId}</resource>
+        <resource>PUT /agencies/{arn}/invitations/sent/{invitationId}/cancel</resource>
     </section>
     <section id="path-parameters">
         <title>Path Parameters</title>
@@ -66,12 +66,12 @@
                 <row>
                     <cell>Permission Denied</cell>
                     <cell><code>403 (Forbidden)</code></cell>
-                    <cell><code>The agency is not permitted to see this list of invitations</code></cell>
+                    <cell><code>The agent is not permitted to cancel this invitation, for example because it has already been accepted or rejected.</code></cell>
                 </row>
                 <row>
                     <cell>Not Found</cell>
                     <cell><code>404 (Not Found)</code></cell>
-                    <cell><code>The invitation does not exist</code></cell>
+                    <cell><code>The invitation with the specified id does not exist.</code></cell>
                 </row>
             </rows>
         </table>

@@ -26,6 +26,7 @@ trait MicroService {
     .settings(scalaSettings: _*)
     .settings(publishingSettings: _*)
     .settings(defaultSettings(): _*)
+    .settings(unmanagedResourceDirectories in Compile += baseDirectory.value / "resources")
     .settings(routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._"))
     .settings(
       targetJvm := "jvm-1.8",
