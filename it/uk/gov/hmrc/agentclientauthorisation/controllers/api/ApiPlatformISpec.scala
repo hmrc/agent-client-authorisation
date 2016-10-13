@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.api
+package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.language.postfixOps
-import scala.util.Try
-import scala.xml.{Node, XML}
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
@@ -43,7 +41,7 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
     lazy override val runningPort: Int = port
 
-    forAllApiVersions() { case (version, endpoints) =>
+    forAllApiVersions(endpointsByVersion) { case (version, endpoints) =>
 
       info(s"Checking API XML documentation for version[$version] of the API")
 
@@ -55,11 +53,38 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
         val (status, contents) = xmlDocumentationFor(endpoint)
 
-        withClue(s"definitions specifies endpoint '$endpointName', it does not exist check the name in the corresponding XML documentation?)") {
+        withClue(s"definitions specifies endpoint '$endpointName', is there a ${endpointName.replaceAll(" ", "-")}.xml file?") {
           status shouldBe 200
         }
-        
-        (contents \ "name").head.text shouldBe endpointName
+
+        withClue(s"documentation for '$endpointName' should be well formed XML with a corresponding 'name' element") {
+          contents.isSuccess shouldBe true
+          (contents.get \ "name").head.text shouldBe endpointName
+        }
+      }
+    }
+  }
+
+
+  "provide RAML documentation exists for all API versions" in new ApiTestSupport {
+
+    lazy override val runningPort: Int = port
+
+    forAllApiVersions(ramlByVersion) { case (version, raml) =>
+
+      info(s"Checking API RAML documentation for version[$version] of the API")
+
+      withClue("RAML does not contain a valid RAML 1.0 version header") {
+        raml should include("#%RAML 1.0")
+      }
+
+      withClue("RAML does not contain the title 'Agent Client Authorisation API'") {
+        raml should include("title: Agent Client Authorisation API")
+
+      }
+
+      withClue(s"RAML does not contain a matching version declaration of [$version]") {
+        raml should include(s"version: $version")
       }
     }
   }
