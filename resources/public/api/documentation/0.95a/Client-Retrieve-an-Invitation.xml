@@ -1,5 +1,5 @@
 <endpoint>
-    <name>Client Retrieve an invitation</name>
+    <name>Client Retrieve an Invitation</name>
     <description>Retrieves a specific invitation sent by an agency</description>
     <section id="resource">
         <title>Resource</title>

@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.api
 
-import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.language.postfixOps
+import scala.util.Try
+import scala.xml.{Node, XML}
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
@@ -48,12 +49,17 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
       endpoints foreach { endpoint =>
 
-        info(s"$version - ${endpoint.endPointName}")
+        val endpointName: String = endpoint.endPointName
 
-        withClue(s"\ndefinitions specifies endpoint '${endpoint endPointName}', it does not exist \ncheck the name in the corresponding XML documentation?)\n") {
-          val response = documentationFor(endpoint)
-          response.status shouldBe 200
+        info(s"$version - $endpointName")
+
+        val (status, contents) = xmlDocumentationFor(endpoint)
+
+        withClue(s"definitions specifies endpoint '$endpointName', it does not exist check the name in the corresponding XML documentation?)") {
+          status shouldBe 200
         }
+        
+        (contents \ "name").head.text shouldBe endpointName
       }
     }
   }

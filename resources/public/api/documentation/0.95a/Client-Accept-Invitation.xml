@@ -1,5 +1,5 @@
 <endpoint>
-    <name>Client Accept an Invitation</name>
+    <name>Client Accept Invitation</name>
     <description>Accept an invitation</description>
     <section id="resource">
         <title>Resource</title>

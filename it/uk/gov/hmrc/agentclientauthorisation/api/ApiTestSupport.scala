@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.api
 
-import java.net.URL
-
 import play.api.libs.json.JsValue
 import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.api.ApiTestSupport.Endpoint
 import uk.gov.hmrc.agentclientauthorisation.support.Resource
 import uk.gov.hmrc.play.http.HttpResponse
+
+import scala.xml.{Elem, XML}
 
 object ApiTestSupport {
   case class Endpoint(uriPattern: String,
@@ -41,9 +41,10 @@ trait ApiTestSupport {
     new Resource(definitionPath toString, runningPort).get().json
   }
 
-  def documentationFor(endpoint:Endpoint): HttpResponse = {
-    val endpointPath = s"${endpoint version}/${UriEncoding.encodePathSegment(endpoint endPointName, "UTF-8")}"
-    new Resource(s"$documentationPath/$endpointPath", runningPort).get()
+  def xmlDocumentationFor(endpoint:Endpoint): (Int, Elem) = {
+    val endpointPath = s"${endpoint version}/${UriEncoding.encodePathSegment(endpoint.endPointName, "UTF-8")}"
+    val response: HttpResponse = new Resource(s"$documentationPath/$endpointPath", runningPort).get()
+    (response.status, XML.loadString(response.body))
   }
 
   private val apiSection = (definitionsJson \ "api").as[JsValue]
