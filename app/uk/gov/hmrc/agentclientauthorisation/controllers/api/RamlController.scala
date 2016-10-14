@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.controllers
+package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
 import uk.gov.hmrc.api.controllers.DocumentationController
 
 
-class RamlController extends DocumentationController {
+object RamlController extends DocumentationController {
 
   def raml(version: String, file: String) = {
     super.at(s"/public/api/conf/$version", file)

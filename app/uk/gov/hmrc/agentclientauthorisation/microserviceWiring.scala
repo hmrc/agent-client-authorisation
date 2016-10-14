@@ -21,11 +21,11 @@ import java.net.URL
 import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgenciesFakeConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.{InvitationsController, RamlController}
+import uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController
+import uk.gov.hmrc.agentclientauthorisation.controllers.api.RamlController
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
-import uk.gov.hmrc.api.controllers.DocumentationController
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
@@ -70,9 +70,7 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector),
-    classOf[DocumentationController] -> DocumentationController,
-    classOf[RamlController] -> new RamlController()
+    classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector)
   )
 
   def getController[A](controllerClass: Class[A]) : A = controllers(controllerClass).asInstanceOf[A]
