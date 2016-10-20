@@ -20,9 +20,10 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
+import play.api.libs.json._
+import play.mvc.Http.HeaderNames.LOCATION
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, StatusChangeEvent}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
@@ -38,15 +39,34 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
-  "GET /clients/{clientId}/invitations/received" should {
+  "GET /clients/:clientId/invitations/received" should {
     "return a 200 response" in {
-      val (client1Id, client2Id) = createInvitations
+      val (invitation1, invitation2) = createInvitations
+      val client1Id : String = invitation1.clientId
+      val client2Id : String = invitation2.clientId
+
       val response = new Resource( s"/agent-client-authorisation/client/$client1Id/invitations/received", port).get
-    //  s"/agent-client-authorisation/client/$clientId/invitations/received
       response.status shouldBe 200
 
-     // val invitation = invitations(response.json)
-     // invitation.value.size shouldBe 1
+      //      val json: JsValue = response.json
+      //      val invitation = invitations(json)
+      //      invitation.value.size shouldBe 1
+    }
+  }
+
+  "GET /clients/:clientId/invitations/received/:invitation" should {
+    "return a 200 response" in {
+      val (invitation1, invitation2) = createInvitations
+      val client1Id : String = invitation1.clientId
+      val client2Id : String = invitation2.clientId
+
+      val invitationId = invitation1.id
+      val response = new Resource( s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitationId", port).get
+      response.status shouldBe 200
+
+      //      val json: JsValue = response.json
+      //      val invitation = invitations(json)
+      //      invitation.value.size shouldBe 1
     }
   }
 
@@ -117,7 +137,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val (client1Id: String, client2Id: String) = createInvitations
+      val (invitation1: TestInvitation, invitation2: TestInvitation) = createInvitations
+      val client1Id: String = invitation1.clientId
+      val client2Id: String = invitation2.clientId
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually { // MongoDB is slow sometimes
@@ -188,7 +210,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     invitationId
   }
 
-  def createInvitations: (String, String) = {
+  def createInvitations: (TestInvitation,TestInvitation) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
@@ -204,14 +226,27 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
-    checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client2Id", "postcode": "AA1 1AA"}"""))
-    (client1Id, client2Id)
+    val location1: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
+    val location2: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client2Id", "postcode": "AA1 1AA"}"""))
+
+    val json1: JsValue = new Resource(location1, port).get().json
+    val json2: JsValue = new Resource(location2, port).get().json
+
+    val invitation1 = invitation(json1)
+    val invitation2 = invitation(json2)
+
+    (invitation1, invitation2)
   }
 
   "PUT /requests/:id/accept" is {
     pending
 //    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
+  }
+
+  def invitation(json: JsValue): TestInvitation = {
+    TestInvitation (
+      (json \ "id").as[String],
+      (json \ "clientRegimeId").as[String])
   }
 
   def invitations(response: JsValue) = {
@@ -252,16 +287,22 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   def checkCreatedResponse(httpResponse: HttpResponse) = {
     httpResponse.status shouldBe 201
-    httpResponse.header("location").get should startWith (s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+    val location: String = httpResponse.header(LOCATION).get
+    location should startWith (s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+    location
   }
 
   def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
+    val (invitation1, invitation2) = createInvitations
+    val client1Id : String = invitation1.clientId
+    val client2Id : String = invitation2.clientId
+
     "return not found for an unknown request" in {
       doStatusChangeRequest("some-request-id").status shouldBe 404
     }
 
     "return forbidden for a request for a different user" in {
-      val (client1Id, client2Id) = createInvitations
+      //val (client1Id, client2Id) = createInvitations
       val responseJson = responseForGetInvitations().json
 
       given().client().isLoggedIn(client1Id)
@@ -271,7 +312,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request not in Pending status" in {
-      val (client1Id, _) = createInvitations
+      //val (client1Id, _) = createInvitations
       val responseJson = responseForGetInvitations().json
 
       given().client().isLoggedIn(client1Id)
@@ -283,4 +324,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       }
     }
   }
+}
+
+case class TestInvitation(id: String, clientId: String ) {
 }

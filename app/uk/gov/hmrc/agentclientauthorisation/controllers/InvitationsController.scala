@@ -56,7 +56,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   }
 
   private def location(invitation: Invitation) = {
-    "location" -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
+    LOCATION -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
@@ -81,6 +81,13 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
       Future successful Forbidden
     } else {
       block
+    }
+  }
+
+  def getInvitationForClient(clientId: String, invitationId: String) = Action.async {
+    invitationsRepository.findById(BSONObjectID(invitationId)).map {
+      case Some(r) => Ok(toJson(r))
+      case None => NotFound
     }
   }
 
@@ -110,6 +117,21 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }
+
+//  private def toHalResource(invitations: List[Invitation], clientId: String): HalResource = {
+//    val requestResources: Vector[HalResource] = invitations.map(toHalResource(_, clientId)).toVector
+//
+//    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, regime, clientRegimeId, status).url))
+//    Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
+//  }
+//
+//  private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
+//    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url)))
+//    if (invitation.mostRecentEvent().status == Pending) {
+//      links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
+//    }
+//    HalResource(links, toJson(invitation).as[JsObject])
+//  }
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
   private def validPostcode(postcode: String) = postcodeWithoutSpacesRegex.findFirstIn(postcode.replaceAll(" ", "")).isDefined
