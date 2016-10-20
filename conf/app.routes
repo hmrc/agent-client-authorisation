@@ -4,4 +4,4 @@ GET      /agencies/:arn/invitations/sent                @uk.gov.hmrc.agentclient
 GET      /agencies/:arn/invitations/sent/:invitation    @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 DELETE   /agencies/:arn/invitations/sent/:invitation    @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 
-GET /client/:clientId/invitations/received             @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.ping(clientId: String)
+GET /client/:clientId/invitations/received             @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationsForClient(clientId: String)

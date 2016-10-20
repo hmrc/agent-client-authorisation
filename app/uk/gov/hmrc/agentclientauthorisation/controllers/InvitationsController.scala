@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
@@ -61,7 +62,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.list(arn, regime, clientRegimeId, status).map { invitations =>
-        Ok(Json.toJson(toHalResource(invitations, arn, regime, clientRegimeId, status)))
+        Ok(toJson(toHalResource(invitations, arn, regime, clientRegimeId, status)))
       }
     })
   }
@@ -69,26 +70,23 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.findById(BSONObjectID(invitation)).map {
-        case Some(r) => Ok(Json.toJson(toHalResource(r, arn)))
+        case Some(r) => Ok(toJson(toHalResource(r, arn)))
         case None => NotFound
       }
     })
   }
-
-  def ping(clientId : String) = Action.async { implicit request =>
-    val regime = "mtd-sa"
-    invitationsRepository.list(regime, clientId).map { invitation =>
-      Ok(Json.toJson(invitation))//needs a to Hal Resource
-    }
-  }
-
-
 
   private def forThisAgency(arn: Arn, block: => Future[Result])(implicit request: AgentRequest[_]) = {
     if (arn != request.arn) {
       Future successful Forbidden
     } else {
       block
+    }
+  }
+
+  def getInvitationsForClient(clientId: String) = Action.async {
+    invitationsRepository.list(SUPPORTED_REGIME,clientId) map {
+      results => Ok(toJson(results))
     }
   }
 
@@ -110,7 +108,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     if (invitation.mostRecentEvent().status == Pending) {
       links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }
-    HalResource(links, Json.toJson(invitation).as[JsObject])
+    HalResource(links, toJson(invitation).as[JsObject])
   }
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r

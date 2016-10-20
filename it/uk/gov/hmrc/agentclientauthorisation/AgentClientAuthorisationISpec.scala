@@ -38,6 +38,18 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
+  "GET /clients/{clientId}/invitations/received" should {
+    "return a 200 response" in {
+      val (client1Id, client2Id) = createInvitations
+      val response = new Resource( s"/agent-client-authorisation/client/$client1Id/invitations/received", port).get
+    //  s"/agent-client-authorisation/client/$clientId/invitations/received
+      response.status shouldBe 200
+
+     // val invitation = invitations(response.json)
+     // invitation.value.size shouldBe 1
+    }
+  }
+
   "GET /agencies/:arn/invitations/sent"  should {
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetInvitations())
 
@@ -99,15 +111,6 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = new Resource(location.get, port).get()
       response.status shouldBe 403
-    }
-
-    "Get client invitations" in {
-      //given().client().isLoggedIn(client1Id)
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val clientId:String = "1234"
-      val response = new Resource(s"/agent-client-authorisation/client/$clientId/invitations/received", port).get()
-
-      response.status shouldBe 200
     }
   }
 
