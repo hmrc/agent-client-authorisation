@@ -100,6 +100,15 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val response = new Resource(location.get, port).get()
       response.status shouldBe 403
     }
+
+    "Get client invitations" in {
+      //given().client().isLoggedIn(client1Id)
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      val clientId:String = "1234"
+      val response = new Resource(s"/agent-client-authorisation/client/$clientId/invitations/received", port).get()
+
+      response.status shouldBe 200
+    }
   }
 
   "/agencies/:arn/invitations" should {

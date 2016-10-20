@@ -75,6 +75,15 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     })
   }
 
+  def ping(clientId : String) = Action.async { implicit request =>
+    val regime = "mtd-sa"
+    invitationsRepository.list(regime, clientId).map { invitation =>
+      Ok(Json.toJson(invitation))//needs a to Hal Resource
+    }
+  }
+
+
+
   private def forThisAgency(arn: Arn, block: => Future[Result])(implicit request: AgentRequest[_]) = {
     if (arn != request.arn) {
       Future successful Forbidden
@@ -86,6 +95,8 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def cancelInvitation(arn: Arn, invitation: String) = Action.async {
     Future successful NotImplemented
   }
+
+
 
   private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
