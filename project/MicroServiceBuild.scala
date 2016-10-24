@@ -29,6 +29,7 @@ private object AppDependencies {
   private val playReactivemongoVersion = "4.8.0"
   private val playHalVersion = "0.3.0"
   private val playHmrcApiVersion = "0.6.0"
+  private val playWhitelistVersion = "1.1.0"
 
   val compile = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion,
@@ -42,6 +43,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-json-logger" % playJsonLoggerVersion,
     "uk.gov.hmrc" %% "play-hal" % playHalVersion,
     "uk.gov.hmrc" %% "play-hmrc-api" % playHmrcApiVersion,
+    "uk.gov.hmrc" %% "play-whitelist-filter" % playWhitelistVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion
   )
 

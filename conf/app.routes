@@ -3,3 +3,6 @@ POST     /agencies/:arn/invitations                     @uk.gov.hmrc.agentclient
 GET      /agencies/:arn/invitations/sent                @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitations(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 GET      /agencies/:arn/invitations/sent/:invitation    @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 DELETE   /agencies/:arn/invitations/sent/:invitation    @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
+
+# Whitelist
+GET      /forbidden                                     @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
