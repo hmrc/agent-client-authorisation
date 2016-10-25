@@ -95,7 +95,8 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   }
 
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url)))
+    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
+                                HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
     if (invitation.mostRecentEvent().status == Pending) {
       links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }

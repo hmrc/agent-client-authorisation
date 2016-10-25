@@ -167,6 +167,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     invitationId should fullyMatch regex alphanumeric
     (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
+    (invitation \ "_links" \ "agency" \ "href").as[String] shouldBe s"http://localhost:$wiremockPort/agencies-fake/agencies/${arn.arn}"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientRegimeId") shouldBe JsString(client2Id)
