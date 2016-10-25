@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.domain.{AgentCode, SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
@@ -36,7 +37,12 @@ object Agency {
 class AgenciesFakeConnector(baseUrl: URL, httpGet: HttpGet) {
 
   def findArn(agentCode: AgentCode)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
-    httpGet.GET[Option[Agency]](new URL(baseUrl, s"/agencies-fake/agencies/agentcode/$agentCode").toString)
+    httpGet.GET[Option[Agency]](new URL(baseUrl, s"/agencies-fake/agencies/agentcode/${encodePathSegment(agentCode.value)}").toString)
       .map(_.map(_.arn))
   }
+
+  def agencyUrl(arn: Arn): URL = {
+    new URL(baseUrl, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")
+  }
+
 }
