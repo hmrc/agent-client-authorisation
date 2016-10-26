@@ -96,7 +96,15 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       val invitation = response.json
       checkClientsInvitation(client1Id, invitation, testStartTime)
-    }//
+    }
+
+    "return a 401 response if not logged-in" in {
+      val (invitation1, invitation2) = createInvitations
+      val client1Id: String = invitation1.clientId
+
+      given().client(clientId).isNotLoggedIn()
+      responseForGetClientInvitation(client1Id).status shouldBe 401
+    }
 
     "return 404 when invitation not found" in {
 
