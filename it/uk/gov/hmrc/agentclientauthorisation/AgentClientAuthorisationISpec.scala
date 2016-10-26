@@ -367,7 +367,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     location
   }
 
-  def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = { //make a client version
+  def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
     val (invitation1, invitation2) = createInvitations
     val client1Id : String = invitation1.clientId
     val client2Id : String = invitation2.clientId
@@ -377,7 +377,6 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request for a different user" in {
-      //val (client1Id, client2Id) = createInvitations
       val responseJson = responseForGetInvitations().json
 
       given().client().isLoggedIn(client1Id)
@@ -387,7 +386,6 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return forbidden for a request not in Pending status" in {
-      //val (client1Id, _) = createInvitations
       val responseJson = responseForGetInvitations().json
 
       given().client().isLoggedIn(client1Id)
