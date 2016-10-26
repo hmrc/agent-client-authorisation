@@ -99,7 +99,14 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
       "Return forbidden" when {
         "the invitation is for a different client" in {
-          pending
+          val request = FakeRequest()
+          whenAuthIsCalled thenReturn aClientUser()
+          whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
+          whenFindingAnInvitation thenReturn anInvitationWithStatus(Cancelled)
+
+          val response = await(endpoint(request))
+
+          response.header.status shouldBe 403
         }
 
         "the invitation has been cancelled in" in {
@@ -173,6 +180,6 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def aClientUser() =
       Future successful Accounts(None, Some(SaUtr(saUtr)))
 
-    def aMtdUser() =
-      Future successful Some(MtdClientId(clientRegimeId))
+    def aMtdUser(clientId: String = clientRegimeId) =
+      Future successful Some(MtdClientId(clientId))
 }

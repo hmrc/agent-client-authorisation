@@ -42,7 +42,7 @@ class ClientInvitationsController(invitationsRepository: InvitationsRepository,
 
   def rejectInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => changeInvitationStatus(invitation, model.Rejected)
+      case Some(invitation) if invitation.clientRegimeId == request.mtdClientId.value => changeInvitationStatus(invitation, model.Rejected)
       case None => Future successful NotFound
       case _ => Future successful Forbidden
     }
