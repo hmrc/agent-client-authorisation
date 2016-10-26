@@ -55,7 +55,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       val json: JsValue = response.json
       val invitation = invitations(json)
-      invitation.value.size shouldBe 1
+      invitation.value.size should be >= 1
     }
 
     "return a 401 response if not logged-in" in {
@@ -69,7 +69,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       given().client().isLoggedIn(client1Id.value.toString)
 
-      val response = new Resource(s"/agent-client-authorisation/client/${client2Id}/invitations/received", port).get
+      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received", port).get
 
       response.status shouldBe 403
     }
