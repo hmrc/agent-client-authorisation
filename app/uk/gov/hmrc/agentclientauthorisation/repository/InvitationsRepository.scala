@@ -40,6 +40,10 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
 
+  def findRegimeID(clientId: String): Future[List[Invitation]]
+
+  //def list(clientRegimeId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
+
 }
 
 class InvitationsMongoRepository(implicit mongo: () => DB)
@@ -66,6 +70,16 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     insert(request).map(_ => request)
   }
 
+  /*override def list(clientRegimeId : String, regime: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
+    val searchOptions = Seq("clientRegimeId" -> clientRegimeId,
+                            "regime" -> regime,
+                            "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
+
+      .filter(_._2.isDefined)
+      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
+
+    find(searchOptions: _*)
+  }*/
 
   override def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.arn),
@@ -81,6 +95,10 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
 
   override def list(regime: String, clientRegimeId: String): Future[List[Invitation]] =
     find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
+
+  override def findRegimeID(clientId: String): Future[List[Invitation]] =
+    find()
+
 
   override def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
