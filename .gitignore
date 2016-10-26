@@ -29,6 +29,7 @@ server.pid
 /.settings
 target
 .target
+test/test.json
 test-result
 tmp
 .idea_modules
