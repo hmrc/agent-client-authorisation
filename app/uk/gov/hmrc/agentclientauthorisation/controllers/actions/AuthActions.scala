@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -60,10 +60,14 @@ trait AuthActions {
 
   val onlyForSaClients = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
     override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, SaClientRequest[A]]] = {
-      Future successful (request.accounts.sa match {
-        case Some(saUtr) => Right(SaClientRequest(saUtr, request))
-        case _ => Left(Results.Unauthorized)
-      })
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
+      request.accounts.sa match {
+        case Some(saUtr) => agenciesFakeConnector.findClient(saUtr) map {
+          case Some(mtdClientId) => Right(SaClientRequest(saUtr, mtdClientId, request))
+          case None => Left(Results.Unauthorized)
+        }
+        case _ => Future successful Left(Results.Unauthorized)
+      }
     }
   }
 
@@ -72,4 +76,4 @@ trait AuthActions {
 
 class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extends WrappedRequest[A](request)
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
-case class SaClientRequest[A](saUtr: SaUtr, request: Request[A]) extends WrappedRequest[A](request)
+case class SaClientRequest[A](saUtr: SaUtr, mtdClientId: MtdClientId, request: Request[A]) extends WrappedRequest[A](request)

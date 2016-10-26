@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.joda.time.DateTime.now
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
@@ -36,12 +36,12 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.{ExecutionContext, Future}
 
 class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
-  implicit val hc = HeaderCarrier()
 
   val controller = new ClientInvitationsController(invitationsRepository, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
   val clientRegimeId = "clientId"
+  val saUtr = "saUtr"
 
 
   "Accepting an invitation" should {
@@ -63,12 +63,13 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def controller: ClientInvitationsController
     def clientRegimeId: String
     def invitationId: String
+    def saUtr: String
 
     def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], status: InvitationStatus) {
 
        "Return no content" in {
         val request = FakeRequest()
-        whenAuthIsCalled thenReturn aClientUser()
+        userIsLoggedIn
         whenFindingAnInvitation thenReturn anInvitation()
         whenUpdatingAnInvitationTo(status) thenReturn anUpdatedInvitation()
 
@@ -79,7 +80,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
       "Return not found when the invitation doesn't exist" in {
         val request = FakeRequest()
-        whenAuthIsCalled thenReturn aClientUser()
+        userIsLoggedIn
         whenFindingAnInvitation thenReturn noInvitation
 
         val response = await(controller.acceptInvitation(clientRegimeId, invitationId)(request))
@@ -103,7 +104,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
         "the invitation has been cancelled in" in {
           val request = FakeRequest()
-          whenAuthIsCalled thenReturn aClientUser()
+          userIsLoggedIn
           whenFindingAnInvitation thenReturn anInvitationWithStatus(Cancelled)
 
           val response = await(endpoint(request))
@@ -113,7 +114,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
         "the invitation has been accepted in" in {
           val request = FakeRequest()
-          whenAuthIsCalled thenReturn aClientUser()
+          userIsLoggedIn
           whenFindingAnInvitation thenReturn anInvitationWithStatus(Accepted)
 
           val response = await(endpoint(request))
@@ -123,7 +124,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
         "the invitation has been rejected in" in {
           val request = FakeRequest()
-          whenAuthIsCalled thenReturn aClientUser()
+          userIsLoggedIn
           whenFindingAnInvitation thenReturn anInvitationWithStatus(Rejected)
 
           val response = await(endpoint(request))
@@ -142,8 +143,17 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       when(invitationsRepository.findById(BSONObjectID(invitationId)))
     }
 
+    def userIsLoggedIn = {
+      whenAuthIsCalled thenReturn aClientUser()
+      whenMtdClientIsLookedUp thenReturn aMtdUser()
+    }
+
     def whenAuthIsCalled: OngoingStubbing[Future[Accounts]] = {
       when(authConnector.currentAccounts()(any[HeaderCarrier], any[ExecutionContext]))
+    }
+
+    def whenMtdClientIsLookedUp = {
+      when(agenciesFakeConnector.findClient(eqs(SaUtr(saUtr)))(any[HeaderCarrier], any[ExecutionContext]))
     }
 
     def noInvitation = Future successful None
@@ -161,5 +171,8 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
 
     def aClientUser() =
-      Future successful Accounts(None, Some(SaUtr(clientRegimeId)))
+      Future successful Accounts(None, Some(SaUtr(saUtr)))
+
+    def aMtdUser() =
+      Future successful Some(MtdClientId(clientRegimeId))
 }

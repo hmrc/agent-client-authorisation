@@ -24,6 +24,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 
 case class Arn(arn: String)
+case class MtdClientId(value: String)
 
 sealed trait InvitationStatus
 case object Pending extends InvitationStatus
