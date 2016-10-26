@@ -46,9 +46,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "GET /clients/:clientId/invitations/received" should {
     "return a 200 response" in {
-      val (invitation1, invitation2) = createInvitations
-      val client1Id: String = invitation1.clientId
-      val client2Id: String = invitation2.clientId
+      val ((_, client1Id), _) = createInvitations
 
       given().client(client1Id).isLoggedIn(client1Id)
 
@@ -61,20 +59,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return a 401 response if not logged-in" in {
-      val client1Id: String = "1234567890"
 
       given().client(clientId).isNotLoggedIn()
       responseForGetClientInvitations().status shouldBe 401
     }
 
-    "return forbidden when try to access someone else's invitations" in {
-      val (invitation1, invitation2) = createInvitations
-      val client1Id : String = invitation1.clientId
-      val client2Id : String = invitation2.clientId
+    "return 404 when try to access someone else's invitations" in {
+      val ((_, client1Id), (_,client2Id)) = createInvitations
 
-      given().client().isLoggedIn(client1Id)
+      given().client().isLoggedIn(client1Id.value.toString)
 
-      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received", port).get
+      val response = new Resource(s"/agent-client-authorisation/client/${client2Id}/invitations/received", port).get
 
       response.status shouldBe 403
     }
@@ -84,14 +79,11 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     "return a 200 response" in {
 
       val testStartTime = DateTime.now.getMillis
-      val (invitation1, invitation2) = createInvitations
-      val client1Id: String = invitation1.clientId
-      val client2Id: String = invitation2.clientId
+      val ((invitation1Id, client1Id), _) = createInvitations
 
       given().client(client1Id).isLoggedIn(client1Id)
 
-      val invitationId = invitation1.id
-      val response = new Resource(s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitationId", port).get
+      val response = new Resource(s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitation1Id", port).get
       response.status shouldBe 200
 
       val invitation = response.json
@@ -99,26 +91,23 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return a 401 response if not logged-in" in {
-      val (invitation1, invitation2) = createInvitations
-      val client1Id: String = invitation1.clientId
+      val ((invitation1Id, _), _) = createInvitations
 
       given().client(clientId).isNotLoggedIn()
-      responseForGetClientInvitation(client1Id).status shouldBe 401
+      responseForGetClientInvitation(invitation1Id).status shouldBe 401
     }
 
     "return 404 when invitation not found" in {
 
-      val response = responseForGetClientInvitation404(BSONObjectID.generate.stringify)
+      val response = responseForGetClientInvitation("none")
       response.status shouldBe 404
     }
 
-    "return forbidden when try to access someone else's invitation" in {
-      val (invitation1, invitation2) = createInvitations
-      val client1Id : String = invitation1.clientId
-      val client2Id : String = invitation2.clientId
+    "return 403 when try to access someone else's invitation" in {
+      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
 
       given().client().isLoggedIn(client1Id)
-      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received/${invitation2.id}", port).get
+      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received/$invitation2Id", port).get
       response.status shouldBe 403
     }
   }
@@ -190,9 +179,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val (invitation1: TestInvitation, invitation2: TestInvitation) = createInvitations
-      val client1Id: String = invitation1.clientId
-      val client2Id: String = invitation2.clientId
+      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -282,7 +269,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     invitationId
   }
 
-  def createInvitations: (TestInvitation, TestInvitation) = {
+  def createInvitations: ((String, String), (String, String)) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
@@ -304,10 +291,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     val json1: JsValue = new Resource(location1, port).get().json
     val json2: JsValue = new Resource(location2, port).get().json
 
-    val invitation1 = invitation(json1)
-    val invitation2 = invitation(json2)
-
-    (invitation1, invitation2)
+    (invitation(json1), invitation(json2))
   }
 
   "PUT /requests/:id/accept" is {
@@ -315,10 +299,9 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     //    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptRequest("request-id"))
   }
 
-  def invitation(json: JsValue): TestInvitation = {
-    TestInvitation(
-      (json \ "id").as[String],
-      (json \ "clientRegimeId").as[String])
+  def invitation(json: JsValue): (String, String) = {
+      (json \ "id").as[String] ->
+      (json \ "clientRegimeId").as[String]
   }
 
   def invitations(response: JsValue) = {
@@ -350,10 +333,6 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     new Resource(getClientInvitationUrl + invitationId, port).get()
   }
 
-  def responseForGetClientInvitation404(invitationId: String = "none"): HttpResponse = {
-    new Resource(getClientInvitationUrl + invitationId, port).get()
-  }
-
   def responseForGetInvitations(): HttpResponse = {
     new Resource(getInvitationsUrl, port).get()
   }
@@ -371,15 +350,13 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 }
   def checkCreatedResponse(httpResponse: HttpResponse) = {
     httpResponse.status shouldBe 201
-    val location: String = httpResponse.header(LOCATION).get
-    location should startWith (s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
-    location
+    val expectedUri: String = httpResponse.header(LOCATION).get
+    expectedUri should startWith (s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+    expectedUri
   }
 
   def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
-    val (invitation1, invitation2) = createInvitations
-    val client1Id : String = invitation1.clientId
-    val client2Id : String = invitation2.clientId
+    val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
 
     "return not found for an unknown request" in {
       doStatusChangeRequest("some-request-id").status shouldBe 404
@@ -409,5 +386,3 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
 }
 
-case class TestInvitation(id: String, clientId: String ) {
-}
