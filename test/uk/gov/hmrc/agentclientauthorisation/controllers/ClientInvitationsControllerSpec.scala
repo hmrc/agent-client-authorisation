@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import org.joda.time.DateTime.now
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -43,11 +44,11 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
   val clientRegimeId = "clientId"
 
 
-  "Accepting a request" should {
+  "Accepting an invitation" should {
     behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Accepted)
   }
 
-  "Rejected a request" should {
+  "Rejecting an invitation" should {
     behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Rejected)
   }
 }
@@ -101,15 +102,33 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
         }
 
         "the invitation has been cancelled in" in {
-          pending
+          val request = FakeRequest()
+          whenAuthIsCalled thenReturn aClientUser()
+          whenFindingAnInvitation thenReturn anInvitationWithStatus(Cancelled)
+
+          val response = await(endpoint(request))
+
+          response.header.status shouldBe 403
         }
 
         "the invitation has been accepted in" in {
-          pending
+          val request = FakeRequest()
+          whenAuthIsCalled thenReturn aClientUser()
+          whenFindingAnInvitation thenReturn anInvitationWithStatus(Accepted)
+
+          val response = await(endpoint(request))
+
+          response.header.status shouldBe 403
         }
 
         "the invitation has been rejected in" in {
-          pending
+          val request = FakeRequest()
+          whenAuthIsCalled thenReturn aClientUser()
+          whenFindingAnInvitation thenReturn anInvitationWithStatus(Rejected)
+
+          val response = await(endpoint(request))
+
+          response.header.status shouldBe 403
         }
       }
     }
@@ -128,9 +147,13 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     }
 
     def noInvitation = Future successful None
+    def anInvitationWithStatus(status: InvitationStatus): Future[Option[Invitation]] =
+      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
+        List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))))
 
     def anInvitation(): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA", List()))
+      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
+           List(StatusChangeEvent(now(), Pending))))
 
     def anUpdatedInvitation(): Future[Invitation] =
       anInvitation() map (_.get)

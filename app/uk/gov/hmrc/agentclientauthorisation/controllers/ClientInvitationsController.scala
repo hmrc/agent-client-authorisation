@@ -21,7 +21,7 @@ import play.api.mvc.Result
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -34,7 +34,7 @@ class ClientInvitationsController(invitationsRepository: InvitationsRepository,
 
   def acceptInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => changeInvitationStatus(invitationId, model.Accepted)
+      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => changeInvitationStatus(invitation, model.Accepted)
       case None => Future successful NotFound
       case _ => Future successful Forbidden
     }
@@ -42,13 +42,16 @@ class ClientInvitationsController(invitationsRepository: InvitationsRepository,
 
   def rejectInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => changeInvitationStatus(invitationId, model.Rejected)
+      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => changeInvitationStatus(invitation, model.Rejected)
       case None => Future successful NotFound
       case _ => Future successful Forbidden
     }
   }
 
-  private def changeInvitationStatus(invitationId: String, status: InvitationStatus): Future[Result] = {
-    invitationsRepository.update(BSONObjectID(invitationId), status) map (_ => NoContent)
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Result] = {
+    invitation.status match {
+      case Pending => invitationsRepository.update(invitation.id, status) map (_ => NoContent)
+      case _ => Future successful Forbidden
+    }
   }
 }
