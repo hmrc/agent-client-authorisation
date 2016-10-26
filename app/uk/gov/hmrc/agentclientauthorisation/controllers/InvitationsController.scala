@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions, SaClientRequest}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
@@ -84,17 +84,20 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     }
   }
 
-  def getInvitationForClient(clientId: String, invitationId: String) = Action.async {
-    invitationsRepository.findById(BSONObjectID(invitationId)).map {
-      case Some(r) => Ok(toJson(toHalResourceClient(r, clientId)))
+  def getInvitationForClient(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request: SaClientRequest[_] =>
+     invitationsRepository.findById(BSONObjectID(invitationId)).map {
+      case Some(x) if x.clientRegimeId == request.saUtr.value => Ok(toJson(toHalResourceClient(x, clientId)))
       case None => NotFound
+      case _ => Forbidden
     }
   }
 
-  def getInvitationsForClient(clientId: String) = Action.async {
-    invitationsRepository.list(SUPPORTED_REGIME,clientId) map {
-      results => Ok(toJson(toHalResourceClientInvitations(results, clientId)))
-    }
+  def getInvitationsForClient(clientId: String) = onlyForSaClients.async { implicit request: SaClientRequest[_] =>
+      invitationsRepository.list(SUPPORTED_REGIME, clientId) map {
+        case results if results.isEmpty => NotFound
+        case results if results(0).clientRegimeId == request.saUtr.value => Ok(toJson(toHalResourceClientInvitations(results, clientId)))
+        case _ => Forbidden
+      }
   }
 
   def cancelInvitation(arn: Arn, invitation: String) = Action.async {

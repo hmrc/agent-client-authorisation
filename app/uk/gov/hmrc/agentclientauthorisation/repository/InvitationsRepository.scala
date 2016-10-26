@@ -40,6 +40,8 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
 
+  def findRegimeID(clientId: String): Future[List[Invitation]]
+
   //def list(clientRegimeId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
 
 }
@@ -94,6 +96,8 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
   override def list(regime: String, clientRegimeId: String): Future[List[Invitation]] =
     find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
 
+  override def findRegimeID(clientId: String): Future[List[Invitation]] =
+    find()
 
 
   override def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
