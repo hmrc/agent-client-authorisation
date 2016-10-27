@@ -39,6 +39,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
 
       given().client().isLoggedIn("0123456789")
+        .aRelationshipIsCreatedWith(arn)
 
       val response = responseForAcceptInvitation(invitationId)
 

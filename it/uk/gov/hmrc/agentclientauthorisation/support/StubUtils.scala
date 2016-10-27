@@ -35,8 +35,8 @@ trait StubUtils {
       new UnknownUser(oid)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f"): Client = {
-      new Client(oid)
+    def client(oid: String = "556737e15500005500eaf68f", clientId: String = "MTD-0123456789"): Client = {
+      new Client(oid, clientId)
     }
   }
 
@@ -57,6 +57,6 @@ trait StubUtils {
   class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  class Client(override val oid: String)
-    extends BaseUser with ClientUserAuthStubs[Client]
+  class Client(override val oid: String, override val clientId: String)
+    extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client]
 }

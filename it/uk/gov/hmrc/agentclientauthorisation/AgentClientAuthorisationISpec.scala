@@ -23,7 +23,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.mvc.Http.HeaderNames.LOCATION
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
@@ -179,7 +179,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations()
+      val ((_, client1Id), (_ ,client2Id)) = createInvitations
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -408,7 +408,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
-    val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations()
+    val ((_, client1Id), (_ ,client2Id)) = createInvitations
 
     "return not found for an unknown request" in {
       doStatusChangeRequest("some-request-id").status shouldBe 404

@@ -26,37 +26,55 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, AnyContent}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse}
+import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
-  val controller = new ClientInvitationsController(invitationsRepository, authConnector, agenciesFakeConnector)
+  val controller = new ClientInvitationsController(invitationsRepository, relationshipsConnector, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
   val clientRegimeId = "clientId"
   val saUtr = "saUtr"
+  val arn: Arn = Arn("12345")
 
 
   "Accepting an invitation" should {
-    behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Accepted)
+    behave like clientStatusChangeEndpoint({
+      whenRelationshipIsCreated thenReturn created
+      controller.acceptInvitation(clientRegimeId, invitationId)
+    }, Accepted)
+
+    "not change the invitation status if relationship creation fails" in {
+      val request = FakeRequest()
+      userIsLoggedIn
+      whenFindingAnInvitation thenReturn anInvitation()
+      whenRelationshipIsCreated thenReturn anException
+
+      intercept[Upstream5xxResponse] {
+        await(controller.acceptInvitation(clientRegimeId, invitationId)(request))
+      }
+      invitationStatusIsNotUpdated
+    }
   }
 
+
   "Rejecting an invitation" should {
-    behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Rejected)
+    behave like clientStatusChangeEndpoint(controller.rejectInvitation(clientRegimeId, invitationId), Rejected)
   }
 }
 
   trait ClientEndpointBehaviours {
-    this: UnitSpec with MockitoSugar =>
+    this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
 
     val invitationsRepository = mock[InvitationsRepository]
+    val relationshipsConnector = mock[RelationshipsConnector]
     val authConnector = mock[AuthConnector]
     val agenciesFakeConnector = mock[AgenciesFakeConnector]
 
@@ -64,6 +82,11 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def clientRegimeId: String
     def invitationId: String
     def saUtr: String
+    def arn: Arn
+
+    override def beforeEach(): Unit = {
+      reset(invitationsRepository, relationshipsConnector, authConnector, agenciesFakeConnector)
+    }
 
     def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], status: InvitationStatus) {
 
@@ -164,22 +187,31 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     }
 
     def noInvitation = Future successful None
+
+
     def anInvitationWithStatus(status: InvitationStatus): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
+      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientRegimeId, "A11 1AA",
         List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))))
 
     def anInvitation(): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
+      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientRegimeId, "A11 1AA",
            List(StatusChangeEvent(now(), Pending))))
 
     def anUpdatedInvitation(): Future[Invitation] =
       anInvitation() map (_.get)
 
+    def invitationStatusIsNotUpdated = verify(invitationsRepository, never).update(any[BSONObjectID], any[InvitationStatus])
+
     def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
+    def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
     def aClientUser() =
       Future successful Accounts(None, Some(SaUtr(saUtr)))
 
     def aMtdUser(clientId: String = clientRegimeId) =
       Future successful Some(MtdClientId(clientId))
+
+    def whenRelationshipIsCreated = when(relationshipsConnector.createRelationship(eqs(arn), eqs(MtdClientId(clientRegimeId)))(any[HeaderCarrier]))
+
+    def created = Future successful {}
 }
