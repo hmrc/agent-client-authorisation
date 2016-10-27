@@ -4,6 +4,11 @@ GET      /agencies/:arn/invitations/sent                        @uk.gov.hmrc.age
 GET      /agencies/:arn/invitations/sent/:invitation            @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 DELETE   /agencies/:arn/invitations/sent/:invitation            @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 
+# Client routes
+
+PUT     /clients/:clientRegimeId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientRegimeId: String, invitationId: String)
+PUT     /clients/:clientRegimeId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientRegimeId: String, invitationId: String)
+
 # Whitelist
 GET      /forbidden                                     @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
 

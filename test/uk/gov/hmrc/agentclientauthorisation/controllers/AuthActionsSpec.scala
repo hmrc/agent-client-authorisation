@@ -25,7 +25,7 @@ import play.api.mvc._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 import uk.gov.hmrc.play.http.Upstream4xxResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -113,11 +113,15 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with B
     givenAccountsAre(Accounts(Some(AgentCode("54321")), None))
     givenUserHasNoAgency(AgentCode("54321"))
   }
-  private def givenClientIsLoggedIn() = givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
+  private def givenClientIsLoggedIn() = {
+    givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
+    givenClientRecordIs(SaUtr("1234567890"), MtdClientId("MTD1234567890"))
+  }
   private def givenUserIsNotLoggedIn() = whenAccountsIsAskedFor().thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))
   private def givenAccountsAre(accounts: Accounts) = whenAccountsIsAskedFor().thenReturn(Future successful accounts)
   private def whenAccountsIsAskedFor() = when(authConnector.currentAccounts()(any(), any()))
   private def givenAgencyRecordIs(agentCode: AgentCode, arn: Arn) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful Some(arn))
+  private def givenClientRecordIs(saUtr: SaUtr, mtdClientId: MtdClientId) = when(agenciesFakeConnector.findClient(eqs(saUtr))(any(), any())).thenReturn(Future successful Some(mtdClientId))
   private def givenUserHasNoAgency(agentCode: AgentCode) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful None)
 
   override protected def beforeEach(): Unit = {

@@ -21,7 +21,7 @@ import java.net.URL
 import play.api.mvc.Controller
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgenciesFakeConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.{InvitationsController, WhitelistController}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsController, InvitationsController, WhitelistController}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
@@ -70,6 +70,7 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector),
+    classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsRepository, authConnector, agenciesFakeConnector),
     classOf[WhitelistController] -> new WhitelistController()
   )
 

@@ -24,6 +24,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 
 case class Arn(arn: String)
+case class MtdClientId(value: String)
 
 sealed trait InvitationStatus
 case object Pending extends InvitationStatus
@@ -72,6 +73,8 @@ case class Invitation(
   def mostRecentEvent(): StatusChangeEvent = {
     events.last
   }
+
+  def status = mostRecentEvent().status
 }
 
 case class AgentClientAuthorisationHttpRequest(
@@ -99,7 +102,7 @@ object Invitation {
       "arn" -> invitation.arn.arn,
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
-      "status" -> invitation.mostRecentEvent().status
+      "status" -> invitation.status
 
     )
 
