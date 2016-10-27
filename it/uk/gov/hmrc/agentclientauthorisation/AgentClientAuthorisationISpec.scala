@@ -325,6 +325,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   def createDuplicateInvitations: ((String, String), (String, String)) = {
     dropMongoDb()
+    val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
 
 
