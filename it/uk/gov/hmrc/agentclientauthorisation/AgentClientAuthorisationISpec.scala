@@ -40,8 +40,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
   val clientId: String = "1234567890"
-  private val getClientInvitationUrl = s"/agent-client-authorisation/client/$clientId/invitations/received/"
-  private val getClientInvitationsUrl = s"/agent-client-authorisation/client/$clientId/invitations/received"
+  private val getClientInvitationUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received/"
+  private val getClientInvitationsUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received"
 
 
   "GET /clients/:clientId/invitations/received" should {
@@ -50,7 +50,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       given().client(client1Id).isLoggedIn(client1Id)
 
-      val response = new Resource(s"/agent-client-authorisation/client/$client1Id/invitations/received", port).get
+      val response = new Resource(s"/agent-client-authorisation/clients/$client1Id/invitations/received", port).get
       response.status shouldBe 200
 
       val json: JsValue = response.json
@@ -69,7 +69,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       given().client().isLoggedIn(client1Id.value.toString)
 
-      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received", port).get
+      val response = new Resource(s"/agent-client-authorisation/clients/$client2Id/invitations/received", port).get
 
       response.status shouldBe 403
     }
@@ -83,7 +83,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
       given().client(client1Id).isLoggedIn(client1Id)
 
-      val response = new Resource(s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitation1Id", port).get
+      val response = new Resource(s"/agent-client-authorisation/clients/$client1Id/invitations/received/$invitation1Id", port).get
       response.status shouldBe 200
 
       val invitation = response.json
@@ -107,7 +107,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
 
       given().client().isLoggedIn(client1Id)
-      val response = new Resource(s"/agent-client-authorisation/client/$client2Id/invitations/received/$invitation2Id", port).get
+      val response = new Resource(s"/agent-client-authorisation/clients/$client2Id/invitations/received/$invitation2Id", port).get
       response.status shouldBe 403
     }
   }
@@ -258,8 +258,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     val alphanumeric = "[0-9A-Za-z]+"
     val invitationId = (invitation \ "id").as[String]
     invitationId should fullyMatch regex alphanumeric
-    (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitationId"
-    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/client/$client1Id/invitations/received/$invitationId"
+    (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/$client1Id/invitations/received/$invitationId"
+    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/$client1Id/invitations/received/$invitationId"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientRegimeId") shouldBe JsString(client1Id)
