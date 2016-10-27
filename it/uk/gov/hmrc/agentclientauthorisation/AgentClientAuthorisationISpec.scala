@@ -207,7 +207,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "create and retrieve duplicate invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, "1234567890"), (invitation2Id,"1234567890")) = createDuplicateInvitations
+      val ((_, "1234567890"), (_,"1234567890")) = createDuplicateInvitations
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -216,7 +216,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
         Logger.info(s"responseJson = $responseJson")
 
-        val requestsArray = invitations(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
+        val requestsArray = invitations(responseJson).value
         requestsArray should have size 2
         (responseJson, requestsArray)
       }
@@ -326,8 +326,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   def createDuplicateInvitations: ((String, String), (String, String)) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-    val client1Id = "1234567890"
-
+    val clientId = "1234567890"
 
     note("there should be no requests")
     eventually {
@@ -338,8 +337,8 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     note("we should be able to add 2 new requests")
-    val location1: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
-    val location2: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
+    val location1: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientId", "postcode": "AA1 1AA"}"""))
+    val location2: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$clientId", "postcode": "AA1 1AA"}"""))
 
     val json1: JsValue = new Resource(location1, port).get().json
     val json2: JsValue = new Resource(location2, port).get().json
