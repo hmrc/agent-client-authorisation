@@ -43,6 +43,11 @@ object Http {
     request.post(Results.EmptyContent())
   }
 
+  def putEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+    import play.api.http.Writeable._
+    request.put(Results.EmptyContent())
+  }
+
   def delete(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
     request.delete()
   }
@@ -65,4 +70,7 @@ class Resource(path: String, port: Int) {
 
   def postEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
     Http.postEmpty(url)(hc)
+
+  def putEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
+    Http.putEmpty(url)(hc)
 }

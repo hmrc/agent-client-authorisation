@@ -83,7 +83,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   def isLoggedIn(utr: String): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody( // TODO add SA account
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
          |  "new-session":"/auth/oid/$oid/session",
@@ -112,6 +112,16 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |[]
          """.stripMargin
     )))
+    stubFor(get(urlPathEqualTo(s"/agencies-fake/clients/sa/$utr"))
+             .willReturn(aResponse()
+                .withStatus(200)
+               .withBody(
+                 s"""
+                   |{
+                   |  "mtdSaClientId": "MTD-$utr"
+                   |}
+                 """.stripMargin)
+             ))
     this
   }
 }
