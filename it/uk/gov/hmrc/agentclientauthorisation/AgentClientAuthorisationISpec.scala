@@ -205,6 +205,34 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       firstInvitationId should not be secondInvitationId
     }
 
+    "create and retrieve duplicate invitations" in {
+      val testStartTime = DateTime.now().getMillis
+      val ((_, "1234567890"), (invitation2Id,"1234567890")) = createDuplicateInvitations
+
+      note("the freshly added invitations should be available")
+      val (responseJson, invitationsArray) = eventually {
+        // MongoDB is slow sometimes
+        val responseJson = responseForGetInvitations().json
+
+        Logger.info(s"responseJson = $responseJson")
+
+        val requestsArray = invitations(responseJson).value.sortBy(j => (j \ "clientRegimeId").as[String])
+        requestsArray should have size 2
+        (responseJson, requestsArray)
+      }
+
+      val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
+      selfLinkHref shouldBe getInvitationsUrl
+
+      val firstInvitation = invitationsArray.head
+      val secondInvitation = invitationsArray(1)
+
+      val firstInvitationId = checkInvitation("1234567890", firstInvitation, testStartTime)
+      val secondInvitationId = checkInvitation("1234567890", secondInvitation, testStartTime)
+
+      firstInvitationId should not be secondInvitationId
+    }
+
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "9876543210", "postcode": "BA1 1AA"}""").status shouldBe 403
@@ -287,6 +315,31 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     note("we should be able to add 2 new requests")
     val location1: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
     val location2: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client2Id", "postcode": "AA1 1AA"}"""))
+
+    val json1: JsValue = new Resource(location1, port).get().json
+    val json2: JsValue = new Resource(location2, port).get().json
+
+    (invitation(json1), invitation(json2))
+  }
+
+
+  def createDuplicateInvitations: ((String, String), (String, String)) = {
+    dropMongoDb()
+    val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+    val client1Id = "1234567890"
+
+
+    note("there should be no requests")
+    eventually {
+      inside(responseForGetInvitations()) { case resp =>
+        resp.status shouldBe 200
+        invitations(resp.json).value shouldBe 'empty
+      }
+    }
+
+    note("we should be able to add 2 new requests")
+    val location1: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
+    val location2: String = checkCreatedResponse(responseForCreateInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "$client1Id", "postcode": "AA1 1AA"}"""))
 
     val json1: JsValue = new Resource(location1, port).get().json
     val json2: JsValue = new Resource(location2, port).get().json
