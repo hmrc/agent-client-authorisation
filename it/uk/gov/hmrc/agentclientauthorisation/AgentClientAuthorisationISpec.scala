@@ -179,7 +179,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
+      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations()
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -207,7 +207,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     "create and retrieve duplicate invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, "1234567890"), (_,"1234567890")) = createDuplicateInvitations
+      createDuplicateInvitations()
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -297,7 +297,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     invitationId
   }
 
-  def createInvitations: ((String, String), (String, String)) = {
+  def createInvitations(): ((String, String), (String, String)) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
@@ -323,7 +323,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
 
-  def createDuplicateInvitations: ((String, String), (String, String)) = {
+  def createDuplicateInvitations(): ((String, String), (String, String)) = {
     dropMongoDb()
     val agent = given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val clientId = "1234567890"
