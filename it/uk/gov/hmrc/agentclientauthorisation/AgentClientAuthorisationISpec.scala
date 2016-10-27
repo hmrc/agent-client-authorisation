@@ -46,7 +46,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
   "GET /clients/:clientId/invitations/received" should {
     "return a 200 response" in {
-      val ((_, client1Id), _) = createInvitations
+      val ((_, client1Id), _) = createInvitations()
 
       given().client(client1Id).isLoggedIn(client1Id)
 
@@ -65,7 +65,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return 404 when try to access someone else's invitations" in {
-      val ((_, client1Id), (_,client2Id)) = createInvitations
+      val ((_, client1Id), (_,client2Id)) = createInvitations()
 
       given().client().isLoggedIn(client1Id.value.toString)
 
@@ -79,7 +79,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     "return a 200 response" in {
 
       val testStartTime = DateTime.now.getMillis
-      val ((invitation1Id, client1Id), _) = createInvitations
+      val ((invitation1Id, client1Id), _) = createInvitations()
 
       given().client(client1Id).isLoggedIn(client1Id)
 
@@ -91,7 +91,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return a 401 response if not logged-in" in {
-      val ((invitation1Id, _), _) = createInvitations
+      val ((invitation1Id, _), _) = createInvitations()
 
       given().client(clientId).isNotLoggedIn()
       responseForGetClientInvitation(invitation1Id).status shouldBe 401
@@ -104,7 +104,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     }
 
     "return 403 when try to access someone else's invitation" in {
-      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
+      val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations()
 
       given().client().isLoggedIn(client1Id)
       val response = new Resource(s"/agent-client-authorisation/clients/$client2Id/invitations/received/$invitation2Id", port).get
@@ -408,7 +408,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   def aClientStatusChange(doStatusChangeRequest: String => HttpResponse) = {
-    val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations
+    val ((_, client1Id), (invitation2Id,client2Id)) = createInvitations()
 
     "return not found for an unknown request" in {
       doStatusChangeRequest("some-request-id").status shouldBe 404
