@@ -83,45 +83,8 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
       block
     }
   }
-
-  def getInvitationForClient(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request: SaClientRequest[_] =>
-     invitationsRepository.findById(BSONObjectID(invitationId)).map {
-      case Some(x) if x.clientRegimeId == request.saUtr.value => Ok(toJson(toHalResourceClient(x, clientId)))
-      case None => NotFound
-      case _ => Forbidden
-    }
-  }
-
-  def getInvitationsForClient(clientId: String) = onlyForSaClients.async { implicit request: SaClientRequest[_] =>
-      invitationsRepository.list(SUPPORTED_REGIME, clientId) map {
-        case results if results.isEmpty => NotFound
-        case results if results(0).clientRegimeId == request.saUtr.value => Ok(toJson(toHalResourceClientInvitations(results, clientId)))
-        case _ => Forbidden
-      }
-  }
-
   def cancelInvitation(arn: Arn, invitation: String) = Action.async {
     Future successful NotImplemented
-  }
-
-  def cancelClientsInvitation(ClientId: String, invitation: String) = Action.async {
-    Future successful NotImplemented
-  }
-
-
-  private def toHalResourceClient(invitation: Invitation, ClientId: String): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getInvitationForClient(ClientId, invitation.id.stringify).url)))
-    if (invitation.mostRecentEvent().status == Pending) {
-      links = links ++ HalLink("cancel", routes.InvitationsController.cancelClientsInvitation(ClientId, invitation.id.stringify).url)//do we need this? Because client should be able to cancel an invitation
-    }
-    HalResource(links, toJson(invitation).as[JsObject])
-  }
-
-  private def toHalResourceClientInvitations(requests: List[Invitation], ClientId: String): HalResource = {
-    val requestResources: Vector[HalResource] = requests.map(toHalResourceClient(_, ClientId)).toVector
-
-    val links = Vector(HalLink("self", routes.InvitationsController.getInvitationsForClient(ClientId).url))
-    Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 
   private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): HalResource = {

@@ -287,7 +287,6 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     val invitationId = (invitation \ "id").as[String]
     invitationId should fullyMatch regex alphanumeric
     (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/$client1Id/invitations/received/$invitationId"
-    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/$client1Id/invitations/received/$invitationId"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientRegimeId") shouldBe JsString(client1Id)

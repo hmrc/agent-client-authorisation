@@ -6,11 +6,10 @@ DELETE   /agencies/:arn/invitations/sent/:invitation            @uk.gov.hmrc.age
 
 # Client routes
 
-PUT     /clients/:clientRegimeId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientRegimeId: String, invitationId: String)
-PUT     /clients/:clientRegimeId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientRegimeId: String, invitationId: String)
-GET      /clients/:clientId/invitations/received                 @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationsForClient(clientId: String)
-GET      /clients/:clientId/invitations/received/:invitationId   @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationForClient(clientId: String, invitationId: String)
-DELETE   /clients/:clientId/invitations/received/:invitationId   @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.cancelClientsInvitation(clientId: String, invitationId: String)
+PUT      /clients/:clientRegimeId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientRegimeId: String, invitationId: String)
+PUT      /clients/:clientRegimeId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientRegimeId: String, invitationId: String)
+GET      /clients/:clientId/invitations/received                 @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitationsForClient(clientId: String)
+GET      /clients/:clientId/invitations/received/:invitationId   @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitationForClient(clientId: String, invitationId: String)
 
 # Whitelist
 GET      /forbidden                                     @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden

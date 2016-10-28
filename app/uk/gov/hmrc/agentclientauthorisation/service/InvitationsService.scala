@@ -45,6 +45,10 @@ class InvitationsService(invitationsRepository: InvitationsRepository,
   def findInvitation(invitationId: String): Future[Option[Invitation]] =
       invitationsRepository.findById(BSONObjectID(invitationId))
 
+  def list(regime: String, clientId: String) =
+    invitationsRepository.list(regime, clientId)
+
+
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Boolean] = {
     invitation.status match {
