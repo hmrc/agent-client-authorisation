@@ -21,15 +21,15 @@ import uk.gov.hmrc.play.test.UnitSpec
 class UriPathEncodingSpec extends UnitSpec {
   "encodePathSegments" should {
     "separate segments with forward slashes" in {
-      UriPathEncoding.encodePathSegments("one", "two", "three") shouldBe "one/two/three"
+      UriPathEncoding.encodePathSegments("one", "two", "three") shouldBe "/one/two/three"
     }
 
     "escape spaces using URL path encoding not form encoding" in {
-      UriPathEncoding.encodePathSegments("AA1 1AA") shouldBe "AA1%201AA"
+      UriPathEncoding.encodePathSegments("AA1 1AA") shouldBe "/AA1%201AA"
     }
 
     "protect against path traversal attacks" in {
-      UriPathEncoding.encodePathSegments("../bad", "ok") shouldBe "..%2Fbad/ok"
+      UriPathEncoding.encodePathSegments("../bad", "ok") shouldBe "/..%2Fbad/ok"
     }
   }
 
