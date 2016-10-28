@@ -28,35 +28,47 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse}
+import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
-  val controller = new ClientInvitationsController(invitationsRepository, authConnector, agenciesFakeConnector)
+  val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
   val clientRegimeId = "clientId"
   val saUtr = "saUtr"
+  val arn: Arn = Arn("12345")
 
 
   "Accepting an invitation" should {
-    behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Accepted)
+    behave like clientStatusChangeEndpoint(
+        controller.acceptInvitation(clientRegimeId, invitationId),
+        whenInvitationIsAccepted
+    )
+
+    "not change the invitation status if relationship creation fails" in {
+      pending
+    }
   }
 
+
   "Rejecting an invitation" should {
-    behave like clientStatusChangeEndpoint(controller.acceptInvitation(clientRegimeId, invitationId), Rejected)
+    behave like clientStatusChangeEndpoint(
+        controller.rejectInvitation(clientRegimeId, invitationId),
+        whenInvitationIsRejected
+    )
   }
 }
 
   trait ClientEndpointBehaviours {
-    this: UnitSpec with MockitoSugar =>
+    this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
 
-    val invitationsRepository = mock[InvitationsRepository]
+    val invitationsService = mock[InvitationsService]
     val authConnector = mock[AuthConnector]
     val agenciesFakeConnector = mock[AgenciesFakeConnector]
 
@@ -64,14 +76,19 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def clientRegimeId: String
     def invitationId: String
     def saUtr: String
+    def arn: Arn
 
-    def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], status: InvitationStatus) {
+    override def beforeEach(): Unit = {
+      reset(invitationsService, authConnector, agenciesFakeConnector)
+    }
+
+    def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Boolean]]) {
 
        "Return no content" in {
         val request = FakeRequest()
         userIsLoggedIn
         whenFindingAnInvitation thenReturn anInvitation()
-        whenUpdatingAnInvitationTo(status) thenReturn anUpdatedInvitation()
+        action thenReturn (Future successful true)
 
         val response = await(endpoint(request))
 
@@ -83,7 +100,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
         userIsLoggedIn
         whenFindingAnInvitation thenReturn noInvitation
 
-        val response = await(controller.acceptInvitation(clientRegimeId, invitationId)(request))
+        val response = await(endpoint(request))
 
         response.header.status shouldBe 404
       }
@@ -92,7 +109,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
         val request = FakeRequest()
         whenAuthIsCalled thenReturn userIsNotLoggedIn
 
-        val response = await(controller.acceptInvitation(clientRegimeId, invitationId)(request))
+        val response = await(endpoint(request))
 
         response.header.status shouldBe 401
       }
@@ -102,37 +119,19 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
           val request = FakeRequest()
           whenAuthIsCalled thenReturn aClientUser()
           whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
-          whenFindingAnInvitation thenReturn anInvitationWithStatus(Cancelled)
+          whenFindingAnInvitation thenReturn anInvitation
+          action thenReturn (Future successful true)
 
           val response = await(endpoint(request))
 
           response.header.status shouldBe 403
         }
 
-        "the invitation has been cancelled in" in {
+        "the invitation cannot be actioned" in {
           val request = FakeRequest()
           userIsLoggedIn
-          whenFindingAnInvitation thenReturn anInvitationWithStatus(Cancelled)
-
-          val response = await(endpoint(request))
-
-          response.header.status shouldBe 403
-        }
-
-        "the invitation has been accepted in" in {
-          val request = FakeRequest()
-          userIsLoggedIn
-          whenFindingAnInvitation thenReturn anInvitationWithStatus(Accepted)
-
-          val response = await(endpoint(request))
-
-          response.header.status shouldBe 403
-        }
-
-        "the invitation has been rejected in" in {
-          val request = FakeRequest()
-          userIsLoggedIn
-          whenFindingAnInvitation thenReturn anInvitationWithStatus(Rejected)
+          whenFindingAnInvitation thenReturn anInvitation
+          action thenReturn (Future successful false)
 
           val response = await(endpoint(request))
 
@@ -142,12 +141,8 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     }
 
 
-    def whenUpdatingAnInvitationTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] = {
-      when(invitationsRepository.update(BSONObjectID(invitationId), status))
-    }
-
     def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
-      when(invitationsRepository.findById(BSONObjectID(invitationId)))
+      when(invitationsService.findInvitation(invitationId))
     }
 
     def userIsLoggedIn = {
@@ -164,22 +159,23 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     }
 
     def noInvitation = Future successful None
-    def anInvitationWithStatus(status: InvitationStatus): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
-        List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))))
 
     def anInvitation(): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), Arn("12345"), "mtd-sa", clientRegimeId, "A11 1AA",
+      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientRegimeId, "A11 1AA",
            List(StatusChangeEvent(now(), Pending))))
 
     def anUpdatedInvitation(): Future[Invitation] =
       anInvitation() map (_.get)
 
     def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
+    def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
     def aClientUser() =
       Future successful Accounts(None, Some(SaUtr(saUtr)))
 
     def aMtdUser(clientId: String = clientRegimeId) =
       Future successful Some(MtdClientId(clientId))
+
+    def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
+    def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any[HeaderCarrier]))
 }

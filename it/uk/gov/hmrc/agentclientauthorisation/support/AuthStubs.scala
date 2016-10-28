@@ -79,6 +79,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def oid: String
+  def clientId: String
 
   def isLoggedIn(utr: String): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
@@ -118,7 +119,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
                .withBody(
                  s"""
                    |{
-                   |  "mtdSaClientId": "MTD-$utr"
+                   |  "mtdSaClientId": "$clientId"
                    |}
                  """.stripMargin)
              ))
