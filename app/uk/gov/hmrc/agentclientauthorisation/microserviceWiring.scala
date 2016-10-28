@@ -72,7 +72,7 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector),
-    classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsRepository, invitationsService, authConnector, agenciesFakeConnector),
+    classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector),
     classOf[WhitelistController] -> new WhitelistController()
   )
 

@@ -28,7 +28,6 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
@@ -38,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
-  val controller = new ClientInvitationsController(invitationsRepository, invitationsService, authConnector, agenciesFakeConnector)
+  val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
   val clientRegimeId = "clientId"
@@ -69,7 +68,6 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
   trait ClientEndpointBehaviours {
     this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
 
-    val invitationsRepository = mock[InvitationsRepository]
     val invitationsService = mock[InvitationsService]
     val authConnector = mock[AuthConnector]
     val agenciesFakeConnector = mock[AgenciesFakeConnector]
@@ -81,7 +79,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def arn: Arn
 
     override def beforeEach(): Unit = {
-      reset(invitationsRepository, invitationsService, authConnector, agenciesFakeConnector)
+      reset(invitationsService, authConnector, agenciesFakeConnector)
     }
 
     def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Boolean]]) {
@@ -144,7 +142,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
 
     def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
-      when(invitationsRepository.findById(BSONObjectID(invitationId)))
+      when(invitationsService.findInvitation(invitationId))
     }
 
     def userIsLoggedIn = {

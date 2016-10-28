@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, MtdClientId, Pending}
@@ -30,13 +31,19 @@ class InvitationsService(invitationsRepository: InvitationsRepository,
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientRegimeId))
-      .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
+    if (invitation.status == Pending) {
+      relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientRegimeId))
+        .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
+    } else {
+      Future successful false
+    }
   }
 
-  def rejectInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def rejectInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] =
       changeInvitationStatus(invitation, model.Rejected)
-  }
+
+  def findInvitation(invitationId: String): Future[Option[Invitation]] =
+      invitationsRepository.findById(BSONObjectID(invitationId))
 
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Boolean] = {

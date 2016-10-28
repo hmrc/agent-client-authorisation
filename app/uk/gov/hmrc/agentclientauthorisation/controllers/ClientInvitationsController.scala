@@ -17,18 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class ClientInvitationsController(invitationsRepository: InvitationsRepository,
-                                  invitationsService: InvitationsService,
+class ClientInvitationsController(invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
 
@@ -41,7 +38,7 @@ class ClientInvitationsController(invitationsRepository: InvitationsRepository,
   }
 
   private def actionInvitation(clientRegimeId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
-    invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
+    invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if invitation.clientRegimeId == clientRegimeId => action(invitation) map {
         case true => NoContent
         case false => Forbidden
