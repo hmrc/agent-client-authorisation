@@ -23,7 +23,7 @@ import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsController, InvitationsController, WhitelistController}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
-import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -58,12 +58,13 @@ trait LazyMongoDbConnection {
 trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
+  lazy val relationshipsConnector = new RelationshipsConnector(new URL(baseUrl("relationships")), WSHttp)
   lazy val invitationsRepository = new InvitationsMongoRepository
+  lazy val invitationsService = new InvitationsService(invitationsRepository, relationshipsConnector)
   lazy val postcodeService = new PostcodeService
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
   lazy val slConnector = ServiceLocatorConnector(WSHttp)
   lazy val agenciesFakeConnector = new AgenciesFakeConnector(new URL(baseUrl("agencies-fake")), WSHttp)
-  lazy val relationshipsConnector = new RelationshipsConnector(new URL(baseUrl("relationships")), WSHttp)
 }
 
 trait ControllerRegistry {
@@ -71,7 +72,7 @@ trait ControllerRegistry {
 
   private lazy val controllers = Map[Class[_], Controller](
     classOf[InvitationsController] -> new InvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector),
-    classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsRepository, relationshipsConnector, authConnector, agenciesFakeConnector),
+    classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsRepository, invitationsService, authConnector, agenciesFakeConnector),
     classOf[WhitelistController] -> new WhitelistController()
   )
 

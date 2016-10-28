@@ -17,43 +17,36 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Result
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, MtdClientId, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
 class ClientInvitationsController(invitationsRepository: InvitationsRepository,
-                                  relationshipsConnector: RelationshipsConnector,
+                                  invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
 
   def acceptInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == clientRegimeId =>
-        relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientRegimeId))
-          .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
-      case None => Future successful NotFound
-      case _ => Future successful Forbidden
-    }
+    actionInvitation(request.mtdClientId.value, invitationId, invitationsService.acceptInvitation)
   }
 
   def rejectInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == request.mtdClientId.value => changeInvitationStatus(invitation, model.Rejected)
-      case None => Future successful NotFound
-      case _ => Future successful Forbidden
-    }
+    actionInvitation(request.mtdClientId.value, invitationId, invitationsService.rejectInvitation)
   }
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Result] = {
-    invitation.status match {
-      case Pending => invitationsRepository.update(invitation.id, status) map (_ => NoContent)
+  private def actionInvitation(clientRegimeId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
+    invitationsRepository.findById(BSONObjectID(invitationId)) flatMap {
+      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => action(invitation) map {
+        case true => NoContent
+        case false => Forbidden
+      }
+      case None => Future successful NotFound
       case _ => Future successful Forbidden
     }
   }
