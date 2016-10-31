@@ -54,7 +54,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
   def getInvitationForClient(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientRegimeId == request.saUtr.value => Ok(toJson(toHalResource(x, clientId)))
+      case Some(x) if x.clientRegimeId == request.mtdClientId.value => Ok(toJson(toHalResource(x, clientId)))
       case None => NotFound
       case _ => Forbidden
     }
@@ -63,7 +63,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   def getInvitationsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.list(SUPPORTED_REGIME, clientId) map {
       case results if results.isEmpty => NotFound
-      case results if results(0).clientRegimeId == request.saUtr.value => Ok(toJson(toHalResource(results, clientId)))
+      case results if results(0).clientRegimeId == request.mtdClientId.value => Ok(toJson(toHalResource(results, clientId)))
       case _ => Forbidden
     }
   }
