@@ -52,7 +52,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
       case _ => Future successful Forbidden
     }
   }
-  def getInvitationForClient(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
       case Some(x) if x.clientRegimeId == request.mtdClientId.value => Ok(toJson(toHalResource(x, clientId)))
       case None => NotFound
@@ -60,7 +60,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
     }
   }
 
-  def getInvitationsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
+  def getInvitations(clientId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.list(SUPPORTED_REGIME, clientId) map {
       case results if results.isEmpty => NotFound
       case results if results(0).clientRegimeId == request.mtdClientId.value => Ok(toJson(toHalResource(results, clientId)))
@@ -69,7 +69,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
 
   private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
-    val links = HalLinks(Vector(HalLink("self", routes.ClientInvitationsController.getInvitationForClient(clientId, invitation.id.stringify).url)))
+    val links = HalLinks(Vector(HalLink("self", routes.ClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
     if (invitation.mostRecentEvent().status == Pending) {
       // TODO add accept/reject links
     }
@@ -79,7 +79,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   private def toHalResource(requests: List[Invitation], clientId: String): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, clientId)).toVector
 
-    val links = Vector(HalLink("self", routes.ClientInvitationsController.getInvitationsForClient(clientId).url))
+    val links = Vector(HalLink("self", routes.ClientInvitationsController.getInvitations(clientId).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 }
