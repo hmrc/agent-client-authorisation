@@ -48,15 +48,15 @@
             <rows>
                 <row>
                     <cell><code>pending</code></cell>
-                    <cell>The invitation has been created, it has not been accepted or rejected by the customer. Only the service can set this status</cell>
+                    <cell>The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status</cell>
                 </row>
                 <row>
                     <cell><code>accepted</code></cell>
-                    <cell>The customer has accepted the invitation. Only the customer can set this status</cell>
+                    <cell>The client has accepted the invitation. Only the client can set this status</cell>
                 </row>
                 <row>
                     <cell><code>rejected</code></cell>
-                    <cell>The customer has rejected the invitation. Only the customer can set this status</cell>
+                    <cell>The client has rejected the invitation. Only the client can set this status</cell>
                 </row>
                 <row>
                     <cell><code>cancelled</code></cell>
@@ -92,7 +92,7 @@
 			"lastUpdated": "2016-07-02T01:55:28+00.00",
 			"arn": "123451234512345",
 			"regime": "mtd-sa",
-			"customerRegimeId": "123456789",
+			"clientId": "123456789",
 			"status": "pending"
 		}, {
 			"_links": {
@@ -107,7 +107,7 @@
 			"lastUpdated": "2016-07-02T01:55:28+00.00",
 			"arn": "123451234512345",
 			"regime": "mtd-sa",
-			"customerRegimeId": "0987654321",
+			"clientId": "0987654321",
 			"status": "pending"
 		}]
 	}

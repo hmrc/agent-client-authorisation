@@ -26,8 +26,8 @@ types:
       regime:
         description: The tax regime specified in the invitation
         type: Regime
-      clientRegimeId:
-        description: Client's identification number for the specified tax regime
+      clientId:
+        description: Client's top level ID for their MTD registration (not regime specific)
         type: string
       postcode:
         description: The client's postcode.
@@ -42,5 +42,5 @@ types:
       _links: LinkSection
       _embedded:
         properties:
-          invitations: Invitation[]          
+          invitations: Invitation[]
     example: !include invitations_example.json

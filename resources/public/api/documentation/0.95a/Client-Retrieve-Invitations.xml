@@ -95,7 +95,7 @@
 			"lastUpdated": "2016-07-02T01:55:28+00.00",
 			"arn": "123451234512345",
 			"regime": "mtd-sa",
-			"customerRegimeId": "123456789",
+			"clientId": "123456789",
 			"status": "pending"
 		}, {
 			"_links": {
@@ -114,7 +114,7 @@
 			"lastUpdated": "2016-07-02T01:55:28+00.00",
 			"arn": "123451234512345",
 			"regime": "mtd-sa",
-			"customerRegimeId": "0987654321",
+			"clientId": "0987654321",
 			"status": "pending"
 		}]
 	}
@@ -164,10 +164,10 @@
                     <cell>The tax regime specified in the invitation</cell>
                 </row>
                 <row>
-                    <cell><code>clientRegimeId</code></cell>
+                    <cell><code>clientId</code></cell>
                     <cell><code>String</code></cell>
                     <cell><code>1234567890</code></cell>
-                    <cell>Client's identification number for the specified tax regime</cell>
+                    <cell>Client's top level ID for their MTD registration (not regime specific)</cell>
                 </row>
                 <row>
                     <cell><code>status</code></cell>

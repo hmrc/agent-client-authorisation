@@ -42,7 +42,7 @@
     <section id="sample-request">
         <json><![CDATA[{
   "regime" : "mtd-sa",
-  "customerRegimeId" : "123456789",
+  "clientId" : "123456789",
   "postcode": "SW1AA 0PW"
 }]]></json>
         <table>
@@ -57,19 +57,19 @@
                     <cell><code>regime</code></cell>
                     <cell><code>String</code></cell>
                     <cell><code>mtd-sa</code></cell>
-                    <cell>The tax regime of the customer within which the agency is offering representation</cell>
+                    <cell>The tax regime of the client within which the agency is offering representation</cell>
                 </row>
                 <row>
-                    <cell><code>customerRegimeId</code></cell>
+                    <cell><code>clientId</code></cell>
                     <cell><code>String</code></cell>
                     <cell><code>1234567890</code></cell>
-                    <cell>Customer's identification number for the specified tax regime</cell>
+                    <cell>Client's top level ID for their MTD registration (not regime specific)</cell>
                 </row>
                 <row>
                     <cell><code>postcode (known fact)</code></cell>
                     <cell><code>String</code></cell>
                     <cell><code>BN699Q</code></cell>
-                    <cell>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the customer</cell>
+                    <cell>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the client</cell>
                 </row>
             </rows>
         </table>
@@ -129,8 +129,8 @@
                     <cell><code>403 (Forbidden)</code></cell>
                     <cell>
                         The request has been understood but will not be fulfilled, possible reasons may be: the agency
-                        has not subscribed to Agent Services, the customer is not registered for the tax regime
-                        contained in the invitation, the supplied postcode does not match that of the customer
+                        has not subscribed to Agent Services, the client is not registered for the tax regime
+                        contained in the invitation, the supplied postcode does not match that of the client
                     </cell>
                 </row>
                 <row>

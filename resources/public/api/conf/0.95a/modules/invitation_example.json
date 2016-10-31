@@ -11,7 +11,7 @@
   "lastUpdated": "2016-11-28T16:41:41.090Z",
   "arn": "123451234512345",
   "regime": "mtd-sa",
-  "clientRegimeId": "123456789",
+  "clientId": "123456789",
   "postcode": "EC19AB",
   "status": "pending"
 }
