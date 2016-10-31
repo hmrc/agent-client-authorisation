@@ -70,6 +70,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   "GET /clients/:clientId/invitations/received" should {
     "return a 200 response" in {
       createInvitations()
+      createInvitations()
 
       given().client().isLoggedIn(saUtr)
 
@@ -78,7 +79,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
       val json: JsValue = response.json
       val invitation = invitations(json)
-      invitation.value.size should be >= 1
+      invitation.value.size shouldBe 2
     }
 
     "return a 401 response if not logged-in" in {
