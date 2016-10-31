@@ -33,10 +33,10 @@ object Agency {
   implicit val jsonFormats = Json.format[Agency]
 }
 
-case class Client(mtdSaClientId: MtdClientId)
+case class Client(mtdClientId: MtdClientId)
 
 object Client {
-  implicit val mtdClientIdReads = new SimpleObjectReads[MtdClientId]("mtdSaClientId", MtdClientId.apply)
+  implicit val mtdClientIdReads = new SimpleObjectReads[MtdClientId]("mtdClientId", MtdClientId.apply)
   implicit val mtdClientIdWrites = new SimpleObjectWrites[MtdClientId](_.value)
   implicit val jsonFormats = Json.format[Client]
 }
@@ -50,7 +50,7 @@ class AgenciesFakeConnector(baseUrl: URL, httpGet: HttpGet) {
 
   def findClient(saUtr: SaUtr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdClientId]] = {
     httpGet.GET[Option[Client]](new URL(baseUrl, s"/agencies-fake/clients/sa/${encodePathSegment(saUtr.value)}").toString)
-      .map(_.map(_.mtdSaClientId))
+      .map(_.map(_.mtdClientId))
   }
   def agencyUrl(arn: Arn): URL = {
     new URL(baseUrl, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")

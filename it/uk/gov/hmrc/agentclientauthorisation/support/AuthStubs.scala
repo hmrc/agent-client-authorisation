@@ -119,7 +119,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
                .withBody(
                  s"""
                    |{
-                   |  "mtdSaClientId": "$clientId"
+                   |  "mtdClientId": "$clientId"
                    |}
                  """.stripMargin)
              ))
