@@ -31,10 +31,10 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class InvitationsController(invitationsRepository: InvitationsRepository,
-                            postcodeService: PostcodeService,
-                            override val authConnector: AuthConnector,
-                            override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
+class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
+                                  postcodeService: PostcodeService,
+                                  override val authConnector: AuthConnector,
+                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
 
   private val SUPPORTED_REGIME = "mtd-sa"
 
@@ -56,13 +56,13 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   }
 
   private def location(invitation: Invitation) = {
-    LOCATION -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
+    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
-        Ok(toJson(toHalResource(invitations, arn, regime, clientId, status)))
+        Ok(toHalResource(invitations, arn, regime, clientId, status))
       }
     })
   }
@@ -70,7 +70,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.findById(BSONObjectID(invitation)).map {
-        case Some(r) => Ok(toJson(toHalResource(r, arn)))
+        case Some(r) => Ok(toHalResource(r, arn))
         case None => NotFound
       }
     })
@@ -90,15 +90,15 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
-    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, regime, clientId, status).url))
+    val links = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
+    var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
                                 HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
-    if (invitation.mostRecentEvent().status == Pending) {
-      links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
+    if (invitation.status == Pending) {
+      links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }

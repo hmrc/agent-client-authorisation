@@ -54,7 +54,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toJson(toHalResource(x, clientId)))
+      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x, clientId))
       case None => NotFound
       case _ => Forbidden
     }
@@ -64,7 +64,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
     if (clientId == request.mtdClientId.value) {
       invitationsService.list(SUPPORTED_REGIME, clientId) map {
         case Nil => NotFound
-        case results => Ok(toJson(toHalResource(results, clientId)))
+        case results => Ok(toHalResource(results, clientId))
       }
     } else {
       Future successful Forbidden
@@ -73,7 +73,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
 
   private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
     var links = HalLinks(Vector(HalLink("self", routes.ClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
-    if (invitation.mostRecentEvent().status == Pending) {
+    if (invitation.status == Pending) {
       links = links ++ HalLink("accept", routes.ClientInvitationsController.acceptInvitation(clientId, invitation.id.stringify).url)
       links = links ++ HalLink("reject", routes.ClientInvitationsController.rejectInvitation(clientId, invitation.id.stringify).url)
     }

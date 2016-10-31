@@ -70,6 +70,19 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   "GET /clients/:clientId/invitations/received" should {
     "return a 200 response" in {
       createInvitations()
+
+      given().client().isLoggedIn(saUtr)
+
+      val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received", port).get
+      response.status shouldBe 200
+
+      val json: JsValue = response.json
+      val invitation = invitations(json)
+      invitation.value.size shouldBe 1
+    }
+
+    "return more than one invitation" in {
+      createInvitations()
       createInvitations()
 
       given().client().isLoggedIn(saUtr)
@@ -174,11 +187,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   private def invitations(response: JsValue) = {
-    val embedded = response \ "_embedded" \ "invitations"
-    embedded match {
-      case array: JsArray => array
-      case obj: JsObject => JsArray(Seq(obj))
-    }
+    (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
   def createInvitations(): (String, String) = {
