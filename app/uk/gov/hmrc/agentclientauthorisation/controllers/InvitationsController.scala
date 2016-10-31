@@ -34,7 +34,7 @@ import scala.concurrent.Future
 class InvitationsController(invitationsRepository: InvitationsRepository,
                             postcodeService: PostcodeService,
                             override val authConnector: AuthConnector,
-                            override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions {
+                            override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
 
   private val SUPPORTED_REGIME = "mtd-sa"
 
@@ -62,7 +62,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.list(arn, regime, clientRegimeId, status).map { invitations =>
-        Ok(toJson(toHalResource(invitations, arn, regime, clientRegimeId, status)))
+        Ok(toHalResource(invitations, arn, regime, clientRegimeId, status))
       }
     })
   }
@@ -70,7 +70,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
       invitationsRepository.findById(BSONObjectID(invitation)).map {
-        case Some(r) => Ok(toJson(toHalResource(r, arn)))
+        case Some(r) => Ok(toHalResource(r, arn))
         case None => NotFound
       }
     })
@@ -97,7 +97,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
     var links = HalLinks(Vector(HalLink("self", routes.InvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
                                 HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
-    if (invitation.mostRecentEvent().status == Pending) {
+    if (invitation.status == Pending) {
       links = links ++ HalLink("cancel", routes.InvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
