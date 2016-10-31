@@ -162,6 +162,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     val invitationId = (invitation \ "id").as[String]
     invitationId should fullyMatch regex alphanumeric
     (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/$invitationId"
+    (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/$invitationId/accept"
+    (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/$invitationId/reject"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientRegimeId") shouldBe JsString(clientId.value)
