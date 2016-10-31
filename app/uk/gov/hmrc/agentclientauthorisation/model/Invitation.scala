@@ -62,7 +62,7 @@ case class Invitation(
   id: BSONObjectID,
   arn: Arn,
   regime: String,
-  clientRegimeId: String,
+  clientId: String,
   postcode: String,
   events: List[StatusChangeEvent]) {
 
@@ -77,9 +77,10 @@ case class Invitation(
   def status = mostRecentEvent().status
 }
 
+//TODO is this the same thing as AgentInvite in the RAML? If so rename
 case class AgentClientAuthorisationHttpRequest(
   regime: String,
-  clientRegimeId: String,
+  clientId: String,
   postcode: String)
 
 object StatusChangeEvent {
@@ -97,7 +98,7 @@ object Invitation {
     def writes(invitation: Invitation) = Json.obj(
       "id" -> invitation.id.stringify,
       "regime" -> invitation.regime,
-      "clientRegimeId" -> invitation.clientRegimeId,
+      "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
       "arn" -> invitation.arn.arn,
       "created" -> invitation.firstEvent().time,

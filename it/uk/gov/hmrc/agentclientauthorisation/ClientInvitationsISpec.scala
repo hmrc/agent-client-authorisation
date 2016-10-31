@@ -42,7 +42,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptInvitation())
 
     "accept a pending request" in {
-      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
 
       given().client().isLoggedIn(saUtr)
         .aRelationshipIsCreatedWith(arn)
@@ -57,7 +57,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     behave like anEndpointAccessibleForSaClientsOnly(responseForRejectInvitation())
 
     "reject a pending request" in {
-      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
       given().client().isLoggedIn(saUtr)
 
       val response = responseForRejectInvitation(invitationId)
@@ -166,7 +166,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/$invitationId/reject"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
-    (invitation \ "clientRegimeId") shouldBe JsString(clientId.value)
+    (invitation \ "clientId") shouldBe JsString(clientId.value)
     (invitation \ "status") shouldBe JsString("Pending")
     (invitation \ "created").as[Long] should beRecent
     (invitation \ "lastUpdated").as[Long] should beRecent
@@ -182,8 +182,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   def createInvitations(): (String, String) = {
-    val id1 = createInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
-    val id2 = createInvitation(s"""{"regime": "$REGIME", "clientRegimeId": "${mtdClient2Id.value}", "postcode": "AA1 1AA"}""")
+    val id1 = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+    val id2 = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClient2Id.value}", "postcode": "AA1 1AA"}""")
 
     (id1, id2)
   }

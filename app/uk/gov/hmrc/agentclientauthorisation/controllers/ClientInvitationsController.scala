@@ -34,17 +34,17 @@ class ClientInvitationsController(invitationsService: InvitationsService,
 
   private val SUPPORTED_REGIME = "mtd-sa"
 
-  def acceptInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     actionInvitation(request.mtdClientId.value, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(clientRegimeId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def rejectInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     actionInvitation(request.mtdClientId.value, invitationId, invitationsService.rejectInvitation)
   }
 
-  private def actionInvitation(clientRegimeId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
+  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
     invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation) if invitation.clientRegimeId == clientRegimeId => action(invitation) map {
+      case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
         case true => NoContent
         case false => Forbidden
       }
@@ -54,7 +54,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientRegimeId == request.mtdClientId.value => Ok(toJson(toHalResource(x, clientId)))
+      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toJson(toHalResource(x, clientId)))
       case None => NotFound
       case _ => Forbidden
     }

@@ -32,17 +32,17 @@ import scala.concurrent.Future
 
 trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
-  def create(arn: Arn, regime: String, clientRegimeId: String, postcode: String): Future[Invitation]
+  def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation]
 
   def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
 
-  def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
+  def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
 
-  def list(regime: String, clientRegimeId: String): Future[List[Invitation]]
+  def list(regime: String, clientId: String): Future[List[Invitation]]
 
   def findRegimeID(clientId: String): Future[List[Invitation]]
 
-  //def list(clientRegimeId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
+  //def list(clientId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
 
 }
 
@@ -52,17 +52,17 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
-    Index(Seq("clientRegimeId" -> IndexType.Ascending)),
+    Index(Seq("clientId" -> IndexType.Ascending)),
     Index(Seq("regime" -> IndexType.Ascending))
   )
 
-  override def create(arn: Arn, regime: String, clientRegimeId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
+  override def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
       arn = arn,
       regime = regime,
-      clientRegimeId = clientRegimeId,
+      clientId = clientId,
       postcode = postcode,
       events = List(StatusChangeEvent(now, Pending))
     )
@@ -70,8 +70,8 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     insert(request).map(_ => request)
   }
 
-  /*override def list(clientRegimeId : String, regime: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
-    val searchOptions = Seq("clientRegimeId" -> clientRegimeId,
+  /*override def list(clientId : String, regime: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
+    val searchOptions = Seq("clientId" -> clientId,
                             "regime" -> regime,
                             "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
@@ -81,9 +81,9 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     find(searchOptions: _*)
   }*/
 
-  override def list(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  override def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.arn),
-                            "clientRegimeId" -> clientRegimeId,
+                            "clientId" -> clientId,
                             "regime" -> regime,
                             "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
@@ -93,8 +93,8 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     find(searchOptions: _*)
   }
 
-  override def list(regime: String, clientRegimeId: String): Future[List[Invitation]] =
-    find("regime" -> regime, "clientRegimeId" -> clientRegimeId)
+  override def list(regime: String, clientId: String): Future[List[Invitation]] =
+    find("regime" -> regime, "clientId" -> clientId)
 
   override def findRegimeID(clientId: String): Future[List[Invitation]] =
     find()

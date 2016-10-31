@@ -47,10 +47,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
         ))
       else if (!validPostcode(authRequest.postcode))
         Future successful BadRequest
-      else if (!postcodeService.clientPostcodeMatches(authRequest.clientRegimeId, authRequest.postcode))
+      else if (!postcodeService.clientPostcodeMatches(authRequest.clientId, authRequest.postcode))
         Future successful Forbidden
       else
-        invitationsRepository.create(arn, authRequest.regime, authRequest.clientRegimeId, authRequest.postcode)
+        invitationsRepository.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
           .map(invitation => Created.withHeaders(location(invitation)))
     }
   }
@@ -59,10 +59,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     LOCATION -> routes.InvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
   }
 
-  def getSentInvitations(arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.list(arn, regime, clientRegimeId, status).map { invitations =>
-        Ok(toJson(toHalResource(invitations, arn, regime, clientRegimeId, status)))
+      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
+        Ok(toJson(toHalResource(invitations, arn, regime, clientId, status)))
       }
     })
   }
@@ -87,10 +87,10 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
     Future successful NotImplemented
   }
 
-  private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientRegimeId: Option[String], status: Option[InvitationStatus]): HalResource = {
+  private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
-    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, regime, clientRegimeId, status).url))
+    val links = Vector(HalLink("self", routes.InvitationsController.getSentInvitations(arn, regime, clientId, status).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 

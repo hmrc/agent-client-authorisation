@@ -32,7 +32,7 @@ class InvitationsService(invitationsRepository: InvitationsRepository,
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] = {
     if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientRegimeId))
+      relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
       Future successful false

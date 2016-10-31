@@ -40,14 +40,14 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
   val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
-  val clientRegimeId = "clientId"
+  val clientId = "clientId"
   val saUtr = "saUtr"
   val arn: Arn = Arn("12345")
 
 
   "Accepting an invitation" should {
     behave like clientStatusChangeEndpoint(
-        controller.acceptInvitation(clientRegimeId, invitationId),
+        controller.acceptInvitation(clientId, invitationId),
         whenInvitationIsAccepted
     )
 
@@ -59,7 +59,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
   "Rejecting an invitation" should {
     behave like clientStatusChangeEndpoint(
-        controller.rejectInvitation(clientRegimeId, invitationId),
+        controller.rejectInvitation(clientId, invitationId),
         whenInvitationIsRejected
     )
   }
@@ -73,7 +73,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     val agenciesFakeConnector = mock[AgenciesFakeConnector]
 
     def controller: ClientInvitationsController
-    def clientRegimeId: String
+    def clientId: String
     def invitationId: String
     def saUtr: String
     def arn: Arn
@@ -161,7 +161,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def noInvitation = Future successful None
 
     def anInvitation(): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientRegimeId, "A11 1AA",
+      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA",
            List(StatusChangeEvent(now(), Pending))))
 
     def anUpdatedInvitation(): Future[Invitation] =
@@ -173,7 +173,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     def aClientUser() =
       Future successful Accounts(None, Some(SaUtr(saUtr)))
 
-    def aMtdUser(clientId: String = clientRegimeId) =
+    def aMtdUser(clientId: String = clientId) =
       Future successful Some(MtdClientId(clientId))
 
     def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
