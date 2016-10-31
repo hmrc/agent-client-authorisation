@@ -77,8 +77,8 @@ case class Invitation(
   def status = mostRecentEvent().status
 }
 
-//TODO is this the same thing as AgentInvite in the RAML? If so rename
-case class AgentClientAuthorisationHttpRequest(
+/** Information provided by the agent to offer representation to HMRC */
+case class AgentInvite(
   regime: String,
   clientId: String,
   postcode: String)
@@ -111,6 +111,6 @@ object Invitation {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 
-object AgentClientAuthorisationHttpRequest {
-  implicit val format = Json.format[AgentClientAuthorisationHttpRequest]
+object AgentInvite {
+  implicit val format = Json.format[AgentInvite]
 }

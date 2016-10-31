@@ -39,7 +39,7 @@ class InvitationsController(invitationsRepository: InvitationsRepository,
   private val SUPPORTED_REGIME = "mtd-sa"
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
-    withJsonBody[AgentClientAuthorisationHttpRequest] { authRequest =>
+    withJsonBody[AgentInvite] { authRequest =>
       if (!supportedRegime(authRequest.regime))
         Future successful NotImplemented(errorResponseBody(
           code = "UNSUPPORTED_REGIME",
