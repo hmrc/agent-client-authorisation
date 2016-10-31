@@ -62,10 +62,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
 
   def getInvitations(clientId: String) = onlyForSaClients.async { implicit request =>
     if (clientId == request.mtdClientId.value) {
-      invitationsService.list(SUPPORTED_REGIME, clientId) map {
-        case Nil => NotFound
-        case results => Ok(toHalResource(results, clientId))
-      }
+      invitationsService.list(SUPPORTED_REGIME, clientId) map (results => Ok(toHalResource(results, clientId)))
     } else {
       Future successful Forbidden
     }

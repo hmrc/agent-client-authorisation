@@ -23,7 +23,8 @@ import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Action, AnyContent}
+import play.api.libs.json.JsArray
+import play.api.mvc.{Action, AnyContent, Result}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
@@ -47,8 +48,8 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
   "Accepting an invitation" should {
     behave like clientStatusChangeEndpoint(
-        controller.acceptInvitation(clientId, invitationId),
-        whenInvitationIsAccepted
+      controller.acceptInvitation(clientId, invitationId),
+      whenInvitationIsAccepted
     )
 
     "not change the invitation status if relationship creation fails" in {
@@ -59,9 +60,29 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
   "Rejecting an invitation" should {
     behave like clientStatusChangeEndpoint(
-        controller.rejectInvitation(clientId, invitationId),
-        whenInvitationIsRejected
+      controller.rejectInvitation(clientId, invitationId),
+      whenInvitationIsRejected
     )
+  }
+
+
+  "getInvitationsForClient" should {
+
+    "return 200 and an empty list when there are no invitations for the client" in {
+      val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
+
+      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+
+      when(invitationsService.list("mtd-sa", clientId)).thenReturn(Future successful Nil)
+
+      val request = FakeRequest()
+
+      val result: Result = await(controller.getInvitations(clientId)(request))
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "_embedded" \ "invitations") shouldBe JsArray()
+    }
   }
 }
 
