@@ -16,25 +16,23 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.joda.time.DateTime.now
-import org.mockito.Matchers.{eq => eqs, _}
+import java.net.URL
+
+import org.joda.time.DateTime
 import org.mockito.Mockito._
-import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsArray
-import play.api.mvc.{Action, AnyContent, Result}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.Accounts
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.support.ClientEndpointBehaviours
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
@@ -66,7 +64,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
   }
 
 
-  "getInvitationsForClient" should {
+  "getInvitations" should {
 
     "return 200 and an empty list when there are no invitations for the client" in {
       val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
@@ -76,127 +74,29 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
 
       when(invitationsService.list("mtd-sa", clientId)).thenReturn(Future successful Nil)
 
-      val request = FakeRequest()
-
-      val result: Result = await(controller.getInvitations(clientId)(request))
+      val result: Result = await(controller.getInvitations(clientId)(FakeRequest()))
       status(result) shouldBe 200
 
       (jsonBodyOf(result) \ "_embedded" \ "invitations") shouldBe JsArray()
     }
+
+    "include the agency URL in invitations" in {
+      val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
+
+      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+
+      val expectedUrl = "http://somevalue"
+      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
+
+      when(invitationsService.list("mtd-sa", clientId)).thenReturn(Future successful List(
+        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
+          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+
+      val result: Result = await(controller.getInvitations(clientId)(FakeRequest()))
+      status(result) shouldBe 200
+
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "_links" \ "agency" \ "href").as[String] shouldBe expectedUrl
+    }
   }
-}
-
-  trait ClientEndpointBehaviours {
-    this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
-
-    val invitationsService = mock[InvitationsService]
-    val authConnector = mock[AuthConnector]
-    val agenciesFakeConnector = mock[AgenciesFakeConnector]
-
-    def controller: ClientInvitationsController
-    def clientId: String
-    def invitationId: String
-    def saUtr: String
-    def arn: Arn
-
-    override def beforeEach(): Unit = {
-      reset(invitationsService, authConnector, agenciesFakeConnector)
-    }
-
-    def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Boolean]]) {
-
-       "Return no content" in {
-        val request = FakeRequest()
-        userIsLoggedIn
-        whenFindingAnInvitation thenReturn anInvitation()
-        action thenReturn (Future successful true)
-
-        val response = await(endpoint(request))
-
-        response.header.status shouldBe 204
-      }
-
-      "Return not found when the invitation doesn't exist" in {
-        val request = FakeRequest()
-        userIsLoggedIn
-        whenFindingAnInvitation thenReturn noInvitation
-
-        val response = await(endpoint(request))
-
-        response.header.status shouldBe 404
-      }
-
-      "Return unauthorised when the user is not logged in to MDTP" in {
-        val request = FakeRequest()
-        whenAuthIsCalled thenReturn userIsNotLoggedIn
-
-        val response = await(endpoint(request))
-
-        response.header.status shouldBe 401
-      }
-
-      "Return forbidden" when {
-        "the invitation is for a different client" in {
-          val request = FakeRequest()
-          whenAuthIsCalled thenReturn aClientUser()
-          whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
-          whenFindingAnInvitation thenReturn anInvitation
-          action thenReturn (Future successful true)
-
-          val response = await(endpoint(request))
-
-          response.header.status shouldBe 403
-        }
-
-        "the invitation cannot be actioned" in {
-          val request = FakeRequest()
-          userIsLoggedIn
-          whenFindingAnInvitation thenReturn anInvitation
-          action thenReturn (Future successful false)
-
-          val response = await(endpoint(request))
-
-          response.header.status shouldBe 403
-        }
-      }
-    }
-
-
-    def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
-      when(invitationsService.findInvitation(invitationId))
-    }
-
-    def userIsLoggedIn = {
-      whenAuthIsCalled thenReturn aClientUser()
-      whenMtdClientIsLookedUp thenReturn aMtdUser()
-    }
-
-    def whenAuthIsCalled: OngoingStubbing[Future[Accounts]] = {
-      when(authConnector.currentAccounts()(any[HeaderCarrier], any[ExecutionContext]))
-    }
-
-    def whenMtdClientIsLookedUp = {
-      when(agenciesFakeConnector.findClient(eqs(SaUtr(saUtr)))(any[HeaderCarrier], any[ExecutionContext]))
-    }
-
-    def noInvitation = Future successful None
-
-    def anInvitation(): Future[Option[Invitation]] =
-      Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA",
-           List(StatusChangeEvent(now(), Pending))))
-
-    def anUpdatedInvitation(): Future[Invitation] =
-      anInvitation() map (_.get)
-
-    def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
-    def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
-
-    def aClientUser() =
-      Future successful Accounts(None, Some(SaUtr(saUtr)))
-
-    def aMtdUser(clientId: String = clientId) =
-      Future successful Some(MtdClientId(clientId))
-
-    def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
-    def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any[HeaderCarrier]))
 }

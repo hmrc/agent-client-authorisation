@@ -69,11 +69,15 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
 
   private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
+
     var links = HalLinks(Vector(HalLink("self", routes.ClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
+    links = links ++ HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)
+
     if (invitation.status == Pending) {
       links = links ++ HalLink("accept", routes.ClientInvitationsController.acceptInvitation(clientId, invitation.id.stringify).url)
       links = links ++ HalLink("reject", routes.ClientInvitationsController.rejectInvitation(clientId, invitation.id.stringify).url)
     }
+
     HalResource(links, toJson(invitation).as[JsObject])
   }
 
