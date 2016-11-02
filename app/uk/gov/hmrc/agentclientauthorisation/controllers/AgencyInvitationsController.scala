@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions, SaClientRequest}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
@@ -61,9 +61,7 @@ class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      //TODO this should be as follows, TDD to restore the commented out line
-//      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
-      invitationsRepository.list(arn, None, clientId, None).map { invitations =>
+      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
         Ok(toHalResource(invitations, arn, regime, clientId, status))
       }
     })

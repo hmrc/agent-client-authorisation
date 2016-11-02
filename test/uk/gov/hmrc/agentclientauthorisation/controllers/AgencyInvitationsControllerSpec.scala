@@ -19,24 +19,23 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import java.net.URL
 
 import org.joda.time.DateTime
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => eqs}
 import org.mockito.Mockito._
-import play.api.mvc.{ActionBuilder, Request, Result, Results}
+import org.scalatest.BeforeAndAfterEach
+import play.api.libs.json.{JsArray, JsValue}
 import play.api.test.FakeRequest
-import play.api.mvc.{Action, AnyContent, Result}
-import play.api.test.FakeRequest
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, Pending, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
 import uk.gov.hmrc.play.test.UnitSpec
-import org.mockito.Matchers.{any, eq => eqs}
-import reactivemongo.bson.BSONObjectID
 
 import scala.concurrent.Future
 
-class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking {
+class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
 
 
   val invitationsRepository = resettingMock[InvitationsRepository]
@@ -53,16 +52,86 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
       val arn = givenAgentIsLoggedIn(Arn("arn1"))
 
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
+      val firstInvitationId = BSONObjectID.generate
+      val secondInvitationId = BSONObjectID.generate
       when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
         Future successful List(
-          Invitation(BSONObjectID.generate, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending))),
-          Invitation(BSONObjectID.generate, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
+          Invitation(firstInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending))),
+          Invitation(secondInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
         )
       )
 
       val response = await(controller.getSentInvitations(arn, None, None, None)(FakeRequest()))
       status(response) shouldBe 200
-      (jsonBodyOf(response) \ "_links" \ "invitations")
+      val jsonBody = jsonBodyOf(response)
+
+      invitationsSize(jsonBody) shouldBe 2
+
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, firstInvitationId)
+      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, secondInvitationId)
     }
+
+    "filter by regime when a regime is specified" in {
+
+      val arn = givenAgentIsLoggedIn(Arn("arn1"))
+
+      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
+      val mtdSaInvitationId = BSONObjectID.generate
+      when(invitationsRepository.list(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
+        Future successful List(
+          Invitation(mtdSaInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
+        )
+      )
+
+      val response = await(controller.getSentInvitations(arn, Some("mtd-sa"), None, None)(FakeRequest()))
+      status(response) shouldBe 200
+      val jsonBody = jsonBodyOf(response)
+
+      invitationsSize(jsonBody) shouldBe 1
+
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaInvitationId)
+    }
+
+    "filter by status when a status is specified" in {
+
+      val arn = givenAgentIsLoggedIn(Arn("arn1"))
+
+      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
+      val acceptedInvitationId = BSONObjectID.generate
+      when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+        Future successful List(
+          Invitation(acceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Accepted)))
+        )
+      )
+
+      val response = await(controller.getSentInvitations(arn, None, None, Some(Accepted))(FakeRequest()))
+      status(response) shouldBe 200
+      val jsonBody = jsonBodyOf(response)
+
+      invitationsSize(jsonBody) shouldBe 1
+
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, acceptedInvitationId)
+    }
+
   }
+
+  private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
+    (embeddedInvitations(agencyInvitationsSent)(idx) \ "_links" \ "self" \ "href").as[String]
+
+  private def invitationsSize(agencyInvitationsSent: JsValue): Int =
+    embeddedInvitations(agencyInvitationsSent).value.size
+
+  private def embeddedInvitations(agencyInvitationsSent: JsValue): JsArray =
+    (agencyInvitationsSent \ "_embedded" \ "invitations").as[JsArray]
+
+  private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
+    encodePathSegments(
+      // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
+//      "agent-client-authorisation",
+      "agencies",
+      arn.arn,
+      "invitations",
+      "sent",
+      invitationId.stringify
+    )
 }
