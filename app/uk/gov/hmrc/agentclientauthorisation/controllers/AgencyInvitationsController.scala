@@ -61,7 +61,9 @@ class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
+      //TODO this should be as follows, TDD to restore the commented out line
+//      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
+      invitationsRepository.list(arn, None, clientId, None).map { invitations =>
         Ok(toHalResource(invitations, arn, regime, clientId, status))
       }
     })
