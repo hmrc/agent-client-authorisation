@@ -37,7 +37,6 @@ import scala.concurrent.Future
 
 class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
 
-
   val invitationsRepository = resettingMock[InvitationsRepository]
   val postcodeService = resettingMock[PostcodeService]
   val authConnector = resettingMock[AuthConnector]
@@ -45,64 +44,66 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
 
   val controller = new AgencyInvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector)
 
+  val arn = Arn("arn1")
+  val mtdSaPendingInvitationId = BSONObjectID.generate
+  val mtdSaAcceptedInvitationId = BSONObjectID.generate
+  val otherRegimePendingInvitationId = BSONObjectID.generate
+
+  override protected def beforeEach() = {
+    super.beforeEach()
+
+    givenAgentIsLoggedIn(arn)
+
+    when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
+
+    val allInvitations = List(
+      Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
+    )
+
+    when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
+      Future successful allInvitations
+    )
+
+    when(invitationsRepository.list(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
+      Future successful allInvitations.filter(_.regime == "mtd-sa")
+    )
+
+    when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+      Future successful allInvitations.filter(_.status == Accepted)
+    )
+  }
+
   "getSentInvitations" should {
 
     "for a matching agency should return the invitations" in {
 
-      val arn = givenAgentIsLoggedIn(Arn("arn1"))
-
-      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
-      val firstInvitationId = BSONObjectID.generate
-      val secondInvitationId = BSONObjectID.generate
-      when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
-        Future successful List(
-          Invitation(firstInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending))),
-          Invitation(secondInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
-        )
-      )
-
       val response = await(controller.getSentInvitations(arn, None, None, None)(FakeRequest()))
+
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
-      invitationsSize(jsonBody) shouldBe 2
+      invitationsSize(jsonBody) shouldBe 3
 
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, firstInvitationId)
-      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, secondInvitationId)
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
+      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
+      invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
     }
 
     "filter by regime when a regime is specified" in {
-
-      val arn = givenAgentIsLoggedIn(Arn("arn1"))
-
-      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
-      val mtdSaInvitationId = BSONObjectID.generate
-      when(invitationsRepository.list(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
-        Future successful List(
-          Invitation(mtdSaInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
-        )
-      )
 
       val response = await(controller.getSentInvitations(arn, Some("mtd-sa"), None, None)(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
-      invitationsSize(jsonBody) shouldBe 1
+      invitationsSize(jsonBody) shouldBe 2
 
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaInvitationId)
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
+      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
     }
 
     "filter by status when a status is specified" in {
-
-      val arn = givenAgentIsLoggedIn(Arn("arn1"))
-
-      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
-      val acceptedInvitationId = BSONObjectID.generate
-      when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
-        Future successful List(
-          Invitation(acceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Accepted)))
-        )
-      )
 
       val response = await(controller.getSentInvitations(arn, None, None, Some(Accepted))(FakeRequest()))
       status(response) shouldBe 200
@@ -110,7 +111,7 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
 
       invitationsSize(jsonBody) shouldBe 1
 
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, acceptedInvitationId)
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
     }
 
   }
@@ -134,4 +135,5 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
       "sent",
       invitationId.stringify
     )
+
 }
