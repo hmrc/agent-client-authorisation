@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions, SaClientRequest}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
