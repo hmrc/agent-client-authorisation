@@ -81,7 +81,11 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   def oid: String
   def clientId: String
 
-  def isLoggedIn(utr: String): A = {
+  // TODO
+//  private def utr = FakeMtdClientId.toSaUtr(clientId)
+  private def utr = clientId
+
+  def isLoggedIn(): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(

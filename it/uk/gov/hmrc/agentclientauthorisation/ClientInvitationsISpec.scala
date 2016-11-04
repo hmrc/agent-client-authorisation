@@ -30,9 +30,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
-  //TODO: avoid SaUtr fakery leaking into this ISpec and AgentClientAuthorisationISpec
-  private val saUtr: String = "0123456789"
-  private val mtdClientId = MtdClientId("MTD-" + saUtr)
+  private val mtdClientId = MtdClientId("MTD-0123456789")
   private val mtdClient2Id = MtdClientId("MTD-9876543210")
   private val REGIME = "mtd-sa"
 
@@ -45,7 +43,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "accept a pending request" in {
       val invitationId = createInvitation()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
         .aRelationshipIsCreatedWith(arn)
 
       acceptInvitation(invitationId)
@@ -57,7 +55,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
     "reject a pending request" in {
       val invitationId = createInvitation()
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val response = responseForRejectInvitation(invitationId)
 
@@ -70,7 +68,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return a 200 response" in {
       createInvitations()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received", port).get
       response.status shouldBe 200
@@ -84,7 +82,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       createInvitations()
       createInvitations()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received", port).get
       response.status shouldBe 200
@@ -98,11 +96,11 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val invitationIdToAccept = createInvitation()
       createInvitation()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
         .aRelationshipIsCreatedWith(arn)
       acceptInvitation(invitationIdToAccept)
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val acceptedInvitationsUrl = s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received?status=Accepted"
       val response = new Resource(acceptedInvitationsUrl, port).get
@@ -124,7 +122,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return 404 when try to access someone else's invitations" in {
       createInvitations()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClient2Id.value}/invitations/received", port).get
 
@@ -138,7 +136,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val testStartTime = now().getMillis
       val (invitation1Id, _) = createInvitations()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/$invitation1Id", port).get
       response.status shouldBe 200
@@ -163,7 +161,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return 403 when try to access someone else's invitation" in {
       val (_, invitation2Id) = createInvitations()
 
-      given().client().isLoggedIn(saUtr)
+      given().client(clientId = mtdClientId.value).isLoggedIn()
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClient2Id.value}/invitations/received/$invitation2Id", port).get
       response.status shouldBe 403
     }

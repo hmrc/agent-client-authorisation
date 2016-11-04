@@ -31,7 +31,7 @@ trait SecuredEndpointBehaviours {
     }
 
     "return 401 when user is not an MTD agent" in {
-      given().client().isLoggedIn("0123456789")
+      given().client().isLoggedIn()
       request.status shouldBe 401
     }
   }
