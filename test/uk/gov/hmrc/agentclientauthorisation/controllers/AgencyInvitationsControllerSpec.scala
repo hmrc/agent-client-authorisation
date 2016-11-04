@@ -27,6 +27,7 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
@@ -36,12 +37,12 @@ import scala.concurrent.Future
 
 class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
 
-  val invitationsService = resettingMock[InvitationsService]
   val postcodeService = resettingMock[PostcodeService]
+  val invitationsService = resettingMock[InvitationsService]
   val authConnector = resettingMock[AuthConnector]
   val agenciesFakeConnector = resettingMock[AgenciesFakeConnector]
 
-  val controller = new AgencyInvitationsController(invitationsService, postcodeService, authConnector, agenciesFakeConnector)
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector, agenciesFakeConnector)
 
   val arn = Arn("arn1")
   val mtdSaPendingInvitationId = BSONObjectID.generate

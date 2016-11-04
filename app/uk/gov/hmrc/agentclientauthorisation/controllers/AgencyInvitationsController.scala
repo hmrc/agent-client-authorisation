@@ -22,35 +22,29 @@ import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentInvitationValidation, AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AgencyInvitationsController(invitationsService: InvitationsService,
-                                  postcodeService: PostcodeService,
+class AgencyInvitationsController(override val postcodeService:PostcodeService,
+                                  invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
-                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
+                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with AgentInvitationValidation{
 
-  private val SUPPORTED_REGIME = "mtd-sa"
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
     withJsonBody[AgentInvite] { authRequest =>
-      if (!supportedRegime(authRequest.regime))
-        Future successful NotImplemented(errorResponseBody(
-          code = "UNSUPPORTED_REGIME",
-          message = s"""Unsupported regime "${authRequest.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""
-        ))
-      else if (!validPostcode(authRequest.postcode))
-        Future successful BadRequest
-      else if (!postcodeService.clientPostcodeMatches(authRequest.clientId, authRequest.postcode))
-        Future successful Forbidden
-      else
-        invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
-          .map(invitation => Created.withHeaders(location(invitation)))
+      checkForErrors(authRequest)
+        .headOption.fold(makeInvitation(arn, authRequest))(error => Future successful error)
     }
+  }
+
+  private def makeInvitation(arn: Arn, authRequest: AgentInvite): Future[Result] = {
+    invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
+      .map(invitation => Created.withHeaders(location(invitation)))
   }
 
   private def location(invitation: Invitation) = {
@@ -58,29 +52,30 @@ class AgencyInvitationsController(invitationsService: InvitationsService,
   }
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
-    forThisAgency(arn, {
+    forThisAgency(arn) {
       invitationsService.agencySent(arn, regime, clientId, status).map { invitations =>
         Ok(toHalResource(invitations, arn, regime, clientId, status))
       }
-    })
+    }
   }
 
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
-    forThisAgency(arn, {
+    forThisAgency(arn) {
       invitationsService.findInvitation(invitation).map {
         case Some(r) => Ok(toHalResource(r, arn))
         case None => NotFound
       }
-    })
+    }
   }
 
-  private def forThisAgency(arn: Arn, block: => Future[Result])(implicit request: AgentRequest[_]) = {
+  private def forThisAgency(arn: Arn)( block: => Future[Result])(implicit request: AgentRequest[_]) = {
     if (arn != request.arn) {
       Future successful Forbidden
     } else {
       block
     }
   }
+
   def cancelInvitation(arn: Arn, invitation: String) = Action.async {
     Future successful NotImplemented
   }
@@ -89,26 +84,16 @@ class AgencyInvitationsController(invitationsService: InvitationsService,
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
 
     val links = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
-    Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
+    Hal.hal(Json.obj(), links, Vector("invitations" -> requestResources))
   }
 
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
     var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
-                                HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
+      HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
     if (invitation.status == Pending) {
       links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }
-
-  private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
-  private def validPostcode(postcode: String) = postcodeWithoutSpacesRegex.findFirstIn(postcode.replaceAll(" ", "")).isDefined
-
-  private def supportedRegime(regime: String) = SUPPORTED_REGIME == regime
-
-  private def errorResponseBody(code: String, message: String) =
-    Json.obj(
-      "code" -> code,
-      "message" -> message
-    )
 }
+
