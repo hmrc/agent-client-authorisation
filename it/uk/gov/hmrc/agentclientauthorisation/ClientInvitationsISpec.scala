@@ -21,7 +21,7 @@ import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -30,8 +30,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val mtdClientId = MtdClientId("MTD-0123456789")
-  private val mtdClient2Id = MtdClientId("MTD-9876543210")
+  private val mtdClientId = FakeMtdClientId.random()
+  private val mtdClient2Id = FakeMtdClientId.random()
   private val REGIME = "mtd-sa"
 
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
@@ -43,7 +43,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "accept a pending request" in {
       val invitationId = createInvitation()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
         .aRelationshipIsCreatedWith(arn)
 
       acceptInvitation(invitationId)
@@ -55,7 +55,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
     "reject a pending request" in {
       val invitationId = createInvitation()
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = responseForRejectInvitation(invitationId)
 
@@ -68,7 +68,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return a 200 response" in {
       createInvitations()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received", port).get
       response.status shouldBe 200
@@ -82,7 +82,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       createInvitations()
       createInvitations()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received", port).get
       response.status shouldBe 200
@@ -96,11 +96,11 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val invitationIdToAccept = createInvitation()
       createInvitation()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
         .aRelationshipIsCreatedWith(arn)
       acceptInvitation(invitationIdToAccept)
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val acceptedInvitationsUrl = s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received?status=Accepted"
       val response = new Resource(acceptedInvitationsUrl, port).get
@@ -122,7 +122,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return 404 when try to access someone else's invitations" in {
       createInvitations()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClient2Id.value}/invitations/received", port).get
 
@@ -136,7 +136,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val testStartTime = now().getMillis
       val (invitation1Id, _) = createInvitations()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/$invitation1Id", port).get
       response.status shouldBe 200
@@ -161,7 +161,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     "return 403 when try to access someone else's invitation" in {
       val (_, invitation2Id) = createInvitations()
 
-      given().client(clientId = mtdClientId.value).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
+      given().client(clientId = mtdClientId).isLoggedIn()
       val response = new Resource(s"/agent-client-authorisation/clients/${mtdClient2Id.value}/invitations/received/$invitation2Id", port).get
       response.status shouldBe 403
     }
