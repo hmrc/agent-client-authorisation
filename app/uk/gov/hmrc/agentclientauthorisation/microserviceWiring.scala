@@ -59,8 +59,7 @@ trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
 
   // Instantiate services here
   lazy val relationshipsConnector = new RelationshipsConnector(new URL(baseUrl("relationships")), WSHttp)
-  lazy val invitationsRepository = new InvitationsMongoRepository
-  lazy val invitationsService = new InvitationsService(invitationsRepository, relationshipsConnector)
+  lazy val invitationsService = new InvitationsService(new InvitationsMongoRepository, relationshipsConnector)
   lazy val postcodeService = new PostcodeService
   lazy val authConnector = new uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector(new URL(baseUrl("auth")), WSHttp)
   lazy val slConnector = ServiceLocatorConnector(WSHttp)
@@ -71,7 +70,7 @@ trait ControllerRegistry {
   registry: ServiceRegistry =>
 
   private lazy val controllers = Map[Class[_], Controller](
-    classOf[AgencyInvitationsController] -> new AgencyInvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector),
+    classOf[AgencyInvitationsController] -> new AgencyInvitationsController(invitationsService, postcodeService, authConnector, agenciesFakeConnector),
     classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector),
     classOf[WhitelistController] -> new WhitelistController()
   )

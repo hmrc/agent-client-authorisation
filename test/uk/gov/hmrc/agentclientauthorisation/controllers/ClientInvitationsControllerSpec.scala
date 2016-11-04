@@ -70,7 +70,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
       whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
 
-      when(invitationsService.list("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
@@ -85,7 +85,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
 
-      when(invitationsService.list("mtd-sa", clientId, None)).thenReturn(Future successful List(
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 

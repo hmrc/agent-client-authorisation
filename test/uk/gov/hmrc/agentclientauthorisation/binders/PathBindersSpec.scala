@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.binders
 
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.binders.PathBinders.InvitationStatusBinder
+import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 
 class PathBindersSpec extends UnitSpec {
+
   "InvitationStatusBinder" should {
-    "reject multiple status arguments" in {
-      InvitationStatusBinder.bind("status", Map("status" -> Seq("Accepted", "Pending"))) shouldBe Some(Left("Cannot parse parameter status as InvitationStatus: multiple values not supported"))
+    "only consider the first argument" in {
+      InvitationStatusBinder.bind("status", Map("status" -> Seq("Accepted", "Pending"))) shouldBe Some(Right(Accepted))
     }
 
     "reject unknown status" in {

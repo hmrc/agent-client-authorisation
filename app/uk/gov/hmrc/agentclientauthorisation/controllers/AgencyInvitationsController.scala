@@ -21,17 +21,15 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
+class AgencyInvitationsController(invitationsService: InvitationsService,
                                   postcodeService: PostcodeService,
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
@@ -50,7 +48,7 @@ class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
       else if (!postcodeService.clientPostcodeMatches(authRequest.clientId, authRequest.postcode))
         Future successful Forbidden
       else
-        invitationsRepository.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
+        invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
           .map(invitation => Created.withHeaders(location(invitation)))
     }
   }
@@ -61,7 +59,7 @@ class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.list(arn, regime, clientId, status).map { invitations =>
+      invitationsService.agencySent(arn, regime, clientId, status).map { invitations =>
         Ok(toHalResource(invitations, arn, regime, clientId, status))
       }
     })
@@ -69,7 +67,7 @@ class AgencyInvitationsController(invitationsRepository: InvitationsRepository,
 
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn, {
-      invitationsRepository.findById(BSONObjectID(invitation)).map {
+      invitationsService.findInvitation(invitation).map {
         case Some(r) => Ok(toHalResource(r, arn))
         case None => NotFound
       }

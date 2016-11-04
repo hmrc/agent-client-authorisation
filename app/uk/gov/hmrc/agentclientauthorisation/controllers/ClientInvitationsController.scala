@@ -62,7 +62,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
 
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
     if (clientId == request.mtdClientId.value) {
-      invitationsService.list(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
+      invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
       Future successful Forbidden
     }
