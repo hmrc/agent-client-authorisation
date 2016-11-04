@@ -38,7 +38,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   }
 
 
-  "InvitationsMongoRepository create" should {
+  "create" should {
 
     "create a new StatusChangedEvent of Pending" in {
 
@@ -55,7 +55,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-  "AuthorisationRequestRepository update" should {
+  "update" should {
 
     "create a new StatusChangedEvent" in {
 
@@ -72,7 +72,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-  "AuthorisationRequestRepository listing by arn" should {
+  "listing by arn" should {
 
     "return previously created and updated elements" in {
 
@@ -149,7 +149,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   }
 
 
-  "AuthorisationRequestRepository listing by clientSaUtr" should {
+  "listing by clientSaUtr" should {
 
     "return an empty list when there is no such regime-regimeId pair" in {
       val regime = "sa"
