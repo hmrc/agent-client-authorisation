@@ -27,9 +27,8 @@ object PathBinders {
 
   implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] = {
-      params.get(key) map {
-        case value :: _ => Right(InvitationStatus.apply(value))
-      }
+      //TODO this ignores multiple status arguments - should throw an error
+      params.get(key) map (vals => Right(InvitationStatus.apply(vals.head)))
     }
 
     override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
