@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
+import play.api.http.LazyHttpErrorHandler
 import uk.gov.hmrc.api.controllers.DocumentationController
 
 
-object RamlController extends DocumentationController {
+object RamlController extends DocumentationController(LazyHttpErrorHandler) {
 
   def raml(version: String, file: String) = {
     super.at(s"/public/api/conf/$version", file)

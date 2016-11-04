@@ -30,7 +30,7 @@ import scala.concurrent.Future
 
 class ClientInvitationsController(invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
-                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter{
+                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
 
   private val SUPPORTED_REGIME = "mtd-sa"
 

@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.net.URL
 
+import play.modules.reactivemongo.MongoDbConnection
 import play.api.mvc.Controller
-import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsController, AgencyInvitationsController, WhitelistController}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
@@ -47,15 +47,8 @@ object MicroserviceAuthConnector extends AuthConnector with ServicesConfig {
   override val authBaseUrl = baseUrl("auth")
 }
 
-trait LazyMongoDbConnection {
-  import play.api.Play.current
 
-  lazy val mongoConnector: MongoConnector = ReactiveMongoPlugin.mongoConnector
-
-  implicit lazy val db = mongoConnector.db
-}
-
-trait ServiceRegistry extends ServicesConfig with LazyMongoDbConnection {
+trait ServiceRegistry extends ServicesConfig with MongoDbConnection {
 
   // Instantiate services here
   lazy val relationshipsConnector = new RelationshipsConnector(new URL(baseUrl("relationships")), WSHttp)
