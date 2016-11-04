@@ -27,8 +27,13 @@ object PathBinders {
 
   implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] = {
-      params.get(key) map {
-        case value :: _ => Right(InvitationStatus.apply(value))
+      params.get(key) flatMap  {
+        case vals if vals.isEmpty => None
+        case vals if vals.size > 1 => Some(Left(s"Cannot parse parameter $key as InvitationStatus: multiple values not supported"))
+        case vals => InvitationStatus.parse(vals.head) match {
+          case Left(error) => Some(Left(s"Cannot parse parameter $key as InvitationStatus: $error"))
+          case x => Some(x)
+        }
       }
     }
 

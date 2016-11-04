@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 import views.html.helper.urlEncode
 
-class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
 
   import play.api.mvc.Codec.utf_8
 

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
+import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
@@ -30,6 +30,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
+  //TODO: avoid SaUtr fakery leaking into this ISpec and AgentClientAuthorisationISpec
   private val saUtr: String = "0123456789"
   private val mtdClientId = MtdClientId("MTD-" + saUtr)
   private val mtdClient2Id = MtdClientId("MTD-9876543210")
@@ -42,14 +43,12 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptInvitation())
 
     "accept a pending request" in {
-      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+      val invitationId = createInvitation()
 
       given().client().isLoggedIn(saUtr)
         .aRelationshipIsCreatedWith(arn)
 
-      val response = responseForAcceptInvitation(invitationId)
-
-      response.status shouldBe 204
+      acceptInvitation(invitationId)
     }
   }
 
@@ -57,7 +56,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     behave like anEndpointAccessibleForSaClientsOnly(responseForRejectInvitation())
 
     "reject a pending request" in {
-      val invitationId = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+      val invitationId = createInvitation()
       given().client().isLoggedIn(saUtr)
 
       val response = responseForRejectInvitation(invitationId)
@@ -93,6 +92,27 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val json: JsValue = response.json
       val invitation = invitations(json)
       invitation.value.size shouldBe 2
+    }
+
+    "return only invitations with the specified status" in {
+      val invitationIdToAccept = createInvitation()
+      createInvitation()
+
+      given().client().isLoggedIn(saUtr)
+        .aRelationshipIsCreatedWith(arn)
+      acceptInvitation(invitationIdToAccept)
+
+      given().client().isLoggedIn(saUtr)
+
+      val acceptedInvitationsUrl = s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received?status=Accepted"
+      val response = new Resource(acceptedInvitationsUrl, port).get
+      response.status shouldBe 200
+
+      val json: JsValue = response.json
+      val invitation = invitations(json)
+      invitation.value.size shouldBe 1
+
+      (json \ "_links" \ "self" \ "href").as[String] shouldBe acceptedInvitationsUrl
     }
 
     "return a 401 response if not logged-in" in {
@@ -157,7 +177,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     new Resource(getInvitationUrl + invitationId, port).get()
   }
 
-  private def createInvitation(body: String): String = {
+  private def createInvitation(body: String = s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}"""): String = {
     given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val response = new Resource(createInvitationUrl, port).postAsJson(body)
 
@@ -190,17 +210,23 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     (response \ "_embedded" \ "invitations").as[JsArray]
   }
 
-  def createInvitations(): (String, String) = {
-    val id1 = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClientId.value}", "postcode": "AA1 1AA"}""")
+  private def createInvitations(): (String, String) = {
+    val id1 = createInvitation()
     val id2 = createInvitation(s"""{"regime": "$REGIME", "clientId": "${mtdClient2Id.value}", "postcode": "AA1 1AA"}""")
 
     (id1, id2)
   }
-  def responseForRejectInvitation(invitationId: String = "none"): HttpResponse = {
+
+  private def responseForRejectInvitation(invitationId: String = "none"): HttpResponse = {
     new Resource(getInvitationUrl + invitationId + "/reject", port).putEmpty()
   }
 
-  def responseForAcceptInvitation(invitationId: String = "none"): HttpResponse = {
+  private def responseForAcceptInvitation(invitationId: String = "none"): HttpResponse = {
     new Resource(getInvitationUrl + invitationId + "/accept", port).putEmpty()
+  }
+
+  private def acceptInvitation(invitationId: String): Unit = {
+    val response = responseForAcceptInvitation(invitationId)
+    response.status shouldBe 204
   }
 }

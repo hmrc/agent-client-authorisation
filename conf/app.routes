@@ -8,7 +8,7 @@ DELETE   /agencies/:arn/invitations/sent/:invitation            @uk.gov.hmrc.age
 
 PUT      /clients/:clientId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientId: String, invitationId: String)
 PUT      /clients/:clientId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientId: String, invitationId: String)
-GET      /clients/:clientId/invitations/received                 @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientId: String)
+GET      /clients/:clientId/invitations/received                 @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientId: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 GET      /clients/:clientId/invitations/received/:invitationId   @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientId: String, invitationId: String)
 
 # Whitelist

@@ -41,16 +41,20 @@ object InvitationStatus {
     case _ => None
   }
 
-  def apply(status: String) = status.toLowerCase match {
-    case "pending" =>   Pending
-    case "rejected" =>  Rejected
-    case "accepted" =>  Accepted
-    case "cancelled" => Cancelled
-    case unknown => throw new IllegalArgumentException(s"status of [$unknown] is not a valid InvitationStatus")
+  def parse(status: String): Either[String, InvitationStatus] = status.toLowerCase match {
+    case "pending" =>   Right(Pending)
+    case "rejected" =>  Right(Rejected)
+    case "accepted" =>  Right(Accepted)
+    case "cancelled" => Right(Cancelled)
+    case _ => Left(s"status of [$status] is not a valid InvitationStatus")
   }
 
-  implicit val authorisationStatusFormat = new Format[InvitationStatus] {
-    override def reads(json: JsValue): JsResult[InvitationStatus] = JsSuccess(apply(json.as[String]))
+  implicit val invitationStatusFormat = new Format[InvitationStatus] {
+    override def reads(json: JsValue): JsResult[InvitationStatus] = parse(json.as[String]) match {
+      case Right(status) => JsSuccess(status)
+      case Left(error) => JsError(error)
+    }
+
     override def writes(o: InvitationStatus): JsValue = unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
   }
 

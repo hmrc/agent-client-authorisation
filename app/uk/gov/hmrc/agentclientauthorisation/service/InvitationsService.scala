@@ -45,8 +45,8 @@ class InvitationsService(invitationsRepository: InvitationsRepository,
   def findInvitation(invitationId: String): Future[Option[Invitation]] =
       invitationsRepository.findById(BSONObjectID(invitationId))
 
-  def list(regime: String, clientId: String) =
-    invitationsRepository.list(regime, clientId)
+  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+    invitationsRepository.list(regime, clientId, status)
 
 
 
