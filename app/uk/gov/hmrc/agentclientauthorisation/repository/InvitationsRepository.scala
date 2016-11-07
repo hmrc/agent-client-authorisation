@@ -41,9 +41,6 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
   def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]]
 
   def findRegimeID(clientId: String): Future[List[Invitation]]
-
-  //def list(clientId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
-
 }
 
 class InvitationsMongoRepository(implicit mongo: () => DB)

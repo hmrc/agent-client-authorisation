@@ -16,9 +16,9 @@ uses:
       type: string
   get:
     description: List of invitations sent by the agency (arn)
-    queryParameters:
       status:
-        description: filter invitations by status.
+    queryParameters:
+        description: Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
         type: invitations.Status
       clientId:
         type: string
@@ -35,7 +35,7 @@ uses:
   post:
     description: Create a new invitation
     body:
-      type: atoms.AgentInvite
+      type: atoms.AgentInvitation
     responses:
       201:
         description: The invitation was successfully created.
@@ -91,7 +91,7 @@ uses:
   get:
     queryParameters:
       status:
-        description: filter invitations by status.
+        description: filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
         type: atoms.Status
     responses:
       200:

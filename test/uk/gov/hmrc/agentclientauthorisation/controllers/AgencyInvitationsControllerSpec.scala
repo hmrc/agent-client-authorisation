@@ -27,9 +27,9 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -37,12 +37,12 @@ import scala.concurrent.Future
 
 class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
 
-  val invitationsRepository = resettingMock[InvitationsRepository]
   val postcodeService = resettingMock[PostcodeService]
+  val invitationsService = resettingMock[InvitationsService]
   val authConnector = resettingMock[AuthConnector]
   val agenciesFakeConnector = resettingMock[AgenciesFakeConnector]
 
-  val controller = new AgencyInvitationsController(invitationsRepository, postcodeService, authConnector, agenciesFakeConnector)
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector, agenciesFakeConnector)
 
   val arn = Arn("arn1")
   val mtdSaPendingInvitationId = BSONObjectID.generate
@@ -62,15 +62,15 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
       Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
     )
 
-    when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
       Future successful allInvitations
     )
 
-    when(invitationsRepository.list(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
       Future successful allInvitations.filter(_.regime == "mtd-sa")
     )
 
-    when(invitationsRepository.list(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
   }

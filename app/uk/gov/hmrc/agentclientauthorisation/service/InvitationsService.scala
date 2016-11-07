@@ -20,7 +20,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, MtdClientId, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -28,6 +28,9 @@ import scala.concurrent.Future
 
 class InvitationsService(invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
+
+  def create(arn: Arn, regime: String, clientId: String, postcode: String) =
+    invitationsRepository.create(arn, regime, clientId, postcode)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] = {
@@ -45,10 +48,11 @@ class InvitationsService(invitationsRepository: InvitationsRepository,
   def findInvitation(invitationId: String): Future[Option[Invitation]] =
       invitationsRepository.findById(BSONObjectID(invitationId))
 
-  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+  def clientsReceived(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
     invitationsRepository.list(regime, clientId, status)
 
-
+  def agencySent(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
+    invitationsRepository.list(arn, regime, clientId, status)
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Boolean] = {
     invitation.status match {

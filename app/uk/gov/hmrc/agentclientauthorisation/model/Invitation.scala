@@ -24,16 +24,28 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 
 case class Arn(arn: String)
+
 case class MtdClientId(value: String)
 
-sealed trait InvitationStatus
+sealed trait InvitationStatus {
+
+  def toEither: Either[String, InvitationStatus] = this match {
+    case Unknown(status) => Left(status)
+    case status => Right(status)
+  }
+
+  def leftMap[X](f: String => X) =
+    toEither.left.map(f)
+}
+
 case object Pending extends InvitationStatus
 case object Rejected extends InvitationStatus
 case object Accepted extends InvitationStatus
 case object Cancelled extends InvitationStatus
+case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
-  def unapply(status: InvitationStatus) : Option[String] = status match {
+  def unapply(status: InvitationStatus): Option[String] = status match {
     case Pending => Some("Pending")
     case Rejected => Some("Rejected")
     case Accepted => Some("Accepted")
@@ -41,34 +53,33 @@ object InvitationStatus {
     case _ => None
   }
 
-  def parse(status: String): Either[String, InvitationStatus] = status.toLowerCase match {
-    case "pending" =>   Right(Pending)
-    case "rejected" =>  Right(Rejected)
-    case "accepted" =>  Right(Accepted)
-    case "cancelled" => Right(Cancelled)
-    case _ => Left(s"status of [$status] is not a valid InvitationStatus")
+  def apply(status: String): InvitationStatus = status.toLowerCase match {
+    case "pending" => Pending
+    case "rejected" => Rejected
+    case "accepted" => Accepted
+    case "cancelled" => Cancelled
+    case _ => Unknown(status)
   }
 
   implicit val invitationStatusFormat = new Format[InvitationStatus] {
-    override def reads(json: JsValue): JsResult[InvitationStatus] = parse(json.as[String]) match {
-      case Right(status) => JsSuccess(status)
-      case Left(error) => JsError(error)
+    override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
+      case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
+      case value => JsSuccess(value)
     }
 
     override def writes(o: InvitationStatus): JsValue = unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
   }
-
 }
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
 case class Invitation(
-  id: BSONObjectID,
-  arn: Arn,
-  regime: String,
-  clientId: String,
-  postcode: String,
-  events: List[StatusChangeEvent]) {
+                       id: BSONObjectID,
+                       arn: Arn,
+                       regime: String,
+                       clientId: String,
+                       postcode: String,
+                       events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent = {
     events.head
@@ -82,10 +93,10 @@ case class Invitation(
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvite(
-  regime: String,
-  clientId: String,
-  postcode: String)
+case class AgentInvitation(
+                        regime: String,
+                        clientId: String,
+                        postcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
@@ -115,6 +126,6 @@ object Invitation {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 
-object AgentInvite {
-  implicit val format = Json.format[AgentInvite]
+object AgentInvitation {
+  implicit val format = Json.format[AgentInvitation]
 }
