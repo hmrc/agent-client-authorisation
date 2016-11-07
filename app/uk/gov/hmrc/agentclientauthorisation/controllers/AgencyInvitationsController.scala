@@ -36,13 +36,13 @@ class AgencyInvitationsController(override val postcodeService:PostcodeService,
 
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
-    withJsonBody[AgentInvite] { authRequest =>
+    withJsonBody[AgentInvitation] { authRequest =>
       checkForErrors(authRequest)
         .headOption.fold(makeInvitation(arn, authRequest))(error => Future successful error)
     }
   }
 
-  private def makeInvitation(arn: Arn, authRequest: AgentInvite): Future[Result] = {
+  private def makeInvitation(arn: Arn, authRequest: AgentInvitation): Future[Result] = {
     invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
       .map(invitation => Created.withHeaders(location(invitation)))
   }

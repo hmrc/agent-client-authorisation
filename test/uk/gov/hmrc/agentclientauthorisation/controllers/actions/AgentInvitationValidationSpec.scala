@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.agentclientauthorisation.model.AgentInvite
+import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -25,13 +25,13 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
 
   override val postcodeService: PostcodeService = new PostcodeService
 
-  private val validInvite: AgentInvite = AgentInvite("mtd-sa", "clientId", "AN11PA")
+  private val validInvite: AgentInvitation = AgentInvitation("mtd-sa", "clientId", "AN11PA")
 
   private implicit class ResultChecker(r: Result) {
     def is(r1: Result) = status(r1) shouldBe status(r)
   }
 
-  private def responseFor(invite: AgentInvite): Result = {
+  private def responseFor(invite: AgentInvitation): Result = {
     checkForErrors(invite).head
   }
 

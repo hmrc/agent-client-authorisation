@@ -93,7 +93,7 @@ case class Invitation(
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvite(
+case class AgentInvitation(
                         regime: String,
                         clientId: String,
                         postcode: String)
@@ -126,6 +126,6 @@ object Invitation {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 
-object AgentInvite {
-  implicit val format = Json.format[AgentInvite]
+object AgentInvitation {
+  implicit val format = Json.format[AgentInvitation]
 }
