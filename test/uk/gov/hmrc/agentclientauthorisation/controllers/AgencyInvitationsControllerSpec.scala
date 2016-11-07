@@ -23,14 +23,16 @@ import org.mockito.Matchers.{eq => eqs}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
@@ -112,6 +114,19 @@ class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSuga
       invitationsSize(jsonBody) shouldBe 1
 
       invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
+    }
+
+    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+      val response = await(controller.getSentInvitations(arn, None, None, None)(FakeRequest()))
+
+      status(response) shouldBe 200
+      val jsonBody = jsonBodyOf(response)
+
+      invitationsSize(jsonBody) shouldBe 3
+
+      (embeddedInvitations(jsonBody)(0) \ "status").asOpt[String] should not be None
+      (embeddedInvitations(jsonBody)(0) \ "id").asOpt[String] shouldBe None
+      (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe None
     }
 
   }
