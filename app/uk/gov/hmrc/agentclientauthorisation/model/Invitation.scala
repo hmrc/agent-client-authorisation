@@ -21,6 +21,7 @@ import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.play.controllers.RestFormats
 
 
 case class Arn(arn: String)
@@ -108,6 +109,8 @@ object Arn {
 }
 
 object Invitation {
+  implicit val dateWrites = RestFormats.dateTimeWrite
+  implicit val dateReads = RestFormats.dateTimeRead
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(

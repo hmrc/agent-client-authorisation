@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.net.URI
 
+import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
@@ -25,6 +26,7 @@ import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -198,6 +200,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
+    implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val selfHref = (invitation \ "_links" \ "self" \ "href").as[String]
     selfHref should startWith(s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/")
@@ -207,8 +210,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientId") shouldBe JsString(clientId.value)
     (invitation \ "status") shouldBe JsString("Pending")
-    (invitation \ "created").as[Long] should beRecent
-    (invitation \ "lastUpdated").as[Long] should beRecent
+    (invitation \ "created").as[DateTime].getMillis should beRecent
+    (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
   }
 
   private def invitations(response: JsValue) = {
