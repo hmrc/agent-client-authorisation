@@ -134,7 +134,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, client1Id), (_ ,client2Id)) = createInvitations()
+      val (client1Id, client2Id) = createInvitations()
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -154,10 +154,10 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       val firstInvitation = invitationsArray head
       val secondInvitation = invitationsArray(1)
 
-      val firstInvitationId = checkInvitation(client1Id, firstInvitation, testStartTime)
-      val secondInvitationId = checkInvitation(client2Id, secondInvitation, testStartTime)
+      val firstInvitationHref = checkInvitation(client1Id, firstInvitation, testStartTime)
+      val secondInvitationHref = checkInvitation(client2Id, secondInvitation, testStartTime)
 
-      firstInvitationId should not be secondInvitationId
+      firstInvitationHref should not be secondInvitationHref
     }
 
     "create and retrieve duplicate invitations" in {
@@ -182,10 +182,10 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       val firstInvitation = invitationsArray.head
       val secondInvitation = invitationsArray(1)
 
-      val firstInvitationId = checkInvitation("1234567890", firstInvitation, testStartTime)
-      val secondInvitationId = checkInvitation("1234567890", secondInvitation, testStartTime)
+      val firstInvitationHref = checkInvitation("1234567890", firstInvitation, testStartTime)
+      val secondInvitationHref = checkInvitation("1234567890", secondInvitation, testStartTime)
 
-      firstInvitationId should not be secondInvitationId
+      firstInvitationHref should not be secondInvitationHref
     }
 
     "should not create invitation if postcodes do not match" in {
@@ -220,11 +220,9 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   private def checkInvitation(client2Id: String, invitation: JsValue, testStartTime: Long): String = {
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    val alphanumeric = "[0-9A-Za-z]+"
-    val invitationId = (invitation \ "id").as[String]
-    invitationId should fullyMatch regex alphanumeric
-    (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
-    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
+    val selfLinkHref = (invitation \ "_links" \ "self" \ "href").as[String]
+    selfLinkHref should startWith(s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfLinkHref/cancel"
     (invitation \ "_links" \ "agency" \ "href").as[String] shouldBe s"http://localhost:$wiremockPort/agencies-fake/agencies/${arn.arn}"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
@@ -232,15 +230,14 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     (invitation \ "status") shouldBe JsString("Pending")
     (invitation \ "created").as[Long] should beRecent
     (invitation \ "lastUpdated").as[Long] should beRecent
-    invitationId
+    selfLinkHref
   }
 
-  def createInvitations(): ((String, String), (String, String)) = {
+  def createInvitations(): (String, String) = {
     dropMongoDb()
     given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
     val client2Id = "1234567891"
-
 
     note("there should be no requests")
     eventually {
@@ -261,7 +258,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   }
 
 
-  private def createDuplicateInvitations(): ((String, String), (String, String)) = {
+  private def createDuplicateInvitations(): Unit = {
     dropMongoDb()
     given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val clientId = "1234567890"
@@ -280,13 +277,10 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
     val json1: JsValue = new Resource(location1, port).get().json
     val json2: JsValue = new Resource(location2, port).get().json
-
-    (invitation(json1), invitation(json2))
   }
 
-  private def invitation(json: JsValue): (String, String) = {
-      (json \ "id").as[String] ->
-      (json \ "clientId").as[String]
+  private def invitation(json: JsValue): String = {
+    (json \ "clientId").as[String]
   }
 
   private def invitations(response: JsValue) = {

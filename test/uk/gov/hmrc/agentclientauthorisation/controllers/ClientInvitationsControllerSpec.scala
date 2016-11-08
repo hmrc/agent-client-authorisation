@@ -95,6 +95,24 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "_links" \ "agency" \ "href").as[String] shouldBe expectedUrl
     }
 
+    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+
+      val expectedUrl = "http://somevalue"
+      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
+
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
+        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
+          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+
+      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
+    }
+
     //TODO do we need this?
 //    "filter by status when a status is specified" in {
 //      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))

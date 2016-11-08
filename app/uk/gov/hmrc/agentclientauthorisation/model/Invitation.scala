@@ -111,7 +111,6 @@ object Invitation {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "id" -> invitation.id.stringify,
       "regime" -> invitation.regime,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
