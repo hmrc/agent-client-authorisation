@@ -26,6 +26,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 import views.html.helper.urlEncode
@@ -219,6 +220,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
 
   private def checkInvitation(client2Id: String, invitation: JsValue, testStartTime: Long): String = {
+    implicit val dateReads = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val selfLinkHref = (invitation \ "_links" \ "self" \ "href").as[String]
     selfLinkHref should startWith(s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
@@ -228,8 +230,8 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientId") shouldBe JsString(client2Id)
     (invitation \ "status") shouldBe JsString("Pending")
-    (invitation \ "created").as[Long] should beRecent
-    (invitation \ "lastUpdated").as[Long] should beRecent
+    (invitation \ "created").as[DateTime].getMillis should beRecent
+    (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
     selfLinkHref
   }
 
