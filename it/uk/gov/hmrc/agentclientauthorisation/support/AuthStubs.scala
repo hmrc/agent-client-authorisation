@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import org.openqa.selenium.lift.`match`.ValueMatcher
 import play.api.http.HeaderNames
 import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.domain.SaAgentReference
@@ -128,6 +129,51 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
              ))
     this
   }
+
+  def isLoggedInWithSessionId(): A = {
+    stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).withHeader("X-Session-ID", containing(clientId.value)).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "new-session":"/auth/oid/$oid/session",
+         |  "enrolments":"/auth/oid/$oid/enrolments",
+         |  "uri":"/auth/oid/$oid",
+         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
+         |  "credentials":{
+         |    "gatewayId":"0000001592621267"
+         |  },
+         |  "accounts":{
+         |    "sa": {
+         |      "utr": "$utr"
+         |    }
+         |  },
+         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
+         |  "credentialStrength":"strong",
+         |  "confidenceLevel":50,
+         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
+         |  "levelOfAssurance":"1",
+         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |}
+       """.stripMargin
+    )))
+    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |[]
+         """.stripMargin
+    )))
+    stubFor(get(urlPathEqualTo(s"/agencies-fake/clients/sa/$utr"))
+             .willReturn(aResponse()
+                .withStatus(200)
+               .withBody(
+                 s"""
+                   |{
+                   |  "mtdClientId": "${clientId.value}"
+                   |}
+                 """.stripMargin)
+             ))
+    this
+  }
 }
 
 object EnrolmentStates {
@@ -162,6 +208,45 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "new-session":"/auth/oid/$oid/session",
+         |  "enrolments":"/auth/oid/$oid/enrolments",
+         |  "uri":"/auth/oid/$oid",
+         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
+         |  "credentials":{
+         |    "gatewayId":"0000001592621267"
+         |  },
+         |  "accounts":{
+         |    "agent":{
+         |      "link":"/agent/$agentCode",
+         |      "agentCode":"$agentCode",
+         |      "agentUserId":"ZMOQ1hrrP-9ZmnFw0kIA5vlc-mo",
+         |      "agentUserRole":"admin",
+         |      "payeReference":"HZ1234",
+         |      "agentBusinessUtr":"JARN1234567"
+         |    },
+         |    "taxsAgent":{
+         |      "link":"/taxsagent/V3264H",
+         |      "uar":"V3264H"
+         |    }
+         |  },
+         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
+         |  "credentialStrength":"strong",
+         |  "confidenceLevel":50,
+         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
+         |  "levelOfAssurance":"1",
+         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |}
+       """.stripMargin
+    )))
+    this
+  }
+
+  def isLoggedInWithSessionId(): A = {
+    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/auth/authority")).withHeader("X-Session-ID", containing(arn)).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
          |  "new-session":"/auth/oid/$oid/session",

@@ -41,6 +41,9 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
   private val getInvitationUrl = s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/"
   private def getInvitationsUrl(clientId: MtdClientId = mtdClientId) = s"/agent-client-authorisation/clients/${clientId.value}/invitations/received"
+
+
+
   "PUT of /clients/:clientId/invitations/received/:invitationId/accept" should {
     behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptInvitation())
 

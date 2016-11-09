@@ -44,7 +44,9 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   private val getInvitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
-  private val getClientInvitationUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received/"
+  //private val getClientInvitationUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received/"
+
+
 
   "GET /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetInvitations())
