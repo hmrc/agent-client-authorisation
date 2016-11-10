@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.domain.AgentCode
 
 trait StubUtils {
@@ -35,7 +35,7 @@ trait StubUtils {
       new UnknownUser(oid)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f", clientId: String = "MTD-0123456789"): Client = {
+    def client(oid: String = "556737e15500005500eaf68f", clientId: MtdClientId = FakeMtdClientId.random()): Client = {
       new Client(oid, clientId)
     }
   }
@@ -57,6 +57,6 @@ trait StubUtils {
   class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  class Client(override val oid: String, override val clientId: String)
+  class Client(override val oid: String, override val clientId: MtdClientId)
     extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client]
 }

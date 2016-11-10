@@ -22,17 +22,20 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.binders.SimpleObjectBinder
 
 object PathBinders {
+
   implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.arn)
+
   implicit object SaUtrBinder extends SimpleObjectBinder[SaUtr](SaUtr.apply, _.value)
 
+  private def toError(err:String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
+
   implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
-    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] = {
-      params.get(key) map {
-        case value :: _ => Right(InvitationStatus.apply(value))
+
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] =
+      params.get(key) flatMap {
+        _.headOption map (status => InvitationStatus(status) leftMap toError)
       }
-    }
 
     override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
   }
-
 }

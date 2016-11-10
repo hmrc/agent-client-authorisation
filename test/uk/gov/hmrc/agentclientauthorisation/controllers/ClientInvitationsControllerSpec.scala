@@ -72,14 +72,12 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
   "getInvitations" should {
 
     "return 200 and an empty list when there are no invitations for the client" in {
-      val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
-
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
       whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
 
-      when(invitationsService.list("mtd-sa", clientId)).thenReturn(Future successful Nil)
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
 
-      val result: Result = await(controller.getInvitations(clientId)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
 
       println(jsonBodyOf(result))
@@ -87,22 +85,48 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
     }
 
     "include the agency URL in invitations" in {
-      val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
-
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
       whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
 
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
 
-      when(invitationsService.list("mtd-sa", clientId)).thenReturn(Future successful List(
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
-      val result: Result = await(controller.getInvitations(clientId)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
 
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "_links" \ "agency" \ "href").as[String] shouldBe expectedUrl
     }
+
+    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+
+      val expectedUrl = "http://somevalue"
+      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
+
+      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
+        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
+          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+
+      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
+    }
+
+    //TODO do we need this?
+//    "filter by status when a status is specified" in {
+//      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
+//      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+//
+//      when(invitationsService.list("mtd-sa", clientId, Some(Accepted))).thenReturn(Future successful ...)
+//
+//      ...
+//    }
   }
 }

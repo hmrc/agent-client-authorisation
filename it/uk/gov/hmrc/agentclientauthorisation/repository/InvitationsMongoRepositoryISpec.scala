@@ -38,7 +38,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   }
 
 
-  "InvitationsMongoRepository create" should {
+  "create" should {
 
     "create a new StatusChangedEvent of Pending" in {
 
@@ -55,7 +55,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-  "AuthorisationRequestRepository update" should {
+  "update" should {
 
     "create a new StatusChangedEvent" in {
 
@@ -72,7 +72,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-  "AuthorisationRequestRepository listing by arn" should {
+  "listing by arn" should {
 
     "return previously created and updated elements" in {
 
@@ -149,7 +149,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   }
 
 
-  "AuthorisationRequestRepository listing by clientSaUtr" should {
+  "listing by clientId" should {
 
     "return an empty list when there is no such regime-regimeId pair" in {
       val regime = "sa"
@@ -207,6 +207,19 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
           date shouldBe now
       }
     }
+
+    "return elements with the specified status" in {
+      val arn = Arn("3")
+      val mtdClientId = "MTD-REG-3A"
+
+      val invitations = addInvitations((arn, "mtd-sa", mtdClientId, "user-details-1"), (arn, "mtd-sa", mtdClientId, "user-details-1"))
+      update(invitations.head.id, Accepted)
+
+      val list = listByClientId("mtd-sa", mtdClientId, Some(Pending))
+
+      list.size shouldBe 1
+      list.head.status shouldBe Pending
+    }
   }
 
 
@@ -226,7 +239,8 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   private def listByArn(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
                             await(repository.list(arn, regime, clientId, status))
 
-  private def listByClientId(regime: String, clientId: String) = await(repository.list(regime, clientId))
+  private def listByClientId(regime: String, clientId: String, status: Option[InvitationStatus] = None) =
+    await(repository.list(regime, clientId, status))
 
   private def update(id: BSONObjectID, status: InvitationStatus) = await(repository.update(id, status))
 

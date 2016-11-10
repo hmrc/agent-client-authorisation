@@ -26,20 +26,27 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
+import views.html.helper.urlEncode
 
-class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours {
+
+  import play.api.mvc.Codec.utf_8
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
+
+  private val clientId: String = "1234567890"
 
   private val REGIME: String = "mtd-sa"
   private val getInvitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
   private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
+  //private val getClientInvitationUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received/"
 
-  val clientId: String = "1234567890"
+
 
   "GET /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetInvitations())
@@ -56,17 +63,39 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val clientId = "1234567890"
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
 
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "$clientId", "postcode": "AA1 1AA"}""").header("location")
-      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "9876543210", "postcode": "AA1 1AA"}""").header("location")
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "$clientId", "postcode": "AA1 1AA"}""")
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "9876543210", "postcode": "AA1 1AA"}""")
 
-      val response = responseForGetInvitations(clientId)
+      val response = responseForGetInvitationsByClient(clientId)
 
       response.status shouldBe 200
       val invitation = invitations(response.json)
       invitation.value.size shouldBe 1
       invitation.value.head \ "clientId" shouldBe JsString(clientId)
-      response.json \ "_links" \ "self" \ "href" shouldBe JsString("/agent-client-authorisation/agencies/ABCDEF12345678/invitations/sent?clientId=1234567890")
+      response.json \ "_links" \ "self" \ "href" shouldBe JsString(getInvitationsByClientUrl(clientId))
     }
+
+    "return only invitations for the specified regime" in {
+      // TODO this test would fail at the time of writing because AgencyInvitationsController.createInvitation
+      // only allows invitations with regime = "mtd-sa" to be created
+      pending
+
+      val clientId = "1234567890"
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+      responseForCreateInvitation(s"""{"regime": "mtd-other", "clientId": "$clientId", "postcode": "AA1 1AA"}""")
+      responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "$clientId", "postcode": "AA1 1AA"}""")
+
+      val response = responseForGetInvitationsByRegime("mtd-other")
+
+      response.status shouldBe 200
+      val invitation = invitations(response.json)
+      invitation.value.size shouldBe 1
+      invitation.value.head \ "regime" shouldBe JsString("mtd-other")
+      response.json \ "_links" \ "self" \ "href" shouldBe JsString(getInvitationsByRegimeUrl("mtd-other"))
+    }
+
+    "return only invitations with the specified status" is pending
   }
 
   "POST /agencies/:arn/invitations" should {
@@ -108,7 +137,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   "/agencies/:arn/invitations" should {
     "create and retrieve invitations" in {
       val testStartTime = DateTime.now().getMillis
-      val ((_, client1Id), (_ ,client2Id)) = createInvitations
+      val (client1Id, client2Id) = createInvitations()
 
       note("the freshly added invitations should be available")
       val (responseJson, invitationsArray) = eventually {
@@ -128,10 +157,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val firstInvitation = invitationsArray head
       val secondInvitation = invitationsArray(1)
 
-      val firstInvitationId = checkInvitation(client1Id, firstInvitation, testStartTime)
-      val secondInvitationId = checkInvitation(client2Id, secondInvitation, testStartTime)
+      val firstInvitationHref = checkInvitation(client1Id, firstInvitation, testStartTime)
+      val secondInvitationHref = checkInvitation(client2Id, secondInvitation, testStartTime)
 
-      firstInvitationId should not be secondInvitationId
+      firstInvitationHref should not be secondInvitationHref
     }
 
     "create and retrieve duplicate invitations" in {
@@ -156,10 +185,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
       val firstInvitation = invitationsArray.head
       val secondInvitation = invitationsArray(1)
 
-      val firstInvitationId = checkInvitation("1234567890", firstInvitation, testStartTime)
-      val secondInvitationId = checkInvitation("1234567890", secondInvitation, testStartTime)
+      val firstInvitationHref = checkInvitation("1234567890", firstInvitation, testStartTime)
+      val secondInvitationHref = checkInvitation("1234567890", secondInvitation, testStartTime)
 
-      firstInvitationId should not be secondInvitationId
+      firstInvitationHref should not be secondInvitationHref
     }
 
     "should not create invitation if postcodes do not match" in {
@@ -193,28 +222,26 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
 
   private def checkInvitation(client2Id: String, invitation: JsValue, testStartTime: Long): String = {
+    implicit val dateReads = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    val alphanumeric = "[0-9A-Za-z]+"
-    val invitationId = (invitation \ "id").as[String]
-    invitationId should fullyMatch regex alphanumeric
-    (invitation \ "_links" \ "self" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
-    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/$invitationId"
+    val selfLinkHref = (invitation \ "_links" \ "self" \ "href").as[String]
+    selfLinkHref should startWith(s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
+    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfLinkHref/cancel"
     (invitation \ "_links" \ "agency" \ "href").as[String] shouldBe s"http://localhost:$wiremockPort/agencies-fake/agencies/${arn.arn}"
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientId") shouldBe JsString(client2Id)
     (invitation \ "status") shouldBe JsString("Pending")
-    (invitation \ "created").as[Long] should beRecent
-    (invitation \ "lastUpdated").as[Long] should beRecent
-    invitationId
+    (invitation \ "created").as[DateTime].getMillis should beRecent
+    (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
+    selfLinkHref
   }
 
-  def createInvitations(): ((String, String), (String, String)) = {
+  def createInvitations(): (String, String) = {
     dropMongoDb()
     given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val client1Id = "1234567890"
     val client2Id = "1234567891"
-
 
     note("there should be no requests")
     eventually {
@@ -235,7 +262,7 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
 
-  private def createDuplicateInvitations(): ((String, String), (String, String)) = {
+  private def createDuplicateInvitations(): Unit = {
     dropMongoDb()
     given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
     val clientId = "1234567890"
@@ -254,13 +281,10 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
 
     val json1: JsValue = new Resource(location1, port).get().json
     val json2: JsValue = new Resource(location2, port).get().json
-
-    (invitation(json1), invitation(json2))
   }
 
-  private def invitation(json: JsValue): (String, String) = {
-      (json \ "id").as[String] ->
-      (json \ "clientId").as[String]
+  private def invitation(json: JsValue): String = {
+    (json \ "clientId").as[String]
   }
 
   private def invitations(response: JsValue) = {
@@ -275,9 +299,17 @@ class AgentClientAuthorisationISpec extends UnitSpec with MongoAppAndStubs with 
     new Resource(getInvitationsUrl, port).get()
   }
 
-  private def responseForGetInvitations(clientId: String): HttpResponse = {
-    new Resource(getInvitationsUrl + s"?clientId=$clientId", port).get()
+  private def responseForGetInvitationsByRegime(regime: String): HttpResponse = {
+    new Resource(getInvitationsByRegimeUrl(regime), port).get()
   }
+
+  private def getInvitationsByRegimeUrl(regime: String): String = getInvitationsUrl + s"?regime=${urlEncode(regime)}"
+
+  private def responseForGetInvitationsByClient(clientId: String): HttpResponse = {
+    new Resource(getInvitationsByClientUrl(clientId), port).get()
+  }
+
+  private def getInvitationsByClientUrl(clientId: String): String = getInvitationsUrl + s"?clientId=${urlEncode(clientId)}"
 
   private def responseForGetInvitation(invitationId: String = "none"): HttpResponse = {
     new Resource(getInvitationUrl + invitationId, port).get()

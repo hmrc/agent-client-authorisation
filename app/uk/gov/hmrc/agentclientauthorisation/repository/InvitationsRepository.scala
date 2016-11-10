@@ -38,12 +38,9 @@ trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
 
   def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
 
-  def list(regime: String, clientId: String): Future[List[Invitation]]
+  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]]
 
   def findRegimeID(clientId: String): Future[List[Invitation]]
-
-  //def list(clientId : String, regime: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
-
 }
 
 class InvitationsMongoRepository(implicit mongo: () => DB)
@@ -93,8 +90,21 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     find(searchOptions: _*)
   }
 
-  override def list(regime: String, clientId: String): Future[List[Invitation]] =
-    find("regime" -> regime, "clientId" -> clientId)
+  override def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
+    val searchOptions = Seq(
+      "regime" -> Some(regime),
+      "clientId" -> Some(clientId),
+      statusSearchOption(status)
+    )
+      .filter(_._2.isDefined)
+      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
+
+    find(searchOptions: _*)
+  }
+
+  private def statusSearchOption(status: Option[InvitationStatus]): (String, Option[String]) = {
+    "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'")
+  }
 
   override def findRegimeID(clientId: String): Future[List[Invitation]] =
     find()

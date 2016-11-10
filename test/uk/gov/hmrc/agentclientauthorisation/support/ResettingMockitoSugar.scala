@@ -16,16 +16,25 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import org.mockito.Mockito
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{BeforeAndAfterEach, Suite}
 
-trait RelationshipStubs[A] {
-  me: A with WiremockAware =>
-  def clientId: MtdClientId
+import scala.reflect.Manifest
 
-  def aRelationshipIsCreatedWith(arn: Arn): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/relationships/mtd-sa/${clientId.value}/${arn.arn}"))
-      .willReturn(aResponse().withStatus(201)))
-    this
+trait ResettingMockitoSugar extends MockitoSugar with BeforeAndAfterEach {
+  this: Suite =>
+
+  var mocksToReset = Seq.empty[Any]
+
+  def resettingMock[T <: AnyRef](implicit manifest: Manifest[T]): T = {
+    val m = mock[T](manifest)
+    mocksToReset = mocksToReset :+ m
+    m
+  }
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    Mockito.reset(mocksToReset: _*)
   }
 }

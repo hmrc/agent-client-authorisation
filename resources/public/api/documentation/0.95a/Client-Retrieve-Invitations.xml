@@ -24,6 +24,25 @@
             </rows>
         </table>
     </section>
+    <section id="query-parameters">
+        <title>Query Parameters</title>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>status</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code><nowrap>pending</nowrap></code></cell>
+                    <cell>Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.</cell>
+                </row>
+            </rows>
+        </table>
+    </section>
     <section id="authorisation">
         <title>Authorisation</title>
         <authorisation>

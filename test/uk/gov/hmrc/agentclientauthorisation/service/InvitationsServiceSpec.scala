@@ -33,7 +33,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAfterEach {
+class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach {
   val invitationsRepository = mock[InvitationsRepository]
   val relationshipsConnector = mock[RelationshipsConnector]
 
@@ -41,6 +41,7 @@ class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAf
 
   val arn = Arn("12345")
   val mtdClientId = MtdClientId("67890")
+  val mtdClientIdAsString = mtdClientId.value
 
   implicit val hc = HeaderCarrier()
 
@@ -55,9 +56,9 @@ class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAf
     "create a relationship" when {
       "invitation status update succeeds" in {
         whenRelationshipIsCreated thenReturn(Future successful {})
-        whenStatusIsChangedTo(Accepted) thenReturn(Future successful invitation)
+        whenStatusIsChangedTo(Accepted) thenReturn(Future successful testInvitation)
 
-        val response = await(service.acceptInvitation(invitation))
+        val response = await(service.acceptInvitation(testInvitation))
 
         response shouldBe true
       }
@@ -69,17 +70,17 @@ class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAf
 
     "should not create a relationship" when {
       "invitation has already been accepted" in {
-        val response = await(service.acceptInvitation(invitationWithStatus(Accepted)))
+        val response = await(service.acceptInvitation(testInvitationWithStatus(Accepted)))
 
         response shouldBe false
       }
       "invitation has been cancelled" in {
-        val response = await(service.acceptInvitation(invitationWithStatus(Cancelled)))
+        val response = await(service.acceptInvitation(testInvitationWithStatus(Cancelled)))
 
         response shouldBe false
       }
       "invitation has been rejected" in {
-        val response = await(service.acceptInvitation(invitationWithStatus(Rejected)))
+        val response = await(service.acceptInvitation(testInvitationWithStatus(Rejected)))
 
         response shouldBe false
       }
@@ -89,7 +90,7 @@ class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAf
       whenRelationshipIsCreated thenReturn(Future failed ReactiveMongoException("Mongo error"))
 
       intercept[ReactiveMongoException] {
-        await(service.acceptInvitation(invitation))
+        await(service.acceptInvitation(testInvitation))
       }
 
       verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus])
@@ -99,44 +100,58 @@ class InvitationsServiceTest extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "rejectInvitation" should {
     "update the invitation status" in {
-      whenStatusIsChangedTo(Rejected) thenReturn invitation
+      whenStatusIsChangedTo(Rejected) thenReturn testInvitation
 
-      val response = await(service.rejectInvitation(invitation))
+      val response = await(service.rejectInvitation(testInvitation))
 
       response shouldBe true
     }
 
     "not reject a cancelled invitation" in {
-      val response = await(service.rejectInvitation(invitationWithStatus(Cancelled)))
+      val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
       response shouldBe false
     }
 
     "not reject an accepted invitation" in {
-      val response = await(service.rejectInvitation(invitationWithStatus(Accepted)))
+      val response = await(service.rejectInvitation(testInvitationWithStatus(Accepted)))
 
       response shouldBe false
     }
 
     "not reject an already rejected invitation" in {
-      val response = await(service.rejectInvitation(invitationWithStatus(Rejected)))
+      val response = await(service.rejectInvitation(testInvitationWithStatus(Rejected)))
 
       response shouldBe false
     }
   }
 
-  private def invitationWithStatus(status: InvitationStatus) = Invitation(generate,
+
+  // TODO do we need this?
+//  "list" should {
+//    "delegate to InvitationsRepository" in {
+//      val invitation: Invitation = testInvitation
+//      when(invitationsRepository.list(invitation.regime, invitation.clientId))
+//        .thenReturn(Future successful List(invitation))
+//
+//      await(service.list(invitation.regime, invitation.clientId)) shouldBe Seq(invitation)
+//
+//      verify(invitationsRepository).list(invitation.regime, invitation.clientId)
+//    }
+//  }
+
+  private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdClientId.value,
+    mtdClientIdAsString,
     "A11 1AA",
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
   )
 
-  private def invitation = Invitation(generate,
+  private def testInvitation = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdClientId.value,
+    mtdClientIdAsString,
     "A11 1AA",
     List(StatusChangeEvent(now(), Pending))
   )

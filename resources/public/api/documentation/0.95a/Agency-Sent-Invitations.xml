@@ -24,6 +24,37 @@
             </rows>
         </table>
     </section>
+    <section id="query-parameters">
+        <title>Query Parameters</title>
+        <table>
+            <headings>
+                <cell>Name</cell>
+                <cell>Type</cell>
+                <cell>Example</cell>
+                <cell>Description</cell>
+            </headings>
+            <rows>
+                <row>
+                    <cell><code>status</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code><nowrap>pending</nowrap></code></cell>
+                    <cell>Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.</cell>
+                </row>
+                <row>
+                    <cell><code>clientId</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code><nowrap>pending</nowrap></code></cell>
+                    <cell>Client's top level ID for their MTD registration (not regime specific)</cell>
+                </row>
+                <row>
+                    <cell><code>regime</code></cell>
+                    <cell><code>String</code></cell>
+                    <cell><code><nowrap>mtd-sa</nowrap></code></cell>
+                    <cell>The tax regime</cell>
+                </row>
+            </rows>
+        </table>
+    </section>
     <section id="authorisation">
         <title>Authorisation</title>
         <authorisation>

@@ -22,7 +22,7 @@ import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -60,9 +60,9 @@ class ClientInvitationsController(invitationsService: InvitationsService,
     }
   }
 
-  def getInvitations(clientId: String) = onlyForSaClients.async { implicit request =>
+  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
     if (clientId == request.mtdClientId.value) {
-      invitationsService.list(SUPPORTED_REGIME, clientId) map (results => Ok(toHalResource(results, clientId)))
+      invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
       Future successful Forbidden
     }
@@ -81,10 +81,10 @@ class ClientInvitationsController(invitationsService: InvitationsService,
     HalResource(links, toJson(invitation).as[JsObject])
   }
 
-  private def toHalResource(requests: List[Invitation], clientId: String): HalResource = {
+  private def toHalResource(requests: Seq[Invitation], clientId: String, status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = requests.map(toHalResource(_, clientId)).toVector
 
-    val links = Vector(HalLink("self", routes.ClientInvitationsController.getInvitations(clientId).url))
+    val links = Vector(HalLink("self", routes.ClientInvitationsController.getInvitations(clientId, status).url))
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 }

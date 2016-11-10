@@ -16,16 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 
-trait RelationshipStubs[A] {
-  me: A with WiremockAware =>
-  def clientId: MtdClientId
+import scala.util.Random
 
-  def aRelationshipIsCreatedWith(arn: Arn): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/relationships/mtd-sa/${clientId.value}/${arn.arn}"))
-      .willReturn(aResponse().withStatus(201)))
-    this
-  }
+object RandomArn {
+
+  def apply() = Arn(Random.alphanumeric.take(10).mkString)
 }

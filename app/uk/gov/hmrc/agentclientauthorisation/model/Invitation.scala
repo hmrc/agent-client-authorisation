@@ -21,19 +21,32 @@ import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.play.controllers.RestFormats
 
 
 case class Arn(arn: String)
+
 case class MtdClientId(value: String)
 
-sealed trait InvitationStatus
+sealed trait InvitationStatus {
+
+  def toEither: Either[String, InvitationStatus] = this match {
+    case Unknown(status) => Left(status)
+    case status => Right(status)
+  }
+
+  def leftMap[X](f: String => X) =
+    toEither.left.map(f)
+}
+
 case object Pending extends InvitationStatus
 case object Rejected extends InvitationStatus
 case object Accepted extends InvitationStatus
 case object Cancelled extends InvitationStatus
+case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
-  def unapply(status: InvitationStatus) : Option[String] = status match {
+  def unapply(status: InvitationStatus): Option[String] = status match {
     case Pending => Some("Pending")
     case Rejected => Some("Rejected")
     case Accepted => Some("Accepted")
@@ -41,30 +54,33 @@ object InvitationStatus {
     case _ => None
   }
 
-  def apply(status: String) = status.toLowerCase match {
-    case "pending" =>   Pending
-    case "rejected" =>  Rejected
-    case "accepted" =>  Accepted
+  def apply(status: String): InvitationStatus = status.toLowerCase match {
+    case "pending" => Pending
+    case "rejected" => Rejected
+    case "accepted" => Accepted
     case "cancelled" => Cancelled
-    case unknown => throw new IllegalArgumentException(s"status of [$unknown] is not a valid InvitationStatus")
+    case _ => Unknown(status)
   }
 
-  implicit val authorisationStatusFormat = new Format[InvitationStatus] {
-    override def reads(json: JsValue): JsResult[InvitationStatus] = JsSuccess(apply(json.as[String]))
+  implicit val invitationStatusFormat = new Format[InvitationStatus] {
+    override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
+      case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
+      case value => JsSuccess(value)
+    }
+
     override def writes(o: InvitationStatus): JsValue = unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
   }
-
 }
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
 case class Invitation(
-  id: BSONObjectID,
-  arn: Arn,
-  regime: String,
-  clientId: String,
-  postcode: String,
-  events: List[StatusChangeEvent]) {
+                       id: BSONObjectID,
+                       arn: Arn,
+                       regime: String,
+                       clientId: String,
+                       postcode: String,
+                       events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent = {
     events.head
@@ -78,10 +94,10 @@ case class Invitation(
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvite(
-  regime: String,
-  clientId: String,
-  postcode: String)
+case class AgentInvitation(
+                        regime: String,
+                        clientId: String,
+                        postcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
@@ -93,10 +109,11 @@ object Arn {
 }
 
 object Invitation {
+  implicit val dateWrites = RestFormats.dateTimeWrite
+  implicit val dateReads = RestFormats.dateTimeRead
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "id" -> invitation.id.stringify,
       "regime" -> invitation.regime,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
@@ -111,6 +128,6 @@ object Invitation {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 
-object AgentInvite {
-  implicit val format = Json.format[AgentInvite]
+object AgentInvitation {
+  implicit val format = Json.format[AgentInvitation]
 }

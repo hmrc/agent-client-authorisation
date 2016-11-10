@@ -10,16 +10,16 @@ uses:
   atoms:       modules/atoms.raml
 
 /agencies/{arn}/invitations/sent:
+  description: List of invitations sent by the agency (arn)
   uriParameters:
     arn:
       description: The MTD platform Agent Registration Number
       type: string
   get:
-    description: List of invitations sent by the agency (arn)
     queryParameters:
       status:
-        description: filter invitations by status.
         type: invitations.Status
+        description: Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
       clientId:
         type: string
       regime:
@@ -35,7 +35,7 @@ uses:
   post:
     description: Create a new invitation
     body:
-      type: atoms.AgentInvite
+      type: atoms.AgentInvitation
     responses:
       201:
         description: The invitation was successfully created.
@@ -91,7 +91,7 @@ uses:
   get:
     queryParameters:
       status:
-        description: filter invitations by status.
+        description: filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
         type: atoms.Status
     responses:
       200:
