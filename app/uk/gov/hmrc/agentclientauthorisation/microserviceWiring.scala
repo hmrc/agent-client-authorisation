@@ -23,6 +23,7 @@ import play.modules.reactivemongo.ReactiveMongoPlugin
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsController, ClientInvitationsController, WhitelistController}
+import uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.{SandboxAgencyInvitationsController, SandboxClientInvitationsController}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsMongoRepository
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
@@ -72,6 +73,8 @@ trait ControllerRegistry {
   private lazy val controllers = Map[Class[_], Controller](
     classOf[AgencyInvitationsController] -> new AgencyInvitationsController(new PostcodeService, invitationsService, authConnector, agenciesFakeConnector),
     classOf[ClientInvitationsController] -> new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector),
+    classOf[SandboxAgencyInvitationsController] -> new SandboxAgencyInvitationsController(authConnector, agenciesFakeConnector),
+    classOf[SandboxClientInvitationsController] -> new SandboxClientInvitationsController(authConnector, agenciesFakeConnector),
     classOf[WhitelistController] -> new WhitelistController()
   )
 
