@@ -18,26 +18,29 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.net.URL
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import org.joda.time.DateTime
 import org.mockito.Matchers.{eq => eqs}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue}
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
-import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
 class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
+
+  //TODO is this the right way to do it or should we obtain these from elsewhere?
+  implicit lazy val actorSystem = ActorSystem()
+  implicit lazy val materializer = ActorMaterializer()
 
   val postcodeService = resettingMock[PostcodeService]
   val invitationsService = resettingMock[InvitationsService]
