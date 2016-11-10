@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import play.api.Play.current
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.ws.{WS, WSRequestHolder, WSResponse}
+import play.api.libs.ws.{WS, WSRequest, WSResponse}
 import play.api.mvc.Results
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
@@ -52,8 +52,8 @@ object Http {
     request.delete()
   }
 
-  private def perform(url: String)(fun: WSRequestHolder => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
-    await(fun(WS.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000)).map(new WSHttpResponse(_)))
+  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
+    await(fun(WS.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
 
   private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
 
