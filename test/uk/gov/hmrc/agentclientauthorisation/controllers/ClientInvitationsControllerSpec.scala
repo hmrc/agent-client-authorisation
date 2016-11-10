@@ -18,14 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.net.URL
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import org.joda.time.DateTime
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.JsArray
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.Play
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
@@ -80,8 +79,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
 
-      println(jsonBodyOf(result))
-      (jsonBodyOf(result) \ "_embedded" \ "invitations") shouldBe JsArray()
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
     "include the agency URL in invitations" in {

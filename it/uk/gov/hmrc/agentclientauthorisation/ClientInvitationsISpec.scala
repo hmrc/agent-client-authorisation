@@ -22,7 +22,7 @@ import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import play.api.libs.json.{JsArray, JsString, JsValue}
+import play.api.libs.json.{JsArray, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
@@ -209,10 +209,10 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     selfHref should startWith(s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfHref/accept"
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfHref/reject"
-    (invitation \ "arn") shouldBe JsString(arn.arn)
-    (invitation \ "regime") shouldBe JsString(REGIME)
-    (invitation \ "clientId") shouldBe JsString(clientId.value)
-    (invitation \ "status") shouldBe JsString("Pending")
+    (invitation \ "arn").as[String] shouldBe arn.arn
+    (invitation \ "regime").as[String] shouldBe REGIME
+    (invitation \ "clientId").as[String] shouldBe clientId.value
+    (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
   }
