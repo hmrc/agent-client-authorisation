@@ -35,6 +35,20 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   private implicit val arn = Arn("ABCDEF12345678")
   private val getInvitationUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent/"
   private val getInvitationsUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent"
+  private val createInvitationUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations"
+
+  "POST of /sandbox/agencies/:arn/invitations" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation())
+
+    "return a 201 response with a location header" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+      val response = responseForCreateInvitation()
+
+      response.status shouldBe 201
+      response.header("location").get should startWith(getInvitationUrl)
+    }
+  }
 
   "PUT of /sandbox/agencies/:arn/invitations/received/:invitationId/cancel" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForCancelInvitation())
@@ -102,6 +116,10 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   def responseForGetInvitations(): HttpResponse = {
     new Resource(getInvitationsUrl, port).get()
+  }
+
+  def responseForCreateInvitation(): HttpResponse = {
+    new Resource(createInvitationUrl, port).postAsJson(s"""{"regime": "$REGIME", "clientId": "clientId", "postcode": "AA1 1AA"}""")
   }
 
   private def responseForCancelInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")): HttpResponse = {
