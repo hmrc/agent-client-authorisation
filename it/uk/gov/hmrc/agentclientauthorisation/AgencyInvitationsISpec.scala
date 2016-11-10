@@ -288,7 +288,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   }
 
   private def invitations(response: JsValue) = {
-    val embedded = response \ "_embedded" \ "invitations"
+    val embedded = (response \ "_embedded" \ "invitations").get
     embedded match {
       case array: JsArray => array
       case obj: JsObject => JsArray(Seq(obj))
