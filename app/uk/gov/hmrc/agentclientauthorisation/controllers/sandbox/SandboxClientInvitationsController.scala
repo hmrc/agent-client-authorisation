@@ -24,6 +24,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter
+import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -32,8 +33,6 @@ import scala.concurrent.Future
 class SandboxClientInvitationsController(override val authConnector: AuthConnector,
                                          override val agenciesFakeConnector: AgenciesFakeConnector
                                         ) extends BaseController with AuthActions with HalWriter {
-
-  private val SUPPORTED_REGIME = "mtd-sa"
 
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
     NoContent
