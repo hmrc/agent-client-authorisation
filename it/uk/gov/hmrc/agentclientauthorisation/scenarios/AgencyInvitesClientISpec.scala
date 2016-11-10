@@ -16,40 +16,41 @@
 
 package uk.gov.hmrc.agentclientauthorisation.scenarios
 
+import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
-import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, RandomArn}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
-import uk.gov.hmrc.play.test.UnitSpec
 
-class AgencyInvitesClientISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientISpec extends FeatureSpec with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
   private val mtdClientId: MtdClientId = FakeMtdClientId.random()
   private val MtdSaRegime: String = "mtd-sa"
 
-  "Agencies can filter on STATUS" in {
+  feature("Agencies can filter")  {
 
-    val agency = new AgencyApi(arn, port)
-    val client = new ClientApi(mtdClientId, port)
+    scenario("on the status of clients invitations") {
+      val agency = new AgencyApi(arn, port)
+      val client = new ClientApi(mtdClientId, port)
+      Given("An agent and a client are logged in")
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
-    given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-    given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+      When("the Agency sends several invitations to the Client")
+      agencySendsSeveralInvitations(agency, MtdSaRegime)
 
-    info("the Agency sends several invitations to the Client")
-    agencySendsSeveralInvitations(agency, MtdSaRegime)
+      Then(s"the Client should see 2 pending invitations from the Agency $arn")
+      clientsViewOfPendingInvitations(client)
 
-    info(s"the Client should see 2 pending invitations from the Agency $arn")
-    clientsViewOfPendingInvitations(client)
+      When(s"the Client accepts the first Agency invitation")
+      clientAcceptsFirstInvitation(client)
 
-    info(s"the Client accepts the first Agency invitation")
-    clientAcceptsFirstInvitation(client)
-
-    info(s"the Agency filters their sent invitations by status")
-    agencyFiltersByStatus(agency)
+      Then(s"the Agency filters their sent invitations by status")
+      agencyFiltersByStatus(agency)
+    }
   }
 
   private def agencySendsSeveralInvitations(agency: AgencyApi, regime: String): Unit = {
@@ -72,9 +73,10 @@ class AgencyInvitesClientISpec extends UnitSpec with MongoAppAndStubs with Inspe
     i2.clientId shouldBe mtdClientId
     i2.regime shouldBe Regime(regime)
     i2.status shouldBe "Pending"
-
-    //    response.links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-    //    response.links.invitations shouldBe 'nonEmpty
+    // TODO: This can only be implemented after the Play 2.5 upgrade 
+//    val links = response.links
+//    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+//    links.invitations shouldBe 'nonEmpty
   }
 
   private def clientsViewOfPendingInvitations(client: ClientApi): Unit = {

@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.scenarios
+package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime
-import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsObject, JsValue}
-import play.mvc.Http.HeaderNames._
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.scenarios.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
-import uk.gov.hmrc.agentclientauthorisation.scenarios.HalTestHelpers.HalResourceHelper
-import uk.gov.hmrc.agentclientauthorisation.support.Resource
+import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
-import uk.gov.hmrc.play.http.logging.SessionId
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
-import views.html.helper._
 
 import scala.util.Try
-
 
 object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)
@@ -45,63 +37,6 @@ object HalTestHelpers {
     def secondInvitation = embedded.invitations(1)
   }
 }
-
-class AgencyApi(arn: Arn, port: Int) {
-
-  private val getInvitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-  private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
-  private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
-
-  implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
-
-  def sendInvitation(clientId: MtdClientId, regime: String = "mtd-sa", postcode:String = "AA1 1AA"): String = {
-
-    val response = new Resource(createInvitationUrl, port).postAsJson(
-      s"""{"regime": "$regime", "clientId": "${clientId.value}", "postcode": "$postcode"}"""
-    )(hc)
-
-    require(response.status == 201, s"creating an invitation should return 201, was [${response.status}]")
-    response.header(LOCATION).get
-  }
-
-  def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
-
-    val params = withFilterParams(filteredBy)
-    val response: HttpResponse = new Resource(getInvitationsUrl+params, port).get()(hc)
-    require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
-    HalTestHelpers(response.json)
-  }
-
-  def withFilterParams(filteredBy: Seq[(String, String)]): String = {
-    filteredBy match {
-      case Nil => ""
-      case (k, v) :: Nil => s"?$k=$v"
-      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}")
-    }
-  }
-}
-
-
-class ClientApi(clientId: MtdClientId, port: Int) extends Eventually {
-
-  private val getClientInvitationUrl = s"/agent-client-authorisation/clients/${urlEncode(clientId.value)}/invitations/received"
-  implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
-
-  def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.acceptLink.map { acceptLink =>
-      val response: HttpResponse = new Resource(acceptLink, port).putEmpty()(hc)
-      require(response.status == 204, s"response for accepting invitation should be 204, was [${response.status}]")
-      response
-    } .getOrElse (throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
-  }
-
-  def getInvitations(): HalResourceHelper = {
-    val response: HttpResponse = new Resource(getClientInvitationUrl, port).get()(hc)
-    require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
-    HalTestHelpers(response.json)
-  }
-}
-
 
 object EmbeddedSection {
 
@@ -157,4 +92,3 @@ class LinkSection(links: JsValue) {
 
   def invitations: Seq[String] = (links \ "self" \ "invitations" \\ "href").map(_.as[String])
 }
-

@@ -80,19 +80,26 @@ class AgencyInvitationsController(override val postcodeService:PostcodeService,
     Future successful NotImplemented
   }
 
-  private def toHalResource(requests: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
-    val requestResources: Vector[HalResource] = requests.map(toHalResource(_, arn)).toVector
+  private def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
+    val invitationResources = invitations.map(toHalResource(_, arn)).toVector
 
-    val links = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
-    Hal.hal(Json.obj(), links, Vector("invitations" -> requestResources))
+    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
+    Hal.hal(Json.obj(), selfLink, Vector("invitations" -> invitationResources))
   }
 
   private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
-      HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)))
+
+    var links = HalLinks(
+      Vector(
+        HalLink("self", routes.AgencyInvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
+        HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)
+      )
+    )
+
     if (invitation.status == Pending) {
       links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
     }
+
     HalResource(links, toJson(invitation).as[JsObject])
   }
 }
