@@ -45,6 +45,8 @@
 
     <logger name="uk.gov" level="INFO"/>
 
+    <logger name="com.google.inject" level="INFO"/>
+
     <logger name="application" level="DEBUG"/>
 
     <logger name="connector" level="TRACE">
