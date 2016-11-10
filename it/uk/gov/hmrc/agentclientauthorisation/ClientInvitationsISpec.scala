@@ -69,6 +69,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   "GET /clients/:clientId/invitations/received" should {
+    behave like anEndpointAccessibleForSaClientsOnly(responseForGetClientInvitations())
+
     "return a 200 response" in {
       createInvitations()
 
@@ -135,6 +137,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   "GET /clients/:clientId/invitations/received/:invitation" should {
+    behave like anEndpointAccessibleForSaClientsOnly(responseForGetClientInvitations())
+
     "return a 200 response" in {
 
       val testStartTime = now().getMillis

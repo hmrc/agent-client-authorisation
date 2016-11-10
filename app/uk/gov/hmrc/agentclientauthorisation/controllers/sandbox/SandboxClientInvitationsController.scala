@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
+import org.joda.time.DateTime.now
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, Json}
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
@@ -42,12 +44,22 @@ class SandboxClientInvitationsController(override val authConnector: AuthConnect
   }
 
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
-    NotFound
+    Ok(toHalResource(invitation(clientId), clientId))
   }
 
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients { implicit request =>
-    Ok(toHalResource(Seq(), clientId, status))
+    Ok(toHalResource(Seq(invitation(clientId), invitation(clientId)), clientId, status))
   }
+
+  private def invitation(clientId: String) = Invitation(
+        BSONObjectID.generate,
+        Arn("agencyReference"),
+        SUPPORTED_REGIME,
+        clientId,
+        "A11 1AA",
+        List(StatusChangeEvent(now(), Pending))
+      )
+
 
   private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
     var links = HalLinks(Vector(HalLink("self", routes.SandboxClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
