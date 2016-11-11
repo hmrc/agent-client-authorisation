@@ -20,6 +20,7 @@ import java.util.Base64
 import javax.inject._
 
 import com.google.inject.AbstractModule
+import com.kenshoo.play.metrics.MetricsFilter
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.MDC
@@ -37,7 +38,6 @@ import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
-import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
 import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
@@ -52,6 +52,10 @@ class GuiceModule() extends AbstractModule {
     bind(classOf[HttpPut]).to(classOf[WSHttp])
     bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
     bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
+    bind(classOf[ControllerConfig]).to(classOf[ControllerConfiguration])
+    bind(classOf[AuthParamsControllerConfig]).to(classOf[AuthParamsControllerConfiguration])
+    bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
+    bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
   }
 
 }
@@ -90,7 +94,7 @@ class MicroserviceAuthFilter @Inject() (
 }
 
 @Singleton
-class WhitelistFilter @Inject() (configuration: play.api.Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
+class WhitelistFilter @Inject() (configuration: Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
 
   override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
   override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")
@@ -104,8 +108,17 @@ class WhitelistFilter @Inject() (configuration: play.api.Configuration) extends 
   private def whitelistConfig(key: String): Seq[String] =
     new String(Base64.getDecoder.decode(configuration.getString(key).getOrElse("")), "UTF-8").split(",")
 }
-
-class Filters extends DefaultHttpFilters
+// TODO re-add whitelist filter once there is a 2.5 compatible version
+class Filters @Inject() (
+  metricsFilter: MetricsFilter,
+  auditFilter: MicroserviceAuditFilter,
+  loggingFilter: MicroserviceLoggingFilter,
+  authFilter: MicroserviceAuthFilter
+) extends DefaultHttpFilters (
+  metricsFilter,
+  auditFilter,
+  loggingFilter,
+  authFilter)
 
 object MicroserviceGlobal
   extends GlobalSettings
@@ -132,28 +145,4 @@ object MicroserviceGlobal
 
   override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")
 }
-
-/* trait MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with ServiceLocatorRegistration with ServiceLocatorConfig {
-  private lazy val whitelistFilterSeq = WhitelistFilter.enabled() match {
-    case true =>
-      Logger.info("Starting microservice with IP whitelist enabled")
-      Seq(new WhitelistFilter)
-    case _ =>
-      Logger.info("Starting microservice with IP whitelist disabled")
-      Seq.empty
-  }
-
-  override val auditConnector = MicroserviceAuditConnector
-
-
-  override val loggingFilter = MicroserviceLoggingFilter
-
-  override val microserviceAuditFilter = MicroserviceAuditFilter
-
-  override val authFilter = Some(MicroserviceAuthFilter)
-
-  override implicit val hc: HeaderCarrier = HeaderCarrier()
-
-  override lazy val microserviceFilters = whitelistFilterSeq ++ defaultMicroserviceFilters
-}*/
 

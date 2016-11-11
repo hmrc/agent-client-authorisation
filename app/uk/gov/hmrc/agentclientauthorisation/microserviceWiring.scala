@@ -37,6 +37,6 @@ class MicroserviceAuditConnector extends AuditConnector with RunMode {
 
 @Singleton
 class MicroserviceAuthConnector extends AuthConnector with ServicesConfig {
-  override val authBaseUrl = baseUrl("auth")
+  override lazy val authBaseUrl = baseUrl("auth")
 }
 
