@@ -17,9 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import javax.inject._
 
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +29,9 @@ import scala.language.postfixOps
 
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
 
-class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
+@Singleton
+class AuthConnector @Inject() (httpGet: HttpGet) extends ServicesConfig {
+  private val _url = new URL(baseUrl("auth"))
 
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
     currentAuthority() map authorityAsAccounts
@@ -41,7 +45,7 @@ class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
       sa = (authority \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
     )
 
-  private def url(relativeUrl: String): URL = new URL(baseUrl, relativeUrl)
+  private def url(relativeUrl: String): URL = new URL(_url, relativeUrl)
 
   private def httpGetAs[T](relativeUrl: String)(implicit rds: HttpReads[T], hc: HeaderCarrier, ec: ExecutionContext): Future[T] =
     httpGet.GET[T](url(relativeUrl).toString)(rds, hc)

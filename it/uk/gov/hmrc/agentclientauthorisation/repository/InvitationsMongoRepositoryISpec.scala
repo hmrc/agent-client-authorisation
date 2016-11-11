@@ -33,7 +33,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   private val now = DateTime.now()
 
-  private def repository = new InvitationsMongoRepository() {
+  private def repository = new InvitationsRepository(mongo()) {
     override def withCurrentTime[A](f: (DateTime) => A): A = f(now)
   }
 

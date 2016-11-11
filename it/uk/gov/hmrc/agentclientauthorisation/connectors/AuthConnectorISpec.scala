@@ -38,6 +38,6 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
     }
   }
 
-  def newAuthConnector() = new AuthConnector(new URL(wiremockBaseUrl), WSHttp)
+  def newAuthConnector() = app.injector.instanceOf(classOf[AuthConnector])
 
 }

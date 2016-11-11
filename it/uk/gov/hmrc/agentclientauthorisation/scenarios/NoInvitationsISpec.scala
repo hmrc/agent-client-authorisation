@@ -31,6 +31,7 @@ class NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
 
   "Before the Agency has sent any invitations" in {
 
+    pending
     val agency = new AgencyApi(arn, port)
     val client = new ClientApi(mtdClientId, port)
 

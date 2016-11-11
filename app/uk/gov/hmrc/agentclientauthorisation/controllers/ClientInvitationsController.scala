@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import javax.inject._
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json.toJson
@@ -28,7 +29,8 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class ClientInvitationsController(invitationsService: InvitationsService,
+@Singleton
+class ClientInvitationsController @Inject() (invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter {
 

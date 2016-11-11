@@ -17,47 +17,72 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import java.util.Base64
+import javax.inject._
 
+import com.google.inject.AbstractModule
 import com.typesafe.config.Config
-import play.api.{Application, Configuration, Logger, Play}
+import net.ceedubs.ficus.Ficus._
+import play.api.Configuration
+import play.api.http.DefaultHttpFilters
+import play.api.mvc.Call
+import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.DB
 import uk.gov.hmrc.play.audit.filters.AuditFilter
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
+import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
+import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
-import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
-import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import net.ceedubs.ficus.Ficus._
-import play.api.mvc.Call
-import uk.gov.hmrc.api.config.{ServiceLocatorConfig, ServiceLocatorRegistration}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.http.{HttpGet, HttpPut}
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
+class GuiceModule() extends AbstractModule {
+  def configure() = {
+    bind(classOf[HttpGet]).to(classOf[WSHttp])
+    bind(classOf[HttpPut]).to(classOf[WSHttp])
+    bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
+    bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
+  }
 
-object ControllerConfiguration extends ControllerConfig {
-  lazy val controllerConfigs = Play.current.configuration.underlying.as[Config]("controllers")
 }
 
-object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
-  lazy val controllerConfigs = ControllerConfiguration.controllerConfigs
+class MongoDbProvider @Inject() (reactiveMongoComponent: ReactiveMongoComponent) extends Provider[DB] {
+  def get = reactiveMongoComponent.mongoConnector.db()
 }
 
-object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport {
-  override val auditConnector = MicroserviceAuditConnector
-  override def controllerNeedsAuditing(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+// TODO These could probably be replaced with instance bindings.
+@Singleton
+class ControllerConfiguration @Inject() (configuration: Configuration) extends ControllerConfig {
+  lazy val controllerConfigs = configuration.underlying.as[Config]("controllers")
 }
 
-object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSupport {
-  override def controllerNeedsLogging(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsLogging
+@Singleton
+class AuthParamsControllerConfiguration @Inject() (controllerConfig: ControllerConfig) extends AuthParamsControllerConfig {
+  lazy val controllerConfigs = controllerConfig.controllerConfigs
 }
 
-object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilterSupport {
-  override lazy val authParamsConfig = AuthParamsControllerConfiguration
-  override lazy val authConnector = MicroserviceAuthConnector
-  override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuth
+@Singleton
+class MicroserviceAuditFilter @Inject() (override val auditConnector: AuditConnector, controllerConfig: ControllerConfig) extends AuditFilter with AppName with MicroserviceFilterSupport {
+  override def controllerNeedsAuditing(controllerName: String) = controllerConfig.paramsForController(controllerName).needsAuditing
 }
-class WhitelistFilter extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
-  import play.api.Play.current
+
+@Singleton
+class MicroserviceLoggingFilter @Inject()(controllerConfig: ControllerConfig) extends LoggingFilter with MicroserviceFilterSupport {
+  override def controllerNeedsLogging(controllerName: String) = controllerConfig.paramsForController(controllerName).needsLogging
+}
+
+@Singleton
+class MicroserviceAuthFilter @Inject() (
+      override val authParamsConfig: AuthParamsControllerConfig,
+      override val authConnector: AuthConnector,
+      controllerConfig: ControllerConfig) extends AuthorisationFilter with MicroserviceFilterSupport {
+  override def controllerNeedsAuth(controllerName: String): Boolean = controllerConfig.paramsForController(controllerName).needsAuth
+}
+
+@Singleton
+class WhitelistFilter @Inject() (configuration: play.api.Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
 
   override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
   override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")
@@ -69,17 +94,13 @@ class WhitelistFilter extends AkamaiWhitelistFilter with MicroserviceFilterSuppo
   )
 
   private def whitelistConfig(key: String): Seq[String] =
-    new String(Base64.getDecoder.decode(Play.configuration.getString(key).getOrElse("")), "UTF-8").split(",")
+    new String(Base64.getDecoder.decode(configuration.getString(key).getOrElse("")), "UTF-8").split(",")
 }
 
-object WhitelistFilter {
-  import play.api.Play.current
+class Filters extends DefaultHttpFilters
 
-  def enabled(): Boolean = Play.configuration.getBoolean("microservice.whitelist.enabled").getOrElse(true)
 
-}
-
-trait MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with ServiceRegistry with ControllerRegistry with ServiceLocatorRegistration with ServiceLocatorConfig {
+/* trait MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with ServiceLocatorRegistration with ServiceLocatorConfig {
   private lazy val whitelistFilterSeq = WhitelistFilter.enabled() match {
     case true =>
       Logger.info("Starting microservice with IP whitelist enabled")
@@ -102,10 +123,5 @@ trait MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with Ser
   override implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override lazy val microserviceFilters = whitelistFilterSeq ++ defaultMicroserviceFilters
+}*/
 
-//  override def getControllerInstance[A](controllerClass: Class[A]): A = {
-//    getController(controllerClass)
-//  }
-}
-
-object MicroserviceGlobal extends MicroserviceGlobal

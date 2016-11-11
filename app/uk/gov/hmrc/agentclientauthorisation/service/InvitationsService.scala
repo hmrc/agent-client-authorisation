@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import javax.inject._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
@@ -26,7 +27,8 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class InvitationsService(invitationsRepository: InvitationsRepository,
+@Singleton
+class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
 
   def create(arn: Arn, regime: String, clientId: String, postcode: String) =

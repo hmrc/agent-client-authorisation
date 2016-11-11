@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import javax.inject._
 import play.api.mvc.Action
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-class WhitelistController extends BaseController {
+@Singleton
+class WhitelistController @Inject() extends BaseController {
 
   val forbidden = Action {
     Forbidden
