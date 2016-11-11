@@ -28,6 +28,8 @@ import play.api.http.DefaultHttpFilters
 import play.api.mvc._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
+import uk.gov.hmrc.api.config._
+import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.play.audit.filters.AuditFilter
 import uk.gov.hmrc.play.audit.http.config.ErrorAuditingSettings
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -39,7 +41,7 @@ import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
 import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
-import uk.gov.hmrc.play.http.{HttpGet, HttpPut}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPut}
 import uk.gov.hmrc.play.microservice.bootstrap.Routing.RemovingOfTrailingSlashes
 import uk.gov.hmrc.play.microservice.bootstrap.JsonErrorHandling
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
@@ -110,7 +112,9 @@ object MicroserviceGlobal
   with GraphiteConfig
   with RemovingOfTrailingSlashes
   with JsonErrorHandling
-  with ErrorAuditingSettings {
+  with ErrorAuditingSettings
+  with ServiceLocatorRegistration
+  with ServiceLocatorConfig {
 
   lazy val appName = Play.current.configuration.getString("appName").getOrElse("APP NAME NOT SET")
   lazy val loggerDateFormat: Option[String] = Play.current.configuration.getString("logger.json.dateformat")
@@ -123,6 +127,8 @@ object MicroserviceGlobal
   }
 
   override val auditConnector = new MicroserviceAuditConnector
+  override lazy val slConnector = ServiceLocatorConnector(new WSHttp(auditConnector))
+  override implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")
 }
