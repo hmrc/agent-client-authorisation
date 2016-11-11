@@ -48,7 +48,7 @@ class EmbeddedSection(embedded: JsLookupResult) {
   lazy val invitations: Seq[EmbeddedInvitation] = getInvitations.value.map(asInvitation)
 
   private def getInvitations: JsArray = {
-    embedded \ "invitations" match {
+    (embedded \ "invitations").get match {
       case array: JsArray => array
       case obj: JsObject => JsArray(Seq(obj))
     }

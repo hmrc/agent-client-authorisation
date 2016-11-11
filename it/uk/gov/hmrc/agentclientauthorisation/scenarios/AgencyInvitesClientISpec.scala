@@ -33,7 +33,6 @@ class AgencyInvitesClientISpec extends FeatureSpec with GivenWhenThen with Match
   feature("Agencies can filter")  {
 
     scenario("on the status of clients invitations") {
-      pending
       val agency = new AgencyApi(arn, port)
       val client = new ClientApi(mtdClientId, port)
       Given("An agent and a client are logged in")
