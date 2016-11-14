@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
+import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 
@@ -26,8 +27,6 @@ trait AgentInvitationValidation extends Results {
   val postcodeService: PostcodeService
 
   private type Validation = (AgentInvitation) => Option[Result]
-
-  private val SUPPORTED_REGIME = "mtd-sa"
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
