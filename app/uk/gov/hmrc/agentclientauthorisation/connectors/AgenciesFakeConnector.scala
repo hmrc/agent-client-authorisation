@@ -44,8 +44,8 @@ object Client {
 }
 
 @Singleton
-class AgenciesFakeConnector @Inject() (httpGet: HttpGet) extends ServicesConfig {
-  private val url = new URL(baseUrl("agencies-fake"))
+class AgenciesFakeConnector @Inject() (servicesConfig: ServicesConfig, httpGet: HttpGet) {
+  private val url = new URL(servicesConfig.baseUrl("agencies-fake"))
 
   def findArn(agentCode: AgentCode)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
     httpGet.GET[Option[Agency]](new URL(url, s"/agencies-fake/agencies/agentcode/${encodePathSegment(agentCode.value)}").toString)

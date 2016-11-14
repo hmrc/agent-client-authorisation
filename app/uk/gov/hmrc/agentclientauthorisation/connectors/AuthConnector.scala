@@ -30,8 +30,8 @@ import scala.language.postfixOps
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
 
 @Singleton
-class AuthConnector @Inject() (httpGet: HttpGet) extends ServicesConfig {
-  private val _url = new URL(baseUrl("auth"))
+class AuthConnector @Inject() (servicesConfig: ServicesConfig, httpGet: HttpGet) {
+  private val _url = new URL(servicesConfig.baseUrl("auth"))
 
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
     currentAuthority() map authorityAsAccounts

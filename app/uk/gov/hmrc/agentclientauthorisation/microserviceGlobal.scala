@@ -37,7 +37,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
 import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
 import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
@@ -56,6 +56,7 @@ class GuiceModule() extends AbstractModule {
     bind(classOf[AuthParamsControllerConfig]).to(classOf[AuthParamsControllerConfiguration])
     bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
+    bind(classOf[ServicesConfig]).toInstance(MicroserviceGlobal)
   }
 
 }

@@ -28,8 +28,8 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import scala.concurrent.Future
 
 @Singleton
-class RelationshipsConnector @Inject() (httpPut: HttpPut) extends ServicesConfig {
-  private lazy val url = new URL(baseUrl("relationships"))
+class RelationshipsConnector @Inject() (servicesConfig: ServicesConfig, httpPut: HttpPut) {
+  private lazy val url = new URL(servicesConfig.baseUrl("relationships"))
 
 
   def createRelationship(arn: Arn, mtdClientId: MtdClientId)(implicit hc: HeaderCarrier): Future[Unit] = {
