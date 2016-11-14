@@ -62,7 +62,6 @@ class SandboxClientInvitationsController(override val authConnector: AuthConnect
 
   private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
     var links = HalLinks(Vector(HalLink("self", routes.SandboxClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
-    links = links ++ HalLink("agency", "/agencies/arn")
 
     if (invitation.status == Pending) {
       links = links ++ HalLink("accept", routes.SandboxClientInvitationsController.acceptInvitation(clientId, invitation.id.stringify).url)
