@@ -17,13 +17,14 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import java.net.URI
+
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsString, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.http.HttpResponse
@@ -102,6 +103,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     val selfHref = (invitation \ "_links" \ "self" \ "href").as[String]
     selfHref should startWith(s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent")
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
+    (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn") shouldBe JsString(arn.arn)
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientId") shouldBe JsString("clientId")

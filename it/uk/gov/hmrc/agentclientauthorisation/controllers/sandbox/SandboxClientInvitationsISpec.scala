@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import java.net.URI
+
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
@@ -24,7 +25,6 @@ import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsString, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
-import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -101,6 +101,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     selfHref should startWith(s"/agent-client-authorisation/sandbox/clients/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfHref/accept"
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfHref/reject"
+    (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn") shouldBe JsString("agencyReference")
     (invitation \ "regime") shouldBe JsString(REGIME)
     (invitation \ "clientId") shouldBe JsString(clientId.value)

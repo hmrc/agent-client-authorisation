@@ -16,10 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, Result}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentInvitationValidation, AgentRequest, AuthActions}
@@ -32,7 +29,7 @@ import scala.concurrent.Future
 class AgencyInvitationsController(override val postcodeService:PostcodeService,
                                   invitationsService: InvitationsService,
                                   override val authConnector: AuthConnector,
-                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with AgentInvitationValidation{
+                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
@@ -80,27 +77,20 @@ class AgencyInvitationsController(override val postcodeService:PostcodeService,
     Future successful NotImplemented
   }
 
-  private def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
-    val invitationResources = invitations.map(toHalResource(_, arn)).toVector
+  override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations
 
-    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
-    Hal.hal(Json.obj(), selfLink, Vector("invitations" -> invitationResources))
-  }
-
-  private def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
-
-    var links = HalLinks(
-      Vector(
-        HalLink("self", routes.AgencyInvitationsController.getSentInvitation(arn, invitation.id.stringify).url),
-        HalLink("agency", agenciesFakeConnector.agencyUrl(invitation.arn).toString)
-      )
-    )
-
-    if (invitation.status == Pending) {
-      links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(arn, invitation.id.stringify).url)
-    }
-
-    HalResource(links, toJson(invitation).as[JsObject])
-  }
+  override protected def agencyLink(invitation: Invitation) =
+    Some(agenciesFakeConnector.agencyUrl(invitation.arn).toString)
 }
 
+
+private object ReverseAgencyInvitations extends ReverseAgencyInvitationsRoutes {
+  override def getSentInvitation(arn: Arn, invitationId: String) =
+    routes.AgencyInvitationsController.getSentInvitation(arn, invitationId)
+
+  override def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
+    routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status)
+
+  override def cancelInvitation(arn: Arn, invitationId: String) =
+    routes.AgencyInvitationsController.cancelInvitation(arn, invitationId)
+}

@@ -17,22 +17,17 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import org.joda.time.DateTime.now
-import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Call
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter
-import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
+import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsHal, HalWriter, ReverseClientInvitationsRoutes, SUPPORTED_REGIME}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
-
 class SandboxClientInvitationsController(override val authConnector: AuthConnector,
                                          override val agenciesFakeConnector: AgenciesFakeConnector
-                                        ) extends BaseController with AuthActions with HalWriter {
+                                        ) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal {
 
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
     NoContent
@@ -60,21 +55,13 @@ class SandboxClientInvitationsController(override val authConnector: AuthConnect
       )
 
 
-  private def toHalResource(invitation: Invitation, clientId: String): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.SandboxClientInvitationsController.getInvitation(clientId, invitation.id.stringify).url)))
+  override protected val reverseRoutes: ReverseClientInvitationsRoutes = ReverseSandboxClientInvitations
+  override protected def agencyLink(invitation: Invitation): Option[String] = None
+}
 
-    if (invitation.status == Pending) {
-      links = links ++ HalLink("accept", routes.SandboxClientInvitationsController.acceptInvitation(clientId, invitation.id.stringify).url)
-      links = links ++ HalLink("reject", routes.SandboxClientInvitationsController.rejectInvitation(clientId, invitation.id.stringify).url)
-    }
-
-    HalResource(links, toJson(invitation).as[JsObject])
-  }
-
-  private def toHalResource(requests: Seq[Invitation], clientId: String, status: Option[InvitationStatus]): HalResource = {
-    val requestResources: Vector[HalResource] = requests.map(toHalResource(_, clientId)).toVector
-
-    val links = Vector(HalLink("self", routes.SandboxClientInvitationsController.getInvitations(clientId, status).url))
-    Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
-  }
+private object ReverseSandboxClientInvitations extends ReverseClientInvitationsRoutes {
+  override def getInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.getInvitation(clientId, invitationId)
+  override def getInvitations(clientId:String, status:Option[InvitationStatus]): Call = routes.SandboxClientInvitationsController.getInvitations(clientId, status)
+  override def acceptInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.acceptInvitation(clientId, invitationId)
+  override def rejectInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.rejectInvitation(clientId, invitationId)
 }
