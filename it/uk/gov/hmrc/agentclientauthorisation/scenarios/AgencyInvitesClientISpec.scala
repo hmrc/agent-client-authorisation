@@ -23,12 +23,11 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-class AgencyInvitesClientISpec extends FeatureSpec with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
-  private implicit val arn = RandomArn()
+  implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val mtdClientId: MtdClientId = FakeMtdClientId.random()
-  private val MtdSaRegime: String = "mtd-sa"
+  val mtdClientId: MtdClientId = FakeMtdClientId.random()
 
   feature("Agencies can filter")  {
 
@@ -53,54 +52,6 @@ class AgencyInvitesClientISpec extends FeatureSpec with GivenWhenThen with Match
     }
   }
 
-  private def agencySendsSeveralInvitations(agency: AgencyApi, regime: String): Unit = {
-    val location1 = agency sendInvitation(mtdClientId, regime = regime)
-    val location2 = agency sendInvitation(mtdClientId, regime = regime)
-    location1 should not(be(location2))
-
-    info(s"the Agency should see 2 pending invitations to Client $mtdClientId")
-    val response = agency.sentInvitations()
-    response.numberOfInvitations shouldBe 2
-
-    val i1 = response.firstInvitation
-    i1.arn shouldBe arn
-    i1.clientId shouldBe mtdClientId
-    i1.regime shouldBe Regime(regime)
-    i1.status shouldBe "Pending"
-
-    val i2 = response.secondInvitation
-    i2.arn shouldBe arn
-    i2.clientId shouldBe mtdClientId
-    i2.regime shouldBe Regime(regime)
-    i2.status shouldBe "Pending"
-    // TODO: This can only be implemented after the Play 2.5 upgrade 
-//    val links = response.links
-//    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-//    links.invitations shouldBe 'nonEmpty
-  }
-
-  private def clientsViewOfPendingInvitations(client: ClientApi): Unit = {
-    val clientResponse = client.getInvitations()
-
-    val i1 = clientResponse.firstInvitation
-    i1.arn shouldBe arn
-    i1.clientId shouldBe mtdClientId
-    i1.regime shouldBe Regime(MtdSaRegime)
-    i1.status shouldBe "Pending"
-
-    val selfLink = i1.links.selfLink
-    selfLink should startWith(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/")
-    i1.links.acceptLink shouldBe Some(s"$selfLink/accept")
-    i1.links.rejectLink shouldBe Some(s"$selfLink/reject")
-    i1.links.cancelLink shouldBe None
-    i1.links.agencyLink.get should include(s"/agencies-fake/agencies/${arn.arn}")
-
-    val i2 = clientResponse.secondInvitation
-    i2.arn shouldBe arn
-    i2.clientId shouldBe mtdClientId
-    i2.regime shouldBe Regime(MtdSaRegime)
-    i2.status shouldBe "Pending"
-  }
 
   private def clientAcceptsFirstInvitation(client: ClientApi): Unit = {
     val invitations = client.getInvitations()
