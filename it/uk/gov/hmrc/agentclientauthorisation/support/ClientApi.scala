@@ -37,9 +37,26 @@ class ClientApi(clientId: MtdClientId, port: Int) extends Eventually {
     } .getOrElse (throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
   }
 
-  def getInvitations(): HalResourceHelper = {
-    val response: HttpResponse = new Resource(getClientInvitationUrl, port).get()(hc)
+  def rejectInvitation(invitation: EmbeddedInvitation): HttpResponse = {
+    invitation.links.rejectLink.map { rejectLink =>
+      val response: HttpResponse = new Resource(rejectLink, port).putEmpty()(hc)
+      require(response.status == 204, s"response for rejecting invitation should be 204, was [${response.status}]")
+      response
+    } .getOrElse (throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
+  }
+
+  def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
+    val params = withFilterParams(filteredBy)
+    val response: HttpResponse = new Resource(getClientInvitationUrl+params, port).get()(hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
+  }
+
+  def withFilterParams(filteredBy: Seq[(String, String)]): String = {
+    filteredBy match {
+      case Nil => ""
+      case (k, v) :: Nil => s"?$k=$v"
+      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
+    }
   }
 }
