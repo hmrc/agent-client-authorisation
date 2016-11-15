@@ -61,14 +61,6 @@ class ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with G
     }
   }
 
-  private def clientAcceptsFirstInvitation(client: ClientApi): Unit = {
-    val invitations = client.getInvitations()
-    client.acceptInvitation(invitations.firstInvitation)
-    val refetchedInvitations = client.getInvitations()
-    refetchedInvitations.firstInvitation.status shouldBe "Accepted"
-    refetchedInvitations.secondInvitation.status shouldBe "Pending"
-  }
-
   private def clientRejectsSecondInvitation(client: ClientApi): Unit = {
     val invitations = client.getInvitations(Seq("status" -> "pending"))
     client.rejectInvitation(invitations.firstInvitation)

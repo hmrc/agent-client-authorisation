@@ -75,4 +75,13 @@ trait ScenarioHelpers {
     i2.regime shouldBe Regime(MtdSaRegime)
     i2.status shouldBe "Pending"
   }
+
+  def clientAcceptsFirstInvitation(client: ClientApi): Unit = {
+    val invitations = client.getInvitations()
+    client.acceptInvitation(invitations.firstInvitation)
+    val refetchedInvitations = client.getInvitations()
+    refetchedInvitations.firstInvitation.status shouldBe "Accepted"
+    refetchedInvitations.secondInvitation.status shouldBe "Pending"
+  }
+
 }
