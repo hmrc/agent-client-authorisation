@@ -16,15 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 
-import play.api.http.LazyHttpErrorHandler
-
+import play.api.http.HttpErrorHandler
 
 @Singleton
-class RamlController extends DocumentationController(LazyHttpErrorHandler) {
-
-  def raml(version: String, file: String) = {
-    super.at(s"/public/api/conf/$version", file)
-  }
-}
+class DocumentationController @Inject() (errorHandler: HttpErrorHandler)
+  extends uk.gov.hmrc.api.controllers.DocumentationController(errorHandler = errorHandler)
