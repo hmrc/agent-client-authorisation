@@ -5,7 +5,7 @@
         <encoder class="uk.gov.hmrc.play.logging.JsonEncoder"/>
     </appender>
 
-    <logger name="uk.gov" level="DEBUG"/>
+    <logger name="uk.gov" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

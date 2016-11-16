@@ -35,7 +35,7 @@
     </appender>
 
 
-    <logger name="accesslog" level="INFO" additivity="false">
+    <logger name="accesslog" level="OFF" additivity="false">
         <appender-ref ref="ACCESS_LOG_FILE" />
     </logger>
 
@@ -43,15 +43,15 @@
         <appender-ref ref="STDOUT_IGNORE_NETTY" />
     </logger>
 
-    <logger name="uk.gov" level="INFO"/>
+    <logger name="uk.gov" level="OFF"/>
 
-    <logger name="application" level="DEBUG"/>
+    <logger name="application" level="OFF"/>
 
-    <logger name="connector" level="TRACE">
+    <logger name="connector" level="OFF">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="DEBUG">
+    <root level="OFF">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
     </root>

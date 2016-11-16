@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHe
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
 
-class AgencyApi(arn: Arn, port: Int) {
+class AgencyApi(val arn: Arn, port: Int) {
 
   private val invitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"

@@ -38,7 +38,6 @@ class NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
     given().client(clientId = mtdClientId).isLoggedInWithSessionId()
 
     info("the Agency sent invitations should be empty")
-
     val agencyResponse = agency.sentInvitations()
     agencyResponse.numberOfInvitations shouldBe 0
     agencyResponse.links.invitations shouldBe 'empty
