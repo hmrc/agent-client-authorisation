@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation
 
+import java.net.URL
 import java.util.Base64
 import javax.inject._
 
 import com.google.inject.AbstractModule
+import com.google.inject.name.Names
 import com.kenshoo.play.metrics.MetricsFilter
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -42,11 +44,11 @@ import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
 import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPut}
-import uk.gov.hmrc.play.microservice.bootstrap.Routing.RemovingOfTrailingSlashes
 import uk.gov.hmrc.play.microservice.bootstrap.JsonErrorHandling
+import uk.gov.hmrc.play.microservice.bootstrap.Routing.RemovingOfTrailingSlashes
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
-class GuiceModule() extends AbstractModule {
+class GuiceModule() extends AbstractModule with ServicesConfig {
   def configure() = {
     bind(classOf[HttpGet]).to(classOf[WSHttp])
     bind(classOf[HttpPut]).to(classOf[WSHttp])
@@ -57,6 +59,16 @@ class GuiceModule() extends AbstractModule {
     bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ServicesConfig]).toInstance(MicroserviceGlobal)
+    bindBaseUrl("auth")
+    bindBaseUrl("agencies-fake")
+    bindBaseUrl("relationships")
+  }
+
+  private def bindBaseUrl(serviceName: String) =
+    bind(classOf[URL]).annotatedWith(Names.named(s"$serviceName-baseUrl")).toProvider(new BaseUrlProvider(serviceName))
+
+  private class BaseUrlProvider(serviceName: String) extends Provider[URL] {
+    override lazy val get = new URL(baseUrl(serviceName))
   }
 
 }

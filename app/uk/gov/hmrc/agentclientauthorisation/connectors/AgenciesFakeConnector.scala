@@ -17,13 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
-
 import javax.inject._
+
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.domain.{AgentCode, SaUtr, SimpleObjectReads, SimpleObjectWrites}
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,20 +43,19 @@ object Client {
 }
 
 @Singleton
-class AgenciesFakeConnector @Inject() (servicesConfig: ServicesConfig, httpGet: HttpGet) {
-  private val url = new URL(servicesConfig.baseUrl("agencies-fake"))
+class AgenciesFakeConnector @Inject() (@Named("agencies-fake-baseUrl") baseUrl: URL, httpGet: HttpGet) {
 
   def findArn(agentCode: AgentCode)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
-    httpGet.GET[Option[Agency]](new URL(url, s"/agencies-fake/agencies/agentcode/${encodePathSegment(agentCode.value)}").toString)
+    httpGet.GET[Option[Agency]](new URL(baseUrl, s"/agencies-fake/agencies/agentcode/${encodePathSegment(agentCode.value)}").toString)
       .map(_.map(_.arn))
   }
 
   def findClient(saUtr: SaUtr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdClientId]] = {
-    httpGet.GET[Option[Client]](new URL(url, s"/agencies-fake/clients/sa/${encodePathSegment(saUtr.value)}").toString)
+    httpGet.GET[Option[Client]](new URL(baseUrl, s"/agencies-fake/clients/sa/${encodePathSegment(saUtr.value)}").toString)
       .map(_.map(_.mtdClientId))
   }
   def agencyUrl(arn: Arn): URL = {
-    new URL(url, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")
+    new URL(baseUrl, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")
   }
 
 }
