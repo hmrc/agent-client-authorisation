@@ -41,10 +41,8 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   private val clientId: String = "1234567890"
 
   private val REGIME: String = "mtd-sa"
-  private val getInvitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+  private val invitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
-  private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
-  //private val getClientInvitationUrl = s"/agent-client-authorisation/clients/$clientId/invitations/received/"
 
 
 
@@ -152,7 +150,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       }
 
       val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
-      selfLinkHref shouldBe getInvitationsUrl
+      selfLinkHref shouldBe invitationsUrl
 
       val firstInvitation = invitationsArray head
       val secondInvitation = invitationsArray(1)
@@ -180,7 +178,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       }
 
       val selfLinkHref = (responseJson \ "_links" \ "self" \ "href").as[String]
-      selfLinkHref shouldBe getInvitationsUrl
+      selfLinkHref shouldBe invitationsUrl
 
       val firstInvitation = invitationsArray.head
       val secondInvitation = invitationsArray(1)
@@ -296,27 +294,27 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   }
 
   private def responseForGetInvitations(): HttpResponse = {
-    new Resource(getInvitationsUrl, port).get()
+    new Resource(invitationsUrl, port).get()
   }
 
   private def responseForGetInvitationsByRegime(regime: String): HttpResponse = {
     new Resource(getInvitationsByRegimeUrl(regime), port).get()
   }
 
-  private def getInvitationsByRegimeUrl(regime: String): String = getInvitationsUrl + s"?regime=${urlEncode(regime)}"
+  private def getInvitationsByRegimeUrl(regime: String): String = invitationsUrl + s"?regime=${urlEncode(regime)}"
 
   private def responseForGetInvitationsByClient(clientId: String): HttpResponse = {
     new Resource(getInvitationsByClientUrl(clientId), port).get()
   }
 
-  private def getInvitationsByClientUrl(clientId: String): String = getInvitationsUrl + s"?clientId=${urlEncode(clientId)}"
+  private def getInvitationsByClientUrl(clientId: String): String = invitationsUrl + s"?clientId=${urlEncode(clientId)}"
 
   private def responseForGetInvitation(invitationId: String = "none"): HttpResponse = {
     new Resource(getInvitationUrl + invitationId, port).get()
   }
 
   private def responseForCreateInvitation(body: String): HttpResponse = {
-    new Resource(createInvitationUrl, port).postAsJson(body)
+    new Resource(invitationsUrl, port).postAsJson(body)
   }
   private def checkCreatedResponse(httpResponse: HttpResponse) = {
     httpResponse.status shouldBe 201

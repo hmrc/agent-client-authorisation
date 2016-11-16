@@ -24,15 +24,14 @@ import uk.gov.hmrc.play.http.logging.SessionId
 
 class AgencyApi(arn: Arn, port: Int) {
 
-  private val getInvitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+  private val invitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
-  private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
 
   def sendInvitation(clientId: MtdClientId, regime: String = "mtd-sa", postcode:String = "AA1 1AA"): String = {
 
-    val response = new Resource(createInvitationUrl, port).postAsJson(
+    val response = new Resource(invitationsUrl, port).postAsJson(
       s"""{"regime": "$regime", "clientId": "${clientId.value}", "postcode": "$postcode"}"""
     )(hc)
 
@@ -43,7 +42,7 @@ class AgencyApi(arn: Arn, port: Int) {
   def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
 
     val params = withFilterParams(filteredBy)
-    val response: HttpResponse = new Resource(getInvitationsUrl+params, port).get()(hc)
+    val response: HttpResponse = new Resource(invitationsUrl+params, port).get()(hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }

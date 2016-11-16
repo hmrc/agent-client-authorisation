@@ -38,7 +38,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   private val mtdClient2Id = FakeMtdClientId.random()
   private val REGIME = "mtd-sa"
 
-  private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations"
+  private val createInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/"
   private def getInvitationsUrl(clientId: MtdClientId = mtdClientId) = s"/agent-client-authorisation/clients/${clientId.value}/invitations/received"
 
