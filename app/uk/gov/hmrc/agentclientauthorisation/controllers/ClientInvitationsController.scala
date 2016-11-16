@@ -50,7 +50,7 @@ class ClientInvitationsController(invitationsService: InvitationsService,
   }
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x, clientId))
+      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x))
       case None => NotFound
       case _ => Forbidden
     }

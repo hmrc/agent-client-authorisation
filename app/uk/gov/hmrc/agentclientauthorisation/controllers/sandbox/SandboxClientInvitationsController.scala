@@ -38,7 +38,7 @@ class SandboxClientInvitationsController(override val authConnector: AuthConnect
   }
 
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
-    Ok(toHalResource(invitation(clientId), clientId))
+    Ok(toHalResource(invitation(clientId)))
   }
 
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients { implicit request =>

@@ -90,5 +90,5 @@ class LinkSection(links: JsValue) {
 
   def selfLink: String = (links \ "self" \ "href").as[String]
 
-  def invitations: Seq[String] = (links \ "self" \ "invitations" \\ "href").map(_.as[String])
+  def invitations: Seq[String] = (links \ "invitation" \\ "href").map(_.as[String])
 }
