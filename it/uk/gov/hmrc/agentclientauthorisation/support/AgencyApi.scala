@@ -52,7 +52,7 @@ class AgencyApi(arn: Arn, port: Int) {
     filteredBy match {
       case Nil => ""
       case (k, v) :: Nil => s"?$k=$v"
-      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}")
+      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
     }
   }
 }
