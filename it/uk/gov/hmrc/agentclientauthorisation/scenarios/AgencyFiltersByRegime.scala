@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -31,35 +31,31 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
 
   feature("Agencies can filter")  {
 
-    scenario("on the status of clients invitations") {
+    scenario("on the regime of invitations") {
       val agency = new AgencyApi(arn, port)
-      val client = new ClientApi(mtdClientId, port)
-      Given("An agent and a client are logged in")
+      Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-      given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
-      When("the Agency sends several invitations to the Client")
+      When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency, MtdSaRegime)
 
-      Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      clientsViewOfPendingInvitations(client)
+      Then("The agent filters by mtd-sa")
+      agencyFiltersByMtdSa(agency)
 
-      When(s"the Client accepts the first Agency invitation")
-      clientAcceptsFirstInvitation(client)
-
-      Then(s"the Agency filters their sent invitations by status")
-      agencyFiltersByStatus(agency)
+      Then("The agent filters by mtd-vat")
+      agencyFiltersByMtdVat(agency)
     }
   }
 
+  def agencyFiltersByMtdSa(agency: AgencyApi) = {
+    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdSaRegime))
 
-  private def agencyFiltersByStatus(agency: AgencyApi): Unit = {
-    val pendingFiltered = agency.sentInvitations(filteredBy = Seq("status" -> "pending"))
-    pendingFiltered.numberOfInvitations shouldBe 1
-    pendingFiltered.firstInvitation.status shouldBe "Pending"
+    invitations.numberOfInvitations shouldBe 2
+  }
 
-    val acceptedFiltered = agency.sentInvitations(filteredBy = Seq("status" -> "accepted"))
-    acceptedFiltered.numberOfInvitations shouldBe 1
-    acceptedFiltered.firstInvitation.status shouldBe "Accepted"
+  def agencyFiltersByMtdVat(agency: AgencyApi) = {
+    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> "mtd-vat"))
+
+    invitations.numberOfInvitations shouldBe 0
   }
 }
