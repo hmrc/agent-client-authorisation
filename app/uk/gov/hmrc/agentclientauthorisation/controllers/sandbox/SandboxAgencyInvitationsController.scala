@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
+import javax.inject.{Inject, Singleton}
+
 import org.joda.time.DateTime.now
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
@@ -24,9 +26,11 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsHal, H
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-class SandboxAgencyInvitationsController(override val authConnector: AuthConnector,
-                                         override val agenciesFakeConnector: AgenciesFakeConnector
-                                        ) extends BaseController with AuthActions with HalWriter with AgencyInvitationsHal {
+@Singleton
+class SandboxAgencyInvitationsController @Inject() (
+  override val authConnector: AuthConnector,
+  override val agenciesFakeConnector: AgenciesFakeConnector
+) extends BaseController with AuthActions with HalWriter with AgencyInvitationsHal {
 
   def createInvitation(arn: Arn) = onlyForSaAgents { implicit request =>
       Created.withHeaders(location(arn, "invitationId"))
