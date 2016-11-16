@@ -71,12 +71,13 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val selfLinkHref = (response.json \ "_links" \ "self" \ "href").as[String]
+      val invitationLinks = (response.json \ "_links" \ "invitation" \\ "href").map(_.as[String])
 
       invitations.size shouldBe 2
       checkInvitation(mtdClientId, invitations.head, testStartTime) 
       checkInvitation(mtdClientId, invitations(1), testStartTime) 
-      selfLinkHref shouldBe getInvitationsUrl
+      selfLink(response.json) shouldBe getInvitationsUrl
+      invitations.map(selfLink) shouldBe invitationLinks
     }
   }
 
@@ -97,7 +98,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    val selfHref = (invitation \ "_links" \ "self" \ "href").as[String]
+    val selfHref = selfLink(invitation)
     selfHref should startWith(s"/agent-client-authorisation/sandbox/clients/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfHref/accept"
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfHref/reject"
@@ -110,9 +111,10 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
   }
 
-  private def invitations(response: JsValue) = {
-    (response \ "_embedded" \ "invitations").as[JsArray]
+  def selfLink(obj: JsValue): String = {
+    (obj \ "_links" \ "self" \ "href").as[String]
   }
+
 
   def responseForGetClientInvitation(): HttpResponse = {
     new Resource(getInvitationUrl + "invitationId", port).get()
