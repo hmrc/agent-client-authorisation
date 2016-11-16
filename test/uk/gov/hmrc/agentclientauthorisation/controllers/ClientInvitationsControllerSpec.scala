@@ -18,8 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.net.URL
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import org.joda.time.DateTime
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -30,15 +28,12 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.Accounts
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.ClientEndpointBehaviours
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours}
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
-  implicit lazy val actorSystem = ActorSystem()
-  implicit lazy val materializer = ActorMaterializer()
+class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
   val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
