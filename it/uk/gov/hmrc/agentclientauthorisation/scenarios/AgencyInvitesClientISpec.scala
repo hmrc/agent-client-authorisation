@@ -38,7 +38,10 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends several invitations to the Client")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       clientsViewOfPendingInvitations(client)

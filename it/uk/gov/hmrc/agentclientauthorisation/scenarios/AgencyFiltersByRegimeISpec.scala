@@ -37,7 +37,10 @@ class AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
 
       Then("The agent filters by mtd-sa")
       agencyFiltersByMtdSa(agency)
@@ -48,7 +51,7 @@ class AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
   }
 
   def agencyFiltersByMtdSa(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdSaRegime))
+    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdSaRegime.value))
 
     invitations.numberOfInvitations shouldBe 2
   }

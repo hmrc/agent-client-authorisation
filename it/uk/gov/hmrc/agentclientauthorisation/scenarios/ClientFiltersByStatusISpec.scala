@@ -39,7 +39,10 @@ class ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with G
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       clientsViewOfPendingInvitations(client)

@@ -23,13 +23,13 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-class AgencyFilteringByClientIdISpec extends FeatureSpec with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
-  private implicit val arn = RandomArn()
+  override val arn = RandomArn()
+  override val mtdClientId: MtdClientId = FakeMtdClientId.random()
+
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val mtdClientId: MtdClientId = FakeMtdClientId.random()
   private val mtdClientId2: MtdClientId = FakeMtdClientId.random()
-  private val MtdSaRegime: String = "mtd-sa"
 
   feature("Agencies can filter")  {
 
@@ -42,39 +42,16 @@ class AgencyFilteringByClientIdISpec extends FeatureSpec with GivenWhenThen with
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
 
       And("the Agency has sent 1 invitation to 2 different clients")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId2, MtdSaRegime)
+      )
 
       When(s"the Agency filters by client ID")
       Then(s"only the client matching that id is returned")
       agencyFiltersById(agency, client1.clientId)
       agencyFiltersById(agency, client2.clientId)
     }
-  }
-
-  private def agencySendsSeveralInvitations(agency: AgencyApi, regime: String): Unit = {
-    val location1 = agency sendInvitation(mtdClientId, regime = regime)
-    val location2 = agency sendInvitation(mtdClientId2, regime = regime)
-    location1 should not(be(location2))
-
-    info(s"the Agency should see 2 pending invitations for $mtdClientId and $mtdClientId2")
-    val response = agency.sentInvitations()
-    response.numberOfInvitations shouldBe 2
-
-    val i1 = response.firstInvitation
-    i1.arn shouldBe arn
-    i1.clientId shouldBe mtdClientId
-    i1.regime shouldBe Regime(regime)
-    i1.status shouldBe "Pending"
-
-    val i2 = response.secondInvitation
-    i2.arn shouldBe arn
-    i2.clientId shouldBe mtdClientId2
-    i2.regime shouldBe Regime(regime)
-    i2.status shouldBe "Pending"
-    // TODO: This can only be implemented after the Play 2.5 upgrade 
-//    val links = response.links
-//    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-//    links.invitations shouldBe 'nonEmpty
   }
 
   private def agencyFiltersById(agency: AgencyApi, clientId:MtdClientId): Unit = {
