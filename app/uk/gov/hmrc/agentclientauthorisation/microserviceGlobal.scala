@@ -77,7 +77,6 @@ class MongoDbProvider @Inject() (reactiveMongoComponent: ReactiveMongoComponent)
   def get = reactiveMongoComponent.mongoConnector.db()
 }
 
-// TODO These could probably be replaced with instance bindings.
 @Singleton
 class ControllerConfiguration @Inject() (configuration: Configuration) extends ControllerConfig {
   lazy val controllerConfigs = configuration.underlying.as[Config]("controllers")
