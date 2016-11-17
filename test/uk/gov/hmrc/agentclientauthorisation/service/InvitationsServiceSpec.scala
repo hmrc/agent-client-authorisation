@@ -126,6 +126,33 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
+  "cancelInvitation" should {
+    "update the invitation status" in {
+      whenStatusIsChangedTo(Cancelled) thenReturn testInvitation
+
+      val response = await(service.cancelInvitation(testInvitation))
+
+      response shouldBe true
+    }
+
+    "not cancel a cancelled invitation" in {
+      val response = await(service.cancelInvitation(testInvitationWithStatus(Cancelled)))
+
+      response shouldBe false
+    }
+
+    "not cancel an accepted invitation" in {
+      val response = await(service.cancelInvitation(testInvitationWithStatus(Accepted)))
+
+      response shouldBe false
+    }
+
+    "not cancel an already rejected invitation" in {
+      val response = await(service.cancelInvitation(testInvitationWithStatus(Rejected)))
+
+      response shouldBe false
+    }
+  }
 
   // TODO do we need this?
 //  "list" should {

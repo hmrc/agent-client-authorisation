@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import java.net.URL
 
 import org.joda.time.DateTime
-import org.mockito.Matchers.{eq => eqs}
+import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue}
@@ -127,6 +127,42 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   }
 
+  "cancelInvitation" should {
+    "cancel a pending invitation" in {
+      whenAnInvitationIsCancelled thenReturn (Future successful true)
+      whenFindingAnInvitation thenReturn anInvitation()
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+
+      status(response) shouldBe 204
+    }
+
+    "not cancel an already cancelled invitation" in {
+      whenAnInvitationIsCancelled thenReturn (Future successful false)
+      whenFindingAnInvitation thenReturn anInvitation()
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+
+      status(response) shouldBe 403
+    }
+
+    "return 403 if the invitation belongs to a different agency" in {
+      whenFindingAnInvitation thenReturn anInvitation()
+
+      val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
+
+      status(response) shouldBe 403
+    }
+
+    "return 404 if the invitation doesn't exist" in {
+      whenFindingAnInvitation thenReturn (Future successful None)
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+
+      status(response) shouldBe 404
+    }
+  }
+
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
     (embeddedInvitations(agencyInvitationsSent)(idx) \ "_links" \ "self" \ "href").as[String]
 
@@ -147,4 +183,10 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationId.stringify
     )
 
+  private def anInvitation(status: InvitationStatus = Pending) =
+      Future successful Some(Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, status))))
+
+  private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[String]))
+
+  private def whenAnInvitationIsCancelled = when(invitationsService.cancelInvitation(any[Invitation]))
 }

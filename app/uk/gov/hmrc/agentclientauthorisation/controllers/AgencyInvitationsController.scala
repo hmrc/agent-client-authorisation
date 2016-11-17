@@ -75,8 +75,17 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
-  def cancelInvitation(arn: Arn, invitation: String) = Action.async {
-    Future successful NotImplemented
+  def cancelInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
+    forThisAgency(arn) {
+      invitationsService.findInvitation(invitation) flatMap {
+        case Some(i) if i.arn == arn => invitationsService.cancelInvitation(i) map {
+          case true => NoContent
+          case false => Forbidden
+        }
+        case None => Future successful NotFound
+        case _ => Future successful Forbidden
+      }
+    }
   }
 
   override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations

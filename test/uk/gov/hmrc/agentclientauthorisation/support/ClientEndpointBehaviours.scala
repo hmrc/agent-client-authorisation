@@ -156,5 +156,5 @@ trait ClientEndpointBehaviours {
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 
-  def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any[HeaderCarrier]))
+  def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation]))
 }

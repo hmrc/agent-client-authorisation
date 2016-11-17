@@ -44,7 +44,10 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
     }
   }
 
-  def rejectInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] =
+  def cancelInvitation(invitation: Invitation): Future[Boolean] =
+      changeInvitationStatus(invitation, model.Cancelled)
+
+  def rejectInvitation(invitation: Invitation): Future[Boolean] =
       changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: String): Future[Option[Invitation]] =

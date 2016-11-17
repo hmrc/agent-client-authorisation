@@ -50,18 +50,49 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       clientAcceptsFirstInvitation(client)
 
       Then(s"the Agency filters their sent invitations by status")
-      agencyFiltersByStatus(agency)
+      agencyFiltersByStatus(agency, "accepted")
+    }
+
+    scenario("on cancelled status") {
+      val agency = new AgencyApi(arn, port)
+      val client = new ClientApi(mtdClientId, port)
+      Given("An agent and a client are logged in")
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+
+      When("the Agency sends several invitations to the Client")
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
+
+      Then(s"the Client should see 2 pending invitations from the Agency $arn")
+      clientsViewOfPendingInvitations(client)
+
+      When(s"the agency cancels the invitation")
+      agencyCancelsInvitation(agency)
+
+      Then(s"the Agency filters their sent invitations by status")
+      agencyFiltersByStatus(agency, "cancelled")
     }
   }
 
+  private def agencyCancelsInvitation(agency: AgencyApi) = {
+    val invitations = agency.sentInvitations()
+    agency.cancelInvitation(invitations.firstInvitation)
+    val refetchedInvitations = agency.sentInvitations()
+    refetchedInvitations.firstInvitation.status shouldBe "Cancelled"
+    refetchedInvitations.secondInvitation.status shouldBe "Pending"
+  }
 
-  private def agencyFiltersByStatus(agency: AgencyApi): Unit = {
+
+  private def agencyFiltersByStatus(agency: AgencyApi, status: String): Unit = {
     val pendingFiltered = agency.sentInvitations(filteredBy = Seq("status" -> "pending"))
     pendingFiltered.numberOfInvitations shouldBe 1
     pendingFiltered.firstInvitation.status shouldBe "Pending"
 
-    val acceptedFiltered = agency.sentInvitations(filteredBy = Seq("status" -> "accepted"))
+    val acceptedFiltered = agency.sentInvitations(filteredBy = Seq("status" -> status))
     acceptedFiltered.numberOfInvitations shouldBe 1
-    acceptedFiltered.firstInvitation.status shouldBe "Accepted"
+    acceptedFiltered.firstInvitation.status.toLowerCase shouldBe status
   }
 }

@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import play.mvc.Http.HeaderNames._
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
+import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
+import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
@@ -46,6 +47,14 @@ class AgencyApi(val arn: Arn, port: Int) {
     val response: HttpResponse = new Resource(invitationsUrl+params, port).get()(hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
+  }
+
+  def cancelInvitation(invitation: EmbeddedInvitation): HttpResponse = {
+    invitation.links.cancelLink.map { cancelLink =>
+      val response: HttpResponse = new Resource(cancelLink, port).putEmpty()(hc)
+      require(response.status == 204, s"response for canceling invitation should be 204, was [${response.status}]")
+      response
+    } .getOrElse (throw new IllegalStateException("Can't cancel this invitation the cancel link is not defined"))
   }
 
   def withFilterParams(filteredBy: Seq[(String, String)]): String = {
