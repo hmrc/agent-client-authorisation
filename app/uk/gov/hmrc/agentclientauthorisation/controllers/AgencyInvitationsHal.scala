@@ -29,19 +29,23 @@ trait AgencyInvitationsHal {
   protected def agencyLink(invitation: Invitation): Option[String]
 
   def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
-    val invitationResources = invitations.map(toHalResource(_, arn)).toVector
+    val invitationResources = invitations.map(toHalResource(_)).toVector
 
     val selfLink = Vector(HalLink("self", reverseRoutes.getSentInvitations(arn, regime, clientId, status).url))
-    Hal.hal(Json.obj(), selfLink, Vector("invitations" -> invitationResources))
+    Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 
-  def toHalResource(invitation: Invitation, arn: Arn): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", reverseRoutes.getSentInvitation(arn, invitation.id.stringify).url)))
+  private def invitationLinks(invitations: List[Invitation]): Vector[HalLink] = {
+    invitations.map { i => HalLink("invitation", reverseRoutes.getSentInvitation(i.arn, i.id.stringify).toString())}.toVector
+  }
+
+  def toHalResource(invitation: Invitation): HalResource = {
+    var links = HalLinks(Vector(HalLink("self", reverseRoutes.getSentInvitation(invitation.arn, invitation.id.stringify).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
-      links = links ++ HalLink("cancel", reverseRoutes.cancelInvitation(arn, invitation.id.stringify).url)
+      links = links ++ HalLink("cancel", reverseRoutes.cancelInvitation(invitation.arn, invitation.id.stringify).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }

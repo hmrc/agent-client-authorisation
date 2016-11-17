@@ -61,7 +61,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
   def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
       invitationsService.findInvitation(invitation).map {
-        case Some(r) => Ok(toHalResource(r, arn))
+        case Some(r) => Ok(toHalResource(r))
         case None => NotFound
       }
     }

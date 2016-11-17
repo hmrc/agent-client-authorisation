@@ -28,23 +28,27 @@ trait ClientInvitationsHal {
 
   protected def agencyLink(invitation: Invitation): Option[String]
 
-  def toHalResource(invitation: Invitation, clientId: String): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", reverseRoutes.getInvitation(clientId, invitation.id.stringify).url)))
+  def toHalResource(invitation: Invitation): HalResource = {
+    var links = HalLinks(Vector(HalLink("self", reverseRoutes.getInvitation(invitation.clientId, invitation.id.stringify).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
-      links = links ++ HalLink("accept", reverseRoutes.acceptInvitation(clientId, invitation.id.stringify).url)
-      links = links ++ HalLink("reject", reverseRoutes.rejectInvitation(clientId, invitation.id.stringify).url)
+      links = links ++ HalLink("accept", reverseRoutes.acceptInvitation(invitation.clientId, invitation.id.stringify).url)
+      links = links ++ HalLink("reject", reverseRoutes.rejectInvitation(invitation.clientId, invitation.id.stringify).url)
     }
 
     HalResource(links, toJson(invitation).as[JsObject])
   }
 
-  def toHalResource(invitations: Seq[Invitation], clientId: String, status: Option[InvitationStatus]): HalResource = {
-    val requestResources: Vector[HalResource] = invitations.map(invitation => toHalResource(invitation, clientId)).toVector
+  private def invitationLinks(invitations: Seq[Invitation]): Vector[HalLink] = {
+    invitations.map { i => HalLink("invitation", reverseRoutes.getInvitation(i.clientId, i.id.stringify).toString())}.toVector
+  }
 
-    val links = Vector(HalLink("self", reverseRoutes.getInvitations(clientId, status).url))
+  def toHalResource(invitations: Seq[Invitation], clientId: String, status: Option[InvitationStatus]): HalResource = {
+    val requestResources: Vector[HalResource] = invitations.map(invitation => toHalResource(invitation)).toVector
+
+    val links = Vector(HalLink("self", reverseRoutes.getInvitations(clientId, status).url)) ++ invitationLinks(invitations)
     Hal.hal(Json.obj(), links, Vector("invitations"-> requestResources))
   }
 

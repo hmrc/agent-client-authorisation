@@ -49,6 +49,12 @@ trait ScenarioHelpers {
       invitation.regime shouldBe expected._2
       invitation.status shouldBe "Pending"
     }
+
+    val links = response.links
+    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+    links.invitations shouldBe 'nonEmpty
+    links.invitations.head shouldBe response.firstInvitation.links.selfLink
+    links.invitations(1) shouldBe response.secondInvitation.links.selfLink
   }
 
   def clientsViewOfPendingInvitations(client: ClientApi): Unit = {
@@ -72,6 +78,11 @@ trait ScenarioHelpers {
     i2.clientId shouldBe mtdClientId
     i2.regime shouldBe MtdSaRegime
     i2.status shouldBe "Pending"
+    val links = clientResponse.links
+    links.selfLink shouldBe s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received"
+    links.invitations shouldBe 'nonEmpty
+    links.invitations.head shouldBe i1.links.selfLink
+    links.invitations(1) shouldBe i2.links.selfLink
   }
 
   def clientAcceptsFirstInvitation(client: ClientApi): Unit = {

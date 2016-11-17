@@ -74,12 +74,14 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val selfLinkHref = (response.json \ "_links" \ "self" \ "href").as[String]
+      val invitationLinks = (response.json \ "_links" \ "invitation" \\ "href").map(_.as[String])
 
       invitations.size shouldBe 2
-      checkInvitation(invitations.head, testStartTime) 
-      checkInvitation(invitations(1), testStartTime) 
-      selfLinkHref shouldBe getInvitationsUrl
+      checkInvitation(invitations.head, testStartTime)
+      checkInvitation(invitations(1), testStartTime)
+      invitations.map(selfLink) shouldBe invitationLinks
+
+      selfLink(response.json) shouldBe getInvitationsUrl
     }
   }
 
@@ -93,14 +95,14 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       val response = responseForGetInvitation()
 
       response.status shouldBe 200
-      checkInvitation(response.json, testStartTime) 
+      checkInvitation(response.json, testStartTime)
     }
   }
   
   private def checkInvitation(invitation: JsValue, testStartTime: Long): Unit = {
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    val selfHref = (invitation \ "_links" \ "self" \ "href").as[String]
+    val selfHref = selfLink(invitation)
     selfHref should startWith(s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent")
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
@@ -110,6 +112,10 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
+  }
+
+  def selfLink(obj: JsValue): String = {
+    (obj \ "_links" \ "self" \ "href").as[String]
   }
 
   def responseForGetInvitation(): HttpResponse = {

@@ -45,7 +45,7 @@ class SandboxAgencyInvitationsController @Inject() (
   }
 
   def getSentInvitation(arn: Arn, invitationId: String) = onlyForSaAgents { implicit request =>
-    Ok(toHalResource(invitation(arn), arn))
+    Ok(toHalResource(invitation(arn)))
   }
 
   def cancelInvitation(arn: Arn, invitation: String) = onlyForSaAgents { implicit request =>
