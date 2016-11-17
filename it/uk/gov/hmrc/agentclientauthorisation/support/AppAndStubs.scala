@@ -21,6 +21,7 @@ import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
 import uk.gov.hmrc.mongo.{Awaiting => MongoAwaiting, MongoSpecSupport}
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext
 
@@ -28,6 +29,8 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
   me: Suite =>
 
   implicit val hc = HeaderCarrier()
+
+  override lazy val port: Int = Port.randomAvailable
 
   override implicit lazy val app: FakeApplication = FakeApplication(
     additionalConfiguration = additionalConfiguration
