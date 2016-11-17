@@ -29,7 +29,7 @@ private object AppDependencies {
   private val playReactivemongoVersion = "5.1.0"
   private val playHalVersion = "1.1.0"
   private val playHmrcApiVersion = "1.2.0"
-  private val playWhitelistVersion = "1.1.0"
+  private val playWhitelistVersion = "2.0.0"
 
   val compile = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion,

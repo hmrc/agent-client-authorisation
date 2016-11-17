@@ -35,7 +35,6 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
 
 
   "A service endpoint" should {
-    pending
     "respond with NOT_IMPLEMENTED if whitelist is enabled and there is no IP address in header" in {
       givenLoggedInAgentIsAuthorised()
 

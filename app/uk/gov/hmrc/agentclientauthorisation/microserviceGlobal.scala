@@ -27,7 +27,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.MDC
 import play.api._
-import play.api.http.DefaultHttpFilters
+import play.api.http.HttpFilters
 import play.api.mvc._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
@@ -108,6 +108,8 @@ class MicroserviceAuthFilter @Inject() (
 @Singleton
 class WhitelistFilter @Inject() (configuration: Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
 
+  def enabled(): Boolean = configuration.getBoolean("microservice.whitelist.enabled").getOrElse(true)
+
   override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
   override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")
   override val excludedPaths: Seq[Call] = Seq(
@@ -120,17 +122,29 @@ class WhitelistFilter @Inject() (configuration: Configuration) extends AkamaiWhi
   private def whitelistConfig(key: String): Seq[String] =
     new String(Base64.getDecoder.decode(configuration.getString(key).getOrElse("")), "UTF-8").split(",")
 }
-// TODO re-add whitelist filter once there is a 2.5 compatible version
+
 class Filters @Inject() (
+  whitelistFilter: WhitelistFilter,
   metricsFilter: MetricsFilter,
   auditFilter: MicroserviceAuditFilter,
   loggingFilter: MicroserviceLoggingFilter,
   authFilter: MicroserviceAuthFilter
-) extends DefaultHttpFilters (
-  metricsFilter,
-  auditFilter,
-  loggingFilter,
-  authFilter)
+) extends HttpFilters {
+
+  private lazy val whitelistFilterSeq = if (whitelistFilter.enabled()) {
+    Logger.info("Starting microservice with IP whitelist enabled")
+    Seq(whitelistFilter)
+  } else {
+    Logger.info("Starting microservice with IP whitelist disabled")
+    Seq.empty
+  }
+
+  override def filters = whitelistFilterSeq ++ Seq(
+    metricsFilter,
+    auditFilter,
+    loggingFilter,
+    authFilter)
+}
 
 object MicroserviceGlobal
   extends GlobalSettings
