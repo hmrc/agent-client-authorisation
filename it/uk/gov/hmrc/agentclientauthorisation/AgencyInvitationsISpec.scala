@@ -93,7 +93,6 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe getInvitationsByRegimeUrl("mtd-other")
     }
 
-    "return only invitations with the specified status" is pending
   }
 
   "POST /agencies/:arn/invitations" should {
@@ -218,6 +217,21 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     }
   }
 
+  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCancelInvitation())
+
+    "should return 204 when invitation is Cancelled" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      val clientId = "1234567899"
+      val location = responseForCreateInvitation(s"""{"regime": "$REGIME", "clientId": "$clientId", "postcode": "AA1 1AA"}""").header("location")
+
+      val response = responseForCancelInvitation(location.get)
+
+      response.status shouldBe 204
+
+    }
+
+  }
 
   private def checkInvitation(client2Id: String, invitation: JsValue, testStartTime: Long): String = {
     implicit val dateReads = RestFormats.dateTimeRead
@@ -295,6 +309,10 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   private def responseForGetInvitations(): HttpResponse = {
     new Resource(invitationsUrl, port).get()
+  }
+
+  private def responseForCancelInvitation(invitation: String = getInvitationUrl + "none"): HttpResponse = {
+    new Resource(invitation + "/cancel", port).putEmpty()
   }
 
   private def responseForGetInvitationsByRegime(regime: String): HttpResponse = {
