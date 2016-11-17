@@ -49,11 +49,11 @@
 
     <logger name="application" level="DEBUG"/>
 
-    <logger name="connector" level="TRACE">
+    <logger name="connector" level="INFO">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
     </root>
