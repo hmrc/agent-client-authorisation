@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import javax.inject._
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -25,8 +26,8 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpPut, HttpResponse}
 
 import scala.concurrent.Future
 
-class RelationshipsConnector(baseUrl: URL, httpPut: HttpPut) {
-
+@Singleton
+class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL, httpPut: HttpPut) {
 
   def createRelationship(arn: Arn, mtdClientId: MtdClientId)(implicit hc: HeaderCarrier): Future[Unit] = {
     httpPut.PUT[String, HttpResponse](relationshipUrl(arn, mtdClientId).toString, "") map (_ => Unit)

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import javax.inject._
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -41,7 +42,8 @@ object Client {
   implicit val jsonFormats = Json.format[Client]
 }
 
-class AgenciesFakeConnector(baseUrl: URL, httpGet: HttpGet) {
+@Singleton
+class AgenciesFakeConnector @Inject() (@Named("agencies-fake-baseUrl") baseUrl: URL, httpGet: HttpGet) {
 
   def findArn(agentCode: AgentCode)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
     httpGet.GET[Option[Agency]](new URL(baseUrl, s"/agencies-fake/agencies/agentcode/${encodePathSegment(agentCode.value)}").toString)

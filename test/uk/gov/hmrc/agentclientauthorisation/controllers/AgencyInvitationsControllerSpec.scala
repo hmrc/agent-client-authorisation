@@ -23,21 +23,17 @@ import org.mockito.Matchers.{eq => eqs}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue}
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
-import uk.gov.hmrc.agentclientauthorisation.support.{AuthMocking, ResettingMockitoSugar}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
 
 import scala.concurrent.Future
 
-class AgencyInvitationsControllerSpec extends UnitSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
+class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
 
   val postcodeService = resettingMock[PostcodeService]
   val invitationsService = resettingMock[InvitationsService]

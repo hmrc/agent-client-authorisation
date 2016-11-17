@@ -28,13 +28,12 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.Accounts
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.ClientEndpointBehaviours
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours}
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
+class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
   val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
@@ -75,7 +74,7 @@ class ClientInvitationsControllerSpec extends UnitSpec with MockitoSugar with Be
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
 
-      (jsonBodyOf(result) \ "_embedded" \ "invitations") shouldBe JsArray()
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
     "include the agency URL in invitations" in {

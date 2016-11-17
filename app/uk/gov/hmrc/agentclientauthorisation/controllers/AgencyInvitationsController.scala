@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import javax.inject._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, Result}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
@@ -26,10 +27,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 
-class AgencyInvitationsController(override val postcodeService:PostcodeService,
-                                  invitationsService: InvitationsService,
-                                  override val authConnector: AuthConnector,
-                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
+@Singleton
+class AgencyInvitationsController @Inject()(override val postcodeService:PostcodeService,
+                                            invitationsService: InvitationsService,
+                                            override val authConnector: AuthConnector,
+                                            override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>

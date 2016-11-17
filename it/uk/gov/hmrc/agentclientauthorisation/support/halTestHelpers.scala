@@ -17,19 +17,16 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, JsObject, JsValue}
+import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 
-import scala.util.Try
-
 object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)
 
   class HalResourceHelper(json: JsValue) {
-    def underlying: JsValue = json
     def embedded: EmbeddedSection = new EmbeddedSection(json \ "_embedded")
     def links: LinkSection = new LinkSection(json \ "_links")
     def numberOfInvitations = embedded.invitations.size
@@ -44,15 +41,14 @@ object EmbeddedSection {
   case class EmbeddedInvitation(links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: MtdClientId, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
-class EmbeddedSection(embedded: JsValue) {
+class EmbeddedSection(embedded: JsLookupResult) {
 
-  def underlying: JsValue = embedded
   def isEmpty: Boolean = invitations isEmpty
 
   lazy val invitations: Seq[EmbeddedInvitation] = getInvitations.value.map(asInvitation)
 
   private def getInvitations: JsArray = {
-    embedded \ "invitations" match {
+    (embedded \ "invitations").get match {
       case array: JsArray => array
       case obj: JsObject => JsArray(Seq(obj))
     }
@@ -62,9 +58,9 @@ class EmbeddedSection(embedded: JsValue) {
 
     implicit val dateReads = RestFormats.dateTimeRead
 
-    def find(path: JsValue) = Try(path.as[String]) toOption
-    def getString(path: JsValue) = path.as[String]
-    def getDateTime(path: JsValue) = path.as[DateTime]
+    def find(path: JsLookupResult) = path.asOpt[String]
+    def getString(path: JsLookupResult) = path.as[String]
+    def getDateTime(path: JsLookupResult) = path.as[DateTime]
 
     EmbeddedInvitation(
       EmbeddedInvitationLinks(
@@ -84,9 +80,7 @@ class EmbeddedSection(embedded: JsValue) {
   }
 }
 
-class LinkSection(links: JsValue) {
-
-  def underlying: JsValue = links
+class LinkSection(links: JsLookupResult) {
 
   def selfLink: String = (links \ "self" \ "href").as[String]
 

@@ -30,7 +30,6 @@ class NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
   private val mtdClientId: MtdClientId = FakeMtdClientId.random()
 
   "Before the Agency has sent any invitations" in {
-
     val agency = new AgencyApi(arn, port)
     val client = new ClientApi(mtdClientId, port)
 

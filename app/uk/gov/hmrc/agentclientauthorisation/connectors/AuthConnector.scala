@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import javax.inject._
 
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.{AgentCode, SaUtr}
@@ -27,7 +28,8 @@ import scala.language.postfixOps
 
 case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
 
-class AuthConnector(baseUrl: URL, httpGet: HttpGet) {
+@Singleton
+class AuthConnector @Inject() (@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet) {
 
   def currentAccounts()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Accounts] =
     currentAuthority() map authorityAsAccounts

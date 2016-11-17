@@ -15,20 +15,20 @@ object MicroServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.PlayImport._
+  import play.sbt.PlayImport._
   import play.core.PlayVersion
 
-  private val microserviceBootstrapVersion = "4.2.1"
-  private val playAuthVersion = "3.1.0"
-  private val playHealthVersion = "1.1.0"
-  private val playJsonLoggerVersion = "2.1.1"  
-  private val playUrlBindersVersion = "1.0.0"
-  private val playConfigVersion = "2.0.1"
-  private val domainVersion = "3.7.0"
-  private val hmrcTestVersion = "1.6.0"
-  private val playReactivemongoVersion = "4.8.0"
-  private val playHalVersion = "0.3.0"
-  private val playHmrcApiVersion = "0.6.0"
+  private val microserviceBootstrapVersion = "5.8.0"
+  private val playAuthVersion = "4.2.0"
+  private val playHealthVersion = "2.0.0"
+  private val playJsonLoggerVersion = "3.0.0"  
+  private val playUrlBindersVersion = "2.0.0"
+  private val playConfigVersion = "3.0.0"
+  private val domainVersion = "4.0.0"
+  private val hmrcTestVersion = "2.1.0"
+  private val playReactivemongoVersion = "5.1.0"
+  private val playHalVersion = "1.1.0"
+  private val playHmrcApiVersion = "1.2.0"
   private val playWhitelistVersion = "1.1.0"
 
   val compile = Seq(
@@ -57,8 +57,9 @@ private object AppDependencies {
       override lazy val test = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % "2.2.6" % scope,
-        "org.pegdown" % "pegdown" % "1.5.0" % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+        "org.pegdown" % "pegdown" % "1.6.0" % scope,
+        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "org.mockito" % "mockito-core" % "1.9.0" % scope
       )
     }.test
   }
@@ -71,7 +72,7 @@ private object AppDependencies {
       override lazy val test = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % "2.2.6" % scope,
-        "org.scalatestplus" %% "play" % "1.2.0" % scope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,

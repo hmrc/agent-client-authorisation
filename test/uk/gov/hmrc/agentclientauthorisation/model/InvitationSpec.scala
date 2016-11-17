@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.joda.time.DateTime
-import play.api.libs.json.{Json, JsString}
+import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.test.UnitSpec
 
 class InvitationSpec extends UnitSpec {
@@ -38,8 +37,8 @@ class InvitationSpec extends UnitSpec {
 
       val json = Json.toJson(invitation)
 
-      json \ "created" shouldBe JsString(created)
-      json \ "lastUpdated" shouldBe JsString(lastUpdated)
+      (json \ "created").as[String] shouldBe created
+      (json \ "lastUpdated").as[String] shouldBe lastUpdated
     }
   }
 }

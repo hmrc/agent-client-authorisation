@@ -69,8 +69,8 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       response.status shouldBe 200
       val invitation = invitations(response.json)
       invitation.value.size shouldBe 1
-      invitation.value.head \ "clientId" shouldBe JsString(clientId)
-      response.json \ "_links" \ "self" \ "href" shouldBe JsString(getInvitationsByClientUrl(clientId))
+      (invitation.value.head \ "clientId").as[String] shouldBe clientId
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe getInvitationsByClientUrl(clientId)
     }
 
     "return only invitations for the specified regime" in {
@@ -89,8 +89,8 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       response.status shouldBe 200
       val invitation = invitations(response.json)
       invitation.value.size shouldBe 1
-      invitation.value.head \ "regime" shouldBe JsString("mtd-other")
-      response.json \ "_links" \ "self" \ "href" shouldBe JsString(getInvitationsByRegimeUrl("mtd-other"))
+      (invitation.value.head \ "regime").as[String] shouldBe "mtd-other"
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe getInvitationsByRegimeUrl("mtd-other")
     }
 
     "return only invitations with the specified status" is pending
@@ -226,10 +226,10 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     selfLinkHref should startWith(s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/")
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfLinkHref/cancel"
     (invitation \ "_links" \ "agency" \ "href").as[String] shouldBe s"http://localhost:$wiremockPort/agencies-fake/agencies/${arn.arn}"
-    (invitation \ "arn") shouldBe JsString(arn.arn)
-    (invitation \ "regime") shouldBe JsString(REGIME)
-    (invitation \ "clientId") shouldBe JsString(client2Id)
-    (invitation \ "status") shouldBe JsString("Pending")
+    (invitation \ "arn").as[String] shouldBe arn.arn
+    (invitation \ "regime").as[String] shouldBe REGIME
+    (invitation \ "clientId").as[String] shouldBe client2Id
+    (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
     selfLinkHref
@@ -286,7 +286,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   }
 
   private def invitations(response: JsValue) = {
-    val embedded = response \ "_embedded" \ "invitations"
+    val embedded = (response \ "_embedded" \ "invitations").get
     embedded match {
       case array: JsArray => array
       case obj: JsObject => JsArray(Seq(obj))

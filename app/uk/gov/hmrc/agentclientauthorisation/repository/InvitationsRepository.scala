@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import javax.inject._
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
@@ -30,22 +31,10 @@ import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait InvitationsRepository extends Repository[Invitation, BSONObjectID] {
-
-  def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation]
-
-  def update(id:BSONObjectID, status:InvitationStatus): Future[Invitation]
-
-  def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]]
-
-  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]]
-
-  def findRegimeID(clientId: String): Future[List[Invitation]]
-}
-
-class InvitationsMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
-    with InvitationsRepository with AtomicUpdate[Invitation] {
+@Singleton
+class InvitationsRepository @Inject() (mongo: DB)
+extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
+    with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
@@ -53,7 +42,7 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     Index(Seq("regime" -> IndexType.Ascending))
   )
 
-  override def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
@@ -78,7 +67,7 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     find(searchOptions: _*)
   }*/
 
-  override def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.arn),
                             "clientId" -> clientId,
                             "regime" -> regime,
@@ -90,7 +79,7 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     find(searchOptions: _*)
   }
 
-  override def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "regime" -> Some(regime),
       "clientId" -> Some(clientId),
@@ -106,11 +95,11 @@ class InvitationsMongoRepository(implicit mongo: () => DB)
     "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'")
   }
 
-  override def findRegimeID(clientId: String): Future[List[Invitation]] =
+  def findRegimeID(clientId: String): Future[List[Invitation]] =
     find()
 
 
-  override def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
+  def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
     update.map(_.map(_.updateType.savedValue).get)
   }

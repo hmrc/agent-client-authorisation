@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.controllers
+package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import javax.inject._
-import play.api.mvc.Action
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import javax.inject.{Inject, Singleton}
+
+import play.api.http.HttpErrorHandler
 
 @Singleton
-class WhitelistController @Inject() extends BaseController {
-
-  val forbidden = Action {
-    Forbidden
-  }
-
-}
+class DocumentationController @Inject() (errorHandler: HttpErrorHandler)
+  extends uk.gov.hmrc.api.controllers.DocumentationController(errorHandler = errorHandler)
