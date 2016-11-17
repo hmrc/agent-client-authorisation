@@ -21,7 +21,6 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
 class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -39,7 +38,10 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends several invitations to the Client")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       clientsViewOfPendingInvitations(client)

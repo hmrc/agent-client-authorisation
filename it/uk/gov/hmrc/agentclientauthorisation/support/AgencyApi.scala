@@ -19,17 +19,18 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import play.mvc.Http.HeaderNames._
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
+import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
 
-class AgencyApi(arn: Arn, port: Int) {
+class AgencyApi(val arn: Arn, port: Int) {
 
   private val invitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
   private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
 
-  def sendInvitation(clientId: MtdClientId, regime: String = "mtd-sa", postcode:String = "AA1 1AA"): String = {
+  def sendInvitation(clientId: MtdClientId, regime: Regime = Regime("mtd-sa"), postcode:String = "AA1 1AA"): String = {
 
     val response = new Resource(invitationsUrl, port).postAsJson(
       s"""{"regime": "$regime", "clientId": "${clientId.value}", "postcode": "$postcode"}"""

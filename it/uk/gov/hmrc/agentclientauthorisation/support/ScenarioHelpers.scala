@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest._
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
 trait ScenarioHelpers {
@@ -25,32 +26,29 @@ trait ScenarioHelpers {
 
   def mtdClientId: MtdClientId
   def arn: Arn
-  val MtdSaRegime: String = "mtd-sa"
+  val MtdSaRegime: Regime = Regime("mtd-sa")
 
-  def agencySendsSeveralInvitations(agency: AgencyApi, regime: String): Unit = {
-    val location1 = agency sendInvitation(mtdClientId, regime = regime)
-    val location2 = agency sendInvitation(mtdClientId, regime = regime)
+  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(MtdClientId, Regime), secondClient:(MtdClientId, Regime)): Unit = {
+
+    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1, regime = i._2))
+
+    val location1 = locations.head
+    val location2 = locations(1)
     location1 should not(be(location2))
 
     info(s"the Agency should see 2 pending invitations to Client $mtdClientId")
     val response = agency.sentInvitations()
     response.numberOfInvitations shouldBe 2
 
-    val i1 = response.firstInvitation
-    i1.arn shouldBe arn
-    i1.clientId shouldBe mtdClientId
-    i1.regime shouldBe Regime(regime)
-    i1.status shouldBe "Pending"
+    checkInvite(response.firstInvitation)(firstClient)
+    checkInvite(response.secondInvitation)(secondClient)
 
-    val i2 = response.secondInvitation
-    i2.arn shouldBe arn
-    i2.clientId shouldBe mtdClientId
-    i2.regime shouldBe Regime(regime)
-    i2.status shouldBe "Pending"
-    // TODO: This can only be implemented after the Play 2.5 upgrade 
-//    val links = response.links
-//    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-//    links.invitations shouldBe 'nonEmpty
+    def checkInvite(invitation: EmbeddedInvitation)(expected:(MtdClientId, Regime)): Unit = {
+      invitation.arn shouldBe arn
+      invitation.clientId shouldBe expected._1
+      invitation.regime shouldBe expected._2
+      invitation.status shouldBe "Pending"
+    }
   }
 
   def clientsViewOfPendingInvitations(client: ClientApi): Unit = {
@@ -59,7 +57,7 @@ trait ScenarioHelpers {
     val i1 = clientResponse.firstInvitation
     i1.arn shouldBe arn
     i1.clientId shouldBe mtdClientId
-    i1.regime shouldBe Regime(MtdSaRegime)
+    i1.regime shouldBe MtdSaRegime
     i1.status shouldBe "Pending"
 
     val selfLink = i1.links.selfLink
@@ -72,7 +70,7 @@ trait ScenarioHelpers {
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn
     i2.clientId shouldBe mtdClientId
-    i2.regime shouldBe Regime(MtdSaRegime)
+    i2.regime shouldBe MtdSaRegime
     i2.status shouldBe "Pending"
   }
 

@@ -24,10 +24,11 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
 import views.html.helper._
 
-class ClientApi(clientId: MtdClientId, port: Int) extends Eventually {
+class ClientApi(val clientId: MtdClientId, port: Int) extends Eventually {
 
   private val getClientInvitationUrl = s"/agent-client-authorisation/clients/${urlEncode(clientId.value)}/invitations/received"
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
+
 
   def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse = {
     invitation.links.acceptLink.map { acceptLink =>

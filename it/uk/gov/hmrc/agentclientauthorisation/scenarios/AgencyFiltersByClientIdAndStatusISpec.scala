@@ -40,7 +40,10 @@ class AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHel
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
 
       When("An agent sends invitations to Client 1")
-      agencySendsSeveralInvitations(agency, MtdSaRegime)
+      agencySendsSeveralInvitations(agency)(
+        (mtdClientId, MtdSaRegime),
+        (mtdClientId, MtdSaRegime)
+      )
 
       And("Sends an invitations to Client 2")
       agency sendInvitation(mtdClientId2, MtdSaRegime)
