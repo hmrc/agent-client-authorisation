@@ -9,7 +9,7 @@ This code is open source software licensed under the [Apache 2.0 License]("http:
 
 ### API docs
 
-[RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.95a/application.raml)
+[RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.0/application_disabled.raml)
 
 ### Running the tests
 

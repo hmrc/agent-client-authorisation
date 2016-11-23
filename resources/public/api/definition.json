@@ -22,7 +22,7 @@
     "description": "Manages invitations from agents to clients to act on their behalf",
     "context": "agent-client-authorisation",
     "versions": [{
-      "version": "0.95a",
+      "version": "0.0",
       "status": "PROTOTYPED",
       "endpoints": [{
         "uriPattern": "/agencies/{id}/invitations/sent",
