@@ -18,7 +18,6 @@ lib
 lib_managed
 log
 logs
-modules
 /out
 precompiled
 /.project
