@@ -20,44 +20,26 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
-import views.html.helper._
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
-class ClientApi(val clientId: MtdClientId, port: Int) extends Eventually {
+class ClientApi(val clientId: MtdClientId, implicit val port: Int) extends Eventually with APIRequests {
 
-  private val getClientInvitationUrl = s"/agent-client-authorisation/clients/${urlEncode(clientId.value)}/invitations/received"
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
 
-
   def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.acceptLink.map { acceptLink =>
-      val response: HttpResponse = new Resource(acceptLink, port).putEmpty()(hc)
-      require(response.status == 204, s"response for accepting invitation should be 204, was [${response.status}]")
-      response
-    } .getOrElse (throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
+    invitation.links.acceptLink.map (updateInvitationStatus)
+      .getOrElse (throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
   }
 
   def rejectInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.rejectLink.map { rejectLink =>
-      val response: HttpResponse = new Resource(rejectLink, port).putEmpty()(hc)
-      require(response.status == 204, s"response for rejecting invitation should be 204, was [${response.status}]")
-      response
-    } .getOrElse (throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
+    invitation.links.rejectLink.map(updateInvitationStatus)
+      .getOrElse (throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
   }
 
   def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
-    val params = withFilterParams(filteredBy)
-    val response: HttpResponse = new Resource(getClientInvitationUrl+params, port).get()(hc)
+    val response = clientGetReceivedInvitations(filteredBy, clientId)(port, hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
-  }
-
-  def withFilterParams(filteredBy: Seq[(String, String)]): String = {
-    filteredBy match {
-      case Nil => ""
-      case (k, v) :: Nil => s"?$k=$v"
-      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
-    }
   }
 }

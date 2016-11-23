@@ -17,12 +17,14 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest._
+import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-trait ScenarioHelpers {
-  me : FeatureSpec with Matchers =>
+trait ScenarioHelpers extends APIRequests with Matchers with Eventually {
+
+  self : FeatureSpec =>
 
   def mtdClientId: MtdClientId
   def arn: Arn
@@ -92,5 +94,4 @@ trait ScenarioHelpers {
     refetchedInvitations.firstInvitation.status shouldBe "Accepted"
     refetchedInvitations.secondInvitation.status shouldBe "Pending"
   }
-
 }

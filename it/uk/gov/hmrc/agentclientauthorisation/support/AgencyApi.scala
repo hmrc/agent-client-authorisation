@@ -24,44 +24,30 @@ import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
 
-class AgencyApi(val arn: Arn, port: Int) {
-
-  private val invitationsUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
-  private val getInvitationUrl = s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent/"
+class AgencyApi(val arn: Arn, implicit val port: Int) extends APIRequests {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
 
   def sendInvitation(clientId: MtdClientId, regime: Regime = Regime("mtd-sa"), postcode:String = "AA1 1AA"): String = {
 
-    val response = new Resource(invitationsUrl, port).postAsJson(
-      s"""{"regime": "$regime", "clientId": "${clientId.value}", "postcode": "$postcode"}"""
-    )(hc)
-
-    require(response.status == 201, s"creating an invitation should return 201, was [${response.status}]")
+    val response = agencyPostInvitationRequest(arn, AgencyInvitationRequest(regime, clientId, postcode))
+    require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
     response.header(LOCATION).get
   }
 
   def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
 
-    val params = withFilterParams(filteredBy)
-    val response: HttpResponse = new Resource(invitationsUrl+params, port).get()(hc)
+    val response = agencyGetSentInvitationsRequest(arn, filteredBy)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }
 
   def cancelInvitation(invitation: EmbeddedInvitation): HttpResponse = {
+
     invitation.links.cancelLink.map { cancelLink =>
       val response: HttpResponse = new Resource(cancelLink, port).putEmpty()(hc)
       require(response.status == 204, s"response for canceling invitation should be 204, was [${response.status}]")
       response
     } .getOrElse (throw new IllegalStateException("Can't cancel this invitation the cancel link is not defined"))
-  }
-
-  def withFilterParams(filteredBy: Seq[(String, String)]): String = {
-    filteredBy match {
-      case Nil => ""
-      case (k, v) :: Nil => s"?$k=$v"
-      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
-    }
   }
 }
