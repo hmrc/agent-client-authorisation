@@ -57,10 +57,15 @@ trait ApiTestSupport {
      (api \ "version").as[String] -> getEndpoints(api)
 
   def ramlByVersion(api: JsValue) : (String, String) = {
-    val apiVersion: String = (api \ "version").as[String]
-    val response: HttpResponse = new Resource(s"$ramlPath/$apiVersion/application.raml", runningPort).get()
+    val (apiVersion: String, response: HttpResponse) = ramlResponseByVersion(api)
     require(response.status == 200)
     apiVersion -> response.body
+  }
+
+  def ramlResponseByVersion(api: JsValue): (String, HttpResponse) = {
+    val apiVersion: String = (api \ "version").as[String]
+    val response: HttpResponse = new Resource(s"$ramlPath/$apiVersion/application.raml", runningPort).get()
+    apiVersion -> response
   }
 
   private def getEndpoints(api: JsValue) = {
