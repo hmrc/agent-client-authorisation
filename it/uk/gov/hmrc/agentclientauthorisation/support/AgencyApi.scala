@@ -30,14 +30,21 @@ class AgencyApi(val arn: Arn, implicit val port: Int) extends APIRequests {
 
   def sendInvitation(clientId: MtdClientId, regime: Regime = Regime("mtd-sa"), postcode:String = "AA1 1AA"): String = {
 
-    val response = agencyPostInvitationRequest(arn, AgencyInvitationRequest(regime, clientId, postcode))
+    val response = agencySendInvitation(arn, AgencyInvitationRequest(regime, clientId, postcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
     response.header(LOCATION).get
   }
 
   def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
 
-    val response = agencyGetSentInvitationsRequest(arn, filteredBy)
+    val response = agencyGetSentInvitations(arn, filteredBy)
+    require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
+    HalTestHelpers(response.json)
+  }
+
+  def sentInvitation(invitationId:String): HalResourceHelper = {
+
+    val response = agencyGetSentInvitation(arn, invitationId)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }

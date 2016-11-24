@@ -16,119 +16,94 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import java.net.URI
-
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.JsValue
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.support.{FakeMtdClientId, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
+import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
-import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside {
-  private val REGIME = "mtd-sa"
+class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
+
+  private val MtdRegime = Regime("mtd-sa")
   private implicit val arn = Arn("ABCDEF12345678")
   private val mtdClientId = FakeMtdClientId.random()
-  private val getInvitationUrl = s"/agent-client-authorisation/sandbox/clients/${mtdClientId.value}/invitations/received/"
-  private val getInvitationsUrl = s"/agent-client-authorisation/sandbox/clients/${mtdClientId.value}/invitations/received"
+
+  override def sandboxMode: Boolean = true
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForAcceptInvitation())
+
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientAcceptInvitation(mtdClientId, "none"))
 
     "return a 204 response code" in {
+
       given().client(clientId = mtdClientId).isLoggedIn()
-
-      val response = responseForAcceptInvitation()
-
+      val response = clientAcceptInvitation(mtdClientId, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/reject" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForRejectInvitation())
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientRejectInvitation(mtdClientId, "invitationId"))
 
     "return a 204 response code" in {
       given().client(clientId = mtdClientId).isLoggedIn()
-
-      val response = responseForRejectInvitation()
-
+      val response = clientAcceptInvitation(mtdClientId, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "GET /clients/:clientId/invitations/received" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForGetClientInvitations())
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
 
     "return some invitations" in {
+
       val testStartTime = now().getMillis
       given().client(clientId = mtdClientId).isLoggedIn()
-      
-      val response = responseForGetClientInvitations()
 
-      response.status shouldBe 200
-      val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val invitationLinks = (response.json \ "_links" \ "invitation" \\ "href").map(_.as[String])
+      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(mtdClientId).json)
 
-      invitations.size shouldBe 2
-      checkInvitation(mtdClientId, invitations.head, testStartTime) 
-      checkInvitation(mtdClientId, invitations(1), testStartTime) 
-      selfLink(response.json) shouldBe getInvitationsUrl
-      invitations.map(selfLink) shouldBe invitationLinks
+      response.embedded.invitations.size shouldBe 2
+      checkInvitation(mtdClientId, response.firstInvitation.underlying, testStartTime)
+      checkInvitation(mtdClientId, response.secondInvitation.underlying, testStartTime)
+      response.links.selfLink shouldBe s"/agent-client-authorisation/sandbox/clients/${mtdClientId.value}/invitations/received"
+      response.embedded.invitations.map(_.links.selfLink) shouldBe response.links.invitations
     }
   }
 
   "GET /clients/:clientId/invitations/received/invitationId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(responseForGetClientInvitation())
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitation(mtdClientId, "invitation-id-not-used"))
 
     "return an invitation" in {
       val testStartTime = now().getMillis
       given().client(clientId = mtdClientId).isLoggedIn()
-      
-      val response = responseForGetClientInvitation()
 
+      val response = clientGetReceivedInvitation(mtdClientId, "invitationId")
       response.status shouldBe 200
-      checkInvitation(mtdClientId, response.json, testStartTime) 
+      checkInvitation(mtdClientId, response.json, testStartTime)
     }
   }
-  
+
   private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
+
+    def selfLink: String = (invitation \ "_links" \ "self" \ "href").as[String]
+
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    val selfHref = selfLink(invitation)
-    selfHref should startWith(s"/agent-client-authorisation/sandbox/clients/${clientId.value}/invitations/received/")
-    (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfHref/accept"
-    (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfHref/reject"
+    selfLink should startWith(s"/agent-client-authorisation/sandbox/clients/${clientId.value}/invitations/received/")
+    (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfLink/accept"
+    (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfLink/reject"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe "agencyReference"
-    (invitation \ "regime").as[String] shouldBe REGIME
+    (invitation \ "regime").as[String] shouldBe MtdRegime.value
     (invitation \ "clientId").as[String] shouldBe clientId.value
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
-  }
-
-  def selfLink(obj: JsValue): String = {
-    (obj \ "_links" \ "self" \ "href").as[String]
-  }
-
-
-  def responseForGetClientInvitation(): HttpResponse = {
-    new Resource(getInvitationUrl + "invitationId", port).get()
-  }
-
-  def responseForGetClientInvitations(): HttpResponse = {
-    new Resource(getInvitationsUrl, port).get()
-  }
-
-  private def responseForRejectInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")): HttpResponse = {
-    new Resource(invitationUri.toString + "/reject", port).putEmpty()
-  }
-
-  private def responseForAcceptInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")): HttpResponse = {
-    new Resource(invitationUri.toString + "/accept", port).putEmpty()
   }
 }

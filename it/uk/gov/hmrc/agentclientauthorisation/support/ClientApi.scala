@@ -28,17 +28,17 @@ class ClientApi(val clientId: MtdClientId, implicit val port: Int) extends Event
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
 
   def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.acceptLink.map (updateInvitationStatus)
+    invitation.links.acceptLink.map (updateInvitationResource)
       .getOrElse (throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
   }
 
   def rejectInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.rejectLink.map(updateInvitationStatus)
+    invitation.links.rejectLink.map(updateInvitationResource)
       .getOrElse (throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
   }
 
   def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
-    val response = clientGetReceivedInvitations(filteredBy, clientId)(port, hc)
+    val response = clientGetReceivedInvitations(clientId, filteredBy)(port, hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }
