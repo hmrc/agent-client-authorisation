@@ -29,6 +29,7 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
   me: Suite =>
 
   implicit val hc = HeaderCarrier()
+  implicit val portNum = port
 
   override lazy val port: Int = Port.randomAvailable
 

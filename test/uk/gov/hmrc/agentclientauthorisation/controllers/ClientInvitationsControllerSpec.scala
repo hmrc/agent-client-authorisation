@@ -111,15 +111,5 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
     }
-
-    //TODO do we need this?
-//    "filter by status when a status is specified" in {
-//      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
-//      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
-//
-//      when(invitationsService.list("mtd-sa", clientId, Some(Accepted))).thenReturn(Future successful ...)
-//
-//      ...
-//    }
   }
 }

@@ -27,10 +27,10 @@ object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)
 
   class HalResourceHelper(json: JsValue) {
-    def embedded: EmbeddedSection = new EmbeddedSection(json \ "_embedded")
-    def links: LinkSection = new LinkSection(json \ "_links")
+    def embedded: EmbeddedSection = new EmbeddedSection((json \ "_embedded").as[JsValue])
+    def links: LinkSection = new LinkSection((json \ "_links").as[JsValue])
     def numberOfInvitations = embedded.invitations.size
-    def firstInvitation = embedded.invitations.head
+    def firstInvitation: EmbeddedInvitation = embedded.invitations.head
     def secondInvitation = embedded.invitations(1)
   }
 }
@@ -38,10 +38,10 @@ object HalTestHelpers {
 object EmbeddedSection {
 
   case class EmbeddedInvitationLinks(selfLink: String, agencyLink:Option[String], cancelLink: Option[String], acceptLink: Option[String], rejectLink: Option[String])
-  case class EmbeddedInvitation(links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: MtdClientId, status: String, created: DateTime, lastUpdated: DateTime)
+  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: MtdClientId, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
-class EmbeddedSection(embedded: JsLookupResult) {
+class EmbeddedSection(embedded: JsValue) {
 
   def isEmpty: Boolean = invitations isEmpty
 
@@ -63,6 +63,7 @@ class EmbeddedSection(embedded: JsLookupResult) {
     def getDateTime(path: JsLookupResult) = path.as[DateTime]
 
     EmbeddedInvitation(
+      underlying = invitation,
       EmbeddedInvitationLinks(
         getString(invitation \ "_links" \ "self" \ "href"),
         find(invitation \ "_links" \ "agency" \ "href"),
@@ -80,7 +81,7 @@ class EmbeddedSection(embedded: JsLookupResult) {
   }
 }
 
-class LinkSection(links: JsLookupResult) {
+class LinkSection(links: JsValue) {
 
   def selfLink: String = (links \ "self" \ "href").as[String]
 
