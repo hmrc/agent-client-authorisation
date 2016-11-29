@@ -64,7 +64,7 @@ trait ApiTestSupport {
 
   def ramlResponseByVersion(api: JsValue): (String, HttpResponse) = {
     val apiVersion: String = (api \ "version").as[String]
-    val response: HttpResponse = new Resource(s"$ramlPath/$apiVersion/not-ready-for-prod-application.raml", runningPort).get()
+    val response: HttpResponse = new Resource(s"$ramlPath/$apiVersion/application.raml", runningPort).get()
     apiVersion -> response
   }
 
