@@ -30,28 +30,24 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   private implicit val agentCode = AgentCode("LMNOP123456")
   private val mtdClientId = FakeMtdClientId.random()
   private val mtdClient2Id = FakeMtdClientId.random()
-  private val MtdRegime = Regime("mtd-sa")
 
-  private val rootUrl = "/agent-client-authorisation"
-  private val clientsUrl = s"${rootUrl}/clients"
-  private val clientUrl = s"${clientsUrl}/${mtdClientId.value}"
-  private val invitationsUrl = s"${clientUrl}/invitations"
-  private val invitationsReceivedUrl = s"${invitationsUrl}/received"
+  private val invitationsUrl = s"${clientUrl(mtdClientId)}/invitations"
+  private val invitationsReceivedUrl = s"$invitationsUrl/received"
 
   "GET /" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(rootUrl)
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(rootUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(rootResource())
   }
 
   "GET /clients" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientsUrl, port).get())
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource())
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
   }
  
   "GET /clients/:clientId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientUrl, port).get())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl)
-    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
+    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl(mtdClientId))
   }
 
   "GET /clients/:clientId/invitations" should {
@@ -127,8 +123,5 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
       response.status shouldBe 403
     }
-  }
-  private def responseForInvitations() = {
-    new Resource(invitationsUrl, port).get()
   }
 }

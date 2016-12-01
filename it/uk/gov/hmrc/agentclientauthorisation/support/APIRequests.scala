@@ -72,10 +72,19 @@ trait APIRequests {
   CLIENT RELATED RESOURCES
   TODO:  split these into seperate traits?
    */
+  def clientsUrl = s"$baseUrl/clients"
+  def clientUrl(mtdClientId: MtdClientId) = s"$baseUrl/clients/${mtdClientId.value}"
 
-  private def clientReceivedInvitationsUrl(id: MtdClientId): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
+  def clientReceivedInvitationsUrl(id: MtdClientId): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
   private def clientReceivedInvitationUrl(id: MtdClientId, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
 
+  def clientsResource()(implicit port: Int) = {
+    new Resource(clientsUrl, port).get
+  }
+
+  def clientResource(mtdClientId: MtdClientId)(implicit port: Int) = {
+    new Resource(clientUrl(mtdClientId), port).get
+  }
   def clientGetReceivedInvitations(clientId: MtdClientId, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)

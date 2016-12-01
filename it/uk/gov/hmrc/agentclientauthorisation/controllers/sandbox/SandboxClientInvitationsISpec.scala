@@ -35,30 +35,25 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   private val mtdClientId = FakeMtdClientId.random()
 
   override def sandboxMode: Boolean = true
-  private val rootUrl = s"/agent-client-authorisation/sandbox"
-  private val clientsUrl = s"${rootUrl}/clients"
-  private val clientUrl = s"${clientsUrl}/${mtdClientId.value}"
-  private val invitationsUrl = s"${clientUrl}/invitations"
-  private val invitationsReceivedUrl = s"${invitationsUrl}/received"
 
   "GET /sandbox" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(rootUrl, port).get())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(rootUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(rootResource())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
   }
 
   "GET /sandbox/clients" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientsUrl, port).get())
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource)
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
   }
 
   "GET /sandbox/clients/:clientId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientUrl, port).get())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
   }
 
   "GET /sandbox/clients/:clientId/invitations" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(invitationsUrl, port).get())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientReceivedInvitationsUrl(mtdClientId))
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
@@ -122,7 +117,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe invitationsReceivedUrl
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe clientReceivedInvitationsUrl(mtdClientId)
     }
    }
 
