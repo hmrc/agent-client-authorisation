@@ -53,7 +53,6 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   "GET /sandbox/clients/:clientId/invitations" should {
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientReceivedInvitationsUrl(mtdClientId))
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
