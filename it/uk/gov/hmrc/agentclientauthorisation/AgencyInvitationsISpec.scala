@@ -28,17 +28,47 @@ import uk.gov.hmrc.play.test.UnitSpec
 class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with APIRequests {
 
   private implicit val arn = Arn("ABCDEF12345678")
+  private val otherAgencyArn: Arn = Arn("98765")
+  private val otherAgencyCode: AgentCode = AgentCode("123456") 
   private implicit val agentCode = AgentCode("LMNOP123456")
 
   private val clientId: MtdClientId = MtdClientId("1234567890")
   private val MtdRegime: Regime = Regime("mtd-sa")
   private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, MtdClientId("1234567899"), "AA1 1AA")
+  private val rootUrl = s"/agent-client-authorisation"
+  private val agenciesUrl = s"${rootUrl}/agencies"
+  private val agencyUrl = s"${agenciesUrl}/${arn.arn}"
+  private val invitationsUrl = s"${agencyUrl}/invitations"
+  private val invitationsSentUrl = s"${invitationsUrl}/sent"
+  private val getInvitationSentUrl = s"${invitationsSentUrl}/"
+
+  "GET root resource" should {
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(rootUrl)
+    behave like anEndpointAccessibleForMtdAgentsOnly(new Resource(rootUrl, port).get())
+  }
+  
+  "GET /agencies" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForAgencies())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agenciesUrl)
+  }
+
+  "GET /agencies/:arn" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForAgency())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl)
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyUrl)
+  }
+
+  "GET /agencies/:arn/invitations" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForInvitations())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(invitationsUrl)
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(invitationsUrl)
+  }
 
   "GET /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
 
     "return 403 for someone else's invitation list" in {
-      given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = agencyGetSentInvitations(arn)
       response.status shouldBe 403
     }
@@ -109,5 +139,40 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
         response.status shouldBe 204
       }
     }
+  }
+
+   def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
+    "return a meaningful response for the authenticated agent" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe invitationsSentUrl
+    }
+  }
+
+  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url:String): Unit = {
+    "return 403 for someone else's invitations" in {
+      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      new Resource(url, port).get().status shouldBe 403
+    }
+  }
+
+  private def responseForRoot() = {
+    new Resource(rootUrl, port).get()
+  }
+
+  private def responseForAgencies() = {
+    new Resource(agenciesUrl, port).get()
+  }
+
+  private def responseForAgency() = {
+    new Resource(agencyUrl, port).get()
+  }
+
+  private def responseForInvitations() = {
+    new Resource(invitationsUrl, port).get()
   }
 }

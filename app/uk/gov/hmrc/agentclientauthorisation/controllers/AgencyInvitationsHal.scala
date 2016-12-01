@@ -28,6 +28,12 @@ trait AgencyInvitationsHal {
 
   protected def agencyLink(invitation: Invitation): Option[String]
 
+  def toHalResource(arn: Arn, path: String): HalResource = {
+    val selfLink = Vector(HalLink("self", path ));
+    val invitationsSentLink = Vector(HalLink("sent", reverseRoutes.getSentInvitations(arn, None, None, None).url))
+    Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
+  }
+
   def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val invitationResources = invitations.map(toHalResource(_)).toVector
 

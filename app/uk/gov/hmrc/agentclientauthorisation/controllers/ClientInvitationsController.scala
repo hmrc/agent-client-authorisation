@@ -32,6 +32,18 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal  {
 
+   def getDetailsForAuthenticatedClient() = onlyForSaClients.async { implicit request =>
+    Future successful Ok(toHalResource(request.mtdClientId.value, request.path))
+  }
+
+  def getDetailsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
+    if (clientId == request.mtdClientId.value) {
+      Future successful Ok(toHalResource(clientId, request.path))
+    } else {
+      Future successful Forbidden
+    }
+  }
+
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     actionInvitation(request.mtdClientId.value, invitationId, invitationsService.acceptInvitation)
   }

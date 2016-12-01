@@ -45,6 +45,12 @@ trait ClientInvitationsHal {
     invitations.map { i => HalLink("invitation", reverseRoutes.getInvitation(i.clientId, i.id.stringify).toString())}.toVector
   }
 
+  def toHalResource(clientId: String, path: String): HalResource = {
+    val selfLink = Vector(HalLink("self", path ));
+    val invitationsSentLink = Vector(HalLink("received", reverseRoutes.getInvitations(clientId, None ).url))
+    Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
+  }
+
   def toHalResource(invitations: Seq[Invitation], clientId: String, status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = invitations.map(invitation => toHalResource(invitation)).toVector
 

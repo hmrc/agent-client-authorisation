@@ -35,6 +35,31 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   private val mtdClientId = FakeMtdClientId.random()
 
   override def sandboxMode: Boolean = true
+  private val rootUrl = s"/agent-client-authorisation/sandbox"
+  private val clientsUrl = s"${rootUrl}/clients"
+  private val clientUrl = s"${clientsUrl}/${mtdClientId.value}"
+  private val invitationsUrl = s"${clientUrl}/invitations"
+  private val invitationsReceivedUrl = s"${invitationsUrl}/received"
+
+  "GET /sandbox" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(rootUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(rootUrl)
+  }
+
+  "GET /sandbox/clients" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientsUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
+  }
+
+  "GET /sandbox/clients/:clientId" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(clientUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl)
+  }
+
+  "GET /sandbox/clients/:clientId/invitations" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(invitationsUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
+  }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
 
@@ -88,6 +113,18 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       checkInvitation(mtdClientId, response.json, testStartTime)
     }
   }
+
+  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
+    "return a meaningful response for the authenticated agent" in {
+      given().client(clientId = mtdClientId).isLoggedIn().aRelationshipIsCreatedWith(arn)
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe invitationsReceivedUrl
+    }
+   }
 
   private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
 

@@ -33,6 +33,14 @@ class SandboxClientInvitationsController @Inject() (
   override val agenciesFakeConnector: AgenciesFakeConnector
 ) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal {
 
+   def getDetailsForAuthenticatedClient() = onlyForSaClients { implicit request =>
+    Ok(toHalResource(request.mtdClientId.value, request.path))
+  }
+
+  def getDetailsForClient(clientId: String) = onlyForSaClients { implicit request =>
+    Ok(toHalResource(clientId, request.path))
+  }
+
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
     NoContent
   }

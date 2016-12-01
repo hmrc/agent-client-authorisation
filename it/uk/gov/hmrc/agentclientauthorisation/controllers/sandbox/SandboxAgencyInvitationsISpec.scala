@@ -27,16 +27,40 @@ import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
-import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside {
   private val REGIME = "mtd-sa"
   private val agentCode = AgentCode("A12345A")
   private implicit val arn = Arn("ABCDEF12345678")
-  private val getInvitationUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent/"
   private val getInvitationsUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations/sent"
   private val createInvitationUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations"
+  private val rootUrl = s"/agent-client-authorisation/sandbox"
+  private val agenciesUrl = s"${rootUrl}/agencies"
+  private val agencyUrl = s"${agenciesUrl}/${arn.arn}"
+  private val invitationsUrl = s"${agencyUrl}/invitations"
+  private val invitationsSentUrl = s"${invitationsUrl}/sent"
+  private val getInvitationUrl = s"${invitationsSentUrl}/"
+
+  "GET /sandbox" should {
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(rootUrl)
+    behave like anEndpointAccessibleForMtdAgentsOnly(new Resource(rootUrl, port).get())
+  }
+
+  "GET /sandbox/agencies" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForAgencies())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agenciesUrl)
+  }
+
+  "GET /sandbox/agencies/:arn" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForInvitations())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl)
+  }
+
+  "GET /sandbox/agencies/:arn/invitations" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(responseForInvitations())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(invitationsUrl)
+  }
 
   "POST of /sandbox/agencies/:arn/invitations" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation())
@@ -118,19 +142,45 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (obj \ "_links" \ "self" \ "href").as[String]
   }
 
-  def responseForGetInvitation(): HttpResponse = {
+  def responseForGetInvitation() = {
     new Resource(getInvitationUrl + "invitationId", port).get()
   }
 
-  def responseForGetInvitations(): HttpResponse = {
+  def responseForGetInvitations() = {
     new Resource(getInvitationsUrl, port).get()
   }
 
-  def responseForCreateInvitation(): HttpResponse = {
+  def responseForCreateInvitation() = {
     new Resource(createInvitationUrl, port).postAsJson(s"""{"regime": "$REGIME", "clientId": "clientId", "postcode": "AA1 1AA"}""")
   }
 
-  private def responseForCancelInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")): HttpResponse = {
+  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
+    "return a meaningful response for the authenticated agent" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe invitationsSentUrl
+    }
+  }
+
+  private def responseForCancelInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")) = {
     new Resource(invitationUri.toString + "/cancel", port).putEmpty()
+  }
+  private def responseForRoot() = {
+    new Resource(rootUrl, port).get()
+  }
+  private def responseForAgencies() = {
+    new Resource(agenciesUrl, port).get()
+  }
+
+  private def responseForAgency() = {
+    new Resource(agencyUrl, port).get()
+  }
+
+  private def responseForInvitations() = {
+    new Resource(invitationsUrl, port).get()
   }
 }

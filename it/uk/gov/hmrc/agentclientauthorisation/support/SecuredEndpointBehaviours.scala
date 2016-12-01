@@ -31,7 +31,7 @@ trait SecuredEndpointBehaviours {
     }
 
     "return 401 when user is not an MTD agent" in {
-      given().client().isLoggedIn()
+      given().user().isLoggedIn()
       request.status shouldBe 401
     }
   }
@@ -43,7 +43,7 @@ trait SecuredEndpointBehaviours {
     }
 
     "return 401 when user has no SA account" in {
-      given().agentAdmin(RandomArn(), AgentCode("12345")).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().user().isLoggedIn()
       request.status shouldBe 401
     }
   }

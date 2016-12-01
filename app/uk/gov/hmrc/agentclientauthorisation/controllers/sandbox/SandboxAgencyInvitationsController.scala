@@ -44,6 +44,14 @@ class SandboxAgencyInvitationsController @Inject() (
     Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, regime, clientId, status))
   }
 
+  def getDetailsForAuthenticatedAgency() = onlyForSaAgents { implicit request =>
+    Ok(toHalResource(request.arn, request.path))
+  }
+
+  def getDetailsForAgency(arn: Arn) = onlyForSaAgents { implicit request =>
+    Ok(toHalResource(arn, request.path))
+  }
+
   def getSentInvitation(arn: Arn, invitationId: String) = onlyForSaAgents { implicit request =>
     Ok(toHalResource(invitation(arn)))
   }
