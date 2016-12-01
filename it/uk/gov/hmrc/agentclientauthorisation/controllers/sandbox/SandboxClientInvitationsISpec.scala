@@ -36,6 +36,25 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   override def sandboxMode: Boolean = true
 
+  "GET /sandbox" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(rootResource())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
+  }
+
+  "GET /sandbox/clients" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource)
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
+  }
+
+  "GET /sandbox/clients/:clientId" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
+  }
+
+  "GET /sandbox/clients/:clientId/invitations" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
+  }
+
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
 
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientAcceptInvitation(mtdClientId, "none"))
@@ -88,6 +107,18 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       checkInvitation(mtdClientId, response.json, testStartTime)
     }
   }
+
+  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
+    "return a meaningful response for the authenticated agent" in {
+      given().client(clientId = mtdClientId).isLoggedIn().aRelationshipIsCreatedWith(arn)
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe clientReceivedInvitationsUrl(mtdClientId)
+    }
+   }
 
   private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
 

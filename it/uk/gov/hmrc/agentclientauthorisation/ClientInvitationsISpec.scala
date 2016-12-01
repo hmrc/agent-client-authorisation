@@ -30,8 +30,31 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   private implicit val agentCode = AgentCode("LMNOP123456")
   private val mtdClientId = FakeMtdClientId.random()
   private val mtdClient2Id = FakeMtdClientId.random()
-  private val MtdRegime = Regime("mtd-sa")
 
+  private val invitationsUrl = s"${clientUrl(mtdClientId)}/invitations"
+  private val invitationsReceivedUrl = s"$invitationsUrl/received"
+
+  "GET /" should {
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(rootResource())
+  }
+
+  "GET /clients" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
+  }
+ 
+  "GET /clients/:clientId" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
+    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl(mtdClientId))
+  }
+
+  "GET /clients/:clientId/invitations" should {
+    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(new Resource(invitationsUrl, port).get())
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
+    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(invitationsUrl)
+  }
 
   "PUT of /clients/:clientId/invitations/received/:invitationId/accept" should {
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientAcceptInvitation(mtdClientId, "invitation-id-not-used"))
@@ -44,7 +67,7 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   "GET /clients/:clientId/invitations/received" should {
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
 
-    "return 404 when try to access someone else's invitations" in {
+    "return 403 when try to access someone else's invitations" in {
 
       given().client(clientId = mtdClientId).isLoggedIn()
       clientGetReceivedInvitations(mtdClient2Id).status shouldBe 403
@@ -76,6 +99,28 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       given().client(clientId = client2.clientId).isLoggedIn()
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client2.hc)
+      response.status shouldBe 403
+    }
+  }
+  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
+    "return a meaningful response for the authenticated agent" in {
+      given().client(clientId = mtdClientId).isLoggedIn().aRelationshipIsCreatedWith(arn)
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe invitationsReceivedUrl
+    }
+  }
+
+  def anEndpointThatPreventsAccessToAnotherClientsInvitations(url:String): Unit = {
+    "return 403 for someone else's invitations" in {
+
+      given().client(clientId = mtdClient2Id).isLoggedIn()
+
+      val response = new Resource(url, port).get
+
       response.status shouldBe 403
     }
   }

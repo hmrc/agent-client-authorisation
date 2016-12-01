@@ -30,7 +30,7 @@ trait AuthActions {
   def authConnector: AuthConnector
   def agenciesFakeConnector: AgenciesFakeConnector
 
-  private val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
+  protected val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
     protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithAccounts[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
       authConnector.currentAccounts()
