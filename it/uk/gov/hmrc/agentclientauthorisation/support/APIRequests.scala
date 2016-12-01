@@ -26,9 +26,24 @@ trait APIRequests {
 
   def sandboxMode:Boolean = false
 
-  private def baseUrl = if(sandboxMode) "/agent-client-authorisation/sandbox" else "/agent-client-authorisation"
-  private def agencyGetInvitationsUrl(arn: Arn): String = s"$baseUrl/agencies/${arn.arn}/invitations/sent"
-  private def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.arn}/invitations/sent/$invitationId"
+  def baseUrl = if(sandboxMode) "/agent-client-authorisation/sandbox" else "/agent-client-authorisation"
+  def agenciesUrl = s"$baseUrl/agencies"
+  def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.arn}"
+  def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
+  def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
+  def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.arn}/invitations/sent/$invitationId"
+
+  def rootResource()(implicit port: Int) = {
+    new Resource(baseUrl, port).get()
+  }
+
+  def agenciesResource()(implicit port: Int) = {
+    new Resource(agenciesUrl, port).get()
+  }
+
+  def agencyResource(arn: Arn)(implicit port: Int) = {
+    new Resource(agencyUrl(arn), port).get()
+  }
 
   def agencyGetSentInvitations(arn: Arn, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
