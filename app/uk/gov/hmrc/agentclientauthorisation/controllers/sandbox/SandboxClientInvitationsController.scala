@@ -16,44 +16,39 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Singleton
 
 import org.joda.time.DateTime.now
-import play.api.mvc.Call
+import play.api.mvc.{Action, Call}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsHal, HalWriter, ReverseClientInvitationsRoutes, SUPPORTED_REGIME}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
-class SandboxClientInvitationsController @Inject() (
-  override val authConnector: AuthConnector,
-  override val agenciesFakeConnector: AgenciesFakeConnector
-) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal {
+class SandboxClientInvitationsController extends BaseController with HalWriter with ClientInvitationsHal {
 
-   def getDetailsForAuthenticatedClient() = onlyForSaClients { implicit request =>
-    Ok(toHalResource(request.mtdClientId.value, request.path))
+  def getDetailsForAuthenticatedClient() = Action { implicit request =>
+    Ok(toHalResource(HardCodedSandboxIds.clientId.value, request.path))
   }
 
-  def getDetailsForClient(clientId: String) = onlyForSaClients { implicit request =>
+  def getDetailsForClient(clientId: String) = Action { implicit request =>
     Ok(toHalResource(clientId, request.path))
   }
 
-  def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
+  def acceptInvitation(clientId: String, invitationId: String) = Action { implicit request =>
     NoContent
   }
 
-  def rejectInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
+  def rejectInvitation(clientId: String, invitationId: String) = Action { implicit request =>
     NoContent
   }
 
-  def getInvitation(clientId: String, invitationId: String) = onlyForSaClients { implicit request =>
+  def getInvitation(clientId: String, invitationId: String) = Action { implicit request =>
     Ok(toHalResource(invitation(clientId)))
   }
 
-  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients { implicit request =>
+  def getInvitations(clientId: String, status: Option[InvitationStatus]) = Action { implicit request =>
     Ok(toHalResource(Seq(invitation(clientId), invitation(clientId)), clientId, status))
   }
 

@@ -32,58 +32,52 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   private val MtdRegime = Regime("mtd-sa")
   private implicit val arn = Arn("ABCDEF12345678")
-  private val mtdClientId = FakeMtdClientId.random()
+  private val mtdClientId = HardCodedSandboxIds.clientId
 
   override def sandboxMode: Boolean = true
 
   "GET /sandbox" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(rootResource())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
+    behave like anEndpointWithClientReceivedInvitationsLink(baseUrl)
   }
 
   "GET /sandbox/clients" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource)
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
+    behave like anEndpointWithClientReceivedInvitationsLink(clientsUrl)
   }
 
   "GET /sandbox/clients/:clientId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
+    behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(mtdClientId))
   }
 
   "GET /sandbox/clients/:clientId/invitations" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
+    "return a meaningful response" in {
+      val url = clientReceivedInvitationsUrl(mtdClientId)
+
+      val response = new Resource(url, port).get()
+
+      response.status shouldBe 200
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+    }
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
-
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientAcceptInvitation(mtdClientId, "none"))
-
     "return a 204 response code" in {
 
-      given().client(clientId = mtdClientId).isLoggedIn()
       val response = clientAcceptInvitation(mtdClientId, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/reject" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientRejectInvitation(mtdClientId, "invitationId"))
-
     "return a 204 response code" in {
-      given().client(clientId = mtdClientId).isLoggedIn()
       val response = clientRejectInvitation(mtdClientId, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "GET /clients/:clientId/invitations/received" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
-
     "return some invitations" in {
 
       val testStartTime = now().getMillis
-      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(mtdClientId).json)
 
@@ -96,11 +90,8 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "GET /clients/:clientId/invitations/received/invitationId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitation(mtdClientId, "invitation-id-not-used"))
-
     "return an invitation" in {
       val testStartTime = now().getMillis
-      given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = clientGetReceivedInvitation(mtdClientId, "invitationId")
       response.status shouldBe 200
@@ -108,10 +99,8 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
-    "return a meaningful response for the authenticated agent" in {
-      given().client(clientId = mtdClientId).isLoggedIn().aRelationshipIsCreatedWith(arn)
-
+  def anEndpointWithClientReceivedInvitationsLink(url: String): Unit = {
+    "return a HAL response including a client received invitations link" in {
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
