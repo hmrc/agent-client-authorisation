@@ -115,8 +115,8 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe clientReceivedInvitationsUrl(mtdClientId)
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdClientId))
     }
    }
 

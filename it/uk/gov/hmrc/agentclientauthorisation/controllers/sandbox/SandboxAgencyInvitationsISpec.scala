@@ -24,17 +24,16 @@ import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.support.{APIRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.support.APIRequests
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
   private val REGIME = "mtd-sa"
   private val agentCode = AgentCode("A12345A")
   private implicit val arn = Arn("ABCDEF12345678")
-  private val createInvitationUrl = s"/agent-client-authorisation/sandbox/agencies/${arn.arn}/invitations"
+  private val createInvitationUrl = s"/sandbox/agencies/${arn.arn}/invitations"
   private def getInvitationUrl = s"${agencyGetInvitationsUrl(arn)}/"
 
   override val sandboxMode = true
@@ -68,7 +67,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       val response = responseForCreateInvitation()
 
       response.status shouldBe 201
-      response.header("location").get should startWith(agencyGetInvitationsUrl(arn))
+      response.header("location").get should startWith(externalUrl(agencyGetInvitationsUrl(arn)))
     }
   }
 
@@ -102,7 +101,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       checkInvitation(invitations(1), testStartTime)
       invitations.map(selfLink) shouldBe invitationLinks
 
-      selfLink(response.json) shouldBe agencyGetInvitationsUrl(arn)
+      selfLink(response.json) shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
   }
 
@@ -154,8 +153,8 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
-      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe agencyGetInvitationsUrl(arn)
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
   }
 

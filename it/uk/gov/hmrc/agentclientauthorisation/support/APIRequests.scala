@@ -26,7 +26,25 @@ trait APIRequests {
 
   def sandboxMode:Boolean = false
 
-  def baseUrl = if(sandboxMode) "/agent-client-authorisation/sandbox" else "/agent-client-authorisation"
+  def baseUrl = if(sandboxMode) "/sandbox" else "/agent-client-authorisation"
+
+  def externalUrl(serviceRouteUrl: String) =
+    if (sandboxMode) {
+      // TODO this is wrong - it should be the commented out version. However the plan is to get a release out where the API can be called in the sandbox first and fix the links it returns afterwards.
+//      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
+      "/agent-client-authorisation" + serviceRouteUrl
+    } else {
+      // non-sandbox routes can't currently be called by the API platform because they have the wrong URLs (the routes have a /agent-client-authorisation prefix which the API platform doesn't include in its requests' paths).
+      // That's why we don't do a translation here yet.
+      serviceRouteUrl
+    }
+
+
+  private def stripPrefix(s: String, prefix: String): String = {
+    if (!s.startsWith(prefix)) throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
+    s.substring(prefix.length)
+  }
+
   def agenciesUrl = s"$baseUrl/agencies"
   def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.arn}"
   def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
