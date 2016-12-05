@@ -72,7 +72,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
     "return a 204 response code" in {
       given().client(clientId = mtdClientId).isLoggedIn()
-      val response = clientAcceptInvitation(mtdClientId, "invitationId")
+      val response = clientRejectInvitation(mtdClientId, "invitationId")
       response.status shouldBe 204
     }
   }
