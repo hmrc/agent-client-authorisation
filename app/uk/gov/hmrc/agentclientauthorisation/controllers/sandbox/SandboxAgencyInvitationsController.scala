@@ -16,47 +16,43 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Singleton
 
 import org.joda.time.DateTime.now
+import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsHal, HalWriter, ReverseAgencyInvitationsRoutes, SUPPORTED_REGIME}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
-class SandboxAgencyInvitationsController @Inject() (
-  override val authConnector: AuthConnector,
-  override val agenciesFakeConnector: AgenciesFakeConnector
-) extends BaseController with AuthActions with HalWriter with AgencyInvitationsHal {
+class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {
 
-  def createInvitation(arn: Arn) = onlyForSaAgents { implicit request =>
-      Created.withHeaders(location(arn, "invitationId"))
+  def createInvitation(arn: Arn) = Action { implicit request =>
+    Created.withHeaders(location(arn, "invitationId"))
   }
 
   private def location(arn: Arn, invitationId: String) = {
     LOCATION -> routes.SandboxAgencyInvitationsController.getSentInvitation(arn, invitationId).url
   }
 
-  def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents { implicit request =>
+  def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
     Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, regime, clientId, status))
   }
 
-  def getDetailsForAuthenticatedAgency() = onlyForSaAgents { implicit request =>
-    Ok(toHalResource(request.arn, request.path))
+  def getDetailsForAuthenticatedAgency() = Action { implicit request =>
+    Ok(toHalResource(HardCodedSandboxIds.arn, request.path))
   }
 
-  def getDetailsForAgency(arn: Arn) = onlyForSaAgents { implicit request =>
+  def getDetailsForAgency(arn: Arn) = Action { implicit request =>
     Ok(toHalResource(arn, request.path))
   }
 
-  def getSentInvitation(arn: Arn, invitationId: String) = onlyForSaAgents { implicit request =>
+  def getSentInvitation(arn: Arn, invitationId: String) = Action { implicit request =>
     Ok(toHalResource(invitation(arn)))
   }
 
-  def cancelInvitation(arn: Arn, invitation: String) = onlyForSaAgents { implicit request =>
+  def cancelInvitation(arn: Arn, invitation: String) = Action { implicit request =>
     NoContent
   }
 

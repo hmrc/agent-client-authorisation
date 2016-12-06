@@ -17,37 +17,22 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import javax.inject._
-import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+import play.api.hal.{Hal, HalLink, HalResource}
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import play.api.mvc.Action
 import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
-
 @Singleton
-class SandboxRootController @Inject() (override val agenciesFakeConnector: AgenciesFakeConnector,
-                                override val authConnector: AuthConnector)
-    extends BaseController with AuthActions with HalWriter {
+class SandboxRootController
+    extends BaseController with HalWriter {
   private val selfLink = Vector(HalLink("self", routes.SandboxRootController.getRootResource().url));
 
-  def getRootResource() = withAccounts.async { implicit request => 
-    (request.accounts.agent, request.accounts.sa) match {
-      case (Some(agentCode), None) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(Unauthorized))
-      case (None, Some(saUtr)) => agenciesFakeConnector.findClient(saUtr).map(_.map(clientId => Ok(toHalResource(clientId))).getOrElse(Unauthorized))
-      case _ => Future successful Unauthorized
-    }
-  }
-  private def toHalResource(arn: Arn): HalResource = {
-    val invitationsSentLink = Vector(HalLink("sent", routes.SandboxAgencyInvitationsController.getSentInvitations(arn, None, None, None).url))
-    Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
-  }
-
-  private def toHalResource(clientId: MtdClientId): HalResource = {
-    val invitationsReceivedLink = Vector(HalLink("received", routes.SandboxClientInvitationsController.getInvitations(clientId.value, None).url))
-    Hal.hal(Json.obj(), selfLink ++ invitationsReceivedLink, Vector())
+  def getRootResource() = Action { implicit request =>
+    val invitationsSentLink = HalLink("sent", routes.SandboxAgencyInvitationsController.getSentInvitations(HardCodedSandboxIds.arn, None, None, None).url)
+    val invitationsReceivedLink = HalLink("received", routes.SandboxClientInvitationsController.getInvitations(HardCodedSandboxIds.clientId.value, None).url)
+    val halResource: HalResource = Hal.hal(Json.obj(), selfLink ++ Vector(invitationsSentLink, invitationsReceivedLink), Vector())
+    Ok(halResource)
   }
 }

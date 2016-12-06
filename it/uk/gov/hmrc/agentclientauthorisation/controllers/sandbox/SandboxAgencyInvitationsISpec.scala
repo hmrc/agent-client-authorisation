@@ -23,7 +23,6 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{APIRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
@@ -32,38 +31,30 @@ import uk.gov.hmrc.play.test.UnitSpec
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
   private val REGIME = "mtd-sa"
   private val agentCode = AgentCode("A12345A")
-  private implicit val arn = Arn("ABCDEF12345678")
+  private implicit val arn = HardCodedSandboxIds.arn
   private val createInvitationUrl = s"/sandbox/agencies/${arn.arn}/invitations"
   private def getInvitationUrl = s"${agencyGetInvitationsUrl(arn)}/"
 
   override val sandboxMode = true
 
   "GET /sandbox" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
-    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
+    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
   }
 
   "GET /sandbox/agencies" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agenciesResource)
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agenciesUrl)
+    behave like anEndpointWithAgencySentInvitationsLink(agenciesUrl)
   }
 
   "GET /sandbox/agencies/:arn" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyResource(arn))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl(arn))
+    behave like anEndpointWithAgencySentInvitationsLink(agencyUrl(arn))
   }
 
   "GET /sandbox/agencies/:arn/invitations" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyInvitationsUrl(arn))
+    behave like anEndpointWithAgencySentInvitationsLink(agencyInvitationsUrl(arn))
   }
 
   "POST of /sandbox/agencies/:arn/invitations" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCreateInvitation())
-
     "return a 201 response with a location header" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-
       val response = responseForCreateInvitation()
 
       response.status shouldBe 201
@@ -72,11 +63,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "PUT of /sandbox/agencies/:arn/invitations/received/:invitationId/cancel" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForCancelInvitation())
-
     "return a 204 response code" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-
       val response = responseForCancelInvitation()
 
       response.status shouldBe 204
@@ -84,12 +71,9 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "GET /agencies/:arn/invitations/sent" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
-
     "return some invitations" in {
       val testStartTime = now().getMillis
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      
+
       val response = agencyGetSentInvitations(arn)
 
       response.status shouldBe 200
@@ -106,19 +90,16 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "GET /agencies/:arn/invitations/sent/invitationId" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(responseForGetInvitation())
-
     "return an invitation" in {
       val testStartTime = now().getMillis
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      
+
       val response = responseForGetInvitation()
 
       response.status shouldBe 200
       checkInvitation(response.json, testStartTime)
     }
   }
-  
+
   private def checkInvitation(invitation: JsValue, testStartTime: Long): Unit = {
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
@@ -146,10 +127,8 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     new Resource(createInvitationUrl, port).postAsJson(s"""{"regime": "$REGIME", "clientId": "clientId", "postcode": "AA1 1AA"}""")
   }
 
-  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
-    "return a meaningful response for the authenticated agent" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-
+  def anEndpointWithAgencySentInvitationsLink(url:String): Unit = {
+    "return a HAL response including an agency sent invitations link" in {
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
