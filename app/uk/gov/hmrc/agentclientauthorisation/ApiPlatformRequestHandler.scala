@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import javax.inject.Inject
 
 import play.api.http.{DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters}
-import play.api.mvc.RequestHeader
+import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 
 /**
@@ -30,19 +30,29 @@ import play.api.routing.Router
 class ApiPlatformRequestHandler @Inject() (router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters)
   extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
 
-  override def handlerForRequest(request: RequestHeader) = {
+  override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) = {
     if (isApiPlatformRequest(request)) {
-      super.handlerForRequest(request.copy(path = "/agent-client-authorisation" + request.path ))
+      super.handlerForRequest(request.copy(path = addApiPlatformContext(request.path)))
     } else {
       super.handlerForRequest(request)
     }
   }
 
+  private def addApiPlatformContext(path: String) = {
+    val context = "/agent-client-authorisation"
+    if (path == "/") {
+      // special case for root - /agent-client-authorisation/ results in a 404
+      // so we need to make it /agent-client-authorisation instead
+      context
+    } else {
+      context + path
+    }
+  }
+
   private def isApiPlatformRequest(request: RequestHeader): Boolean =
-    request.path.startsWith("/sandbox") /* TODO we'll need something like the following to deal with non-sandbox requests
-    ||
+    request.path.startsWith("/sandbox") ||
     request.path.startsWith("/agencies") ||
     request.path.startsWith("/clients") ||
-    request.path == "/" */
+    request.path == "/"
 
 }

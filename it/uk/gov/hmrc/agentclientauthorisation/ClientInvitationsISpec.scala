@@ -21,7 +21,6 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.test.UnitSpec
 
 class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
@@ -109,8 +108,8 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe invitationsReceivedUrl
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(invitationsReceivedUrl)
     }
   }
 

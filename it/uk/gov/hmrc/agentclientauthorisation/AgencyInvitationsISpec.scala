@@ -24,7 +24,6 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.play.http.HttpResponse
 
 class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with APIRequests {
 
@@ -142,8 +141,8 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe url
-      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe agencyGetInvitationsUrl(arn)
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
   }
 

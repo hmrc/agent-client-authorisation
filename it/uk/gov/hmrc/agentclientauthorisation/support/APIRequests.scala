@@ -26,7 +26,7 @@ trait APIRequests {
 
   def sandboxMode:Boolean = false
 
-  def baseUrl = if(sandboxMode) "/sandbox" else "/agent-client-authorisation"
+  def baseUrl = if(sandboxMode) "/sandbox" else ""
 
   def externalUrl(serviceRouteUrl: String) =
     if (sandboxMode) {
@@ -34,9 +34,7 @@ trait APIRequests {
 //      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
       "/agent-client-authorisation" + serviceRouteUrl
     } else {
-      // non-sandbox routes can't currently be called by the API platform because they have the wrong URLs (the routes have a /agent-client-authorisation prefix which the API platform doesn't include in its requests' paths).
-      // That's why we don't do a translation here yet.
-      serviceRouteUrl
+      "/agent-client-authorisation" + serviceRouteUrl
     }
 
 
