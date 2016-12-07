@@ -27,13 +27,14 @@ import uk.gov.hmrc.agentclientauthorisation.support.{APIRequests, MongoAppAndStu
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
+import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
-  private val REGIME = "mtd-sa"
   private val agentCode = AgentCode("A12345A")
   private implicit val arn = HardCodedSandboxIds.arn
-  private val createInvitationUrl = s"/sandbox/agencies/${arn.arn}/invitations"
-  private def getInvitationUrl = s"${agencyGetInvitationsUrl(arn)}/"
+  private val MtdRegime: Regime = Regime("mtd-sa")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, MtdClientId("1234567899"), "AA1 1AA")
 
   override val sandboxMode = true
 
@@ -53,9 +54,9 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     behave like anEndpointWithAgencySentInvitationsLink(agencyInvitationsUrl(arn))
   }
 
-  "POST of /sandbox/agencies/:arn/invitations" should {
+  "POST of /sandbox/agencies/:arn/invitations/sent" should {
     "return a 201 response with a location header" in {
-      val response = responseForCreateInvitation()
+      val response = agencySendInvitation(arn, validInvitation)
 
       response.status shouldBe 201
       response.header("location").get should startWith(externalUrl(agencyGetInvitationsUrl(arn)))
@@ -64,7 +65,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   "PUT of /sandbox/agencies/:arn/invitations/received/:invitationId/cancel" should {
     "return a 204 response code" in {
-      val response = responseForCancelInvitation()
+      val response = agencyCancelInvitation(arn, "some")
 
       response.status shouldBe 204
     }
@@ -93,7 +94,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     "return an invitation" in {
       val testStartTime = now().getMillis
 
-      val response = responseForGetInvitation()
+      val response = agencyGetSentInvitation(arn, "some")
 
       response.status shouldBe 200
       checkInvitation(response.json, testStartTime)
@@ -108,7 +109,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.arn
-    (invitation \ "regime").as[String] shouldBe REGIME
+    (invitation \ "regime").as[String] shouldBe MtdRegime.value
     (invitation \ "clientId").as[String] shouldBe "clientId"
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
@@ -119,14 +120,6 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (obj \ "_links" \ "self" \ "href").as[String]
   }
 
-  def responseForGetInvitation() = {
-    new Resource(getInvitationUrl + "invitationId", port).get()
-  }
-
-  def responseForCreateInvitation() = {
-    new Resource(createInvitationUrl, port).postAsJson(s"""{"regime": "$REGIME", "clientId": "clientId", "postcode": "AA1 1AA"}""")
-  }
-
   def anEndpointWithAgencySentInvitationsLink(url:String): Unit = {
     "return a HAL response including an agency sent invitations link" in {
       val response = new Resource(url, port).get()
@@ -135,9 +128,5 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
       (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
-  }
-
-  private def responseForCancelInvitation(invitationUri: URI = new URI(getInvitationUrl + "none")) = {
-    new Resource(invitationUri.toString + "/cancel", port).putEmpty()
   }
 }

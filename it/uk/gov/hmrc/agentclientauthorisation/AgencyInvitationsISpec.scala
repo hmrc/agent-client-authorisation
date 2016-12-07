@@ -67,7 +67,7 @@ class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     }
   }
 
-  "POST /agencies/:arn/invitations" should {
+  "POST /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly{
       agencySendInvitation(arn, validInvitation)
     }
