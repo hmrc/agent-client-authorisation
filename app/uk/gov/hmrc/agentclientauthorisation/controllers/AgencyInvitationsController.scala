@@ -101,20 +101,6 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
-  override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations
-
   override protected def agencyLink(invitation: Invitation) =
     Some(agenciesFakeConnector.agencyUrl(invitation.arn).toString)
-}
-
-
-private object ReverseAgencyInvitations extends ReverseAgencyInvitationsRoutes {
-  override def getSentInvitation(arn: Arn, invitationId: String) =
-    routes.AgencyInvitationsController.getSentInvitation(arn, invitationId)
-
-  override def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
-    routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status)
-
-  override def cancelInvitation(arn: Arn, invitationId: String) =
-    routes.AgencyInvitationsController.cancelInvitation(arn, invitationId)
 }

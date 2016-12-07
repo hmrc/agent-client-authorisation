@@ -61,7 +61,5 @@ class SandboxClientInvitationsController extends BaseController with HalWriter w
         List(StatusChangeEvent(now(), Pending))
       )
 
-
-  override protected val reverseRoutes: ReverseClientInvitationsRoutes = ReverseClientInvitations
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

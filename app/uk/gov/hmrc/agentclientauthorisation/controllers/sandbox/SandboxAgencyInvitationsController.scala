@@ -69,7 +69,5 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         List(StatusChangeEvent(now(), Pending))
       )
 
-  override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations
-
   override protected def agencyLink(invitation: Invitation) = None
 }

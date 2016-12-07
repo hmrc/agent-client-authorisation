@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
+
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Call
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, InvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -78,14 +78,6 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
-  override protected val reverseRoutes: ReverseClientInvitationsRoutes = ReverseClientInvitations
   override protected def agencyLink(invitation: Invitation): Option[String] =
     Some(agenciesFakeConnector.agencyUrl(invitation.arn).toString)
-}
-
-private object ReverseClientInvitations extends ReverseClientInvitationsRoutes {
-  override def getInvitation(clientId:String, invitationId:String): Call = routes.ClientInvitationsController.getInvitation(clientId, invitationId)
-  override def getInvitations(clientId:String, status:Option[InvitationStatus]): Call = routes.ClientInvitationsController.getInvitations(clientId, status)
-  override def acceptInvitation(clientId:String, invitationId:String): Call = routes.ClientInvitationsController.acceptInvitation(clientId, invitationId)
-  override def rejectInvitation(clientId:String, invitationId:String): Call = routes.ClientInvitationsController.rejectInvitation(clientId, invitationId)
 }

@@ -19,47 +19,38 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Call
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, InvitationStatus, Pending}
 
 trait AgencyInvitationsHal {
-
-  protected def reverseRoutes: ReverseAgencyInvitationsRoutes
 
   protected def agencyLink(invitation: Invitation): Option[String]
 
   def toHalResource(arn: Arn, selfLinkHref: String): HalResource = {
     val selfLink = Vector(HalLink("self", selfLinkHref))
-    val invitationsSentLink = Vector(HalLink("sent", reverseRoutes.getSentInvitations(arn, None, None, None).url))
+    val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
   def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
-    val invitationResources = invitations.map(toHalResource(_)).toVector
+    val invitationResources = invitations.map(toHalResource).toVector
 
-    val selfLink = Vector(HalLink("self", reverseRoutes.getSentInvitations(arn, regime, clientId, status).url))
+    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
     Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 
   private def invitationLinks(invitations: List[Invitation]): Vector[HalLink] = {
-    invitations.map { i => HalLink("invitation", reverseRoutes.getSentInvitation(i.arn, i.id.stringify).toString())}.toVector
+    invitations.map { i => HalLink("invitation", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.id.stringify).toString)}.toVector
   }
 
   def toHalResource(invitation: Invitation): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", reverseRoutes.getSentInvitation(invitation.arn, invitation.id.stringify).url)))
+    var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
-      links = links ++ HalLink("cancel", reverseRoutes.cancelInvitation(invitation.arn, invitation.id.stringify).url)
+      links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(invitation.arn, invitation.id.stringify).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }
 
-}
-
-trait ReverseAgencyInvitationsRoutes {
-  def getSentInvitation(arn:Arn, invitationId:String): Call
-  def getSentInvitations(arn:Arn, regime:Option[String], clientId:Option[String], status:Option[InvitationStatus]): Call
-  def cancelInvitation(arn: Arn, invitationId:String): Call
 }
