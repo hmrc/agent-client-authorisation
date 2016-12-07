@@ -21,7 +21,7 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsHal, HalWriter, ReverseAgencyInvitationsRoutes, SUPPORTED_REGIME}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -33,7 +33,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   }
 
   private def location(arn: Arn, invitationId: String) = {
-    LOCATION -> routes.SandboxAgencyInvitationsController.getSentInvitation(arn, invitationId).url
+    LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
   }
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
@@ -41,11 +41,15 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   }
 
   def getDetailsForAuthenticatedAgency() = Action { implicit request =>
-    Ok(toHalResource(HardCodedSandboxIds.arn, request.path))
+    Ok(toHalResource(HardCodedSandboxIds.arn, prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
   }
 
   def getDetailsForAgency(arn: Arn) = Action { implicit request =>
-    Ok(toHalResource(arn, request.path))
+    Ok(toHalResource(arn, prodroutes.AgencyInvitationsController.getDetailsForAgency(arn).url))
+  }
+
+  def getDetailsForAgencyInvitations(arn: Arn) = Action { implicit request =>
+    Ok(toHalResource(arn, prodroutes.AgencyInvitationsController.getDetailsForAgencyInvitations(arn).url))
   }
 
   def getSentInvitation(arn: Arn, invitationId: String) = Action { implicit request =>
@@ -68,16 +72,4 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations
 
   override protected def agencyLink(invitation: Invitation) = None
-}
-
-
-private object ReverseAgencyInvitations extends ReverseAgencyInvitationsRoutes {
-  override def getSentInvitation(arn: Arn, invitationId: String) =
-    routes.SandboxAgencyInvitationsController.getSentInvitation(arn, invitationId)
-
-  override def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
-    routes.SandboxAgencyInvitationsController.getSentInvitations(arn, regime, clientId, status)
-
-  override def cancelInvitation(arn: Arn, invitationId: String) =
-    routes.SandboxAgencyInvitationsController.cancelInvitation(arn, invitationId)
 }

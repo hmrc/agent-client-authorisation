@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
+
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
@@ -59,6 +60,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
       Future successful Ok(toHalResource(arn, request.path))
     }
   }
+
+  def getDetailsForAgencyInvitations(arn: Arn) = getDetailsForAgency(arn)
 
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {

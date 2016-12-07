@@ -30,9 +30,7 @@ trait APIRequests {
 
   def externalUrl(serviceRouteUrl: String) =
     if (sandboxMode) {
-      // TODO this is wrong - it should be the commented out version. However the plan is to get a release out where the API can be called in the sandbox first and fix the links it returns afterwards.
-//      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
-      "/agent-client-authorisation" + serviceRouteUrl
+      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
     } else {
       "/agent-client-authorisation" + serviceRouteUrl
     }

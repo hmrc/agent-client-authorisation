@@ -19,9 +19,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 import javax.inject.Singleton
 
 import org.joda.time.DateTime.now
-import play.api.mvc.{Action, Call}
+import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.controllers.{ClientInvitationsHal, HalWriter, ReverseClientInvitationsRoutes, SUPPORTED_REGIME}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -29,11 +29,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 class SandboxClientInvitationsController extends BaseController with HalWriter with ClientInvitationsHal {
 
   def getDetailsForAuthenticatedClient() = Action { implicit request =>
-    Ok(toHalResource(HardCodedSandboxIds.clientId.value, request.path))
+    Ok(toHalResource(HardCodedSandboxIds.clientId.value, prodroutes.ClientInvitationsController.getDetailsForAuthenticatedClient().url))
   }
 
   def getDetailsForClient(clientId: String) = Action { implicit request =>
-    Ok(toHalResource(clientId, request.path))
+    Ok(toHalResource(clientId, prodroutes.ClientInvitationsController.getDetailsForClient(clientId).url))
   }
 
   def acceptInvitation(clientId: String, invitationId: String) = Action { implicit request =>
@@ -62,13 +62,6 @@ class SandboxClientInvitationsController extends BaseController with HalWriter w
       )
 
 
-  override protected val reverseRoutes: ReverseClientInvitationsRoutes = ReverseSandboxClientInvitations
+  override protected val reverseRoutes: ReverseClientInvitationsRoutes = ReverseClientInvitations
   override protected def agencyLink(invitation: Invitation): Option[String] = None
-}
-
-private object ReverseSandboxClientInvitations extends ReverseClientInvitationsRoutes {
-  override def getInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.getInvitation(clientId, invitationId)
-  override def getInvitations(clientId:String, status:Option[InvitationStatus]): Call = routes.SandboxClientInvitationsController.getInvitations(clientId, status)
-  override def acceptInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.acceptInvitation(clientId, invitationId)
-  override def rejectInvitation(clientId:String, invitationId:String): Call = routes.SandboxClientInvitationsController.rejectInvitation(clientId, invitationId)
 }

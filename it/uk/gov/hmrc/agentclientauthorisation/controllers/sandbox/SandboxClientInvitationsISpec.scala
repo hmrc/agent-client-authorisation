@@ -84,7 +84,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       response.embedded.invitations.size shouldBe 2
       checkInvitation(mtdClientId, response.firstInvitation.underlying, testStartTime)
       checkInvitation(mtdClientId, response.secondInvitation.underlying, testStartTime)
-      response.links.selfLink shouldBe s"/agent-client-authorisation/sandbox/clients/${mtdClientId.value}/invitations/received"
+      response.links.selfLink shouldBe s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received"
       response.embedded.invitations.map(_.links.selfLink) shouldBe response.links.invitations
     }
   }
@@ -115,7 +115,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    selfLink should startWith(s"/agent-client-authorisation/sandbox/clients/${clientId.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfLink/accept"
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfLink/reject"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None

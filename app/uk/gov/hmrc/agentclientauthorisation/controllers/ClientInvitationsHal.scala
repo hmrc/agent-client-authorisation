@@ -20,7 +20,7 @@ import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Call
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
 
 trait ClientInvitationsHal {
 
@@ -45,8 +45,8 @@ trait ClientInvitationsHal {
     invitations.map { i => HalLink("invitation", reverseRoutes.getInvitation(i.clientId, i.id.stringify).toString())}.toVector
   }
 
-  def toHalResource(clientId: String, path: String): HalResource = {
-    val selfLink = Vector(HalLink("self", path ));
+  def toHalResource(clientId: String, selfLinkHref: String): HalResource = {
+    val selfLink = Vector(HalLink("self", selfLinkHref))
     val invitationsSentLink = Vector(HalLink("received", reverseRoutes.getInvitations(clientId, None ).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
