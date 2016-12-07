@@ -16,21 +16,19 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import java.net.URI
-
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.support.{APIRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
+import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
+class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private val agentCode = AgentCode("A12345A")
   private implicit val arn = HardCodedSandboxIds.arn
   private val MtdRegime: Regime = Regime("mtd-sa")

@@ -23,15 +23,21 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
-class NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class NoInvitationsApiPlatformISpec extends NoInvitationsISpec
+
+class NoInvitationsFrontendISpec extends NoInvitationsISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
   private val mtdClientId: MtdClientId = FakeMtdClientId.random()
 
   "Before the Agency has sent any invitations" in {
-    val agency = new AgencyApi(arn, port)
-    val client = new ClientApi(mtdClientId, port)
+    val agency = new AgencyApi(this, arn, port)
+    val client = new ClientApi(this, mtdClientId, port)
 
     given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
     given().client(clientId = mtdClientId).isLoggedInWithSessionId()

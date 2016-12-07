@@ -21,9 +21,15 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-class AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+
+class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends AgencyFiltersByClientIdAndStatusISpec
+
+class AgencyFiltersByClientIdAndStatusFrontendISpec extends AgencyFiltersByClientIdAndStatusISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -33,8 +39,8 @@ class AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHel
   feature("Agencies can filter")  {
 
     scenario("on the client id and status of invitations") {
-      val agency = new AgencyApi(arn, port)
-      val client = new ClientApi(mtdClientId, port)
+      val agency = new AgencyApi(this, arn, port)
+      val client = new ClientApi(this, mtdClientId, port)
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)

@@ -22,7 +22,13 @@ import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 
-class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientApiPlatformISpec extends AgencyInvitesClientISpec
+
+class AgencyInvitesClientFrontendISpec extends AgencyInvitesClientISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -31,8 +37,8 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
   feature("Agencies can filter")  {
 
     scenario("on the status of clients invitations") {
-      val agency = new AgencyApi(arn, port)
-      val client = new ClientApi(mtdClientId, port)
+      val agency = new AgencyApi(this, arn, port)
+      val client = new ClientApi(this, mtdClientId, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
@@ -54,8 +60,8 @@ class AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
     }
 
     scenario("on cancelled status") {
-      val agency = new AgencyApi(arn, port)
-      val client = new ClientApi(mtdClientId, port)
+      val agency = new AgencyApi(this, arn, port)
+      val client = new ClientApi(this, mtdClientId, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
       given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)

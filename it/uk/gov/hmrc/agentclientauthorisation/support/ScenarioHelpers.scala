@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
-trait ScenarioHelpers extends APIRequests with Matchers with Eventually {
+trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
   self : FeatureSpec =>
 

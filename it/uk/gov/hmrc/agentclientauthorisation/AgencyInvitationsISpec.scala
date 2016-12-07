@@ -25,7 +25,13 @@ import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with APIRequests {
+class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec
+
+class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests {
 
   private implicit val arn = Arn("ABCDEF12345678")
   private val otherAgencyArn: Arn = Arn("98765")

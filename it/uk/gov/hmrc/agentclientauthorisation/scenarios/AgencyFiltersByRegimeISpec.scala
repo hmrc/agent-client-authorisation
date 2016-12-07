@@ -22,7 +22,13 @@ import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 
-class AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyFiltersByRegimeApiPlatformISpec extends AgencyFiltersByRegimeISpec
+
+class AgencyFiltersByRegimeFrontendISpec extends AgencyFiltersByRegimeISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -31,7 +37,7 @@ class AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
   feature("Agencies can filter")  {
 
     scenario("on the regime of invitations") {
-      val agency = new AgencyApi(arn, port)
+      val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
 

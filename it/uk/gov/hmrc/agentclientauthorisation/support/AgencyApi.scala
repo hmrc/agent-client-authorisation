@@ -21,30 +21,30 @@ import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.logging.SessionId
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
-class AgencyApi(val arn: Arn, implicit val port: Int) extends APIRequests {
+class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
 
   def sendInvitation(clientId: MtdClientId, regime: Regime = Regime("mtd-sa"), postcode:String = "AA1 1AA"): String = {
 
-    val response = agencySendInvitation(arn, AgencyInvitationRequest(regime, clientId, postcode))
+    val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(regime, clientId, postcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
     response.header(LOCATION).get
   }
 
   def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
 
-    val response = agencyGetSentInvitations(arn, filteredBy)
+    val response = apiRequests.agencyGetSentInvitations(arn, filteredBy)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }
 
   def sentInvitation(invitationId:String): HalResourceHelper = {
 
-    val response = agencyGetSentInvitation(arn, invitationId)
+    val response = apiRequests.agencyGetSentInvitation(arn, invitationId)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }
