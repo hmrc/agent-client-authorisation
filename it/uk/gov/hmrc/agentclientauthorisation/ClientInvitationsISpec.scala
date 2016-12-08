@@ -23,7 +23,13 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
+class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec
+
+class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -84,17 +90,17 @@ class ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
     "return 403 when try to access someone else's invitation" in {
 
-      val agency = new AgencyApi(arn, port)
+      val agency = new AgencyApi(this, arn, port)
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
 
       agency.sendInvitation(mtdClient2Id)
 
-      val client = new ClientApi(mtdClient2Id, port)
+      val client = new ClientApi(this, mtdClient2Id, port)
       given().client(clientId = client.clientId).isLoggedIn()
       val invitations = client.getInvitations()
       val invite = invitations.firstInvitation
 
-      val client2 = new ClientApi(mtdClientId, port)
+      val client2 = new ClientApi(this, mtdClientId, port)
       given().client(clientId = client2.clientId).isLoggedIn()
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client2.hc)

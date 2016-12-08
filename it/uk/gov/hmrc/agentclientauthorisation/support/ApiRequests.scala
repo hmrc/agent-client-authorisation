@@ -22,17 +22,23 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
 
-trait APIRequests {
+trait ApiRequests {
 
-  def sandboxMode:Boolean = false
+  val sandboxMode: Boolean = false
+  val apiPlatform: Boolean = true
 
-  def baseUrl = if(sandboxMode) "/sandbox" else ""
+  def baseUrl =
+    if (sandboxMode) "/sandbox"
+    else {
+      if (apiPlatform) ""
+      else "/agent-client-authorisation"
+    }
 
   def externalUrl(serviceRouteUrl: String) =
-    if (sandboxMode) {
-      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
-    } else {
-      "/agent-client-authorisation" + serviceRouteUrl
+    if (sandboxMode) "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
+    else {
+      if (apiPlatform) "/agent-client-authorisation" + serviceRouteUrl
+      else serviceRouteUrl
     }
 
 

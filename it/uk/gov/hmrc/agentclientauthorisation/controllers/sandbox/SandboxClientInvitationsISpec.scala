@@ -28,13 +28,13 @@ import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
-class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with APIRequests {
+class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private val MtdRegime = Regime("mtd-sa")
   private implicit val arn = Arn("ABCDEF12345678")
   private val mtdClientId = HardCodedSandboxIds.clientId
 
-  override def sandboxMode: Boolean = true
+  override val sandboxMode: Boolean = true
 
   "GET /sandbox" should {
     behave like anEndpointWithClientReceivedInvitationsLink(baseUrl)
