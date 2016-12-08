@@ -28,15 +28,17 @@ trait ApiRequests {
   val apiPlatform: Boolean = true
 
   def baseUrl =
-    if (sandboxMode) "/sandbox"
-    else {
+    if (sandboxMode) {
+      "/sandbox"
+    } else {
       if (apiPlatform) ""
       else "/agent-client-authorisation"
     }
 
   def externalUrl(serviceRouteUrl: String) =
-    if (sandboxMode) "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
-    else {
+    if (sandboxMode) {
+      "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
+    } else {
       if (apiPlatform) "/agent-client-authorisation" + serviceRouteUrl
       else serviceRouteUrl
     }
