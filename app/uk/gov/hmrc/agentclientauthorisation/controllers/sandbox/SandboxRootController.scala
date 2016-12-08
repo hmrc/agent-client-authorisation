@@ -21,17 +21,17 @@ import javax.inject._
 import play.api.hal.{Hal, HalLink, HalResource}
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.controllers.HalWriter
+import uk.gov.hmrc.agentclientauthorisation.controllers.{HalWriter, routes => prodroutes}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
 class SandboxRootController
     extends BaseController with HalWriter {
-  private val selfLink = Vector(HalLink("self", routes.SandboxRootController.getRootResource().url));
+  private val selfLink = Vector(HalLink("self", prodroutes.RootController.getRootResource().url));
 
   def getRootResource() = Action { implicit request =>
-    val invitationsSentLink = HalLink("sent", routes.SandboxAgencyInvitationsController.getSentInvitations(HardCodedSandboxIds.arn, None, None, None).url)
-    val invitationsReceivedLink = HalLink("received", routes.SandboxClientInvitationsController.getInvitations(HardCodedSandboxIds.clientId.value, None).url)
+    val invitationsSentLink = HalLink("sent", prodroutes.AgencyInvitationsController.getSentInvitations(HardCodedSandboxIds.arn, None, None, None).url)
+    val invitationsReceivedLink = HalLink("received", prodroutes.ClientInvitationsController.getInvitations(HardCodedSandboxIds.clientId.value, None).url)
     val halResource: HalResource = Hal.hal(Json.obj(), selfLink ++ Vector(invitationsSentLink, invitationsReceivedLink), Vector())
     Ok(halResource)
   }

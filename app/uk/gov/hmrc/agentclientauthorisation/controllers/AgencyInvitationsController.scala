@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
+
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
@@ -60,6 +61,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
+  def getDetailsForAgencyInvitations(arn: Arn) = getDetailsForAgency(arn)
+
   def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
       invitationsService.agencySent(arn, regime, clientId, status).map { invitations =>
@@ -98,20 +101,6 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
-  override protected def reverseRoutes: ReverseAgencyInvitationsRoutes = ReverseAgencyInvitations
-
   override protected def agencyLink(invitation: Invitation) =
     Some(agenciesFakeConnector.agencyUrl(invitation.arn).toString)
-}
-
-
-private object ReverseAgencyInvitations extends ReverseAgencyInvitationsRoutes {
-  override def getSentInvitation(arn: Arn, invitationId: String) =
-    routes.AgencyInvitationsController.getSentInvitation(arn, invitationId)
-
-  override def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
-    routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status)
-
-  override def cancelInvitation(arn: Arn, invitationId: String) =
-    routes.AgencyInvitationsController.cancelInvitation(arn, invitationId)
 }
