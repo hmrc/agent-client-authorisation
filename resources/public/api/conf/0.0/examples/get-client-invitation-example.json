@@ -1,0 +1,19 @@
+{
+  "_links": {
+    "self": {
+      "href": "/clients/{clientId}/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+    },
+    "accept": {
+      "href": "/clients/{clientId}/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707/cancel"
+    },
+    "reject": {
+      "href": "/clients/{clientId}/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707/cancel"
+    }
+  },
+  "created": "2016-06-27T01:55:28+00.00",
+  "lastUpdated": "2016-07-02T01:55:28+00.00",
+  "arn": "123451234512345",
+  "regime": "mtd-sa",
+  "clientId": "123456789",
+  "status": "pending"
+}

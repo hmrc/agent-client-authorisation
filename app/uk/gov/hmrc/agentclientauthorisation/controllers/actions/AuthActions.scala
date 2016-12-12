@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -28,6 +29,7 @@ import scala.concurrent.Future
 trait AuthActions {
 
   def authConnector: AuthConnector
+
   def agenciesFakeConnector: AgenciesFakeConnector
 
   protected val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
@@ -38,42 +40,41 @@ trait AuthActions {
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
-            Left(Results.Unauthorized)
+            Left(GenericUnauthorizedResult)
         })
     }
   }
 
-  val onlyForSaAgents = withAccounts andThen new ActionRefiner[RequestWithAccounts, AgentRequest] {
+  val onlyForSaAgents: ActionBuilder[AgentRequest] = withAccounts andThen new ActionRefiner[RequestWithAccounts, AgentRequest] {
     override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, AgentRequest[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
       request.accounts.agent match {
         case Some(r) => agenciesFakeConnector.findArn(r).map {
           case Some(arn) => Right(AgentRequest(arn, request))
-          case None => Left(Results.Unauthorized)
+          case None => Left(AgentRegistrationNotFoundResult)
         }
-        case None => Future successful Left(Results.Unauthorized)
+        case None => Future successful Left(NotAnAgentResult)
       }
     }
   }
 
 
-
-  val onlyForSaClients = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
+  val onlyForSaClients: ActionBuilder[SaClientRequest] = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
     override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, SaClientRequest[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
       request.accounts.sa match {
         case Some(saUtr) => agenciesFakeConnector.findClient(saUtr) map {
           case Some(mtdClientId) => Right(SaClientRequest(saUtr, mtdClientId, request))
-          case None => Left(Results.Unauthorized)
+          case None => Left(ClientRegistrationNotFoundResult)
         }
-        case _ => Future successful Left(Results.Unauthorized)
+        case _ => Future successful Left(SaEnrolmentNotFoundResult)
       }
     }
   }
-
-
 }
 
 class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extends WrappedRequest[A](request)
+
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
+
 case class SaClientRequest[A](saUtr: SaUtr, mtdClientId: MtdClientId, request: Request[A]) extends WrappedRequest[A](request)

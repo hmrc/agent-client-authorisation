@@ -16,35 +16,47 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-trait SecuredEndpointBehaviours {
-  this: UnitSpec with AppAndStubs =>
+trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
+  this: UnitSpec with AppAndStubs   =>
 
-  def anEndpointAccessibleForMtdAgentsOnly(request: => HttpResponse): Unit = {
-    "return 401 when the requester is not authenticated" in {
-      given().user().isNotLoggedIn()
-      request.status shouldBe 401
+
+  def anEndpointAccessibleForMtdAgentsOnly(makeRequest: => HttpResponse): Unit = {
+    "return 401 when the requester is an Agent but not authenticated" in {
+      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isNotLoggedIn()
+      makeRequest.status shouldBe 401
+      makeRequest.body shouldBe bodyOf(GenericUnauthorizedResult)
     }
 
-    "return 401 when user is not an MTD agent" in {
-      given().user().isLoggedIn()
-      request.status shouldBe 401
+    "return 403 Forbidden when the requester is a logged as a NON MTD Agent" in {
+      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isLoggedIn()
+      makeRequest.status shouldBe 403
+      makeRequest.body shouldBe bodyOf(AgentRegistrationNotFoundResult)
     }
   }
 
-  def anEndpointAccessibleForSaClientsOnly(id: MtdClientId)(request: => HttpResponse): Unit = {
+  def anEndpointAccessibleForSaClientsOnly(id: MtdClientId)(makeRequest: => HttpResponse): Unit = {
     "return 401 when the requester is not authenticated" in {
       given().client(clientId = id).isNotLoggedIn()
-      request.status shouldBe 401
+      makeRequest.status shouldBe 401
+      makeRequest.body shouldBe bodyOf(GenericUnauthorizedResult)
     }
 
-    "return 401 when user has no SA account" in {
-      given().user().isLoggedIn()
-      request.status shouldBe 401
+    "return 403 Forbidden when user has not registered for MTD SA" in {
+      given().client(clientId = id).isLoggedInWithNoMtdRegistration()
+      makeRequest.status shouldBe 403
+      makeRequest.body shouldBe bodyOf(ClientRegistrationNotFoundResult)
+    }
+
+    "return 403 Forbidden when user has no SA enrolment" in {
+      given().client(clientId = id).withNoSaEnrolment().isLoggedIn()
+      makeRequest.status shouldBe 403
+      makeRequest.body shouldBe bodyOf(SaEnrolmentNotFoundResult)
     }
   }
 }

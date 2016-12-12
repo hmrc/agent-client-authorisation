@@ -28,64 +28,7 @@
     "versions": [{
       "version": "0.0",
       "status": "PROTOTYPED",
-      "access": @Json.toJson(access),
-      "endpoints": [{
-        "uriPattern": "/agencies/{id}/invitations/sent",
-        "endpointName": "Agency Sent Invitations",
-        "method": "GET",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "read:sent-invitations"
-      }, {
-        "uriPattern": "/agencies/{id}/invitations/sent",
-        "endpointName": "Agency Create an Invitation",
-        "method": "POST",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "write:sent-invitations"
-      }, {
-        "uriPattern": "/agencies/{id}/invitations/sent/{invitationId}",
-        "endpointName": "Agency Sent Invitation",
-        "method": "GET",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "read:sent-invitations"
-      }, {
-        "uriPattern": "/agencies/{id}/invitations/sent/{invitationId}",
-        "endpointName": "Agency Cancel Invitation",
-        "method": "DELETE",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "write:sent-invitations"
-      }, {
-        "uriPattern": "/clients/{id}/invitations/received",
-        "endpointName": "Client Retrieve Invitations",
-        "method": "GET",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "read:received-invitations"
-      }, {
-        "uriPattern": "/clients/{id}/invitations/received/{invitationId}",
-        "endpointName": "Client Retrieve an Invitation",
-        "method": "GET",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "read:received-invitations"
-      }, {
-        "uriPattern": "/clients/{id}/invitations/received/{invitationId}/accept",
-        "endpointName": "Client Accept Invitation",
-        "method": "PUT",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "write:received-invitations"
-      }, {
-        "uriPattern": "/clients/{id}/invitations/received/{invitationId}/reject",
-        "endpointName": "Client Reject Invitation",
-        "method": "PUT",
-        "authType": "USER",
-        "throttlingTier": "UNLIMITED",
-        "scope": "write:received-invitations"
-      }]
+      "access": @Json.toJson(access)
     }]
   }
 }

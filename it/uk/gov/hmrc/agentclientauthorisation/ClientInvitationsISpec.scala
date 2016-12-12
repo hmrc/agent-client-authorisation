@@ -48,7 +48,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientsResource())
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
   }
- 
+
   "GET /clients/:clientId" should {
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientResource(mtdClientId))
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdClientId))
@@ -107,8 +107,9 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       response.status shouldBe 403
     }
   }
+
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
-    "return a meaningful response for the authenticated agent" in {
+    "return a meaningful response for the authenticated clients" in {
       given().client(clientId = mtdClientId).isLoggedIn().aRelationshipIsCreatedWith(arn)
 
       val response = new Resource(url, port).get()

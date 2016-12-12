@@ -17,14 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, SaUtr}
 
 trait StubUtils {
   me: StartAndStopWireMock =>
 
   class PreconditionBuilder {
+
     def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
-      new AgentAdmin(arn, oid = "556737e15500005500eaf68e", agentCode)
+       AgentAdmin(arn, oid = "556737e15500005500eaf68e", agentCode)
     }
 
     def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
@@ -32,11 +33,11 @@ trait StubUtils {
     }
 
     def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {
-      new UnknownUser(oid)
+      UnknownUser(oid)
     }
 
     def client(oid: String = "556737e15500005500eaf68f", clientId: MtdClientId = FakeMtdClientId.random()): Client = {
-      new Client(oid, clientId)
+      Client(oid, clientId, Some(FakeMtdClientId.toSaUtr(clientId)))
     }
   }
 
@@ -48,15 +49,18 @@ trait StubUtils {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  class AgentAdmin(override val arn: String,
-                   override val oid: String,
-                   override val agentCode: String)
+  case class AgentAdmin(
+                         override val arn: String,
+                         override val oid: String,
+                         override val agentCode: String)
     extends BaseUser with AgentAuthStubs[AgentAdmin] {
   }
 
-  class UnknownUser(override val oid: String)
+  case class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  class Client(override val oid: String, override val clientId: MtdClientId)
-    extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client]
+  case class Client(override val oid: String, override val clientId: MtdClientId, saUtr:Option[SaUtr]) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] {
+
+    def withNoSaEnrolment(): Client = this.copy(saUtr = None)
+  }
 }

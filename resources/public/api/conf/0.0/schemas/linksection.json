@@ -1,0 +1,91 @@
+{
+  "description": "Contains the LinkItems available from this resource",
+  "properties": {
+    "self": {
+      "description": "An object containing a href property of a traversable link to a related resource",
+      "properties": {
+        "href": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true,
+      "displayName": "Link Item",
+      "type": "object",
+      "example": "{\n  \"href\" : \"/agencies/A123456/invitations/sent\"\n}\n",
+      "required": [
+        "href"
+      ]
+    },
+    "invitations": {
+      "type": "array",
+      "items": {
+        "description": "An object containing a href property of a traversable link to a related resource",
+        "properties": {
+          "href": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true,
+        "displayName": "Link Item",
+        "type": "object",
+        "example": "{\n  \"href\" : \"/agencies/A123456/invitations/sent\"\n}\n",
+        "required": [
+          "href"
+        ]
+      }
+    },
+    "cancel": {
+      "description": "An object containing a href property of a traversable link to a related resource",
+      "properties": {
+        "href": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true,
+      "displayName": "Link Item",
+      "type": "object",
+      "example": "{\n  \"href\" : \"/agencies/A123456/invitations/sent\"\n}\n",
+      "required": [
+        "href"
+      ]
+    },
+    "accept": {
+      "description": "An object containing a href property of a traversable link to a related resource",
+      "properties": {
+        "href": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true,
+      "displayName": "Link Item",
+      "type": "object",
+      "example": "{\n  \"href\" : \"/agencies/A123456/invitations/sent\"\n}\n",
+      "required": [
+        "href"
+      ]
+    },
+    "reject": {
+      "description": "An object containing a href property of a traversable link to a related resource",
+      "properties": {
+        "href": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true,
+      "displayName": "Link Item",
+      "type": "object",
+      "example": "{\n  \"href\" : \"/agencies/A123456/invitations/sent\"\n}\n",
+      "required": [
+        "href"
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "displayName": "Link Section",
+  "type": "object",
+  "example": "{\n  \"self\" : { \"href\" : \"/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707\"},\n  \"cancel\" : { \"href\" : \"/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707\"}\n}\n",
+  "required": [
+    "self"
+  ],
+  "$schema": "http://json-schema.org/draft-04/schema#"
+}

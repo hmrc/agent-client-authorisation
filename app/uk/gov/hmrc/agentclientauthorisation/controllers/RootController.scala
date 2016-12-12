@@ -17,15 +17,18 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
-import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
+
+import play.api.hal.{Hal, HalLink, HalResource}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 @Singleton
 class RootController @Inject() (override val agenciesFakeConnector: AgenciesFakeConnector,
@@ -33,13 +36,14 @@ class RootController @Inject() (override val agenciesFakeConnector: AgenciesFake
     extends BaseController with AuthActions with HalWriter {
   private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url));
 
-  def getRootResource() = withAccounts.async { implicit request => 
+  def getRootResource() = withAccounts.async { implicit request =>
     (request.accounts.agent, request.accounts.sa) match {
-      case (Some(agentCode), None) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(Unauthorized))
-      case (None, Some(saUtr)) => agenciesFakeConnector.findClient(saUtr).map(_.map(clientId => Ok(toHalResource(clientId))).getOrElse(Unauthorized))
-      case _ => Future successful Unauthorized
+      case (Some(agentCode), _) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentRegistrationNotFoundResult))
+      case (None, Some(saUtr))  => agenciesFakeConnector.findClient(saUtr) .map(_.map(clientId => Ok(toHalResource(clientId))).getOrElse(ClientRegistrationNotFoundResult))
+      case (None, None)         => Future successful SaEnrolmentNotFoundResult
     }
   }
+
   private def toHalResource(arn: Arn): HalResource = {
     val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())

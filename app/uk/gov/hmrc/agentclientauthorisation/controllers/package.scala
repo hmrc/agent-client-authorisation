@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation
 
+
 package object controllers {
+
   val SUPPORTED_REGIME = "mtd-sa"
+
 }

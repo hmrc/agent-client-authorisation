@@ -1,0 +1,12 @@
+{
+  "description": "The status of the current invitation\nStatus  | Meaning\n------- | -------\n```pending``` | The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status\n```accepted``` | The client has accepted the invitation. Only the client can set this status\n```rejected``` | The client has rejected the invitation. Only the client can set this status\n```cancelled``` | The Agency has cancelled the invitation. Only the Agency can set this status\n",
+  "enum": [
+    "pending",
+    "accepted",
+    "rejected",
+    "cancelled"
+  ],
+  "displayName": "Statuses",
+  "type": "string",
+  "$schema": "http://json-schema.org/draft-04/schema#"
+}

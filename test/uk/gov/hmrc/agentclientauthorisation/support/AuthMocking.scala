@@ -48,6 +48,16 @@ trait AuthMocking {
   def givenClientIsLoggedIn() = {
     givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
     givenClientRecordIs(SaUtr("1234567890"), MtdClientId("MTD1234567890"))
+    givenClientRecordIs(SaUtr("1234567890"), MtdClientId("MTD1234567890"))
+  }
+
+  def givenNonMTDClientIsLoggedIn() = {
+    givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
+    givenClientRecordIsNotFound(SaUtr("1234567890"))
+  }
+
+  def givenClientIsLoggedInWithNoSAAccount() = {
+    givenAccountsAre(Accounts(None, None))
   }
 
   def givenUserIsNotLoggedIn() = whenAccountsIsAskedFor().thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))
@@ -59,6 +69,8 @@ trait AuthMocking {
   def givenAgencyRecordIs(agentCode: AgentCode, arn: Arn) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful Some(arn))
 
   def givenClientRecordIs(saUtr: SaUtr, mtdClientId: MtdClientId) = when(agenciesFakeConnector.findClient(eqs(saUtr))(any(), any())).thenReturn(Future successful Some(mtdClientId))
+
+  def givenClientRecordIsNotFound(saUtr: SaUtr) = when(agenciesFakeConnector.findClient(eqs(saUtr))(any(), any())).thenReturn(Future successful None)
 
   def givenUserHasNoAgency(agentCode: AgentCode) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful None)
 

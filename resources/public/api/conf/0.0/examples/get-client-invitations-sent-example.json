@@ -1,0 +1,57 @@
+{
+  "_links": {
+    "self": {
+      "href": "/clients/{clientId}/invitations/received"
+    },
+    "invitations": [
+      {
+        "href": "/clients/{clientId}/invitations/received/f8068f15-95e0-45a3-b29a-10a078e3c707"
+      },
+      {
+        "href": "/clients/{clientId}/invitations/received/9e6789e9-27c7-4874-a094-9181c4e9b2e8"
+      }
+    ]
+  },
+  "_embedded": {
+    "invitations": [
+      {
+        "_links": {
+          "self": {
+            "href": "/clients/{clientId}/invitations/received/f8068f15-95e0-45a3-b29a-10a078e3c707"
+          },
+          "accept": {
+            "href": "/clients/{clientId}/invitations/received/f8068f15-95e0-45a3-b29a-10a078e3c707/cancel"
+          },
+          "reject": {
+            "href": "/clients/{clientId}/invitations/received/f8068f15-95e0-45a3-b29a-10a078e3c707/cancel"
+          }
+        },
+        "created": "2016-06-27T01:55:28+00.00",
+        "lastUpdated": "2016-07-02T01:55:28+00.00",
+        "arn": "123451234512345",
+        "regime": "mtd-sa",
+        "clientId": "123456789",
+        "status": "pending"
+      },
+      {
+        "_links": {
+          "self": {
+            "href": "/clients/{clientId}/invitations/received/9e6789e9-27c7-4874-a094-9181c4e9b2e8"
+          },
+          "accept": {
+            "href": "/clients/{clientId}/invitations/received/9e6789e9-27c7-4874-a094-9181c4e9b2e8/cancel"
+          },
+          "reject": {
+            "href": "/clients/{clientId}/invitations/received/9e6789e9-27c7-4874-a094-9181c4e9b2e8/cancel"
+          }
+        },
+        "created": "2016-06-27T01:55:28+00.00",
+        "lastUpdated": "2016-07-02T01:55:28+00.00",
+        "arn": "123451234512345",
+        "regime": "mtd-sa",
+        "clientId": "0987654321",
+        "status": "pending"
+      }
+    ]
+  }
+}

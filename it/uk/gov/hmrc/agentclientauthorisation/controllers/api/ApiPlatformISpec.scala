@@ -35,39 +35,10 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
       (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
       (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
 
-      val accessConfig = (definition \ "api" \ "versions" \\ "access")
+      val accessConfig = definition \ "api" \ "versions" \\ "access"
       (accessConfig.head \ "type").as[String] shouldBe "PRIVATE"
       (accessConfig.head \ "whitelistedApplicationIds").head.as[String] shouldBe "00010002-0003-0004-0005-000600070008"
       (accessConfig.head \ "whitelistedApplicationIds")(1).as[String] shouldBe "00090002-0003-0004-0005-000600070008"
-    }
-  }
-
-
-  "provide XML documentation for all endpoints in the definitions file" in new ApiTestSupport {
-
-    lazy override val runningPort: Int = port
-
-    forAllApiVersions(endpointsByVersion) { case (version, endpoints) =>
-
-      info(s"Checking API XML documentation for version[$version] of the API")
-
-      endpoints foreach { endpoint =>
-
-        val endpointName: String = endpoint.endPointName
-
-        info(s"$version - $endpointName")
-
-        val (status, contents) = xmlDocumentationFor(endpoint)
-
-        withClue(s"definitions specifies endpoint '$endpointName', is there a ${endpointName.replaceAll(" ", "-")}.xml file?") {
-          status shouldBe 200
-        }
-
-        withClue(s"documentation for '$endpointName' should be well formed XML with a corresponding 'name' element") {
-          contents.isSuccess shouldBe true
-          (contents.get \ "name").head.text shouldBe endpointName
-        }
-      }
     }
   }
 

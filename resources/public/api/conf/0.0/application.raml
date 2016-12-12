@@ -1,69 +1,243 @@
 #%RAML 1.0
 title: Agent Client Authorisation
-baseUri: https://gov.uk/agent-client-authorisation
 version: 0.0
-mediaType: application/vnd.hmrc.1.0+json
+protocols: [ HTTPS ]
+baseUri: https://api.service.hmrc.gov.uk/
+mediaType: [ application/json, application/hal+json ]
 description: An API for agents and clients akin to the paper 64-8 form.  The production version of this API is not yet available, only the test version which should be accessed using your test credentials.
 
+documentation:
+ - title: Overview
+   content: !include docs/overview.md
+ - title: Versioning
+   content: !include http://api-documentation-raml-frontend.service/api-documentation/assets/common/docs/versioning.md
+ - title: Errors
+   content: !include http://api-documentation-raml-frontend.service/api-documentation/assets/common/docs/errors.md
+
 uses:
+  sec: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/securitySchemes.raml
+  headers: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/headers.raml
+  annotations: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/annotations.raml
+  types: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/types.raml
   invitations: modules/invitations.raml
   atoms:       modules/atoms.raml
 
-/agencies/{arn}/invitations/sent:
-  description: List of invitations sent by the agency (arn)
+traits:
+  loginRequired:
+    responses:
+      401:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              invalidCredentials:
+                description: Invalid Authentication information provided.
+                value:
+                  code: INVALID_CREDENTIALS
+
+  permissionOnAgencyRequired:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              noPermissionOnAgency:
+                description: The logged in user is not permitted to see the invitations for the specified agency.
+                value:
+                  code: NO_PERMISSION_ON_AGENCY
+
+  permissionOnClientRequired:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              noPermissionOnArn:
+                description: The logged in user is not permitted to see the invitations for the specified client.
+                value:
+                  code: NO_PERMISSION_ON_CLIENT
+
+  mustBeAnAgent:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              notAnAgent:
+                description: The logged in user is not an agent.
+                value:
+                  code: NOT_AN_AGENT
+
+  mustBeASaClient:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              saEnrolmentNotFound:
+                description: The Client must have an active IR-SA enrolment.
+                value:
+                  code: SA_ENROLMENT_NOT_FOUND
+
+  agentRegistrationRequired:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              agentRegistrationNotFound:
+                description: The Agent's MTDfB registration was not found.
+                value:
+                  code: AGENT_REGISTRATION_NOT_FOUND
+
+  clientRegistrationRequired:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              clientRegistrationNotFound:
+                description: The Client's MTDfB registration was not found.
+                value:
+                  code: CLIENT_REGISTRATION_NOT_FOUND
+
+  invitationMustHaveValidStatus:
+    responses:
+      403:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              invalidInvitationStatus:
+                description: The requested state transition is not permitted given the invitation's current status.
+                value:
+                  code: INVALID_INVITATION_STATUS
+
+  invitationSpecified:
+    responses:
+      404:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              invitationNotFound:
+                description: The specified invitation was not found.
+                value:
+                  code: INVITATION_NOT_FOUND
+
+/agent-client-authorisation/agencies/{arn}/invitations/sent:
+  is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired]
   uriParameters:
     arn:
-      description: The MTD platform Agent Registration Number
+      description: The MTD platform Agent Registration Number.
       type: string
   get:
+    displayName: Get invitations sent by the agency
+    description: Retrieves a list of invitations sent by the agency.
+    (annotations.scope): "read:sent-invitations"
+    securedBy: [ sec.oauth_2_0: { scopes: [ "read:sent-invitations" ] } ]
     queryParameters:
       status:
         type: invitations.Status
         description: Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
       clientId:
         type: string
+        description: Client's top level ID for their MTD registration (not regime specific).
       regime:
         type: invitations.Regime
+        description: The tax regime.
     responses:
       200:
         description: A list of invitations.
-        body: invitations.Invitation[]
-      401:
-        description: The agent must be authenticated and authorised (logged-in) to use this resource
-      403:
-        description: The agent is not permitted to see this list of invitations.
+        #TODO status descriptions (see Agency-Sent-Invitations.xml) - can they be generated from JSON Schema?
+        #TODO description of links (see Agency-Sent-Invitations.xml)
+        body:
+          application/json:
+            examples:
+              example-1:
+                value: !include examples/get-agency-invitations-sent-example-1.json
   post:
-    description: Create a new invitation
+    is: [clientRegistrationRequired]
+    displayName: Create a new invitation
+    #TODO replace request body HTML table in description with JSON schema
+    description: |
+      Create a new invitation.
+
+      The request body should be a JSON object with the following properties:
+
+      <table>
+        <tr><th>Property</th><th>Example</th><th>Description</th></tr>
+        <tr><td>regime</td><td>mtd-sa</td><td>The tax regime of the client within which the agency is offering representation.</td></tr>
+        <tr><td>clientId</td><td>1234567890</td><td>Client's top level ID for their MTD registration (not regime specific).</td></tr>
+        <tr><td>postcode (known fact)</td><td>BN699Q</td><td>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the client.</td></tr>
+      </table>
+    (annotations.scope): "write:sent-invitations"
+    securedBy: [ sec.oauth_2_0: { scopes: [ "write:sent-invitations" ] } ]
     body:
-      type: atoms.AgentInvitation
+      application/json:
+        type: atoms.AgentInvitation
+        examples:
+          example-1:
+            value: !include examples/post-agency-invitations-sent-example-1.json
     responses:
       201:
         description: The invitation was successfully created.
         headers:
           Location:
             example: /agencies/A123456/invitations/sent/INV123456
-      401:
-        description: The agent must be authenticated and authorised (logged-in) to use this resource
+            description: Location of the invitation that was created.
+      400:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              invalidPostcode:
+                description: The submitted postcode does not match the expected format.
+                value:
+                  code: POSTCODE_FORMAT_INVALID
       403:
-        description: |
-          The request will not be fulfilled. Reasons for this may include
-             * The agency does not have the requisite active enrolments
-             * The client is not registered for that tax regime
-             * The supplied postcode is not the client's
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              postcodeDoesNotMatch:
+                description: The submitted postcode did not match the client's postcode as held by HMRC.
+                value:
+                  code: POSTCODE_DOES_NOT_MATCH
+      501:
+        body:
+          application/json:
+            type: types.errorResponse
+            examples:
+              postcodeDoesNotMatch:
+                description: The submitted regime is not currently supported by this API.
+                value:
+                  code: UNSUPPORTED_REGIME
 
   /{invitationId}:
+    is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified]
     uriParameters:
       invitationId:
         description: The id of the invitation.
         type: string
     get:
-      description: Retrieve an invitation.
+      displayName: Get a sent invitation
+      description: Retrieve a sent invitation.
+      (annotations.scope): "read:sent-invitations"
+      securedBy: [ sec.oauth_2_0: { scopes: [ "read:sent-invitations" ] } ]
       responses:
         200:
           description: Returns the invitation.
           body:
-            type: invitations.Invitation
-            example: !include modules/invitation_example.json
+            application/json:
+              #TODO: JSON Schema # type: invitations.Invitation
+              example: !include modules/invitation_example.json
         401:
           description: The agent must be authenticated and authorised (logged-in) to use this resource
         403:
@@ -71,8 +245,12 @@ uses:
         404:
           description: The invitation with the specified id does not exist.
     /cancel:
-      description: Cancel an invitation.
+      is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
+        displayName: Cancel an invitation
+        description: Cancel an invitation.
+        (annotations.scope): "write:sent-invitations"
+        securedBy: [ sec.oauth_2_0: { scopes: [ "write:sent-invitations" ] } ]
         responses:
           204:
             description: Invitation has been cancelled.
@@ -83,12 +261,17 @@ uses:
           404:
             description: The invitation with the specified id does not exist.
 
-/clients/{clientId}/invitations/received:
+/agent-client-authorisation/clients/{clientId}/invitations/received:
+  is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired]
   uriParameters:
     clientId:
       description: Client identifier.
       type: string
   get:
+    displayName: Get invitations received by a client
+    description: Retrieves a list of invitations received by a client
+    (annotations.scope): "read:received-invitations"
+    securedBy: [ sec.oauth_2_0: { scopes: [ "read:received-invitations" ] } ]
     queryParameters:
       status:
         description: filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
@@ -96,20 +279,30 @@ uses:
     responses:
       200:
         description: A list of invitations.
-        body: invitations.Invitation[]
+        body: #invitations.Invitation[]
+          application/json:
+            example:
+                value: !include examples/get-client-invitations-sent-example.json
       401:
         description: The client must be authenticated and authorised (logged-in) to use this resource
       403:
         description: The client is not permitted to see these invitations.
 
   /{invitationId}:
+    is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified]
     get:
-      description: Retrieve an invitation.
+      displayName: Get a received invitation
+      description: Retrieve a received invitation.
+      (annotations.scope): "read:received-invitations"
+      securedBy: [ sec.oauth_2_0: { scopes: [ "read:received-invitations" ] } ]
       responses:
         200:
           description: Returns the invitation.
           body:
-            type: invitations.Invitation
+            #type: invitations.Invitation
+            application/json:
+              example:
+                  value: !include examples/get-client-invitations-sent-example.json
         401:
           description: The client must be authenticated and authorised (logged-in) to use this resource
         403:
@@ -121,8 +314,12 @@ uses:
         description: The id of the invitation.
         type: string
     /accept:
-      description: Accept an invitation.
+      is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
+        displayName: Accept an invitation
+        description: Accept an invitation.
+        (annotations.scope): "write:received-invitations"
+        securedBy: [ sec.oauth_2_0: { scopes: [ "write:received-invitations" ] } ]
         responses:
           204:
             description: Invitation has been accepted.
@@ -133,8 +330,12 @@ uses:
           404:
             description: The invitation with the specified id does not exist.
     /reject:
-      description: Reject an invitation.
+      is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
+        displayName: Reject an invitation
+        description: Reject an invitation.
+        (annotations.scope): "write:received-invitations"
+        securedBy: [ sec.oauth_2_0: { scopes: [ "write:received-invitations" ] } ]
         responses:
           204:
             description: Invitation has been rejected.
