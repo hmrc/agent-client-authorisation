@@ -124,7 +124,6 @@ trait ApiRequests {
     updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/reject")
 
   def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
-    println(link)
     new Resource(link, port).putEmpty()(hc)
   }
 

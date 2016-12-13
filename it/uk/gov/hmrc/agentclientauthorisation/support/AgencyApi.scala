@@ -32,6 +32,7 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
 
     val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(regime, clientId, postcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
+    require(response.body == "{}", s"There should be an empty js object in the response body")
     response.header(LOCATION).get
   }
 
