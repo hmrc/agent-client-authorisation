@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.mockito.Matchers.{eq => eqs, _}
 import org.joda.time.DateTime._
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
@@ -28,13 +27,14 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -79,7 +79,7 @@ trait ClientEndpointBehaviours {
 
       val response = await(endpoint(request))
 
-      response.header.status shouldBe 404
+      response shouldBe InvitationNotFound
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -88,7 +88,7 @@ trait ClientEndpointBehaviours {
 
       val response = await(endpoint(request))
 
-      response.header.status shouldBe 401
+      response shouldBe GenericUnauthorized
     }
 
     "Return forbidden" when {
@@ -101,7 +101,7 @@ trait ClientEndpointBehaviours {
 
         val response = await(endpoint(request))
 
-        response.header.status shouldBe 403
+        response shouldBe NoPermissionOnClient
       }
 
       "the invitation cannot be actioned" in {
@@ -112,7 +112,7 @@ trait ClientEndpointBehaviours {
 
         val response = await(endpoint(request))
 
-        response.header.status shouldBe 403
+        response shouldBe invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
       }
     }
   }

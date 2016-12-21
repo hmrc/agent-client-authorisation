@@ -40,7 +40,7 @@ trait AuthActions {
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
-            Left(GenericUnauthorizedResult)
+            Left(GenericUnauthorized)
         })
     }
   }
@@ -51,9 +51,9 @@ trait AuthActions {
       request.accounts.agent match {
         case Some(r) => agenciesFakeConnector.findArn(r).map {
           case Some(arn) => Right(AgentRequest(arn, request))
-          case None => Left(AgentRegistrationNotFoundResult)
+          case None => Left(AgentRegistrationNotFound)
         }
-        case None => Future successful Left(NotAnAgentResult)
+        case None => Future successful Left(NotAnAgent)
       }
     }
   }
@@ -65,9 +65,9 @@ trait AuthActions {
       request.accounts.sa match {
         case Some(saUtr) => agenciesFakeConnector.findClient(saUtr) map {
           case Some(mtdClientId) => Right(SaClientRequest(saUtr, mtdClientId, request))
-          case None => Left(ClientRegistrationNotFoundResult)
+          case None => Left(ClientRegistrationNotFound)
         }
-        case _ => Future successful Left(SaEnrolmentNotFoundResult)
+        case _ => Future successful Left(SaEnrolmentNotFound)
       }
     }
   }

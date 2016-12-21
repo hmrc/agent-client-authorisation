@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
-import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
@@ -32,23 +32,17 @@ trait AgentInvitationValidation extends Results {
 
   val hasValidPostcode: (AgentInvitation) => Option[Result] = (invite) => {
     postcodeWithoutSpacesRegex.findFirstIn(invite.postcode.replaceAll(" ", "")).map(_ => None)
-      .getOrElse(Some(BadRequest))
+      .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.postcode}", does not match the expected format.""")))
   }
 
   private val postCodeMatches: (AgentInvitation) => Option[Result] = (invite) => {
     if(postcodeService.clientPostcodeMatches(invite.clientId, invite.postcode)) None
-    else Some(Forbidden)
+    else Some(PostcodeDoesNotMatch)
   }
 
   private val supportedRegime: (AgentInvitation) => Option[Result] = (invite) => {
     if(SUPPORTED_REGIME == invite.regime) None
-    else {
-      val responseBody = Json.obj(
-        "code" -> "UNSUPPORTED_REGIME",
-        "message" -> s"""Unsupported regime "${invite.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""
-      )
-      Some(NotImplemented(responseBody))
-    }
+    else Some(unsupportedRegime(s"""Unsupported regime "${invite.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""))
   }
 
   def checkForErrors(authRequest: AgentInvitation): Seq[Result] =

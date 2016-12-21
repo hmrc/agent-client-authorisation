@@ -39,17 +39,17 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with A
 
     "return 401 when invoked by not logged in user" in {
       givenUserIsNotLoggedIn()
-      response(onlyForSaAgents) shouldBe GenericUnauthorizedResult
+      response(onlyForSaAgents) shouldBe GenericUnauthorized
     }
 
     "return 403 when a non agent user is logged in" in {
       givenClientIsLoggedIn()
-      response(onlyForSaAgents) shouldBe NotAnAgentResult
+      response(onlyForSaAgents) shouldBe NotAnAgent
     }
 
     "return 403 when an agent without a MTD agency record is logged in" in {
       givenAgentWithoutRecordIsLoggedIn()
-      response(onlyForSaAgents) shouldBe AgentRegistrationNotFoundResult
+      response(onlyForSaAgents) shouldBe AgentRegistrationNotFound
     }
 
     "return 200 when an agent with an MTD agency record is logged in" in {
@@ -74,17 +74,17 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with A
   "onlyForSaClients" should {
     "return 401 when invoked by not logged in user" in {
       givenUserIsNotLoggedIn()
-      response(onlyForSaClients) shouldBe GenericUnauthorizedResult
+      response(onlyForSaClients) shouldBe GenericUnauthorized
     }
 
     "return 403 when a user who has no MTD enrolment is logged in" in {
       givenNonMTDClientIsLoggedIn()
-      response(onlyForSaClients) shouldBe ClientRegistrationNotFoundResult
+      response(onlyForSaClients) shouldBe ClientRegistrationNotFound
     }
 
     "return 403 when a user who has no SA enrolment is logged in" in {
       givenClientIsLoggedInWithNoSAAccount()
-      response(onlyForSaClients) shouldBe SaEnrolmentNotFoundResult
+      response(onlyForSaClients) shouldBe SaEnrolmentNotFound
     }
 
     "return 200 when a user who has an SA enrolment is logged in" in {

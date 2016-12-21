@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.NoPermissionOnClient
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
@@ -29,7 +30,7 @@ class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
 
-trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
+trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests with ErrorResultMatchers {
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -85,10 +86,12 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
     "return 404 when invitation not found" in {
       val response = clientGetReceivedInvitation(mtdClientId, invitationId)
+      // TODO replace with
+      // response should matchErrorResult(InvitationNotFoundResult)
       response.status shouldBe 404
     }
 
-    "return 403 when try to access someone else's invitation" in {
+    "return 403 when trying to transition someone else's invitation" in {
 
       val agency = new AgencyApi(this, arn, port)
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
@@ -104,7 +107,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       given().client(clientId = client2.clientId).isLoggedIn()
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client2.hc)
-      response.status shouldBe 403
+      response should matchErrorResult(NoPermissionOnClient)
     }
   }
 
@@ -121,13 +124,13 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   def anEndpointThatPreventsAccessToAnotherClientsInvitations(url:String): Unit = {
-    "return 403 for someone else's invitations" in {
+    "return 403 NO_PERMISSION_ON_CLIENT for someone else's invitations" in {
 
       given().client(clientId = mtdClient2Id).isLoggedIn()
 
       val response = new Resource(url, port).get
 
-      response.status shouldBe 403
+      response should matchErrorResult(NoPermissionOnClient)
     }
   }
 }

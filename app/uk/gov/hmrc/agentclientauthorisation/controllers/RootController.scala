@@ -38,9 +38,9 @@ class RootController @Inject() (override val agenciesFakeConnector: AgenciesFake
 
   def getRootResource() = withAccounts.async { implicit request =>
     (request.accounts.agent, request.accounts.sa) match {
-      case (Some(agentCode), _) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentRegistrationNotFoundResult))
-      case (None, Some(saUtr))  => agenciesFakeConnector.findClient(saUtr) .map(_.map(clientId => Ok(toHalResource(clientId))).getOrElse(ClientRegistrationNotFoundResult))
-      case (None, None)         => Future successful SaEnrolmentNotFoundResult
+      case (Some(agentCode), _) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentRegistrationNotFound))
+      case (None, Some(saUtr))  => agenciesFakeConnector.findClient(saUtr) .map(_.map(clientId => Ok(toHalResource(clientId))).getOrElse(ClientRegistrationNotFound))
+      case (None, None)         => Future successful SaEnrolmentNotFound
     }
   }
 
