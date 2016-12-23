@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject._
+
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
@@ -51,7 +52,11 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: String): Future[Option[Invitation]] =
-      invitationsRepository.findById(BSONObjectID(invitationId))
+    BSONObjectID.parse(invitationId)
+      .map(bsonInvitationId => invitationsRepository.findById(bsonInvitationId))
+      .recover { case _: IllegalArgumentException => Future successful None }
+      .get
+
 
   def clientsReceived(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
     invitationsRepository.list(regime, clientId, status)

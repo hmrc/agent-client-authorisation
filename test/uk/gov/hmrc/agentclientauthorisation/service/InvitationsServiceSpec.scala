@@ -154,6 +154,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
+  "findInvitation" should {
+    "return None when the passed invitationId cannot be parsed as a BSONObjectId" in {
+      await(service.findInvitation("not a BSON Object Id")) shouldBe None
+    }
+  }
+
   // TODO do we need this?
 //  "list" should {
 //    "delegate to InvitationsRepository" in {

@@ -81,13 +81,25 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   }
 
   "GET /clients/:clientId/invitations/received/:invitation" should {
-    val invitationId: String = "invite-id-never-used"
+    // an invitationId that is a valid BSONObjectID but for which no invitation exists
+    val invitationId: String = "585d24f57a83a131006bb746"
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitation(mtdClientId, invitationId))
 
     "return 404 when invitation not found" in {
+      given().client(clientId = mtdClientId).isLoggedIn()
+
       val response = clientGetReceivedInvitation(mtdClientId, invitationId)
       // TODO replace with
-      // response should matchErrorResult(InvitationNotFoundResult)
+      // response should matchErrorResult(InvitationNotFound)
+      response.status shouldBe 404
+    }
+
+    "return 404 when invitationId is not a valid BSONObjectID" in {
+      given().client(clientId = mtdClientId).isLoggedIn()
+
+      val response = clientGetReceivedInvitation(mtdClientId, "invite-id-never-used")
+      // TODO replace with
+      // response should matchErrorResult(InvitationNotFound)
       response.status shouldBe 404
     }
 
