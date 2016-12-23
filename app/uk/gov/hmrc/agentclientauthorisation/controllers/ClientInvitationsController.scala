@@ -64,11 +64,12 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
       case _ => Future successful NoPermissionOnClient
     }
   }
+
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
       case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x))
-      case None => NotFound
-      case _ => Forbidden
+      case None => InvitationNotFound
+      case _ => NoPermissionOnClient
     }
   }
 
@@ -76,7 +77,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     if (clientId == request.mtdClientId.value) {
       invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
-      Future successful Forbidden
+      Future successful NoPermissionOnClient
     }
   }
 

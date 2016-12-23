@@ -98,7 +98,7 @@ trait ApiRequests {
   def clientUrl(mtdClientId: MtdClientId) = s"$baseUrl/clients/${mtdClientId.value}"
 
   def clientReceivedInvitationsUrl(id: MtdClientId): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
-  private def clientReceivedInvitationUrl(id: MtdClientId, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
+  def clientReceivedInvitationUrl(id: MtdClientId, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
@@ -113,7 +113,11 @@ trait ApiRequests {
   }
 
   def clientGetReceivedInvitation(clientId: MtdClientId, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
-    new Resource(clientReceivedInvitationUrl(clientId, invitationId), port).get()(hc)
+    getReceivedInvitationResource(clientReceivedInvitationUrl(clientId, invitationId))
+  }
+
+  def getReceivedInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+    new Resource(link, port).get()(hc)
   }
 
   def clientAcceptInvitation(clientId: MtdClientId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
@@ -124,7 +128,6 @@ trait ApiRequests {
     updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/reject")
 
   def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
-    println(link)
     new Resource(link, port).putEmpty()(hc)
   }
 

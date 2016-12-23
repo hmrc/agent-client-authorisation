@@ -18,8 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.NoPermissionOnClient
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
@@ -73,10 +74,10 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   "GET /clients/:clientId/invitations/received" should {
     behave like anEndpointAccessibleForSaClientsOnly(mtdClientId)(clientGetReceivedInvitations(mtdClientId))
 
-    "return 403 when try to access someone else's invitations" in {
+    "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
       given().client(clientId = mtdClientId).isLoggedIn()
-      clientGetReceivedInvitations(mtdClient2Id).status shouldBe 403
+      clientGetReceivedInvitations(mtdClient2Id) should matchErrorResult(NoPermissionOnClient)
     }
   }
 
@@ -89,38 +90,47 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = clientGetReceivedInvitation(mtdClientId, invitationId)
-      // TODO replace with
-      // response should matchErrorResult(InvitationNotFound)
-      response.status shouldBe 404
+      response should matchErrorResult(InvitationNotFound)
     }
 
     "return 404 when invitationId is not a valid BSONObjectID" in {
       given().client(clientId = mtdClientId).isLoggedIn()
 
       val response = clientGetReceivedInvitation(mtdClientId, "invite-id-never-used")
-      // TODO replace with
-      // response should matchErrorResult(InvitationNotFound)
-      response.status shouldBe 404
+      response should matchErrorResult(InvitationNotFound)
     }
 
-    "return 403 when trying to transition someone else's invitation" in {
+    "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations" in {
+      val invite = sendInvitationToClient(mtdClient2Id)
 
-      val agency = new AgencyApi(this, arn, port)
-      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-
-      agency.sendInvitation(mtdClient2Id)
-
-      val client = new ClientApi(this, mtdClient2Id, port)
+      val client = new ClientApi(this, mtdClientId, port)
       given().client(clientId = client.clientId).isLoggedIn()
-      val invitations = client.getInvitations()
-      val invite = invitations.firstInvitation
 
-      val client2 = new ClientApi(this, mtdClientId, port)
-      given().client(clientId = client2.clientId).isLoggedIn()
-
-      val response = updateInvitationResource(invite.links.acceptLink.get)(port, client2.hc)
+      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
     }
+
+    "return 403 NO_PERMISSION_ON_CLIENT when trying to transition someone else's invitation" in {
+      val invite = sendInvitationToClient(mtdClient2Id)
+
+      val client = new ClientApi(this, mtdClientId, port)
+      given().client(clientId = client.clientId).isLoggedIn()
+
+      val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
+      response should matchErrorResult(NoPermissionOnClient)
+    }
+  }
+
+  private def sendInvitationToClient(clientId: MtdClientId): EmbeddedInvitation = {
+    val agency = new AgencyApi(this, arn, port)
+    given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+
+    agency.sendInvitation(clientId)
+
+    val client = new ClientApi(this, clientId, port)
+    given().client(clientId = client.clientId).isLoggedIn()
+    val invitations = client.getInvitations()
+    invitations.firstInvitation
   }
 
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
