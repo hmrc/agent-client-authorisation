@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.http.Status
+import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
@@ -24,31 +25,38 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
 
-  "ErrorResults" should {
+  "the constants" should {
 
-    "create correct data for the constants" in {
-      def checkErrorResponse(constant: Result, status: Int, code: String, message: String) = {
+    "contain the correct data" in {
+      def checkConstant(constant: Result, status: Int, code: String, message: String) = {
         constant.header.status shouldBe status
         val jsonBody = jsonBodyOf(constant)
         (jsonBody \ "code").as[String] shouldBe code
         (jsonBody \ "message").as[String] shouldBe message
       }
 
-      checkErrorResponse(GenericUnauthorizedResult, Status.UNAUTHORIZED, "UNAUTHORIZED", "Bearer token is missing or not authorized")
-      checkErrorResponse(AgentRegistrationNotFoundResult, Status.FORBIDDEN, "AGENT_REGISTRATION_NOT_FOUND", "The Agent's MTDfB registration was not found")
-      checkErrorResponse(ClientRegistrationNotFoundResult, Status.FORBIDDEN, "CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found")
-      checkErrorResponse(SaEnrolmentNotFoundResult, Status.FORBIDDEN, "SA_ENROLMENT_NOT_FOUND", "The Client must have an active IR-SA enrolment")
-      checkErrorResponse(NotAnAgentResult, Status.FORBIDDEN, "NOT_AN_AGENT", "The logged in user is not an agent")
+      checkConstant(GenericUnauthorized, Status.UNAUTHORIZED, "UNAUTHORIZED", "Bearer token is missing or not authorized.")
+      checkConstant(AgentRegistrationNotFound, Status.FORBIDDEN, "AGENT_REGISTRATION_NOT_FOUND", "The Agent's MTDfB registration was not found.")
+      checkConstant(ClientRegistrationNotFound, Status.FORBIDDEN, "CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")
+      checkConstant(SaEnrolmentNotFound, Status.FORBIDDEN, "SA_ENROLMENT_NOT_FOUND", "The Client must have an active IR-SA enrolment.")
+      checkConstant(NotAnAgent, Status.FORBIDDEN, "NOT_AN_AGENT", "The logged in user is not an agent.")
+      checkConstant(NoPermissionOnAgency, Status.FORBIDDEN, "NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency.")
+      checkConstant(NoPermissionOnClient, Status.FORBIDDEN, "NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client.")
+      checkConstant(PostcodeDoesNotMatch, Status.FORBIDDEN, "POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC.")
+      checkConstant(InvitationNotFound, Status.NOT_FOUND, "INVITATION_NOT_FOUND", "The specified invitation was not found.")
+      checkConstant(invalidInvitationStatus("My error message"), Status.FORBIDDEN, "INVALID_INVITATION_STATUS", "My error message")
+      checkConstant(postcodeFormatInvalid("My error message"), Status.BAD_REQUEST, "POSTCODE_FORMAT_INVALID", "My error message")
+      checkConstant(unsupportedRegime("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_REGIME", "My error message")
     }
 
+  }
 
-    "create correct Result body" in {
+  "errorBodyWrites" should {
 
-      bodyOf(GenericUnauthorizedResult) shouldBe """{"code":"UNAUTHORIZED","message":"Bearer token is missing or not authorized"}"""
-      bodyOf(AgentRegistrationNotFoundResult) shouldBe """{"code":"AGENT_REGISTRATION_NOT_FOUND","message":"The Agent's MTDfB registration was not found"}"""
-      bodyOf(ClientRegistrationNotFoundResult) shouldBe """{"code":"CLIENT_REGISTRATION_NOT_FOUND","message":"The Client's MTDfB registration was not found"}"""
-      bodyOf(SaEnrolmentNotFoundResult) shouldBe """{"code":"SA_ENROLMENT_NOT_FOUND","message":"The Client must have an active IR-SA enrolment"}"""
-      bodyOf(NotAnAgentResult) shouldBe """{"code":"NOT_AN_AGENT","message":"The logged in user is not an agent"}"""
+    "produce the correct JSON" in {
+
+      val json = Json.toJson(ErrorBody("MY_ERROR_CODE", "My error message"))
+      json.toString shouldBe """{"code":"MY_ERROR_CODE","message":"My error message"}"""
     }
   }
 }

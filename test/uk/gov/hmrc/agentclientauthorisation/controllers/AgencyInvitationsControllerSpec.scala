@@ -27,6 +27,7 @@ import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
@@ -142,25 +143,31 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn anInvitation()
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
-
-      status(response) shouldBe 403
+      response shouldBe invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
     }
 
-    "return 403 if the invitation belongs to a different agency" in {
+    "return 403 NO_PERMISSION_ON_AGENCY if the invitation belongs to a different agency" in {
       whenFindingAnInvitation thenReturn anInvitation()
 
       val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
-      status(response) shouldBe 403
+      response shouldBe NoPermissionOnAgency
+    }
+
+    "return 403 NO_PERMISSION_ON_AGENCY when the ARN in the invitation is not the same as the ARN in the URL" in {
+      whenFindingAnInvitation thenReturn anInvitation(Arn("a-different-arn"))
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      response shouldBe NoPermissionOnAgency
     }
 
     "return 404 if the invitation doesn't exist" in {
       whenFindingAnInvitation thenReturn (Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
-
-      status(response) shouldBe 404
+      response shouldBe InvitationNotFound
     }
+
   }
 
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
@@ -183,7 +190,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationId.stringify
     )
 
-  private def anInvitation(status: InvitationStatus = Pending) =
+  private def anInvitation(arn:Arn = arn, status: InvitationStatus = Pending) =
       Future successful Some(Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, status))))
 
   private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[String]))

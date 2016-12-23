@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
@@ -31,7 +32,7 @@ class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
 
-trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests {
+trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
 
   private implicit val arn = Arn("ABCDEF12345678")
   private val otherAgencyArn: Arn = Arn("98765")
@@ -66,10 +67,10 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   "GET /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
 
-    "return 403 for someone else's invitation list" in {
+    s"return 403 NO_PERMISSION_ON_AGENCY for someone else's invitation list" in {
       given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = agencyGetSentInvitations(arn)
-      response.status shouldBe 403
+      response should matchErrorResult(NoPermissionOnAgency)
     }
   }
 
@@ -85,16 +86,16 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     "Return 404 for an invitation that doesn't exist" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = agencyGetSentInvitation(arn, BSONObjectID.generate.stringify)
-      response.status shouldBe 404
+      response should matchErrorResult(InvitationNotFound)
     }
 
-    "Return 403 if accessing someone else's invitation" in {
+    s"Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val location = agencySendInvitation(arn, validInvitation).header("location")
 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = new Resource(location.get, port).get()
-      response.status shouldBe 403
+      response should matchErrorResult(NoPermissionOnAgency)
     }
   }
 
@@ -102,20 +103,19 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "BA1 1AA")).status shouldBe 403
+      agencySendInvitation(arn, validInvitation.copy(postcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "BAn 1AA")).status shouldBe 400
+      agencySendInvitation(arn, validInvitation.copy(postcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
+        """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
     "should not create invitation for an unsupported regime" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       val response = agencySendInvitation(arn, validInvitation.copy(regime = Regime("sa")))
-      response.status shouldBe 501
-      (response.json \ "code").as[String] shouldBe "UNSUPPORTED_REGIME"
-      (response.json \ "message").as[String] shouldBe "Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""
+      response should matchErrorResult(unsupportedRegime("Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""))
     }
 
     "should create invitation if postcode has no spaces" in {
@@ -155,7 +155,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url:String): Unit = {
     "return 403 for someone else's invitations" in {
       given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      new Resource(url, port).get().status shouldBe 403
+      new Resource(url, port).get() should matchErrorResult(NoPermissionOnAgency)
     }
   }
 }

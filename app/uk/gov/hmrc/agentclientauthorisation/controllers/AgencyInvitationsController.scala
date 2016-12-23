@@ -21,6 +21,7 @@ import javax.inject._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentInvitationValidation, AgentRequest, AuthActions}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
@@ -71,32 +72,31 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
-  def getSentInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitation(arn: Arn, invitationId: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
-      invitationsService.findInvitation(invitation).map {
-        case Some(r) => Ok(toHalResource(r))
-        case None => NotFound
+      invitationsService.findInvitation(invitationId).map {
+        _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
       }
     }
   }
 
   private def forThisAgency(arn: Arn)( block: => Future[Result])(implicit request: AgentRequest[_]) = {
     if (arn != request.arn) {
-      Future successful Forbidden
+      Future successful NoPermissionOnAgency
     } else {
       block
     }
   }
 
-  def cancelInvitation(arn: Arn, invitation: String) = onlyForSaAgents.async { implicit request =>
+  def cancelInvitation(arn: Arn, invitationId: String) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
-      invitationsService.findInvitation(invitation) flatMap {
+      invitationsService.findInvitation(invitationId) flatMap {
         case Some(i) if i.arn == arn => invitationsService.cancelInvitation(i) map {
           case true => NoContent
-          case false => Forbidden
+          case false => invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
         }
-        case None => Future successful NotFound
-        case _ => Future successful Forbidden
+        case None => Future successful InvitationNotFound
+        case _ => Future successful NoPermissionOnAgency
       }
     }
   }

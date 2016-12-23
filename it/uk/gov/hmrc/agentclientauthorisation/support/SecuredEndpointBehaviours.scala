@@ -30,13 +30,13 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
     "return 401 when the requester is an Agent but not authenticated" in {
       given().agentAdmin(RandomArn(), AgentCode("tehCode")).isNotLoggedIn()
       makeRequest.status shouldBe 401
-      makeRequest.body shouldBe bodyOf(GenericUnauthorizedResult)
+      makeRequest.body shouldBe bodyOf(GenericUnauthorized)
     }
 
     "return 403 Forbidden when the requester is a logged as a NON MTD Agent" in {
       given().agentAdmin(RandomArn(), AgentCode("tehCode")).isLoggedIn()
       makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(AgentRegistrationNotFoundResult)
+      makeRequest.body shouldBe bodyOf(AgentRegistrationNotFound)
     }
   }
 
@@ -44,19 +44,19 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
     "return 401 when the requester is not authenticated" in {
       given().client(clientId = id).isNotLoggedIn()
       makeRequest.status shouldBe 401
-      makeRequest.body shouldBe bodyOf(GenericUnauthorizedResult)
+      makeRequest.body shouldBe bodyOf(GenericUnauthorized)
     }
 
     "return 403 Forbidden when user has not registered for MTD SA" in {
       given().client(clientId = id).isLoggedInWithNoMtdRegistration()
       makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(ClientRegistrationNotFoundResult)
+      makeRequest.body shouldBe bodyOf(ClientRegistrationNotFound)
     }
 
     "return 403 Forbidden when user has no SA enrolment" in {
       given().client(clientId = id).withNoSaEnrolment().isLoggedIn()
       makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(SaEnrolmentNotFoundResult)
+      makeRequest.body shouldBe bodyOf(SaEnrolmentNotFound)
     }
   }
 }

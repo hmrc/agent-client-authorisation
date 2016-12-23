@@ -20,6 +20,7 @@ import javax.inject._
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
@@ -40,7 +41,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     if (clientId == request.mtdClientId.value) {
       Future successful Ok(toHalResource(clientId, request.path))
     } else {
-      Future successful Forbidden
+      Future successful NoPermissionOnClient
     }
   }
 
@@ -52,21 +53,23 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     actionInvitation(request.mtdClientId.value, invitationId, invitationsService.rejectInvitation)
   }
 
+  //TODO: Make the invitation error message specific to each transition that being rejected
   private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
         case true => NoContent
-        case false => Forbidden
+        case false => invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
       }
-      case None => Future successful NotFound
-      case _ => Future successful Forbidden
+      case None => Future successful InvitationNotFound
+      case _ => Future successful NoPermissionOnClient
     }
   }
+
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
       case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x))
-      case None => NotFound
-      case _ => Forbidden
+      case None => InvitationNotFound
+      case _ => NoPermissionOnClient
     }
   }
 
@@ -74,7 +77,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     if (clientId == request.mtdClientId.value) {
       invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
-      Future successful Forbidden
+      Future successful NoPermissionOnClient
     }
   }
 
