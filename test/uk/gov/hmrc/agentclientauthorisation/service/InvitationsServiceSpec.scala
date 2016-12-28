@@ -74,17 +74,17 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       "invitation has already been accepted" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Accepted)))
 
-        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Accepted.")
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Accepted. Only Pending invitations may be transitioned to Accepted.")
       }
       "invitation has been cancelled" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Cancelled)))
 
-        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Cancelled.")
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Cancelled. Only Pending invitations may be transitioned to Accepted.")
       }
       "invitation has been rejected" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Rejected)))
 
-        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Rejected.")
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Rejected. Only Pending invitations may be transitioned to Accepted.")
       }
     }
 
@@ -113,19 +113,19 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "not reject a cancelled invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Cancelled.")
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Cancelled. Only Pending invitations may be transitioned to Rejected.")
     }
 
     "not reject an accepted invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Accepted.")
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Accepted. Only Pending invitations may be transitioned to Rejected.")
     }
 
     "not reject an already rejected invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Rejected.")
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Rejected. Only Pending invitations may be transitioned to Rejected.")
     }
   }
 
@@ -142,19 +142,19 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "not cancel a cancelled invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Cancelled.")
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Cancelled. Only Pending invitations may be transitioned to Cancelled.")
     }
 
     "not cancel an accepted invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Accepted.")
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Accepted. Only Pending invitations may be transitioned to Cancelled.")
     }
 
     "not cancel an already rejected invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Rejected.")
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Rejected. Only Pending invitations may be transitioned to Cancelled.")
     }
   }
 

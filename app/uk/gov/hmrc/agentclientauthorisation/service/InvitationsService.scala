@@ -41,7 +41,7 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
-      Future successful cannotTransition(invitation, Accepted)
+      Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
@@ -67,11 +67,11 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
     invitation.status match {
       case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
-      case _ => Future successful cannotTransition(invitation, status)
+      case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
   }
 
-  private def cannotTransition(invitation: Invitation, toStatus: InvitationStatus) = {
-    Left(s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}.")
+  private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) = {
+    Left(s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus.")
   }
 }
