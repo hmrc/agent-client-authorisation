@@ -43,7 +43,7 @@
         <json><![CDATA[{
   "regime" : "mtd-sa",
   "clientId" : "123456789",
-  "postcode": "SW1AA 0PW"
+  "postcode": "SW1A 0PW"
 }]]></json>
         <table>
             <headings>
@@ -68,7 +68,7 @@
                 <row>
                     <cell><code>postcode (known fact)</code></cell>
                     <cell><code>String</code></cell>
-                    <cell><code>BN699Q</code></cell>
+                    <cell><code>XM4 5HQ</code></cell>
                     <cell>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the client</cell>
                 </row>
             </rows>

@@ -18,7 +18,7 @@
   "additionalProperties": true,
   "displayName": "Agent Led Invitation",
   "type": "object",
-  "example": "{\n  \"regime\" : \"mtd-sa\",\n  \"clientId\" : \"123456789\",\n  \"postcode\": \"SW1AA 0PW\"\n}\n",
+  "example": "{\n  \"regime\" : \"mtd-sa\",\n  \"clientId\" : \"123456789\",\n  \"postcode\": \"SW1A 0PW\"\n}\n",
   "required": [
     "regime",
     "clientId",
