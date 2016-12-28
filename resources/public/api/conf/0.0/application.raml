@@ -146,12 +146,15 @@ traits:
       status:
         type: invitations.Status
         description: Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
+        required: false
       clientId:
         type: string
         description: Client's top level ID for their MTD registration (not regime specific).
+        required: false
       regime:
         type: invitations.Regime
         description: The tax regime.
+        required: false
     responses:
       200:
         description: A list of invitations.
@@ -276,6 +279,7 @@ traits:
       status:
         description: filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
         type: atoms.Status
+        required: false
     responses:
       200:
         description: A list of invitations.
