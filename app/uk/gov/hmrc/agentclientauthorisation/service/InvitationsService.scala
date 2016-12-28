@@ -36,20 +36,20 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
     invitationsRepository.create(arn, regime, clientId, postcode)
 
 
-  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
       relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
-      Future successful false
+      Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
-  def cancelInvitation(invitation: Invitation): Future[Boolean] =
-      changeInvitationStatus(invitation, model.Cancelled)
+  def cancelInvitation(invitation: Invitation): Future[Either[String, Invitation]] =
+    changeInvitationStatus(invitation, model.Cancelled)
 
-  def rejectInvitation(invitation: Invitation): Future[Boolean] =
-      changeInvitationStatus(invitation, model.Rejected)
+  def rejectInvitation(invitation: Invitation): Future[Either[String, Invitation]] =
+    changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: String): Future[Option[Invitation]] =
     BSONObjectID.parse(invitationId)
@@ -64,10 +64,14 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
   def agencySent(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
     invitationsRepository.list(arn, regime, clientId, status)
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Boolean] = {
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
     invitation.status match {
-      case Pending => invitationsRepository.update(invitation.id, status) map (_ => true)
-      case _ => Future successful false
+      case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
+      case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
+  }
+
+  private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) = {
+    Left(s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus.")
   }
 }

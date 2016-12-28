@@ -92,8 +92,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     forThisAgency(arn) {
       invitationsService.findInvitation(invitationId) flatMap {
         case Some(i) if i.arn == arn => invitationsService.cancelInvitation(i) map {
-          case true => NoContent
-          case false => invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
+          case Right(_) => NoContent
+          case Left(message) => invalidInvitationStatus(message)
         }
         case None => Future successful InvitationNotFound
         case _ => Future successful NoPermissionOnAgency

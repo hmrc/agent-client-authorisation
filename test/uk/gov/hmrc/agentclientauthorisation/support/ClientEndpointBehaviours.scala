@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.DateTime._
+import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -38,7 +38,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
-trait ClientEndpointBehaviours {
+trait ClientEndpointBehaviours extends TransitionInvitation {
   this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
 
   val invitationsService = mock[InvitationsService]
@@ -59,13 +59,14 @@ trait ClientEndpointBehaviours {
     reset(invitationsService, authConnector, agenciesFakeConnector)
   }
 
-  def clientStatusChangeEndpoint(endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Boolean]]) {
+  def clientStatusChangeEndpoint(toStatus: InvitationStatus, endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Either[String, Invitation]]]) {
 
     "Return no content" in {
       val request = FakeRequest()
       userIsLoggedIn
-      whenFindingAnInvitation thenReturn anInvitation()
-      action thenReturn (Future successful true)
+      val invitation = anInvitation()
+      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+      action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
 
       val response = await(endpoint(request))
 
@@ -96,8 +97,9 @@ trait ClientEndpointBehaviours {
         val request = FakeRequest()
         whenAuthIsCalled thenReturn aClientUser()
         whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
-        whenFindingAnInvitation thenReturn anInvitation
-        action thenReturn (Future successful true)
+        val invitation = anInvitation()
+        whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+        action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
 
         val response = await(endpoint(request))
 
@@ -107,12 +109,12 @@ trait ClientEndpointBehaviours {
       "the invitation cannot be actioned" in {
         val request = FakeRequest()
         userIsLoggedIn
-        whenFindingAnInvitation thenReturn anInvitation
-        action thenReturn (Future successful false)
+        whenFindingAnInvitation thenReturn aFutureOptionInvitation()
+        action thenReturn (Future successful Left("failure message"))
 
         val response = await(endpoint(request))
 
-        response shouldBe invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
+        response shouldBe invalidInvitationStatus("failure message")
       }
     }
   }
@@ -137,12 +139,14 @@ trait ClientEndpointBehaviours {
 
   def noInvitation = Future successful None
 
-  def anInvitation(): Future[Option[Invitation]] =
-    Future successful Some(Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA",
-      List(StatusChangeEvent(now(), Pending))))
+  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA",
+    List(StatusChangeEvent(now(), Pending)))
+
+  def aFutureOptionInvitation(): Future[Option[Invitation]] =
+    Future successful Some(anInvitation())
 
   def anUpdatedInvitation(): Future[Invitation] =
-    anInvitation() map (_.get)
+    aFutureOptionInvitation() map (_.get)
 
   def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
 
