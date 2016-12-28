@@ -53,12 +53,11 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     actionInvitation(request.mtdClientId.value, invitationId, invitationsService.rejectInvitation)
   }
 
-  //TODO: Make the invitation error message specific to each transition that being rejected
-  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Boolean]) = {
+  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]]) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
-        case true => NoContent
-        case false => invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
+        case Right(_) => NoContent
+        case Left(message) => invalidInvitationStatus(message)
       }
       case None => Future successful InvitationNotFound
       case _ => Future successful NoPermissionOnClient

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.net.URL
 
-import org.joda.time.DateTime
+import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -30,11 +30,11 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, A
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
-import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
 
 import scala.concurrent.Future
 
-class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach {
+class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach with TransitionInvitation {
 
   val postcodeService = resettingMock[PostcodeService]
   val invitationsService = resettingMock[InvitationsService]
@@ -56,9 +56,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, Pending)))
+      Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
@@ -130,8 +130,11 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   "cancelInvitation" should {
     "cancel a pending invitation" in {
-      whenAnInvitationIsCancelled thenReturn (Future successful true)
-      whenFindingAnInvitation thenReturn anInvitation()
+      val invitation = anInvitation()
+      val cancelledInvitation = transitionInvitation(invitation, Cancelled)
+
+      whenAnInvitationIsCancelled thenReturn (Future successful Right(cancelledInvitation))
+      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
@@ -139,15 +142,15 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not cancel an already cancelled invitation" in {
-      whenAnInvitationIsCancelled thenReturn (Future successful false)
-      whenFindingAnInvitation thenReturn anInvitation()
+      whenAnInvitationIsCancelled thenReturn (Future successful Left("message"))
+      whenFindingAnInvitation thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
-      response shouldBe invalidInvitationStatus("The requested state transition is not permitted given the invitation's current status.")
+      response shouldBe invalidInvitationStatus("message")
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY if the invitation belongs to a different agency" in {
-      whenFindingAnInvitation thenReturn anInvitation()
+      whenFindingAnInvitation thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
@@ -155,7 +158,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY when the ARN in the invitation is not the same as the ARN in the URL" in {
-      whenFindingAnInvitation thenReturn anInvitation(Arn("a-different-arn"))
+      whenFindingAnInvitation thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
       response shouldBe NoPermissionOnAgency
@@ -190,8 +193,11 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationId.stringify
     )
 
-  private def anInvitation(arn:Arn = arn, status: InvitationStatus = Pending) =
-      Future successful Some(Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(DateTime.now, status))))
+  private def anInvitation(arn: Arn = arn) =
+    Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+
+  private def aFutureOptionInvitation(arn: Arn = arn) =
+    Future successful Some(anInvitation(arn))
 
   private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[String]))
 

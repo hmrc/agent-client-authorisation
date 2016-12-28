@@ -45,6 +45,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
   "Accepting an invitation" should {
     behave like clientStatusChangeEndpoint(
+      Accepted,
       controller.acceptInvitation(clientId, invitationId),
       whenInvitationIsAccepted
     )
@@ -57,6 +58,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
   "Rejecting an invitation" should {
     behave like clientStatusChangeEndpoint(
+      Rejected,
       controller.rejectInvitation(clientId, invitationId),
       whenInvitationIsRejected
     )

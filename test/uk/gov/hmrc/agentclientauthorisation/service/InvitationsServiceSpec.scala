@@ -28,12 +28,13 @@ import reactivemongo.core.errors.ReactiveMongoException
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach {
+class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository = mock[InvitationsRepository]
   val relationshipsConnector = mock[RelationshipsConnector]
 
@@ -56,11 +57,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "create a relationship" when {
       "invitation status update succeeds" in {
         whenRelationshipIsCreated thenReturn(Future successful {})
-        whenStatusIsChangedTo(Accepted) thenReturn(Future successful testInvitation)
+        val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
+        whenStatusIsChangedTo(Accepted) thenReturn(Future successful acceptedTestInvitation)
 
         val response = await(service.acceptInvitation(testInvitation))
 
-        response shouldBe true
+        response shouldBe Right(acceptedTestInvitation)
       }
 
       "invitation status update fails" in {
@@ -72,17 +74,17 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       "invitation has already been accepted" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Accepted)))
 
-        response shouldBe false
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Accepted.")
       }
       "invitation has been cancelled" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Cancelled)))
 
-        response shouldBe false
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Cancelled.")
       }
       "invitation has been rejected" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Rejected)))
 
-        response shouldBe false
+        response shouldBe Left("The invitation cannot be transitioned to Accepted because its current status is Rejected.")
       }
     }
 
@@ -100,57 +102,59 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "rejectInvitation" should {
     "update the invitation status" in {
-      whenStatusIsChangedTo(Rejected) thenReturn testInvitation
+      val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
+      whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
 
       val response = await(service.rejectInvitation(testInvitation))
 
-      response shouldBe true
+      response shouldBe Right(rejectedTestInvitation)
     }
 
     "not reject a cancelled invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Cancelled.")
     }
 
     "not reject an accepted invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Accepted.")
     }
 
     "not reject an already rejected invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Rejected because its current status is Rejected.")
     }
   }
 
   "cancelInvitation" should {
     "update the invitation status" in {
-      whenStatusIsChangedTo(Cancelled) thenReturn testInvitation
+      val cancelledTestInvitation = transitionInvitation(testInvitation, Cancelled)
+      whenStatusIsChangedTo(Cancelled) thenReturn cancelledTestInvitation
 
       val response = await(service.cancelInvitation(testInvitation))
 
-      response shouldBe true
+      response shouldBe Right(cancelledTestInvitation)
     }
 
     "not cancel a cancelled invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Cancelled.")
     }
 
     "not cancel an accepted invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Accepted.")
     }
 
     "not cancel an already rejected invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe false
+      response shouldBe Left("The invitation cannot be transitioned to Cancelled because its current status is Rejected.")
     }
   }
 
