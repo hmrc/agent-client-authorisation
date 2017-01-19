@@ -1,0 +1,53 @@
+{
+  "_links": {
+    "self": {
+      "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent"
+    },
+    "invitation": [
+      {
+        "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e834"
+      },
+      {
+        "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e835"
+      }
+    ]
+  },
+  "_embedded": {
+    "invitations": [
+      {
+        "_links": {
+          "cancel": {
+            "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e834/cancel"
+          },
+          "self": {
+            "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e834"
+          }
+        },
+        "regime": "mtd-sa",
+        "clientId": "clientId",
+        "postcode": "A11 1AA",
+        "arn": "01234567-79ab-cdef-0123-456789abcdef",
+        "created": "2017-01-19T16:25:31.509Z",
+        "lastUpdated": "2017-01-19T16:25:31.509Z",
+        "status": "Pending"
+      },
+      {
+        "_links": {
+          "cancel": {
+            "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e835/cancel"
+          },
+          "self": {
+            "href": "/agent-client-authorisation/agencies/01234567-79ab-cdef-0123-456789abcdef/invitations/sent/5880e87b110000110012e835"
+          }
+        },
+        "regime": "mtd-sa",
+        "clientId": "clientId",
+        "postcode": "A11 1AA",
+        "arn": "01234567-79ab-cdef-0123-456789abcdef",
+        "created": "2017-01-19T16:25:31.521Z",
+        "lastUpdated": "2017-01-19T16:25:31.521Z",
+        "status": "Pending"
+      }
+    ]
+  }
+}
