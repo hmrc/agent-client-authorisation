@@ -30,7 +30,7 @@ traits:
           application/json:
             description: Invalid Authentication information provided
             type: !include schemas/error.json
-            example:  !include examples/login-required-invalid-credentials-example.json
+            example:  !include examples/login-required-example.json
 
   permissionOnAgencyRequired:
     responses:
@@ -39,7 +39,7 @@ traits:
           application/json:
             description: The logged in user is not permitted to access invitations for the specified agency.
             type: !include schemas/error.json
-            example:  !include examples/permission-on-agency-required-no-permission-example.json
+            example:  !include examples/permission-on-agency-required-example.json
 
   permissionOnClientRequired:
     responses:
@@ -48,7 +48,7 @@ traits:
           application/json:
             description: The logged in user is not permitted to see the invitations for the specified client.
             type: !include schemas/error.json
-            example:  !include examples/permission-on-client-required-no-permission-example.json
+            example:  !include examples/permission-on-client-required-example.json
 
   mustBeAnAgent:
     responses:
@@ -57,67 +57,52 @@ traits:
           application/json:
             description: The logged in user is not an agent.
             type: !include schemas/error.json
-            example:  !include examples/must-be-an-agent-but-not-an-agent-example.json
+            example:  !include examples/must-be-an-agent-example.json
 
   mustBeASaClient:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              saEnrolmentNotFound:
-                description: The Client must have an active IR-SA enrolment.
-                value:
-                  code: SA_ENROLMENT_NOT_FOUND
+            description: The Client must have an active IR-SA enrolment.
+            type: !include schemas/error.json
+            example:  !include examples/must-be-a-sa-client-example.json
 
   agentRegistrationRequired:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              agentRegistrationNotFound:
-                description: The Agent's MTDfB registration was not found.
-                value:
-                  code: AGENT_REGISTRATION_NOT_FOUND
+            description: The Agent's MTDfB registration was not found.
+            type: !include schemas/error.json
+            example:  !include examples/agent-registration-required-example.json
 
   clientRegistrationRequired:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              clientRegistrationNotFound:
-                description: The Client's MTDfB registration was not found.
-                value:
-                  code: CLIENT_REGISTRATION_NOT_FOUND
+            description: The Client's MTDfB registration was not found.
+            type: !include schemas/error.json
+            example:  !include examples/client-registration-required-example.json
 
   invitationMustHaveValidStatus:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              invalidInvitationStatus:
-                description: The requested state transition is not permitted given the invitation's current status.
-                value:
-                  code: INVALID_INVITATION_STATUS
+            description: The requested state transition is not permitted given the invitation's current status.
+            type: !include schemas/error.json
+            example:  !include examples/invitation-must-have-valid-status-example.json
 
   invitationSpecified:
     responses:
       404:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              invitationNotFound:
-                description: The specified invitation was not found.
-                value:
-                  code: INVITATION_NOT_FOUND
+            description: The specified invitation was not found.
+            type: !include schemas/error.json
+            example:  !include examples/invitation-not-found-example.json
 
 /agent-client-authorisation/agencies/{arn}/invitations/sent:
   is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired]

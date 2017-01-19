@@ -1,0 +1,4 @@
+{
+  "code": "SA_ENROLMENT_NOT_FOUND",
+  "message": "The Client must have an active IR-SA enrolment."
+}

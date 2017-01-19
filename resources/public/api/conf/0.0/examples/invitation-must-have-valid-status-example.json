@@ -1,0 +1,4 @@
+{
+  "code": "INVALID_INVITATION_STATUS",
+  "message": "The invitation cannot be transitioned."
+}
