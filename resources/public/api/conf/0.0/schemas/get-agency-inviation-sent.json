@@ -1,0 +1,101 @@
+{
+  "type": "object",
+  "properties": {
+    "_links": {
+      "type": "object",
+      "description": "Related resources",
+      "properties": {
+        "self": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "A link to the current resource"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "cancel": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "A link to cancel to this invitation"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        }
+      },
+      "required": [
+        "self",
+        "cancel"
+      ]
+    },
+    "created": {
+      "type": "string",
+      "description" : "Creation time of the request (RFC3339 / ISO8601 format)"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "description" : "Last update time of the request (RFC3339 / ISO8601 format)"
+    },
+    "arn": {
+      "type": "string",
+      "description" : "The Agency Registration Number"
+    },
+    "regime": {
+      "type": "string",
+      "description" : "The tax regime",
+      "oneOf": [
+        {
+          "enum": [ "mtd-sa" ],
+          "description": "The Self Assessment tax regime"
+        }
+      ]
+    },
+    "clientId": {
+      "type": "string",
+      "description" : "Client's top level ID for their MTD registration (not regime specific)"
+    },
+    "postcode": {
+      "type": "string",
+      "description" : "The Client's post code"
+    },
+    "status": {
+      "type": "string",
+      "description" : "The current status of the invitation",
+      "oneOf": [
+        {
+          "enum": [ "Pending" ],
+          "description": "The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status"
+        },
+        {
+          "enum": [ "Accepted" ],
+          "description": "The client has accepted the invitation. Only the client can set this status"
+        },
+        {
+          "enum": [ "Rejected" ],
+          "description": "The client has rejected the invitation. Only the client can set this status"
+        },
+        {
+          "enum": [ "Cancelled" ],
+          "description": "The agency has cancelled the invitation. Only the agency can set this status"
+        }
+      ]
+    }
+  },
+  "required": [
+    "_links",
+    "created",
+    "lastUpdated",
+    "arn",
+    "regime",
+    "clientId",
+    "postcode",
+    "status"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "description": "Creates a new invitation between the agency and client",
+  "properties": {
+    "regime": {
+      "type": "string",
+      "description" : "The tax regime",
+      "oneOf": [
+        {
+          "enum": [ "mtd-sa" ],
+          "description": "The Self Assessment tax regime"
+        }
+      ]
+    },
+    "clientId": {
+      "type": "string",
+      "description" : "Client's top level ID for their MTD registration (not regime specific)"
+    },
+    "postcode": {
+      "type": "string",
+      "description" : "The Client's post code"
+    }
+  },
+  "required": [
+    "regime",
+    "clientId",
+    "postcode"
+  ]
+}
