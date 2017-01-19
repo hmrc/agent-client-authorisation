@@ -28,48 +28,36 @@ traits:
       401:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              invalidCredentials:
-                description: Invalid Authentication information provided.
-                value:
-                  code: INVALID_CREDENTIALS
+            description: Invalid Authentication information provided
+            type: !include schemas/error.json
+            example:  !include examples/login-required-invalid-credentials-example.json
 
   permissionOnAgencyRequired:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              noPermissionOnAgency:
-                description: The logged in user is not permitted to access invitations for the specified agency.
-                value:
-                  code: NO_PERMISSION_ON_AGENCY
+            description: The logged in user is not permitted to access invitations for the specified agency.
+            type: !include schemas/error.json
+            example:  !include examples/permission-on-agency-required-no-permission-example.json
 
   permissionOnClientRequired:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              noPermissionOnArn:
-                description: The logged in user is not permitted to see the invitations for the specified client.
-                value:
-                  code: NO_PERMISSION_ON_CLIENT
+            description: The logged in user is not permitted to see the invitations for the specified client.
+            type: !include schemas/error.json
+            example:  !include examples/permission-on-client-required-no-permission-example.json
 
   mustBeAnAgent:
     responses:
       403:
         body:
           application/json:
-            type: types.errorResponse
-            examples:
-              notAnAgent:
-                description: The logged in user is not an agent.
-                value:
-                  code: NOT_AN_AGENT
+            description: The logged in user is not an agent.
+            type: !include schemas/error.json
+            example:  !include examples/must-be-an-agent-but-not-an-agent-example.json
 
   mustBeASaClient:
     responses:
