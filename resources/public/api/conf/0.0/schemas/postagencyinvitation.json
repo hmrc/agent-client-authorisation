@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "regime": {
+      "type": "string"
+    },
+    "clientId": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "regime",
+    "clientId",
+    "postcode"
+  ]
+}

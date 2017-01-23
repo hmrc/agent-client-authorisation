@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "properties": {
+    "_links": {
+      "type": "object",
+      "properties": {
+        "self": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "cancel": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        }
+      },
+      "required": [
+        "self",
+        "cancel"
+      ]
+    },
+    "created": {
+      "type": "string"
+    },
+    "lastUpdated": {
+      "type": "string"
+    },
+    "arn": {
+      "type": "string"
+    },
+    "regime": {
+      "type": "string"
+    },
+    "clientId": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "_links",
+    "created",
+    "lastUpdated",
+    "arn",
+    "regime",
+    "clientId",
+    "postcode",
+    "status"
+  ]
+}

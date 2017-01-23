@@ -1,0 +1,55 @@
+{
+  "usage": "Basic Types used in the Agent Client authorisation invitations API"
+  "uses": {
+  "atoms": "atoms.raml"
+    },
+  "types": {
+    "LinkSection": "atoms.LinkSection",
+    "Regime":      "atoms.Regime",
+    "Status":      "atoms.Status",
+    "Timestamp":   "atoms.Timestamp"
+  },
+
+  "Invitation": {
+    "displayName": "Invitation",
+    "description": "Invitations provide clients with the facility to confer permission to an agent to act on their behalf when dealing with HMRC",
+    "type": "object"
+    properties: {
+      _links: LinkSection
+      created: Timestamp
+      lastUpdated: Timestamp
+      arn: description
+      :
+      The
+      Agent
+      Registration
+      Number
+      type: string
+      regime: description
+      :
+      The
+      tax
+      regime
+      specified
+      in
+      the
+      invitation
+      type: Regime
+      clientId: description
+      :
+      Client
+      's top level ID for their MTD registration (not regime specific)
+      type: string
+      postcode: description
+      :
+      The
+      client
+      's postcode.
+      type: string
+      status: type
+      :
+      Status
+    },
+    example: !include invitation_example.json
+  }
+}
