@@ -182,22 +182,30 @@ traits:
       400:
         body:
           application/json:
-            description: The submitted postcode does not match the expected format.
-            type: !include schemas/error.json
-            example:  !include examples/invalid-postcode-example.json
-
+            type: types.errorResponse
+            examples:
+              invalidPostcode:
+                description: The submitted postcode does not match the expected format.
+                value:
+                  code: POSTCODE_FORMAT_INVALID
       403:
         body:
           application/json:
-            description: The submitted postcode did not match the client's postcode as held by HMRC.
-            type: !include schemas/error.json
-            example: !include examples/postcode-does-not-match-example.json
+            type: types.errorResponse
+            examples:
+              postcodeDoesNotMatch:
+                description: The submitted postcode did not match the client's postcode as held by HMRC.
+                value:
+                  code: POSTCODE_DOES_NOT_MATCH
       501:
         body:
           application/json:
-            description: The submitted regime is not currently supported by this API.
-            type: !include schemas/error.json
-            example: !include examples/unsupported-regime-example.json
+            type: types.errorResponse
+            examples:
+              postcodeDoesNotMatch:
+                description: The submitted regime is not currently supported by this API.
+                value:
+                  code: UNSUPPORTED_REGIME
 
   /{invitationId}:
     is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified]
