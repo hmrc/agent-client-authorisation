@@ -34,7 +34,7 @@ types:
         type: string
       status:
         type: Status
-  example: !include ../examples/get-agency-invitation-example.json
+  example: !include invitation_example.json
 
   Invitations:
     description: Invitations is the collection of invitations that either an agent or client has sent or recieved
@@ -43,3 +43,4 @@ types:
       _embedded:
         properties:
           invitations: Invitation[]
+    example: !include invitations_example.json

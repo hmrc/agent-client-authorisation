@@ -1,0 +1,44 @@
+{
+  "_links": {
+    "self": {
+      "href": "/agencies/agent/invitations/sent"
+    },
+    "invitations": [{
+      "href": "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+    }, {
+      "href": "/agencies/A123456/invitations/sent/9e6789e9-27c7-4874-a094-9181c4e9b2e8"
+    }]
+  },
+  "_embedded": {
+    "invitations": [{
+      "_links": {
+        "self": {
+          "href": "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+        },
+        "cancel": {
+          "href": "/agencies/A123456/invitations/sent/f8068f15-95e0-45a3-b29a-10a078e3c707"
+        }
+      },
+      "arn": "123451234512345",
+      "regime": "mtd-sa",
+      "clientId": "123456789",
+      "postcode": "NW66PJ",
+      "created": "2016-10-28T16:41:41.090Z",
+      "lastUpdated": "2016-11-28T16:41:41.090Z",
+      "status": "pending"
+    }, {
+      "_links": {
+        "self": {
+          "href": "/agencies/A123456/invitations/sent/9e6789e9-27c7-4874-a094-9181c4e9b2e8"
+        }
+      },
+      "arn": "123451234512345",
+      "regime": "mtd-sa",
+      "clientId": "0987654321",
+      "postcode": "BN699J",
+      "created": "2016-10-28T16:41:41.090Z",
+      "lastUpdated": "2016-11-28T16:41:41.090Z",
+      "status": "rejected"
+    }]
+  }
+}
