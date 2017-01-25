@@ -1,0 +1,121 @@
+{
+  "type": "object",
+  "properties": {
+    "_links": {
+      "type": "object",
+      "properties": {
+        "self": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "invitation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "href": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "href"
+            ]
+          }
+        }
+      },
+      "required": [
+        "self",
+        "invitation"
+      ]
+    },
+    "_embedded": {
+      "type": "object",
+      "properties": {
+        "invitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "_links": {
+                "type": "object",
+                "properties": {
+                  "cancel": {
+                    "type": "object",
+                    "properties": {
+                      "href": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "href"
+                    ]
+                  },
+                  "self": {
+                    "type": "object",
+                    "properties": {
+                      "href": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "href"
+                    ]
+                  }
+                },
+                "required": [
+                  "cancel",
+                  "self"
+                ]
+              },
+              "regime": {
+                "type": "string"
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "postcode": {
+                "type": "string"
+              },
+              "arn": {
+                "type": "string"
+              },
+              "created": {
+                "type": "string"
+              },
+              "lastUpdated": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "_links",
+              "regime",
+              "clientId",
+              "postcode",
+              "arn",
+              "created",
+              "lastUpdated",
+              "status"
+            ]
+          }
+        }
+      },
+      "required": [
+        "invitations"
+      ]
+    }
+  },
+  "required": [
+    "_links",
+    "_embedded"
+  ]
+}

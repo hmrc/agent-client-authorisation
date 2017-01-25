@@ -1,0 +1,129 @@
+{
+  "type": "object",
+  "properties": {
+    "_links": {
+      "type": "object",
+      "properties": {
+        "self": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "invitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "href": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "href"
+            ]
+          }
+        }
+      },
+      "required": [
+        "self",
+        "invitations"
+      ]
+    },
+    "_embedded": {
+      "type": "object",
+      "properties": {
+        "invitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "_links": {
+                "type": "object",
+                "properties": {
+                  "self": {
+                    "type": "object",
+                    "properties": {
+                      "href": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "href"
+                    ]
+                  },
+                  "accept": {
+                    "type": "object",
+                    "properties": {
+                      "href": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "href"
+                    ]
+                  },
+                  "reject": {
+                    "type": "object",
+                    "properties": {
+                      "href": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "href"
+                    ]
+                  }
+                },
+                "required": [
+                  "self",
+                  "accept",
+                  "reject"
+                ]
+              },
+              "created": {
+                "type": "string"
+              },
+              "lastUpdated": {
+                "type": "string"
+              },
+              "arn": {
+                "type": "string"
+              },
+              "regime": {
+                "type": "string"
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "_links",
+              "created",
+              "lastUpdated",
+              "arn",
+              "regime",
+              "clientId",
+              "status"
+            ]
+          }
+        }
+      },
+      "required": [
+        "invitations"
+      ]
+    }
+  },
+  "required": [
+    "_links",
+    "_embedded"
+  ]
+}
