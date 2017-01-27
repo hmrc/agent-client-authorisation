@@ -25,7 +25,7 @@ class GenerateApplicationIdWhitelistingSpec  extends UnitSpec {
 
     "be generated" ignore {
 
-      List("your ids go here").zipWithIndex.foreach{
+      List("your ids go here").sorted.zipWithIndex.foreach{
         case (id, index) =>
 
           println(s"""api.access.white-list.applicationIds.$index: "$id"""")
