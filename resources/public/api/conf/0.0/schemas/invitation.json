@@ -9,7 +9,7 @@
           "properties": {
             "href": {
               "type": "string",
-              "description": "Link to reject the invitation"
+              "description": "Link to reject the invitation. Only provided to clients."
             }
           },
           "required": [
@@ -21,7 +21,19 @@
           "properties": {
             "href": {
               "type": "string",
-              "description": "Link to accept the invitation"
+              "description": "Link to accept the invitation. Only provided to clients."
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "cancel": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "A link to cancel to this invitation. Only provided to agents."
             }
           },
           "required": [
@@ -42,20 +54,11 @@
         }
       },
       "required": [
-        "reject",
-        "accept",
         "self"
       ]
     },
     "regime": {
-      "type": "string",
-      "description" : "The tax regime",
-      "oneOf": [
-        {
-          "enum": [ "mtd-sa" ],
-          "description": "The Self Assessment tax regime"
-        }
-      ]
+      "$ref": "regime.json"
     },
     "clientId": {
       "type": "string",

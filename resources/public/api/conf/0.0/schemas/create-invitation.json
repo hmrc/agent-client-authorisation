@@ -3,14 +3,7 @@
   "description": "Creates a new invitation between the agency and client",
   "properties": {
     "regime": {
-      "type": "string",
-      "description" : "The tax regime",
-      "oneOf": [
-        {
-          "enum": [ "mtd-sa" ],
-          "description": "The Self Assessment tax regime"
-        }
-      ]
+      "$ref": "regime.json"
     },
     "clientId": {
       "type": "string",

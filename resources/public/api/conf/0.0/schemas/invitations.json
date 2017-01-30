@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "properties": {
+    "_links": {
+      "type": "object",
+      "description": "Related resources",
+      "properties": {
+        "self": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string",
+              "description": "A link to the current resource"
+            }
+          },
+          "required": [
+            "href"
+          ]
+        },
+        "invitation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "href": {
+                "type": "string",
+                "description": "An array of links to individual Invitation resources"
+              }
+            },
+            "required": [
+              "href"
+            ]
+          }
+        }
+      },
+      "required": [
+        "self",
+        "invitation"
+      ]
+    },
+    "_embedded": {
+      "type": "object",
+      "properties": {
+        "invitations": {
+          "type": "array",
+          "items": {
+            "$ref": "invitation.json"
+          }
+        }
+      },
+      "required": [
+        "invitations"
+      ]
+    }
+  },
+  "required": [
+    "_links",
+    "_embedded"
+  ]
+}
