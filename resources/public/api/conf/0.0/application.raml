@@ -22,6 +22,8 @@ uses:
 
 types:
 
+  # These Regime and Status RAML type duplicate the status and regime JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
+  # The reason we need both is a current limitation in the api-documentation-raml-frontend whereby types referenced by query parameters must be RAML types and types referenced by bodies must be JSON Schemas.
   Regime:
     description: The tax regime
     type: string
@@ -31,14 +33,6 @@ types:
     displayName: Statuses
     enum: [ Pending, Accepted, Rejected, Cancelled ]
     type: string
-    description: |
-      The status of the current invitation
-      Status  | Meaning
-      ------- | -------
-      ```Pending``` | The invitation has been created, it has not been accepted or rejected by the client. Only the service can set this status
-      ```Accepted``` | The client has accepted the invitation. Only the client can set this status
-      ```Rejected``` | The client has rejected the invitation. Only the client can set this status
-      ```Cancelled``` | The Agency has cancelled the invitation. Only the Agency can set this status
 
 
 traits:
