@@ -1,0 +1,17 @@
+{
+  "_links": {
+    "self": {
+      "href": "/agencies/AARN9999999/invitations/sent/5888c22e11000011007afc11"
+    },
+    "cancel": {
+      "href": "/agencies/AARN9999999/invitations/sent/5888c22e11000011007afc11"
+    }
+  },
+  "created": "2017-01-25T15:20:14.917Z",
+  "lastUpdated": "2017-01-25T15:20:14.917Z",
+  "arn": "AARN9999999",
+  "regime": "mtd-sa",
+  "clientId": "client123",
+  "postcode": "A11 1AA",
+  "status": "Pending"
+}

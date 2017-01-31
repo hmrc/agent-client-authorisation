@@ -1,8 +1,12 @@
 {
-  "description": "The tax regime",
-  "enum": [
-    "mtd-sa"
-  ],
   "type": "string",
-  "$schema": "http://json-schema.org/draft-04/schema#"
+  "description": "The tax regime",
+  "oneOf": [
+    {
+      "enum": [
+        "mtd-sa"
+      ],
+      "description": "The Self Assessment tax regime"
+    }
+  ]
 }

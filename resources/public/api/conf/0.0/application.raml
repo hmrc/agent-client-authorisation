@@ -19,8 +19,21 @@ uses:
   headers: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/headers.raml
   annotations: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/annotations.raml
   types: http://api-documentation-raml-frontend.service/api-documentation/assets/common/modules/types.raml
-  invitations: modules/invitations.raml
-  atoms:       modules/atoms.raml
+
+types:
+
+  # These Regime and Status RAML type duplicate the status and regime JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
+  # The reason we need both is a current limitation in the api-documentation-raml-frontend whereby types referenced by query parameters must be RAML types and types referenced by bodies must be JSON Schemas.
+  Regime:
+    description: The tax regime
+    type: string
+    enum: [ mtd-sa ]
+
+  Status:
+    displayName: Statuses
+    enum: [ Pending, Accepted, Rejected, Cancelled ]
+    type: string
+
 
 traits:
   loginRequired:
@@ -137,6 +150,7 @@ traits:
     arn:
       description: The MTD platform Agent Registration Number.
       type: string
+      example: AARN9999999
   get:
     displayName: Get invitations sent by the agency
     description: Retrieves a list of invitations sent by the agency.
@@ -144,56 +158,43 @@ traits:
     securedBy: [ sec.oauth_2_0: { scopes: [ "read:sent-invitations" ] } ]
     queryParameters:
       status:
-        type: invitations.Status
+        type: Status
         description: Filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
+        example:  Pending
         required: false
       clientId:
         type: string
         description: Client's top level ID for their MTD registration (not regime specific).
+        example:  client123
         required: false
       regime:
-        type: invitations.Regime
+        type: Regime
         description: The tax regime.
+        example:  mtd-sa
         required: false
     responses:
       200:
-        description: A list of invitations.
-        #TODO status descriptions (see Agency-Sent-Invitations.xml) - can they be generated from JSON Schema?
-        #TODO description of links (see Agency-Sent-Invitations.xml)
         body:
           application/json:
-            examples:
-              example-1:
-                value: !include examples/get-agency-invitations-sent-example-1.json
+            description: A list of invitations.
+            type: !include schemas/invitations.json
+            example: !include examples/get-agency-invitations-sent-example.json
   post:
     is: [clientRegistrationRequired]
     displayName: Create a new invitation
-    #TODO replace request body HTML table in description with JSON schema
-    description: |
-      Create a new invitation.
-
-      The request body should be a JSON object with the following properties:
-
-      <table>
-        <tr><th>Property</th><th>Example</th><th>Description</th></tr>
-        <tr><td>regime</td><td>mtd-sa</td><td>The tax regime of the client within which the agency is offering representation.</td></tr>
-        <tr><td>clientId</td><td>1234567890</td><td>Client's top level ID for their MTD registration (not regime specific).</td></tr>
-        <tr><td>postcode (known fact)</td><td>XM4 5HQ</td><td>This varies between regimes. In this example, for mtd-sa, it is the registered postcode of the client.</td></tr>
-      </table>
     (annotations.scope): "write:sent-invitations"
     securedBy: [ sec.oauth_2_0: { scopes: [ "write:sent-invitations" ] } ]
     body:
       application/json:
-        type: atoms.AgentInvitation
-        examples:
-          example-1:
-            value: !include examples/post-agency-invitations-sent-example-1.json
+        description: Create a new invitation.
+        type: !include schemas/create-invitation.json
+        example: !include examples/post-agency-invitations-sent-example.json
     responses:
       201:
         description: The invitation was successfully created.
         headers:
           Location:
-            example: /agencies/A123456/invitations/sent/INV123456
+            example: /agencies/AARN9999999/invitations/sent/5888c22e11000011007afc11
             description: Location of the invitation that was created.
       400:
         body:
@@ -227,8 +228,9 @@ traits:
     is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified]
     uriParameters:
       invitationId:
-        description: The id of the invitation.
+        description: A unique invitation id
         type: string
+        example: 5888c22e11000011007afc11
     get:
       displayName: Get a sent invitation
       description: Retrieve a sent invitation.
@@ -236,11 +238,11 @@ traits:
       securedBy: [ sec.oauth_2_0: { scopes: [ "read:sent-invitations" ] } ]
       responses:
         200:
-          description: Returns the invitation.
           body:
             application/json:
-              #TODO: JSON Schema # type: invitations.Invitation
-              example: !include modules/invitation_example.json
+                description: Returns the invitation.
+                type: !include schemas/invitation.json
+                example: !include examples/get-agency-invitation-sent-example.json
         401:
           description: The agent must be authenticated and authorised (logged-in) to use this resource
         403:
@@ -268,8 +270,9 @@ traits:
   is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired]
   uriParameters:
     clientId:
-      description: Client identifier.
+      description: Client's top level ID for their MTD registration (not regime specific).
       type: string
+      example:  client123
   get:
     displayName: Get invitations received by a client
     description: Retrieves a list of invitations received by a client
@@ -278,15 +281,16 @@ traits:
     queryParameters:
       status:
         description: filter invitations by status. If multiple 'status' filtering parameters are supplied then only the first is considered.
-        type: atoms.Status
+        type: Status
+        example: Pending
         required: false
     responses:
       200:
-        description: A list of invitations.
-        body: #invitations.Invitation[]
+        body:
           application/json:
-            example:
-                value: !include examples/get-client-invitations-sent-example.json
+            description: A list of invitations.
+            type: !include schemas/invitations.json
+            example: !include examples/get-client-invitations-received-example.json
       401:
         description: The client must be authenticated and authorised (logged-in) to use this resource
       403:
@@ -301,12 +305,11 @@ traits:
       securedBy: [ sec.oauth_2_0: { scopes: [ "read:received-invitations" ] } ]
       responses:
         200:
-          description: Returns the invitation.
           body:
-            #type: invitations.Invitation
             application/json:
-              example:
-                  value: !include examples/get-client-invitations-sent-example.json
+                description: Returns the invitation.
+                type: !include schemas/invitation.json
+                example: !include examples/get-client-invitation-example.json
         401:
           description: The client must be authenticated and authorised (logged-in) to use this resource
         403:
@@ -317,6 +320,7 @@ traits:
       invitationId:
         description: The id of the invitation.
         type: string
+        example: 5888c22e11000011007afc11
     /accept:
       is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
