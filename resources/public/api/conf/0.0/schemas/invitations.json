@@ -7,10 +7,10 @@
       "properties": {
         "self": {
           "type": "object",
+          "description": "A link to the current resource",
           "properties": {
             "href": {
-              "type": "string",
-              "description": "A link to the current resource"
+              "type": "string"
             }
           },
           "required": [
@@ -21,10 +21,10 @@
           "type": "array",
           "items": {
             "type": "object",
+            "description": "An array of links to individual Invitation resources",
             "properties": {
               "href": {
-                "type": "string",
-                "description": "An array of links to individual Invitation resources"
+                "type": "string"
               }
             },
             "required": [

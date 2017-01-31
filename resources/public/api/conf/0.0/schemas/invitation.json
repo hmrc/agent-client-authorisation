@@ -6,11 +6,10 @@
       "properties": {
         "reject": {
           "type": "object",
+          "description": "Link to reject the invitation. Only provided to clients.",
           "properties": {
             "href": {
-              "type": "string",
-              "description": "Link to reject the invitation. Only provided to clients."
-            }
+              "type": "string"            }
           },
           "required": [
             "href"
@@ -18,10 +17,10 @@
         },
         "accept": {
           "type": "object",
+          "description": "Link to accept the invitation. Only provided to clients.",
           "properties": {
             "href": {
-              "type": "string",
-              "description": "Link to accept the invitation. Only provided to clients."
+              "type": "string"
             }
           },
           "required": [
@@ -30,10 +29,10 @@
         },
         "cancel": {
           "type": "object",
+          "description": "A link to cancel to this invitation. Only provided to agents.",
           "properties": {
             "href": {
-              "type": "string",
-              "description": "A link to cancel to this invitation. Only provided to agents."
+              "type": "string"
             }
           },
           "required": [
@@ -42,10 +41,10 @@
         },
         "self": {
           "type": "object",
+          "description": "Link back to this resource",
           "properties": {
             "href": {
-              "type": "string",
-              "description": "Link back to this resource"
+              "type": "string"
             }
           },
           "required": [
