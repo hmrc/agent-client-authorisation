@@ -41,7 +41,7 @@
         },
         "self": {
           "type": "object",
-          "description": "Link back to this resource",
+          "description": "A link to the current resource",
           "properties": {
             "href": {
               "type": "string"
