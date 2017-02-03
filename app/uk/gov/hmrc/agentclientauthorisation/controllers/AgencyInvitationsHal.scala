@@ -39,7 +39,7 @@ trait AgencyInvitationsHal {
   }
 
   private def invitationLinks(invitations: List[Invitation]): Vector[HalLink] = {
-    invitations.map { i => HalLink("invitation", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.id.stringify).toString)}.toVector
+    invitations.map { i => HalLink("invitations", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.id.stringify).toString)}.toVector
   }
 
   def toHalResource(invitation: Invitation): HalResource = {

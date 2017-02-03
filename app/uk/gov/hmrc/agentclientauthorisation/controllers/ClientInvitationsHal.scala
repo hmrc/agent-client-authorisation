@@ -39,7 +39,7 @@ trait ClientInvitationsHal {
   }
 
   private def invitationLinks(invitations: Seq[Invitation]): Vector[HalLink] = {
-    invitations.map { i => HalLink("invitation", routes.ClientInvitationsController.getInvitation(i.clientId, i.id.stringify).toString)}.toVector
+    invitations.map { i => HalLink("invitations", routes.ClientInvitationsController.getInvitation(i.clientId, i.id.stringify).toString)}.toVector
   }
 
   def toHalResource(clientId: String, selfLinkHref: String): HalResource = {

@@ -32,8 +32,7 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
       val definition = response.json
 
-      (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
-      (definition \ "api" \ "name").as[String] shouldBe "Agent-client Authorisation"
+      (definition \ "api" \ "name").as[String] shouldBe "Agent Client Authorisation"
 
       val accessConfig = definition \ "api" \ "versions" \\ "access"
       (accessConfig.head \ "type").as[String] shouldBe "PRIVATE"

@@ -3,7 +3,7 @@
     "self": {
       "href": "/agent-client-authorisation/agencies/AARN9999999/invitations/sent"
     },
-    "invitation": [
+    "invitations": [
       {
         "href": "/agent-client-authorisation/agencies/AARN9999999/invitations/sent/5888c22e11000011007afc11"
       },

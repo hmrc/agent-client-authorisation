@@ -77,7 +77,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val invitationLinks = (response.json \ "_links" \ "invitation" \\ "href").map(_.as[String])
+      val invitationLinks = (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
 
       invitations.size shouldBe 2
       checkInvitation(invitations.head, testStartTime)
