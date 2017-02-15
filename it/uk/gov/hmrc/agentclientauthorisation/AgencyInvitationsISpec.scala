@@ -127,16 +127,16 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       agencySendInvitation(arn, validInvitation.copy(postcode = "A A1 1A A")).status shouldBe 201
     }
+  }
 
-    "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
-      behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
+  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
 
-      "should return 204 when invitation is Cancelled" ignore {
-        given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-        val location = agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).header("location")
-        val response = agencyGetSentInvitation(arn, location.get)
-        response.status shouldBe 204
-      }
+    "should return 204 when invitation is Cancelled" ignore {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      val location = agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).header("location")
+      val response = agencyGetSentInvitation(arn, location.get)
+      response.status shouldBe 204
     }
   }
 
