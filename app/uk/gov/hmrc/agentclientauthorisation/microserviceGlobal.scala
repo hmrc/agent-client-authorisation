@@ -62,6 +62,9 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
+    bindBaseUrl("etmp")
+    bindProperty("des.environment", "etmp.environment")
+    bindProperty("des.authorizationToken", "etmp.authorization-token")
   }
 
   private def bindBaseUrl(serviceName: String) =
@@ -71,6 +74,12 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     override lazy val get = new URL(baseUrl(serviceName))
   }
 
+  private def bindProperty(objectName: String, propertyName: String) =
+    bind(classOf[String]).annotatedWith(Names.named(objectName)).toProvider(new PropertyProvider(propertyName))
+
+  private class PropertyProvider(confKey: String) extends Provider[String] {
+    override lazy val get = getConfString(confKey, throw new IllegalStateException(s"No value found for configuration property $confKey"))
+  }
 }
 
 class MongoDbProvider @Inject() (reactiveMongoComponent: ReactiveMongoComponent) extends Provider[DB] {

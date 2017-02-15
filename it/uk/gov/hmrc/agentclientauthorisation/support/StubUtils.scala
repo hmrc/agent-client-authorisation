@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.{AgentCode, Generator, Nino, SaUtr}
 
 trait StubUtils {
   me: StartAndStopWireMock =>
@@ -37,7 +37,7 @@ trait StubUtils {
     }
 
     def client(oid: String = "556737e15500005500eaf68f", clientId: MtdClientId = FakeMtdClientId.random()): Client = {
-      Client(oid, clientId, Some(FakeMtdClientId.toSaUtr(clientId)))
+      Client(oid, clientId, Some(FakeMtdClientId.toSaUtr(clientId)), Some(new Generator().nextNino))
     }
   }
 
@@ -59,7 +59,7 @@ trait StubUtils {
   case class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  case class Client(override val oid: String, override val clientId: MtdClientId, saUtr:Option[SaUtr]) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] {
+  case class Client(override val oid: String, override val clientId: MtdClientId, saUtr:Option[SaUtr], nino: Option[Nino]) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with EtmpStubs[Client] {
 
     def withNoSaEnrolment(): Client = this.copy(saUtr = None)
   }
