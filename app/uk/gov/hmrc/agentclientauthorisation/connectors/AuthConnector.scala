@@ -20,7 +20,7 @@ import java.net.URL
 import javax.inject._
 
 import play.api.libs.json.JsValue
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.{AgentCode, Nino, SaUtr}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}

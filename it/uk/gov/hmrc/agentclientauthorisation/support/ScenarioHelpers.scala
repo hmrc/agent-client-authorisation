@@ -20,17 +20,18 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
   self : FeatureSpec =>
 
-  def mtdClientId: MtdClientId
+  def nino: Nino
   def arn: Arn
   val MtdSaRegime: Regime = Regime("mtd-sa")
 
-  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(MtdClientId, Regime), secondClient:(MtdClientId, Regime)): Unit = {
+  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(Nino, Regime), secondClient:(Nino, Regime)): Unit = {
 
     val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1, regime = i._2))
 
@@ -38,14 +39,14 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val location2 = locations(1)
     location1 should not(be(location2))
 
-    info(s"the Agency should see 2 pending invitations to Client $mtdClientId")
+    info(s"the Agency should see 2 pending invitations to Client $nino")
     val response = agency.sentInvitations()
     response.numberOfInvitations shouldBe 2
 
     checkInvite(response.firstInvitation)(firstClient)
     checkInvite(response.secondInvitation)(secondClient)
 
-    def checkInvite(invitation: EmbeddedInvitation)(expected:(MtdClientId, Regime)): Unit = {
+    def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, Regime)): Unit = {
       invitation.arn shouldBe arn
       invitation.clientId shouldBe expected._1
       invitation.regime shouldBe expected._2
@@ -64,12 +65,12 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i1 = clientResponse.firstInvitation
     i1.arn shouldBe arn
-    i1.clientId shouldBe mtdClientId
+    i1.clientId shouldBe nino
     i1.regime shouldBe MtdSaRegime
     i1.status shouldBe "Pending"
 
     val selfLink = i1.links.selfLink
-    selfLink should startWith(s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/${nino.value}/invitations/received/")
     i1.links.acceptLink shouldBe Some(s"$selfLink/accept")
     i1.links.rejectLink shouldBe Some(s"$selfLink/reject")
     i1.links.cancelLink shouldBe None
@@ -77,11 +78,11 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn
-    i2.clientId shouldBe mtdClientId
+    i2.clientId shouldBe nino
     i2.regime shouldBe MtdSaRegime
     i2.status shouldBe "Pending"
     val links = clientResponse.links
-    links.selfLink shouldBe s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received"
+    links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"
     links.invitations shouldBe 'nonEmpty
     links.invitations.head shouldBe i1.links.selfLink
     links.invitations(1) shouldBe i2.links.selfLink

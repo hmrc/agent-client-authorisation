@@ -18,8 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.HeaderNames
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
-import uk.gov.hmrc.domain.{SaAgentReference, SaUtr}
+import uk.gov.hmrc.domain.{Nino, SaAgentReference, SaUtr}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -80,7 +79,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def oid: String
-  def clientId: MtdClientId
+  def clientId: Nino
   def saUtr: Option[SaUtr]
 
   private def utrBlock = saUtr.map(v => s""""sa": {"utr": "$v"}""") getOrElse ""
@@ -89,7 +88,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(get(urlPathEqualTo(s"/agencies-fake/clients/sa/$theUtr"))
       .willReturn(aResponse()
         .withStatus(200)
-        .withBody(s"""{"mtdClientId": "${clientId.value}"}""")))
+        .withBody(s"""{"nino": "${clientId.value}"}""")))
   }
 
   def isLoggedIn(): A = {

@@ -24,7 +24,8 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
@@ -34,7 +35,7 @@ import scala.language.postfixOps
 class RootController @Inject() (override val agenciesFakeConnector: AgenciesFakeConnector,
                                 override val authConnector: AuthConnector)
     extends BaseController with AuthActions with HalWriter {
-  private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url));
+  private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url))
 
   def getRootResource() = withAccounts.async { implicit request =>
     (request.accounts.agent, request.accounts.sa) match {
@@ -49,8 +50,8 @@ class RootController @Inject() (override val agenciesFakeConnector: AgenciesFake
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
-  private def toHalResource(clientId: MtdClientId): HalResource = {
-    val invitationsReceivedLink = Vector(HalLink("received", routes.ClientInvitationsController.getInvitations(clientId.value, None).url))
+  private def toHalResource(nino: Nino): HalResource = {
+    val invitationsReceivedLink = Vector(HalLink("received", routes.ClientInvitationsController.getInvitations(nino.value, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsReceivedLink, Vector())
   }
 }

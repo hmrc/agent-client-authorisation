@@ -20,9 +20,9 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Generator}
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -40,7 +40,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   private implicit val agentCode = AgentCode("LMNOP123456")
 
   private val MtdRegime: Regime = Regime("mtd-sa")
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, MtdClientId("1234567899"), "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, new Generator().nextNino, "AA1 1AA")
 
   "GET root resource" should {
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)

@@ -21,8 +21,8 @@ import javax.inject._
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr, SimpleObjectReads, SimpleObjectWrites}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain._
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,11 +34,9 @@ object Agency {
   implicit val jsonFormats = Json.format[Agency]
 }
 
-case class Client(mtdClientId: MtdClientId)
+case class Client(nino: Nino)
 
 object Client {
-  implicit val mtdClientIdReads = new SimpleObjectReads[MtdClientId]("mtdClientId", MtdClientId.apply)
-  implicit val mtdClientIdWrites = new SimpleObjectWrites[MtdClientId](_.value)
   implicit val jsonFormats = Json.format[Client]
 }
 
@@ -50,9 +48,9 @@ class AgenciesFakeConnector @Inject() (@Named("agencies-fake-baseUrl") baseUrl: 
       .map(_.map(_.arn))
   }
 
-  def findClient(saUtr: SaUtr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdClientId]] = {
+  def findClient(saUtr: SaUtr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
     httpGet.GET[Option[Client]](new URL(baseUrl, s"/agencies-fake/clients/sa/${encodePathSegment(saUtr.value)}").toString)
-      .map(_.map(_.mtdClientId))
+      .map(_.map(_.nino))
   }
   def agencyUrl(arn: Arn): URL = {
     new URL(baseUrl, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")

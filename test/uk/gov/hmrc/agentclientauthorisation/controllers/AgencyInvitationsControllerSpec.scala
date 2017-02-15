@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
+import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.Future
 
@@ -38,6 +39,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   val postcodeService = resettingMock[PostcodeService]
   val invitationsService = resettingMock[InvitationsService]
+  val generator = new Generator()
   val authConnector = resettingMock[AuthConnector]
   val agenciesFakeConnector = resettingMock[AgenciesFakeConnector]
 

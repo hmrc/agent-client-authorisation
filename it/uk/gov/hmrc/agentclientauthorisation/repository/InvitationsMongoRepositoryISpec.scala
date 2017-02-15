@@ -109,42 +109,42 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "return elements for the specified regime only" in {
       val arn = Arn("3")
-      val mtdClientId1 = "MTD-REG-3A"
-      val mtdClientId2 = "MTD-REG-3B"
+      val clientId1 = "MTD-REG-3A"
+      val clientId2 = "MTD-REG-3B"
 
-      addInvitations((arn, "mtd-sa", mtdClientId1, "user-details-1"), (arn, "some-other-regime", mtdClientId2, "user-details-2"))
+      addInvitations((arn, "mtd-sa", clientId1, "user-details-1"), (arn, "some-other-regime", clientId2, "user-details-2"))
 
       val list = listByArn(arn, Some("mtd-sa"), None, None)
 
       list.size shouldBe 1
-      list.head.clientId shouldBe mtdClientId1
+      list.head.clientId shouldBe clientId1
     }
 
     "return elements for the specified client only" in {
       val arn = Arn("3")
-      val mtdClientId1 = "MTD-REG-3A"
-      val mtdClientId2 = "MTD-REG-3B"
+      val clientId1 = "MTD-REG-3A"
+      val clientId2 = "MTD-REG-3B"
 
-      addInvitations((arn, "mtd-sa", mtdClientId1, "user-details-1"), (arn, "mtd-sa", mtdClientId2, "user-details-2"))
+      addInvitations((arn, "mtd-sa", clientId1, "user-details-1"), (arn, "mtd-sa", clientId2, "user-details-2"))
 
-      val list = listByArn(arn, None, Some(mtdClientId1), None)
+      val list = listByArn(arn, None, Some(clientId1), None)
 
       list.size shouldBe 1
-      list.head.clientId shouldBe mtdClientId1
+      list.head.clientId shouldBe clientId1
     }
 
     "return elements with the specified status" in {
       val arn = Arn("3")
-      val mtdClientId1 = "MTD-REG-3A"
-      val mtdClientId2 = "MTD-REG-3B"
+      val clientId1 = "MTD-REG-3A"
+      val clientId2 = "MTD-REG-3B"
 
-      val invitations = addInvitations((arn, "mtd-sa", mtdClientId1, "user-details-1"), (arn, "mtd-sa", mtdClientId2, "user-details-2"))
+      val invitations = addInvitations((arn, "mtd-sa", clientId1, "user-details-1"), (arn, "mtd-sa", clientId2, "user-details-2"))
       update(invitations.head.id, Accepted)
 
       val list = listByArn(arn, None, None, Some(Pending))
 
       list.size shouldBe 1
-      list.head.clientId shouldBe mtdClientId2
+      list.head.clientId shouldBe clientId2
     }
   }
 
@@ -210,12 +210,12 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "return elements with the specified status" in {
       val arn = Arn("3")
-      val mtdClientId = "MTD-REG-3A"
+      val clientId = "MTD-REG-3A"
 
-      val invitations = addInvitations((arn, "mtd-sa", mtdClientId, "user-details-1"), (arn, "mtd-sa", mtdClientId, "user-details-1"))
+      val invitations = addInvitations((arn, "mtd-sa", clientId, "user-details-1"), (arn, "mtd-sa", clientId, "user-details-1"))
       update(invitations.head.id, Accepted)
 
-      val list = listByClientId("mtd-sa", mtdClientId, Some(Pending))
+      val list = listByClientId("mtd-sa", clientId, Some(Pending))
 
       list.size shouldBe 1
       list.head.status shouldBe Pending

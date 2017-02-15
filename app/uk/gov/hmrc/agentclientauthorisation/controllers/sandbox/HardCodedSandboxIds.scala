@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.Nino
 
 object HardCodedSandboxIds {
 
-  val clientId = MtdClientId("MTD-REG-1234567890")
+  val clientId = Nino("AA123456A")
 
   val arn = Arn("01234567-79ab-cdef-0123-456789abcdef")
 

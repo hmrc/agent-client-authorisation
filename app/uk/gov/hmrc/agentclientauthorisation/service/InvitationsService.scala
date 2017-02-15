@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -38,7 +39,7 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, MtdClientId(invitation.clientId))
+      relationshipsConnector.createRelationship(invitation.arn, Nino(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
       Future successful cannotTransitionBecauseNotPending(invitation, Accepted)

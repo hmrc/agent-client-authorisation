@@ -29,7 +29,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.Accounts
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours}
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{Generator, Nino, SaUtr}
 
 import scala.concurrent.Future
 
@@ -38,7 +38,8 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
   val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
 
   val invitationId = BSONObjectID.generate.stringify
-  val clientId = "clientId"
+  val generator = new Generator()
+  val clientId = generator.nextNino.value
   val saUtr = "saUtr"
   val arn: Arn = Arn("12345")
 
@@ -69,7 +70,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
     "return 200 and an empty list when there are no invitations for the client" in {
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
-      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(Nino(clientId)))
 
       when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
 
@@ -81,7 +82,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
     "include the agency URL in invitations" in {
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
-      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(Nino(clientId)))
 
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
@@ -98,7 +99,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(SaUtr(saUtr))))
-      whenMtdClientIsLookedUp.thenReturn(Future successful Some(MtdClientId(clientId)))
+      whenMtdClientIsLookedUp.thenReturn(Future successful Some(Nino(clientId)))
 
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))

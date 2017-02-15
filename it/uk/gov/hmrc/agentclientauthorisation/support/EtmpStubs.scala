@@ -23,10 +23,10 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 trait EtmpStubs[A] {
   me: A with WiremockAware =>
 
-  def nino: Option[Nino]
+  def clientId: Nino
 
   def hasABusinessPartnerRecord: A = {
-    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(nino.get.value)}"))
+    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -43,7 +43,7 @@ trait EtmpStubs[A] {
   }
 
   def hasNoBusinessPartnerRecord: A = {
-    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(nino.get.value)}"))
+    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
     .withHeader("authorization", equalTo("Bearer secret"))
     .withHeader("environment", equalTo("test"))
       .willReturn(aResponse()

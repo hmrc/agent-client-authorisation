@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsControl
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{Generator, Nino, SaUtr}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -54,6 +54,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def saUtr: String
 
   def arn: Arn
+  def generator: Generator
 
   override def beforeEach(): Unit = {
     reset(invitationsService, authConnector, agenciesFakeConnector)
@@ -96,7 +97,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
       "the invitation is for a different client" in {
         val request = FakeRequest()
         whenAuthIsCalled thenReturn aClientUser()
-        whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
+        whenMtdClientIsLookedUp thenReturn aMtdUser(generator.nextNino.nino)
         val invitation = anInvitation()
         whenFindingAnInvitation thenReturn (Future successful Some(invitation))
         action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
@@ -156,7 +157,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     Future successful Accounts(None, Some(SaUtr(saUtr)))
 
   def aMtdUser(clientId: String = clientId) =
-    Future successful Some(MtdClientId(clientId))
+    Future successful Some(Nino(clientId))
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 

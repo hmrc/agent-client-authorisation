@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
 
 class AgencyFiltersByRegimeApiPlatformISpec extends AgencyFiltersByRegimeISpec
 
@@ -32,7 +31,7 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  val mtdClientId: MtdClientId = FakeMtdClientId.random()
+  val nino: Nino = new Generator().nextNino
 
   feature("Agencies can filter")  {
 
@@ -43,8 +42,8 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
-        (mtdClientId, MtdSaRegime),
-        (mtdClientId, MtdSaRegime)
+        (nino, MtdSaRegime),
+        (nino, MtdSaRegime)
       )
 
       Then("The agent filters by mtd-sa")

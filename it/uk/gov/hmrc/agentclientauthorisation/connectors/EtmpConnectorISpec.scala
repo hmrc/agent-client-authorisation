@@ -29,7 +29,7 @@ class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasABusinessPartnerRecord
 
-      val response = await(connector.getBusinessDetails(client.nino.get)).get
+      val response = await(connector.getBusinessDetails(client.clientId)).get
 
       response.businessAddressDetails.countryCode shouldBe "GB"
       response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
@@ -40,12 +40,12 @@ class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasNoBusinessPartnerRecord
 
-      val response = await(connector.getBusinessDetails(client.nino.get))
+      val response = await(connector.getBusinessDetails(client.clientId))
 
       response shouldBe None
     }
   }
 
-  def connector = app.injector.instanceOf[EtmpConnector]
+  private def connector = app.injector.instanceOf[EtmpConnector]
 
 }

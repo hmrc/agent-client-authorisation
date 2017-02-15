@@ -26,11 +26,13 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{Generator, SaUtr}
 import uk.gov.hmrc.play.test.UnitSpec
 
 
 class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with AuthMocking with ResettingMockitoSugar with BeforeAndAfterEach with AkkaMaterializerSpec {
+
+  override val generator = new Generator()
 
   override val authConnector: AuthConnector = resettingMock[AuthConnector]
   override val agenciesFakeConnector: AgenciesFakeConnector = resettingMock[AgenciesFakeConnector]

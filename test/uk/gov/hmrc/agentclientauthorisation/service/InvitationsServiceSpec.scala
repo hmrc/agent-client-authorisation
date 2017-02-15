@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
+import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -41,8 +42,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   val service = new InvitationsService(invitationsRepository, relationshipsConnector)
 
   val arn = Arn("12345")
-  val mtdClientId = MtdClientId("67890")
-  val mtdClientIdAsString = mtdClientId.value
+  val nino = new Generator().nextNino
+  val ninoAsString = nino.value
 
   implicit val hc = HeaderCarrier()
 
@@ -180,7 +181,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdClientIdAsString,
+    ninoAsString,
     "A11 1AA",
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
   )
@@ -188,7 +189,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   private def testInvitation = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdClientIdAsString,
+    ninoAsString,
     "A11 1AA",
     List(StatusChangeEvent(now(), Pending))
   )
@@ -198,6 +199,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def whenRelationshipIsCreated: OngoingStubbing[Future[Unit]] = {
-    when(relationshipsConnector.createRelationship(arn, mtdClientId))
+    when(relationshipsConnector.createRelationship(arn, nino))
   }
 }
