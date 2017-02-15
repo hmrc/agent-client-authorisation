@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import org.scalatest.{BeforeAndAfterEach, Suite}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
-import uk.gov.hmrc.mongo.{Awaiting => MongoAwaiting, MongoSpecSupport}
+import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
@@ -49,6 +50,9 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
       "microservice.services.etmp.port" -> wiremockPort
     )
   }
+
+  private val generator = new Generator()
+  def nextNino = generator.nextNino
 }
 
 trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest {
@@ -56,6 +60,7 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongo
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)
+
 }
 
 trait ResetMongoBeforeTest extends BeforeAndAfterEach {

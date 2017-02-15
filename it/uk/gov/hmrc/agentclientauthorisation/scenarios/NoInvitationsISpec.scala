@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
 class NoInvitationsApiPlatformISpec extends NoInvitationsISpec
@@ -32,7 +32,7 @@ trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val nino: Nino = new Generator().nextNino
+  private val nino: Nino = nextNino
 
   "Before the Agency has sent any invitations" in {
     val agency = new AgencyApi(this, arn, port)

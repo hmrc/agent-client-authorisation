@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
 class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec
@@ -35,9 +35,8 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   private implicit val arn = Arn("ABCDEF12345678")
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val generator = new Generator()
-  private val nino = generator.nextNino
-  private val nino1 = generator.nextNino
+  private val nino = nextNino
+  private val nino1 = nextNino
 
   private val invitationsUrl = s"${clientUrl(nino)}/invitations"
   private val invitationsReceivedUrl = s"$invitationsUrl/received"

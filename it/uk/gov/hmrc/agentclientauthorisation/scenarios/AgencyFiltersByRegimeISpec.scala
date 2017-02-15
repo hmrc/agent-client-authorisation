@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByRegimeApiPlatformISpec extends AgencyFiltersByRegimeISpec
 
@@ -31,7 +31,7 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  val nino: Nino = new Generator().nextNino
+  val nino: Nino = nextNino
 
   feature("Agencies can filter")  {
 
