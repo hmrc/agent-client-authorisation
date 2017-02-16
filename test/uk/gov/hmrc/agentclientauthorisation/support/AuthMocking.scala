@@ -34,27 +34,27 @@ trait AuthMocking {
   private val defaultArn = Arn("12345")
 
   def givenAgentIsLoggedIn(arn : Arn = defaultArn): Arn = {
-    givenAccountsAre(Accounts(Some(AgentCode("54321"))))
+    givenAccountsAre(Accounts(Some(AgentCode("54321")), None))
     givenAgencyRecordIs(AgentCode("54321"), arn)
     arn
   }
 
   def givenAgentWithoutRecordIsLoggedIn() = {
-    givenAccountsAre(Accounts(Some(AgentCode("54321"))))
+    givenAccountsAre(Accounts(Some(AgentCode("54321")), None))
     givenUserHasNoAgency(AgentCode("54321"))
   }
 
   def givenClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None))
+    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
     val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None))
+    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
   }
 
   def givenClientIsLoggedInWithNoSAAccount() = {
-    givenAccountsAre(Accounts(None))
+    givenAccountsAre(Accounts(None, None))
   }
 
   def givenUserIsNotLoggedIn() = whenAccountsIsAskedFor().thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))

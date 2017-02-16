@@ -93,9 +93,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
     "Return forbidden" when {
       "the invitation is for a different client" in {
-        pending // reinstate when client validation is implemented
         val request = FakeRequest()
-        whenAuthIsCalled thenReturn aClientUser()
+        whenAuthIsCalled thenReturn aClientUser(generator.nextNino.value)
         val invitation = anInvitation()
         whenFindingAnInvitation thenReturn (Future successful Some(invitation))
         action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
@@ -146,11 +145,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser() =
-    Future successful Accounts(None)
-
-  def aMtdUser(clientId: String = clientId) =
-    Future successful Some(Nino(clientId))
+  def aClientUser(nino: String = clientId) = Future successful Accounts(None, Some(Nino(nino)))
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 

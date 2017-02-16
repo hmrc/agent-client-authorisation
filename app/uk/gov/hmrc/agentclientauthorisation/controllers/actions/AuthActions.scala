@@ -21,6 +21,7 @@ import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -60,7 +61,10 @@ trait AuthActions {
 
   val onlyForSaClients: ActionBuilder[SaClientRequest] = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
     override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, SaClientRequest[A]]] = {
-      Future successful Right(SaClientRequest(request))
+      request.accounts.nino match {
+        case Some(nino) => Future successful Right(SaClientRequest(nino, request))
+        case None => Future successful Left(SaEnrolmentNotFound)
+      }
     }
   }
 }
@@ -69,4 +73,4 @@ class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extend
 
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
-case class SaClientRequest[A](request: Request[A]) extends WrappedRequest[A](request)
+case class SaClientRequest[A](nino: Nino, request: Request[A]) extends WrappedRequest[A](request)

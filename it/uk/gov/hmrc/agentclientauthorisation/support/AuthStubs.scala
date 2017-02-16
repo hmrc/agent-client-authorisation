@@ -94,8 +94,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |  "credentials":{
          |    "gatewayId":"0000001592621267"
          |  },
-         |  "accounts":{
-         |  },
+         |  "nino": "${clientId.value}",
          |  "lastUpdated":"2016-06-20T10:44:29.634Z",
          |  "credentialStrength":"strong",
          |  "confidenceLevel":50,
@@ -127,8 +126,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |  "credentials":{
          |    "gatewayId":"0000001592621267"
          |  },
-         |  "accounts":{
-         |  },
+         |  "nino": "${clientId.value}",
          |  "lastUpdated":"2016-06-20T10:44:29.634Z",
          |  "credentialStrength":"strong",
          |  "confidenceLevel":50,

@@ -38,10 +38,10 @@ class RootController @Inject() (override val agenciesFakeConnector: AgenciesFake
   private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url))
 
   def getRootResource() = withAccounts.async { implicit request =>
-    request.accounts.agent match {
-      case Some(agentCode) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentRegistrationNotFound))
-        // TODO use nino from auth response
-      case None         => Future successful Ok(toHalResource(Nino("AA123456A")))
+    (request.accounts.agent, request.accounts.nino) match {
+      case (Some(agentCode), _) => agenciesFakeConnector.findArn(agentCode).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentRegistrationNotFound))
+      case (None, Some(nino))  => Future successful Ok(toHalResource(nino))
+      case (None, None)         => Future successful SaEnrolmentNotFound
     }
   }
 

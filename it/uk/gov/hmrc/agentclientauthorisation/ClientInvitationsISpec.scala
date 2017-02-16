@@ -76,7 +76,6 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
     "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
-      pending // reinstate when client validation is implemented
       given().client(clientId = nino).isLoggedIn()
       clientGetReceivedInvitations(nino1) should matchErrorResult(NoPermissionOnClient)
     }
@@ -102,7 +101,6 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations" in {
-      pending // reinstate when client validation is implemented
       val invite = sendInvitationToClient(nino1)
 
       val client = new ClientApi(this, nino, port)
@@ -113,7 +111,6 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to transition someone else's invitation" in {
-      pending // reinstate when client validation is implemented
       val invite = sendInvitationToClient(nino1)
 
       val client = new ClientApi(this, nino, port)
@@ -146,13 +143,12 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
         response.status shouldBe 200
       }
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      // (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(invitationsReceivedUrl)
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(invitationsReceivedUrl)
     }
   }
 
   def anEndpointThatPreventsAccessToAnotherClientsInvitations(url:String): Unit = {
     "return 403 NO_PERMISSION_ON_CLIENT for someone else's invitations" in {
-      pending // reinstate when client validation is implemented
 
       given().client(clientId = nino1).isLoggedIn()
 
