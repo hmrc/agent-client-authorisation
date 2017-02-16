@@ -37,7 +37,7 @@ trait StubUtils {
     }
 
     def client(oid: String = "556737e15500005500eaf68f", clientId: Nino = new Generator().nextNino): Client = {
-      Client(oid, clientId, Some(new SaUtrGenerator().nextSaUtr))
+      Client(oid, clientId)
     }
   }
 
@@ -59,8 +59,5 @@ trait StubUtils {
   case class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  case class Client(override val oid: String, override val clientId: Nino, saUtr:Option[SaUtr]) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with EtmpStubs[Client] {
-
-    def withNoSaEnrolment(): Client = this.copy(saUtr = None)
-  }
+  case class Client(override val oid: String, override val clientId: Nino) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with EtmpStubs[Client]
 }

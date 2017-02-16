@@ -31,7 +31,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
         .agentAdmin("ABCDEF123456", "12345")
         .isLoggedIn()
 
-      await(newAuthConnector().currentAccounts()) shouldBe Accounts(agent = Some(AgentCode("12345")), sa = None)
+      await(newAuthConnector().currentAccounts()) shouldBe Accounts(agent = Some(AgentCode("12345")))
     }
   }
 

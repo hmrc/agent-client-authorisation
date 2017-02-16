@@ -46,16 +46,5 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
       makeRequest.body shouldBe bodyOf(GenericUnauthorized)
     }
 
-    "return 403 Forbidden when user has not registered for MTD SA" in {
-      given().client(clientId = id).isLoggedInWithNoMtdRegistration()
-      makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(ClientRegistrationNotFound)
-    }
-
-    "return 403 Forbidden when user has no SA enrolment" in {
-      given().client(clientId = id).withNoSaEnrolment().isLoggedIn()
-      makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(SaEnrolmentNotFound)
-    }
   }
 }

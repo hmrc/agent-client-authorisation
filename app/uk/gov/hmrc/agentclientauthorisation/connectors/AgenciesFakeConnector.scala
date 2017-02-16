@@ -48,10 +48,6 @@ class AgenciesFakeConnector @Inject() (@Named("agencies-fake-baseUrl") baseUrl: 
       .map(_.map(_.arn))
   }
 
-  def findClient(saUtr: SaUtr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
-    httpGet.GET[Option[Client]](new URL(baseUrl, s"/agencies-fake/clients/sa/${encodePathSegment(saUtr.value)}").toString)
-      .map(_.map(_.nino))
-  }
   def agencyUrl(arn: Arn): URL = {
     new URL(baseUrl, s"/agencies-fake/agencies/${encodePathSegment(arn.arn)}")
   }

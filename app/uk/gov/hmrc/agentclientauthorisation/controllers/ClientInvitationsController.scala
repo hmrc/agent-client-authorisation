@@ -33,26 +33,31 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
                                   override val authConnector: AuthConnector,
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal  {
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
    def getDetailsForAuthenticatedClient() = onlyForSaClients.async { implicit request =>
-    Future successful Ok(toHalResource(request.nino.value, request.path))
+    Future successful Ok(toHalResource("not-implemented", request.path))
   }
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   def getDetailsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
-    if (clientId == request.nino.value) {
+    if (clientId == clientId) {
       Future successful Ok(toHalResource(clientId, request.path))
     } else {
       Future successful NoPermissionOnClient
     }
   }
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    actionInvitation(request.nino.value, invitationId, invitationsService.acceptInvitation)
+    actionInvitation(clientId, invitationId, invitationsService.acceptInvitation)
   }
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   def rejectInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    actionInvitation(request.nino.value, invitationId, invitationsService.rejectInvitation)
+    actionInvitation(clientId, invitationId, invitationsService.rejectInvitation)
   }
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]]) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
@@ -64,16 +69,17 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
+      case Some(x) if x.clientId == clientId => Ok(toHalResource(x))
       case None => InvitationNotFound
       case _ => NoPermissionOnClient
     }
   }
-
+  // TODO clientId in path needs to be checked against nino from auth/userdetails
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
-    if (clientId == request.nino.value) {
+    if (clientId == clientId) {
       invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
       Future successful NoPermissionOnClient

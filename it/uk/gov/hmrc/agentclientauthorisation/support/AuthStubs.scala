@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.HeaderNames
-import uk.gov.hmrc.domain.{Nino, SaAgentReference, SaUtr}
+import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -80,16 +80,6 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
 
   def oid: String
   def clientId: Nino
-  def saUtr: Option[SaUtr]
-
-  private def utrBlock = saUtr.map(v => s""""sa": {"utr": "$v"}""") getOrElse ""
-
-  private def stubMtdRegistration(theUtr:SaUtr)  = {
-    stubFor(get(urlPathEqualTo(s"/agencies-fake/clients/sa/$theUtr"))
-      .willReturn(aResponse()
-        .withStatus(200)
-        .withBody(s"""{"nino": "${clientId.value}"}""")))
-  }
 
   def isLoggedIn(): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
@@ -105,41 +95,6 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    "gatewayId":"0000001592621267"
          |  },
          |  "accounts":{
-         |    $utrBlock
-         |  },
-         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
-         |  "credentialStrength":"strong",
-         |  "confidenceLevel":50,
-         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
-         |  "levelOfAssurance":"1",
-         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
-         |}
-       """.stripMargin
-    )))
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[]
-         """.stripMargin
-    )))
-
-    saUtr foreach stubMtdRegistration
-    this
-  }
-  def isLoggedInWithNoMtdRegistration(): A = {
-    stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |{
-         |  "new-session":"/auth/oid/$oid/session",
-         |  "enrolments":"/auth/oid/$oid/enrolments",
-         |  "uri":"/auth/oid/$oid",
-         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
-         |  "credentials":{
-         |    "gatewayId":"0000001592621267"
-         |  },
-         |  "accounts":{
-         |    $utrBlock
          |  },
          |  "lastUpdated":"2016-06-20T10:44:29.634Z",
          |  "credentialStrength":"strong",
@@ -173,7 +128,6 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    "gatewayId":"0000001592621267"
          |  },
          |  "accounts":{
-         |      $utrBlock
          |  },
          |  "lastUpdated":"2016-06-20T10:44:29.634Z",
          |  "credentialStrength":"strong",
@@ -190,7 +144,6 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          """.stripMargin
     )))
 
-    saUtr foreach stubMtdRegistration
     this
   }
 }
