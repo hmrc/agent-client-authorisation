@@ -25,16 +25,16 @@ trait EtmpStubs[A] {
 
   def clientId: Nino
 
-  def hasABusinessPartnerRecord: A = {
+  def hasABusinessPartnerRecord(postcode: String = "AA11AA"): A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
           .withStatus(200)
-            .withBody("""
+            .withBody(s"""
               |{
               |  "businessAddressDetails": {
-              |    "postalCode": "AA11AA",
+              |    "postalCode": "$postcode",
               |    "countryCode": "GB"
               |  }
               |}

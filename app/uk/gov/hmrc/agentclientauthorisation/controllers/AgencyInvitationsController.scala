@@ -37,9 +37,9 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
 
 
   def createInvitation(arn: Arn) = onlyForSaAgents.async(parse.json) { implicit request =>
-    withJsonBody[AgentInvitation] { authRequest =>
-      checkForErrors(authRequest)
-        .headOption.fold(makeInvitation(arn, authRequest))(error => Future successful error)
+    withJsonBody[AgentInvitation] { agentInvitation =>
+      checkForErrors(agentInvitation).flatMap(
+        _.headOption.fold(makeInvitation(arn, agentInvitation))(error => Future successful error))
     }
   }
 

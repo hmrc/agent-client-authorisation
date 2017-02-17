@@ -44,6 +44,8 @@ trait AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers wi
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = nino2).hasABusinessPartnerRecord()
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)(

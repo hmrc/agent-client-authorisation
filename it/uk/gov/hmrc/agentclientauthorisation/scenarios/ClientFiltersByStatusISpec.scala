@@ -40,7 +40,7 @@ trait ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with G
       val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-      given().client(clientId = nino).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

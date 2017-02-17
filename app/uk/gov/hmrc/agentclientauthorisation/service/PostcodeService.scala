@@ -16,7 +16,21 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-class PostcodeService {
-  def clientPostcodeMatches(clientIdentifier: String, postcode: String) =
-        postcode.startsWith("A")
+import javax.inject.{Inject, Singleton}
+
+import uk.gov.hmrc.agentclientauthorisation.connectors.EtmpConnector
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.http.HeaderCarrier
+
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
+class PostcodeService @Inject() (etmpConnector: EtmpConnector) {
+  def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
+    etmpConnector.getBusinessDetails(Nino(clientIdentifier)).map {
+      case Some(details) if details.businessAddressDetails.postalCode.contains(postcode.replaceAll("\\s", "")) => true
+      case Some(_) => false
+      case None => false
+    }
+  }
 }

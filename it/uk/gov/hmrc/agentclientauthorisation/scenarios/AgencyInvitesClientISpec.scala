@@ -40,7 +40,7 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-      given().client(clientId = nino).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
@@ -63,7 +63,7 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-      given().client(clientId = nino).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(

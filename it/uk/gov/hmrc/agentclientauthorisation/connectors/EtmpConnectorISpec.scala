@@ -27,7 +27,7 @@ class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
     "return postcode and country code for a registered client" in {
       val client = given()
         .client()
-        .hasABusinessPartnerRecord
+        .hasABusinessPartnerRecord()
 
       val response = await(connector.getBusinessDetails(client.clientId)).get
 
