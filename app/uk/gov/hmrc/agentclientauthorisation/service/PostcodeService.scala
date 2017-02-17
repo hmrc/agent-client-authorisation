@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.agentclientauthorisation.connectors.EtmpConnector
+import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -28,9 +29,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class PostcodeService @Inject() (etmpConnector: EtmpConnector) {
   def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
     etmpConnector.getBusinessDetails(Nino(clientIdentifier)).map {
-      case Some(details) if details.businessAddressDetails.postalCode.contains(postcode.replaceAll("\\s", "")) => true
+      case Some(details) if details.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode)) => true
       case Some(_) => false
       case None => false
     }
   }
+}
+
+object PostcodeService {
+  def normalise(postcode: String): String = postcode.replaceAll("\\s", "").toUpperCase
 }

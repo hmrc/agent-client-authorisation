@@ -45,25 +45,44 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private def responseFor(invite: AgentInvitation): Result = {
     await(checkForErrors(invite)).head
   }
-  private def postcodeCheck = when(etmpConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some("AN11PA")))))
+  private def postcodeCheck(postcode: String = "AN11PA") = when(etmpConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)))))
 
   "checkForErrors" should {
-    postcodeCheck
 
-    "fail with Forbidden if the postcode doesn't start with A" in {
+    "fail with Forbidden if the postcode doesn't match" in {
+      postcodeCheck()
       responseFor(validInvite.copy(postcode = "BN29AB")) is Forbidden
     }
 
     "fail with BadRequest if the postcode is not valid" in {
+      postcodeCheck()
       responseFor(validInvite.copy(postcode = "AAAAAA")) is BadRequest
     }
 
     "fail with NotImplemented if the regime is not mtd-sa" in {
+      postcodeCheck()
       responseFor(validInvite.copy(regime = "mtd-vat")) is NotImplemented
     }
 
-    "pass when the postcode is valid, begins with A and has mtd-sa as the regime" in {
+    "pass when the postcode is valid, matches and has mtd-sa as the regime" in {
+      postcodeCheck()
       await(checkForErrors(validInvite)) shouldBe Nil
+    }
+
+    "pass when the postcodes differ by case" in {
+      postcodeCheck("an11pa")
+      await(checkForErrors(validInvite)) shouldBe Nil
+
+      postcodeCheck()
+      await(checkForErrors(validInvite.copy(postcode = "an11pa"))) shouldBe Nil
+    }
+
+    "pass when the postcodes differ by spacing" in {
+      postcodeCheck("AN1 1PA")
+      await(checkForErrors(validInvite)) shouldBe Nil
+
+      postcodeCheck()
+      await(checkForErrors(validInvite.copy(postcode = "AN1 1PA"))) shouldBe Nil
     }
   }
 }
