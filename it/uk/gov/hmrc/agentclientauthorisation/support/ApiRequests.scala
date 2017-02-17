@@ -77,8 +77,8 @@ trait ApiRequests {
     new Resource(agencyGetInvitationUrl(arn, invitationId), port).get()(hc)
   }
 
-  case class AgencyInvitationRequest(regime: Regime, clientId: Nino, postcode: String) {
-    val json: String = s"""{"regime": "${regime.value}", "clientId": "${clientId.value}", "postcode": "$postcode"}"""
+  case class AgencyInvitationRequest(regime: Regime, clientId: String, postcode: String) {
+    val json: String = s"""{"regime": "${regime.value}", "clientId": "$clientId", "postcode": "$postcode"}"""
   }
 
   def agencySendInvitation(arn: Arn, invitation: AgencyInvitationRequest)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {

@@ -25,7 +25,7 @@ trait EtmpStubs[A] {
 
   def clientId: Nino
 
-  def hasABusinessPartnerRecord(postcode: String = "AA11AA"): A = {
+  def hasABusinessPartnerRecord(postcode: String = "AA11AA", countryCode: String = "GB"): A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
@@ -35,7 +35,7 @@ trait EtmpStubs[A] {
               |{
               |  "businessAddressDetails": {
               |    "postalCode": "$postcode",
-              |    "countryCode": "GB"
+              |    "countryCode": "$countryCode"
               |  }
               |}
               """.stripMargin)))

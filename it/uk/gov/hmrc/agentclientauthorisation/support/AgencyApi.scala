@@ -31,7 +31,7 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
 
   def sendInvitation(clientId: Nino, regime: Regime = Regime("mtd-sa"), postcode:String = "AA1 1AA"): String = {
 
-    val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(regime, clientId, postcode))
+    val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(regime, clientId.value, postcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
     response.header(LOCATION).get
   }

@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
   private val MtdRegime: Regime = Regime("mtd-sa")
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, Nino("AA123456A"), "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, "AA123456A", "AA1 1AA")
 
   override val sandboxMode = true
 

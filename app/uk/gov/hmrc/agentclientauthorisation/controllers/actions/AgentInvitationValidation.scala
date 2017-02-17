@@ -21,6 +21,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,10 +40,12 @@ trait AgentInvitationValidation extends Results {
   }
 
   private def postCodeMatches(implicit hc: HeaderCarrier, ec: ExecutionContext): (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    postcodeService.clientPostcodeMatches(invite.clientId, invite.postcode) map {
-      case true => None
-      case false => Some(PostcodeDoesNotMatch)
-    }
+    postcodeService.clientPostcodeMatches(invite.clientId, invite.postcode)
+  }
+
+  private val hasValidNino: Validation = (invitation) => {
+    if (Nino.isValid(invitation.clientId)) None
+    else Some(InvalidNino)
   }
 
   private val supportedRegime: (AgentInvitation) => Future[Option[Result]] = (invite) => {
@@ -51,7 +54,12 @@ trait AgentInvitationValidation extends Results {
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[Result]] = {
-    val res = Seq(hasValidPostcode, postCodeMatches, supportedRegime).map(x => x(agentInvitation))
-    Future.sequence(res).map(_.flatten)
+    val ninoValid = hasValidNino(agentInvitation)
+    if (ninoValid.isEmpty) {
+      val res = Seq(hasValidPostcode, postCodeMatches, supportedRegime).map(x => x(agentInvitation))
+      Future.sequence(res).map(_.flatten)
+    } else {
+      Future successful Seq(ninoValid.get)
+    }
   }
 }

@@ -37,6 +37,8 @@ object ErrorResults {
   val NoPermissionOnClient                      = Forbidden(toJson(ErrorBody("NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client.")))
   val PostcodeDoesNotMatch                      = Forbidden(toJson(ErrorBody("POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC.")))
   val InvitationNotFound                        = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
+  val InvalidNino                               = BadRequest(toJson(ErrorBody("INVALID_NINO", "The NINO specified is not in a valid format")))
+  def nonUkAddress(countryCode: String)         = NotImplemented(toJson(ErrorBody("NON_UK_ADDRESS", s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
   def invalidInvitationStatus(message: String)  = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
   def unsupportedRegime(message: String)        = NotImplemented(toJson(ErrorBody("UNSUPPORTED_REGIME", message)))
   def postcodeFormatInvalid(message: String)    = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))

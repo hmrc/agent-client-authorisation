@@ -41,7 +41,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   private val MtdRegime: Regime = Regime("mtd-sa")
   private val nino = nextNino
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, nino, "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, nino.value, "AA1 1AA")
 
   "GET root resource" should {
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
@@ -123,6 +123,18 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       withClue(response.body) {
         response should matchErrorResult(unsupportedRegime("Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""))
       }
+    }
+
+    "should not create invitation for non-UK address" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
+      agencySendInvitation(arn, validInvitation) should matchErrorResult(nonUkAddress("AU"))
+    }
+
+    "should not create invitaton for invalid NINO" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
+      agencySendInvitation(arn, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
     }
 
     "should create invitation if postcode has no spaces" in {
