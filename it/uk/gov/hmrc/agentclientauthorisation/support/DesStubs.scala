@@ -20,7 +20,7 @@ import uk.gov.hmrc.domain.Nino
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 
-trait EtmpStubs[A] {
+trait DesStubs[A] {
   me: A with WiremockAware =>
 
   def clientId: Nino

@@ -37,7 +37,7 @@ object BusinessDetails {
 
 
 @Singleton
-class EtmpConnector @Inject() (@Named("etmp-baseUrl") baseUrl: URL,
+class DesConnector @Inject() (@Named("des-baseUrl") baseUrl: URL,
                                @Named("des.authorizationToken") authorizationToken: String,
                                @Named("des.environment") environment: String,
                                httpGet: HttpGet) {

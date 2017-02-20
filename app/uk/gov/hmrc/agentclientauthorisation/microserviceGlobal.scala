@@ -62,9 +62,9 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
-    bindBaseUrl("etmp")
-    bindProperty("des.environment", "etmp.environment")
-    bindProperty("des.authorizationToken", "etmp.authorization-token")
+    bindBaseUrl("des")
+    bindProperty("des.environment", "des.environment")
+    bindProperty("des.authorizationToken", "des.authorization-token")
   }
 
   private def bindBaseUrl(serviceName: String) =

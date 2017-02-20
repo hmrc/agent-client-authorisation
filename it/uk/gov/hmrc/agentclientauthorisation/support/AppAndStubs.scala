@@ -46,8 +46,8 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
       "microservice.services.agencies-fake.port" -> wiremockPort,
       "microservice.services.relationships.host" -> wiremockHost,
       "microservice.services.relationships.port" -> wiremockPort,
-      "microservice.services.etmp.host" -> wiremockHost,
-      "microservice.services.etmp.port" -> wiremockPort
+      "microservice.services.des.host" -> wiremockHost,
+      "microservice.services.des.port" -> wiremockPort
     )
   }
 

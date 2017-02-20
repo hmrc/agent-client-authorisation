@@ -59,5 +59,5 @@ trait StubUtils {
   case class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  case class Client(override val oid: String, override val clientId: Nino) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with EtmpStubs[Client]
+  case class Client(override val oid: String, override val clientId: Nino) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

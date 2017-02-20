@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, EtmpConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.play.test.UnitSpec
@@ -32,8 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar {
 
-  private val etmpConnector = mock[EtmpConnector]
-  override val postcodeService: PostcodeService = new PostcodeService(etmpConnector)
+  private val desConnector = mock[DesConnector]
+  override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
   private val validInvite: AgentInvitation = AgentInvitation("mtd-sa", "AA123456A", "AN11PA")
   private implicit val hc = HeaderCarrier()
@@ -45,7 +45,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private def responseFor(invite: AgentInvitation): Result = {
     await(checkForErrors(invite)).head
   }
-  private def postcodeCheck(postcode: String = "AN11PA") = when(etmpConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)))))
+  private def postcodeCheck(postcode: String = "AN11PA") = when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)))))
 
   "checkForErrors" should {
 

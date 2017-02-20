@@ -21,7 +21,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
+class DesConnectorISpec extends UnitSpec with AppAndStubs {
 
   "getBusinessDetails" should {
     "return postcode and country code for a registered client" in {
@@ -46,6 +46,6 @@ class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
     }
   }
 
-  private def connector = app.injector.instanceOf[EtmpConnector]
+  private def connector = app.injector.instanceOf[DesConnector]
 
 }
