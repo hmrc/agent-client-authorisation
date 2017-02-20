@@ -26,11 +26,13 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.test.UnitSpec
 
 
 class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with AuthMocking with ResettingMockitoSugar with BeforeAndAfterEach with AkkaMaterializerSpec {
+
+  override val generator = new Generator()
 
   override val authConnector: AuthConnector = resettingMock[AuthConnector]
   override val agenciesFakeConnector: AgenciesFakeConnector = resettingMock[AgenciesFakeConnector]
@@ -78,31 +80,16 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with A
     }
 
     "return 403 when a user who has no MTD enrolment is logged in" in {
+      pending // reinstate when client validation is implemented
       givenNonMTDClientIsLoggedIn()
       response(onlyForSaClients) shouldBe ClientRegistrationNotFound
     }
 
-    "return 403 when a user who has no SA enrolment is logged in" in {
-      givenClientIsLoggedInWithNoSAAccount()
-      response(onlyForSaClients) shouldBe SaEnrolmentNotFound
-    }
-
-    "return 200 when a user who has an SA enrolment is logged in" in {
+    "return 200 when a user is logged in" in {
       givenClientIsLoggedIn()
       status(response(onlyForSaClients)) shouldBe 200
     }
 
-    "pass client's SA UTR to the block when a user who has an SA enrolment is logged in" in {
-      givenClientIsLoggedIn()
-      var blockCalled = false
-      val action = onlyForSaClients { request =>
-        blockCalled = true
-        request.saUtr shouldBe SaUtr("1234567890")
-        Results.Ok
-      }
-      await(action(FakeRequest()))
-      blockCalled shouldBe true
-    }
   }
 
   private def response(actionBuilder: ActionBuilder[Request]): Result = {

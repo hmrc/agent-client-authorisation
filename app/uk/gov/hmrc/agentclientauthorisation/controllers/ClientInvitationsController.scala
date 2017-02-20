@@ -34,11 +34,11 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
                                   override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal  {
 
    def getDetailsForAuthenticatedClient() = onlyForSaClients.async { implicit request =>
-    Future successful Ok(toHalResource(request.mtdClientId.value, request.path))
+    Future successful Ok(toHalResource(request.nino.value, request.path))
   }
 
   def getDetailsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
-    if (clientId == request.mtdClientId.value) {
+    if (clientId == request.nino.value) {
       Future successful Ok(toHalResource(clientId, request.path))
     } else {
       Future successful NoPermissionOnClient
@@ -46,11 +46,11 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
   }
 
   def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    actionInvitation(request.mtdClientId.value, invitationId, invitationsService.acceptInvitation)
+    actionInvitation(request.nino.value, invitationId, invitationsService.acceptInvitation)
   }
 
   def rejectInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
-    actionInvitation(request.mtdClientId.value, invitationId, invitationsService.rejectInvitation)
+    actionInvitation(request.nino.value, invitationId, invitationsService.rejectInvitation)
   }
 
   private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]]) = {
@@ -66,14 +66,14 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
 
   def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
-      case Some(x) if x.clientId == request.mtdClientId.value => Ok(toHalResource(x))
+      case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
       case None => InvitationNotFound
       case _ => NoPermissionOnClient
     }
   }
 
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
-    if (clientId == request.mtdClientId.value) {
+    if (clientId == request.nino.value) {
       invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
       Future successful NoPermissionOnClient

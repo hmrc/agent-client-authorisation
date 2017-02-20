@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
-import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
 class NoInvitationsApiPlatformISpec extends NoInvitationsISpec
@@ -33,14 +32,14 @@ trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val mtdClientId: MtdClientId = FakeMtdClientId.random()
+  private val nino: Nino = nextNino
 
   "Before the Agency has sent any invitations" in {
     val agency = new AgencyApi(this, arn, port)
-    val client = new ClientApi(this, mtdClientId, port)
+    val client = new ClientApi(this, nino, port)
 
     given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-    given().client(clientId = mtdClientId).isLoggedInWithSessionId()
+    given().client(clientId = nino).isLoggedInWithSessionId()
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()
@@ -53,7 +52,7 @@ trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
     val clientResponse = client.getInvitations()
     clientResponse.numberOfInvitations shouldBe 0
     clientResponse.links.invitations shouldBe 'empty
-    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received"
+    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"
     clientResponse.embedded.isEmpty shouldBe true
   }
 }

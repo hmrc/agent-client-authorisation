@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsControl
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -51,9 +51,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def invitationId: String
 
-  def saUtr: String
-
   def arn: Arn
+  def generator: Generator
 
   override def beforeEach(): Unit = {
     reset(invitationsService, authConnector, agenciesFakeConnector)
@@ -95,8 +94,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     "Return forbidden" when {
       "the invitation is for a different client" in {
         val request = FakeRequest()
-        whenAuthIsCalled thenReturn aClientUser()
-        whenMtdClientIsLookedUp thenReturn aMtdUser("anotherClient")
+        whenAuthIsCalled thenReturn aClientUser(generator.nextNino.value)
         val invitation = anInvitation()
         whenFindingAnInvitation thenReturn (Future successful Some(invitation))
         action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
@@ -126,15 +124,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def userIsLoggedIn = {
     whenAuthIsCalled thenReturn aClientUser()
-    whenMtdClientIsLookedUp thenReturn aMtdUser()
   }
 
   def whenAuthIsCalled: OngoingStubbing[Future[Accounts]] = {
     when(authConnector.currentAccounts()(any[HeaderCarrier], any[ExecutionContext]))
-  }
-
-  def whenMtdClientIsLookedUp = {
-    when(agenciesFakeConnector.findClient(eqs(SaUtr(saUtr)))(any[HeaderCarrier], any[ExecutionContext]))
   }
 
   def noInvitation = Future successful None
@@ -152,11 +145,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser() =
-    Future successful Accounts(None, Some(SaUtr(saUtr)))
-
-  def aMtdUser(clientId: String = clientId) =
-    Future successful Some(MtdClientId(clientId))
+  def aClientUser(nino: String = clientId) = Future successful Accounts(None, Some(Nino(nino)))
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 

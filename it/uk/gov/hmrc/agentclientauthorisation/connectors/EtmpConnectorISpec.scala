@@ -17,24 +17,35 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
-import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthConnectorISpec extends UnitSpec with AppAndStubs {
+class EtmpConnectorISpec extends UnitSpec with AppAndStubs {
 
+  "getBusinessDetails" should {
+    "return postcode and country code for a registered client" in {
+      val client = given()
+        .client()
+        .hasABusinessPartnerRecord()
 
-  "currentAccounts" should {
-    "return current accounts" in {
-      given()
-        .agentAdmin("ABCDEF123456", "12345")
-        .isLoggedIn()
+      val response = await(connector.getBusinessDetails(client.clientId)).get
 
-      await(newAuthConnector().currentAccounts()) shouldBe Accounts(agent = Some(AgentCode("12345")), None)
+      response.businessAddressDetails.countryCode shouldBe "GB"
+      response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+    }
+
+    "return None if the client is not registered" in {
+      val client = given()
+        .client()
+        .hasNoBusinessPartnerRecord
+
+      val response = await(connector.getBusinessDetails(client.clientId))
+
+      response shouldBe None
     }
   }
 
-  def newAuthConnector() = app.injector.instanceOf(classOf[AuthConnector])
+  private def connector = app.injector.instanceOf[EtmpConnector]
 
 }

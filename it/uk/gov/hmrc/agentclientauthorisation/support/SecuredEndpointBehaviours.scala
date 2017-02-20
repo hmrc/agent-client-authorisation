@@ -17,8 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -40,23 +39,12 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
     }
   }
 
-  def anEndpointAccessibleForSaClientsOnly(id: MtdClientId)(makeRequest: => HttpResponse): Unit = {
+  def anEndpointAccessibleForSaClientsOnly(id: Nino)(makeRequest: => HttpResponse): Unit = {
     "return 401 when the requester is not authenticated" in {
       given().client(clientId = id).isNotLoggedIn()
       makeRequest.status shouldBe 401
       makeRequest.body shouldBe bodyOf(GenericUnauthorized)
     }
 
-    "return 403 Forbidden when user has not registered for MTD SA" in {
-      given().client(clientId = id).isLoggedInWithNoMtdRegistration()
-      makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(ClientRegistrationNotFound)
-    }
-
-    "return 403 Forbidden when user has no SA enrolment" in {
-      given().client(clientId = id).withNoSaEnrolment().isLoggedIn()
-      makeRequest.status shouldBe 403
-      makeRequest.body shouldBe bodyOf(SaEnrolmentNotFound)
-    }
   }
 }

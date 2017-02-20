@@ -21,18 +21,16 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
-  private val agentCode = AgentCode("A12345A")
   private implicit val arn = HardCodedSandboxIds.arn
   private val MtdRegime: Regime = Regime("mtd-sa")
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, MtdClientId("1234567899"), "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, "AA123456A", "AA1 1AA")
 
   override val sandboxMode = true
 

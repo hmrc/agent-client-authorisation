@@ -16,7 +16,35 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-class PostcodeService {
-  def clientPostcodeMatches(clientIdentifier: String, postcode: String) =
-        postcode.startsWith("A")
+import javax.inject.{Inject, Singleton}
+
+import play.api.mvc.Result
+import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessDetails, EtmpConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{PostcodeDoesNotMatch, nonUkAddress}
+import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.http.HeaderCarrier
+
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
+class PostcodeService @Inject() (etmpConnector: EtmpConnector) {
+  def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+    etmpConnector.getBusinessDetails(Nino(clientIdentifier)).map {
+      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details)  => None
+      case Some(details) if postcodeMatches(details, postcode)=> Some(nonUkAddress(details.businessAddressDetails.countryCode))
+      case Some(_) => Some(PostcodeDoesNotMatch)
+      case None => Some(PostcodeDoesNotMatch)
+    }
+  }
+
+  private def postcodeMatches(details: BusinessDetails, postcode: String) =
+    details.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode))
+
+  private def isUkAddress(details: BusinessDetails) =
+    details.businessAddressDetails.countryCode.toUpperCase == "GB"
+}
+
+object PostcodeService {
+  def normalise(postcode: String): String = postcode.replaceAll("\\s", "").toUpperCase
 }

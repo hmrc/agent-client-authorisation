@@ -26,8 +26,6 @@ import uk.gov.hmrc.play.controllers.RestFormats
 
 case class Arn(arn: String)
 
-case class MtdClientId(value: String)
-
 sealed trait InvitationStatus {
 
   def toEither: Either[String, InvitationStatus] = this match {

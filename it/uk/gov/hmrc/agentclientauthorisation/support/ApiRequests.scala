@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
@@ -76,8 +77,8 @@ trait ApiRequests {
     new Resource(agencyGetInvitationUrl(arn, invitationId), port).get()(hc)
   }
 
-  case class AgencyInvitationRequest(regime: Regime, clientId: MtdClientId, postcode: String) {
-    val json: String = s"""{"regime": "${regime.value}", "clientId": "${clientId.value}", "postcode": "$postcode"}"""
+  case class AgencyInvitationRequest(regime: Regime, clientId: String, postcode: String) {
+    val json: String = s"""{"regime": "${regime.value}", "clientId": "$clientId", "postcode": "$postcode"}"""
   }
 
   def agencySendInvitation(arn: Arn, invitation: AgencyInvitationRequest)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
@@ -95,24 +96,24 @@ trait ApiRequests {
   TODO:  split these into seperate traits?
    */
   def clientsUrl = s"$baseUrl/clients"
-  def clientUrl(mtdClientId: MtdClientId) = s"$baseUrl/clients/${mtdClientId.value}"
+  def clientUrl(nino: Nino) = s"$baseUrl/clients/${nino.value}"
 
-  def clientReceivedInvitationsUrl(id: MtdClientId): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
-  def clientReceivedInvitationUrl(id: MtdClientId, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
+  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
+  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
   }
 
-  def clientResource(mtdClientId: MtdClientId)(implicit port: Int) = {
-    new Resource(clientUrl(mtdClientId), port).get
+  def clientResource(nino: Nino)(implicit port: Int) = {
+    new Resource(clientUrl(nino), port).get
   }
-  def clientGetReceivedInvitations(clientId: MtdClientId, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(clientId: Nino, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
   }
 
-  def clientGetReceivedInvitation(clientId: MtdClientId, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitation(clientId: Nino, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     getReceivedInvitationResource(clientReceivedInvitationUrl(clientId, invitationId))
   }
 
@@ -120,11 +121,11 @@ trait ApiRequests {
     new Resource(link, port).get()(hc)
   }
 
-  def clientAcceptInvitation(clientId: MtdClientId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
+  def clientAcceptInvitation(clientId: Nino, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
     updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/accept")
   }
 
-  def clientRejectInvitation(clientId: MtdClientId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) =
+  def clientRejectInvitation(clientId: Nino, invitationId:String)(implicit port: Int, hc: HeaderCarrier) =
     updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/reject")
 
   def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {

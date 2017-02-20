@@ -18,8 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 
@@ -38,7 +39,7 @@ object HalTestHelpers {
 object EmbeddedSection {
 
   case class EmbeddedInvitationLinks(selfLink: String, agencyLink:Option[String], cancelLink: Option[String], acceptLink: Option[String], rejectLink: Option[String])
-  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: MtdClientId, status: String, created: DateTime, lastUpdated: DateTime)
+  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: Nino, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {
@@ -73,7 +74,7 @@ class EmbeddedSection(embedded: JsValue) {
       ),
       arn = Arn(getString(invitation \ "arn")),
       regime = Regime(getString(invitation \ "regime")),
-      clientId = MtdClientId(getString(invitation \ "clientId")),
+      clientId = Nino(getString(invitation \ "clientId")),
       status = getString(invitation \ "status"),
       created = getDateTime(invitation \ "created"),
       lastUpdated = getDateTime(invitation \ "lastUpdated")

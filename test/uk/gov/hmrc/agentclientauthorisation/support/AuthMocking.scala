@@ -16,21 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import play.api.mvc.{ActionBuilder, Request, Result, Results}
-import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
-import uk.gov.hmrc.play.http.Upstream4xxResponse
 import org.mockito.Matchers.{any, eq => eqs}
+import org.mockito.Mockito._
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
+import uk.gov.hmrc.play.http.Upstream4xxResponse
+
 import scala.concurrent.Future
 
 trait AuthMocking {
 
   def authConnector: AuthConnector
   def agenciesFakeConnector : AgenciesFakeConnector
+  def generator: Generator
 
   private val defaultArn = Arn("12345")
 
@@ -46,14 +45,12 @@ trait AuthMocking {
   }
 
   def givenClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
-    givenClientRecordIs(SaUtr("1234567890"), MtdClientId("MTD1234567890"))
-    givenClientRecordIs(SaUtr("1234567890"), MtdClientId("MTD1234567890"))
+    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
+    val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None, Some(SaUtr("1234567890"))))
-    givenClientRecordIsNotFound(SaUtr("1234567890"))
+    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
   }
 
   def givenClientIsLoggedInWithNoSAAccount() = {
@@ -67,10 +64,6 @@ trait AuthMocking {
   def whenAccountsIsAskedFor() = when(authConnector.currentAccounts()(any(), any()))
 
   def givenAgencyRecordIs(agentCode: AgentCode, arn: Arn) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful Some(arn))
-
-  def givenClientRecordIs(saUtr: SaUtr, mtdClientId: MtdClientId) = when(agenciesFakeConnector.findClient(eqs(saUtr))(any(), any())).thenReturn(Future successful Some(mtdClientId))
-
-  def givenClientRecordIsNotFound(saUtr: SaUtr) = when(agenciesFakeConnector.findClient(eqs(saUtr))(any(), any())).thenReturn(Future successful None)
 
   def givenUserHasNoAgency(agentCode: AgentCode) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful None)
 

@@ -20,7 +20,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
@@ -40,7 +40,8 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   private implicit val agentCode = AgentCode("LMNOP123456")
 
   private val MtdRegime: Regime = Regime("mtd-sa")
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, MtdClientId("1234567899"), "AA1 1AA")
+  private val nino = nextNino
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, nino.value, "AA1 1AA")
 
   "GET root resource" should {
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
@@ -91,6 +92,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
     s"Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
       val location = agencySendInvitation(arn, validInvitation).header("location")
 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andHasMtdBusinessPartnerRecord()
@@ -103,40 +105,63 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn, validInvitation.copy(postcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn, validInvitation.copy(postcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
         """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
     "should not create invitation for an unsupported regime" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn, validInvitation.copy(regime = Regime("sa")))
-      response should matchErrorResult(unsupportedRegime("Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""))
+      withClue(response.body) {
+        response should matchErrorResult(unsupportedRegime("Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""))
+      }
+    }
+
+    "should not create invitation for non-UK address" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
+      agencySendInvitation(arn, validInvitation) should matchErrorResult(nonUkAddress("AU"))
+    }
+
+    "should not create invitaton for invalid NINO" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
+      agencySendInvitation(arn, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
     }
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "A A1 1A A")).status shouldBe 201
-    }
+      given().client(clientId = nino).hasABusinessPartnerRecord()
 
-    "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
-      behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
-
-      "should return 204 when invitation is Cancelled" ignore {
-        given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-        val location = agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).header("location")
-        val response = agencyGetSentInvitation(arn, location.get)
-        response.status shouldBe 204
+      val response = agencySendInvitation(arn, validInvitation.copy(postcode = "A A1 1A A"))
+      withClue(response.body) {
+        response.status shouldBe 201
       }
+    }
+  }
+
+  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
+
+    "should return 204 when invitation is Cancelled" ignore {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      val location = agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).header("location")
+      val response = agencyGetSentInvitation(arn, location.get)
+      response.status shouldBe 204
     }
   }
 

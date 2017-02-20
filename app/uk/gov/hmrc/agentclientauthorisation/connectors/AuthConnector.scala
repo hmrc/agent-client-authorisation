@@ -20,13 +20,13 @@ import java.net.URL
 import javax.inject._
 
 import play.api.libs.json.JsValue
-import uk.gov.hmrc.domain.{AgentCode, SaUtr}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
-case class Accounts(agent: Option[AgentCode], sa: Option[SaUtr])
+case class Accounts(agent: Option[AgentCode], nino: Option[Nino])
 
 @Singleton
 class AuthConnector @Inject() (@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet) {
@@ -40,7 +40,7 @@ class AuthConnector @Inject() (@Named("auth-baseUrl") baseUrl: URL, httpGet: Htt
   private def authorityAsAccounts(authority: JsValue): Accounts =
     Accounts(
       agent = (authority \ "accounts" \ "agent" \ "agentCode").asOpt[AgentCode],
-      sa = (authority \ "accounts" \ "sa" \ "utr").asOpt[SaUtr]
+      nino = (authority \ "nino").asOpt[Nino]
     )
 
   private def url(relativeUrl: String): URL = new URL(baseUrl, relativeUrl)

@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFilteringByClientIdIApiPlatformISpec extends AgencyFilteringByClientIdISpec
 
@@ -31,25 +30,27 @@ class AgencyFilteringByClientIdIFrontendISpec extends AgencyFilteringByClientIdI
 trait AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   override val arn = RandomArn()
-  override val mtdClientId: MtdClientId = FakeMtdClientId.random()
+  override val nino: Nino = nextNino
 
   private implicit val agentCode = AgentCode("LMNOP123456")
-  private val mtdClientId2: MtdClientId = FakeMtdClientId.random()
+  private val nino2: Nino = nextNino
 
   feature("Agencies can filter")  {
 
     scenario("on the status of clients invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client1 = new ClientApi(this, mtdClientId, port)
-      val client2 = new ClientApi(this, mtdClientId2, port)
+      val client1 = new ClientApi(this, nino, port)
+      val client2 = new ClientApi(this, nino2, port)
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = nino2).hasABusinessPartnerRecord()
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)(
-        (mtdClientId, MtdSaRegime),
-        (mtdClientId2, MtdSaRegime)
+        (nino, MtdSaRegime),
+        (nino2, MtdSaRegime)
       )
 
       When(s"the Agency filters by client ID")
@@ -59,7 +60,7 @@ trait AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers wi
     }
   }
 
-  private def agencyFiltersById(agency: AgencyApi, clientId:MtdClientId): Unit = {
+  private def agencyFiltersById(agency: AgencyApi, clientId: Nino): Unit = {
     val invitation = agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
     invitation.numberOfInvitations shouldBe 1
     invitation.firstInvitation.status shouldBe "Pending"

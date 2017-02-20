@@ -21,9 +21,10 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.JsValue
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
@@ -32,7 +33,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   private val MtdRegime = Regime("mtd-sa")
   private implicit val arn = Arn("ABCDEF12345678")
-  private val mtdClientId = HardCodedSandboxIds.clientId
+  private val nino = HardCodedSandboxIds.clientId
 
   override val sandboxMode: Boolean = true
 
@@ -45,12 +46,12 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "GET /sandbox/clients/:clientId" should {
-    behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(mtdClientId))
+    behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(nino))
   }
 
   "GET /sandbox/clients/:clientId/invitations" should {
     "return a meaningful response" in {
-      val url = clientReceivedInvitationsUrl(mtdClientId)
+      val url = clientReceivedInvitationsUrl(nino)
 
       val response = new Resource(url, port).get()
 
@@ -62,14 +63,14 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/accept" should {
     "return a 204 response code" in {
 
-      val response = clientAcceptInvitation(mtdClientId, "invitationId")
+      val response = clientAcceptInvitation(nino, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "PUT of /sandbox/clients/:clientId/invitations/received/:invitationId/reject" should {
     "return a 204 response code" in {
-      val response = clientRejectInvitation(mtdClientId, "invitationId")
+      val response = clientRejectInvitation(nino, "invitationId")
       response.status shouldBe 204
     }
   }
@@ -79,12 +80,12 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       val testStartTime = now().getMillis
 
-      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(mtdClientId).json)
+      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(nino).json)
 
       response.embedded.invitations.size shouldBe 2
-      checkInvitation(mtdClientId, response.firstInvitation.underlying, testStartTime)
-      checkInvitation(mtdClientId, response.secondInvitation.underlying, testStartTime)
-      response.links.selfLink shouldBe s"/agent-client-authorisation/clients/${mtdClientId.value}/invitations/received"
+      checkInvitation(nino, response.firstInvitation.underlying, testStartTime)
+      checkInvitation(nino, response.secondInvitation.underlying, testStartTime)
+      response.links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"
       response.embedded.invitations.map(_.links.selfLink) shouldBe response.links.invitations
     }
   }
@@ -93,9 +94,9 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     "return an invitation" in {
       val testStartTime = now().getMillis
 
-      val response = clientGetReceivedInvitation(mtdClientId, "invitationId")
+      val response = clientGetReceivedInvitation(nino, "invitationId")
       response.status shouldBe 200
-      checkInvitation(mtdClientId, response.json, testStartTime)
+      checkInvitation(nino, response.json, testStartTime)
     }
   }
 
@@ -105,11 +106,11 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdClientId))
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(nino))
     }
    }
 
-  private def checkInvitation(clientId: MtdClientId, invitation: JsValue, testStartTime: Long): Unit = {
+  private def checkInvitation(clientId: Nino, invitation: JsValue, testStartTime: Long): Unit = {
 
     def selfLink: String = (invitation \ "_links" \ "self" \ "href").as[String]
 

@@ -21,7 +21,8 @@ import javax.inject._
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, MtdClientId}
+import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpPut, HttpResponse}
 
 import scala.concurrent.Future
@@ -29,11 +30,11 @@ import scala.concurrent.Future
 @Singleton
 class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL, httpPut: HttpPut) {
 
-  def createRelationship(arn: Arn, mtdClientId: MtdClientId)(implicit hc: HeaderCarrier): Future[Unit] = {
-    httpPut.PUT[String, HttpResponse](relationshipUrl(arn, mtdClientId).toString, "") map (_ => Unit)
+  def createRelationship(arn: Arn, nino: Nino)(implicit hc: HeaderCarrier): Future[Unit] = {
+    httpPut.PUT[String, HttpResponse](relationshipUrl(arn, nino).toString, "") map (_ => Unit)
   }
 
-  def relationshipUrl(arn: Arn, mtdClientId: MtdClientId) = {
-    new URL(baseUrl, s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(mtdClientId.value)}/${encodePathSegment(arn.arn)}")
+  def relationshipUrl(arn: Arn, nino: Nino) = {
+    new URL(baseUrl, s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(nino.value)}/${encodePathSegment(arn.arn)}")
   }
 }

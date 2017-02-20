@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model.MtdClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class ClientFiltersByStatusApiPlatformISpec extends ClientFiltersByStatusISpec
 
@@ -32,21 +31,21 @@ trait ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with G
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
-  val mtdClientId: MtdClientId = FakeMtdClientId.random()
+  val nino: Nino = nextNino
 
   feature("Clients can filter")  {
 
     scenario("on the status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, mtdClientId, port)
+      val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
-      given().client(clientId = mtdClientId).isLoggedInWithSessionId().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
-        (mtdClientId, MtdSaRegime),
-        (mtdClientId, MtdSaRegime)
+        (nino, MtdSaRegime),
+        (nino, MtdSaRegime)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
