@@ -131,7 +131,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       agencySendInvitation(arn, validInvitation) should matchErrorResult(nonUkAddress("AU"))
     }
 
-    "should not create invitaton for invalid NINO" in {
+    "should not create invitation for invalid NINO" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
@@ -158,8 +158,6 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       given().client(clientId = nino).hasNoBusinessPartnerRecord
       agencySendInvitation(arn, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
     }
-
-
   }
 
   "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {

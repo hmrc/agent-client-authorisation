@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessDetails, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{PostcodeDoesNotMatch, nonUkAddress}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -34,7 +34,7 @@ class PostcodeService @Inject() (desConnector: DesConnector) {
       case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details)  => None
       case Some(details) if postcodeMatches(details, postcode)=> Some(nonUkAddress(details.businessAddressDetails.countryCode))
       case Some(_) => Some(PostcodeDoesNotMatch)
-      case None => Some(PostcodeDoesNotMatch)
+      case None => Some(ClientRegistrationNotFound)
     }
   }
 
