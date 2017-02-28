@@ -152,6 +152,14 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
         response.status shouldBe 201
       }
     }
+
+    "should not create invitation if DES does not return any Business Partner Record" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasNoBusinessPartnerRecord
+      agencySendInvitation(arn, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
+    }
+
+
   }
 
   "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
