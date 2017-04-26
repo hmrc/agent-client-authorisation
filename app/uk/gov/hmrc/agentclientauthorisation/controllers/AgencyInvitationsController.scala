@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, Postcod
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
+import play.api.libs.json.JsObject
 
 @Singleton
 class AgencyInvitationsController @Inject()(override val postcodeService:PostcodeService,
@@ -45,7 +46,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
 
   private def makeInvitation(arn: Arn, authRequest: AgentInvitation): Future[Result] = {
     invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
-      .map(invitation => Created.withHeaders(location(invitation)))
+      .map(invitation => Created(new JsObject(Map())).withHeaders(location(invitation)))
   }
 
   private def location(invitation: Invitation) = {

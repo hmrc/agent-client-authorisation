@@ -56,6 +56,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 201
       response.header("location").get should startWith(externalUrl(agencyGetInvitationsUrl(arn)))
+      response.body shouldBe "{}"
     }
   }
 

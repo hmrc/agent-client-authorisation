@@ -24,12 +24,13 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.play.microservice.controller.BaseController
+import play.api.libs.json.JsObject
 
 @Singleton
 class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {
 
   def createInvitation(arn: Arn) = Action { implicit request =>
-    Created.withHeaders(location(arn, "invitationId"))
+    Created(new JsObject(Map())).withHeaders(location(arn, "invitationId"))
   }
 
   private def location(arn: Arn, invitationId: String) = {
