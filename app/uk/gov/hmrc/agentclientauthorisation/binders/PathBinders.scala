@@ -17,12 +17,13 @@
 package uk.gov.hmrc.agentclientauthorisation.binders
 
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, InvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.binders.SimpleObjectBinder
 
 object PathBinders {
 
-  implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.arn)
+  implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.value)
 
   private def toError(err:String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
 

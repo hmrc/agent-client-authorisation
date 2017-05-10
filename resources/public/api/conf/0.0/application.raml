@@ -22,12 +22,12 @@ uses:
 
 types:
 
-  # These Regime and Status RAML type duplicate the status and regime JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
+  # These Service and Status RAML type duplicate the service and status JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
   # The reason we need both is a current limitation in the api-documentation-raml-frontend whereby types referenced by query parameters must be RAML types and types referenced by bodies must be JSON Schemas.
-  Regime:
-    description: The tax regime
+  Service:
+    description: The Government Gateway service for the tax regime
     type: string
-    enum: [ mtd-sa ]
+    enum: [ HMRC-MTD-IT ]
 
   Status:
     displayName: Statuses
@@ -84,29 +84,29 @@ traits:
                 value:
                   code: NOT_AN_AGENT
 
-  mustBeASaClient:
+  mustBeAClient:
     responses:
       403:
         body:
           application/json:
             type: types.errorResponse
             examples:
-              saEnrolmentNotFound:
-                description: The Client must have an active IR-SA enrolment.
+              clientNinoNotFound:
+                description: There must be a NINO in the client's user profile.
                 value:
-                  code: SA_ENROLMENT_NOT_FOUND
+                  code: CLIENT_NINO_NOT_FOUND
 
-  agentRegistrationRequired:
+  agentSubscriptionRequired:
     responses:
       403:
         body:
           application/json:
             type: types.errorResponse
             examples:
-              agentRegistrationNotFound:
-                description: The Agent's MTDfB registration was not found.
+              agentNotSubscribed:
+                description: The Agent is not subscribed to Agent Services.
                 value:
-                  code: AGENT_REGISTRATION_NOT_FOUND
+                  code: AGENT_NOT_SUBSCRIBED
 
   clientRegistrationRequired:
     responses:
@@ -145,7 +145,7 @@ traits:
                   code: INVITATION_NOT_FOUND
 
 /agent-client-authorisation/agencies/{arn}/invitations/sent:
-  is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired]
+  is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentSubscriptionRequired, permissionOnAgencyRequired]
   uriParameters:
     arn:
       description: The MTD platform Agent Registration Number.
@@ -164,13 +164,18 @@ traits:
         required: false
       clientId:
         type: string
-        description: Client's top level ID for their MTD registration (not regime specific).
-        example:  client123
+        description: Filter by client identifier. Only the exact client identifier used to create the invitation will match (not another identifier for the same client).
+        example:  AA999999A
         required: false
-      regime:
-        type: Regime
-        description: The tax regime.
-        example:  mtd-sa
+      service:
+        type: Service
+        description: Filter by the Government Gateway service for the tax regime.
+        example:  HMRC-MTD-IT
+        required: false
+      clientIdType:
+        type: string
+        description: Filter invitations by client identifier type.
+        example: ni
         required: false
     responses:
       200:
@@ -205,6 +210,10 @@ traits:
                 description: The submitted postcode does not match the expected format.
                 value:
                   code: POSTCODE_FORMAT_INVALID
+              invalidClientId:
+                description: The submitted clientId does not match the expected format.
+                value:
+                  code: CLIENT_ID_FORMAT_INVALID
       403:
         body:
           application/json:
@@ -219,13 +228,17 @@ traits:
           application/json:
             type: types.errorResponse
             examples:
-              postcodeDoesNotMatch:
-                description: The submitted regime is not currently supported by this API.
+              unsupportedService:
+                description: The submitted service is not currently supported by this API.
                 value:
-                  code: UNSUPPORTED_REGIME
+                  code: UNSUPPORTED_SERVICE
+              unsupportedClientIdType:
+                description: The submitted clientIdType is not currently supported by this API.
+                value:
+                  code: UNSUPPORTED_CLIENT_ID_TYPE
 
   /{invitationId}:
-    is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified]
+    is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentSubscriptionRequired, permissionOnAgencyRequired, invitationSpecified]
     uriParameters:
       invitationId:
         description: A unique invitation id
@@ -250,7 +263,7 @@ traits:
         404:
           description: The invitation with the specified id does not exist.
     /cancel:
-      is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentRegistrationRequired, permissionOnAgencyRequired, invitationSpecified, invitationMustHaveValidStatus]
+      is: [headers.acceptHeader, loginRequired, mustBeAnAgent, agentSubscriptionRequired, permissionOnAgencyRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
         displayName: Cancel an invitation
         description: Cancel an invitation.
@@ -266,13 +279,13 @@ traits:
           404:
             description: The invitation with the specified id does not exist.
 
-/agent-client-authorisation/clients/{clientId}/invitations/received:
-  is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired]
+/agent-client-authorisation/clients/ni/{clientId}/invitations/received:
+  is: [headers.acceptHeader, loginRequired, mustBeAClient, clientRegistrationRequired, permissionOnClientRequired]
   uriParameters:
     clientId:
-      description: Client's top level ID for their MTD registration (not regime specific).
+      description: Client's NINO.
       type: string
-      example:  client123
+      example:  AA999999A
   get:
     displayName: Get invitations received by a client
     description: Retrieves a list of invitations received by a client
@@ -297,7 +310,7 @@ traits:
         description: The client is not permitted to see these invitations.
 
   /{invitationId}:
-    is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified]
+    is: [headers.acceptHeader, loginRequired, mustBeAClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified]
     get:
       displayName: Get a received invitation
       description: Retrieve a received invitation.
@@ -322,7 +335,7 @@ traits:
         type: string
         example: 5888c22e11000011007afc11
     /accept:
-      is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
+      is: [headers.acceptHeader, loginRequired, mustBeAClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
         displayName: Accept an invitation
         description: Accept an invitation.
@@ -338,7 +351,7 @@ traits:
           404:
             description: The invitation with the specified id does not exist.
     /reject:
-      is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
+      is: [headers.acceptHeader, loginRequired, mustBeAClient, clientRegistrationRequired, permissionOnClientRequired, invitationSpecified, invitationMustHaveValidStatus]
       put:
         displayName: Reject an invitation
         description: Reject an invitation.

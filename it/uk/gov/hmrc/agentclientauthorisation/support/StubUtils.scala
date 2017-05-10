@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain._
 
 trait StubUtils {
@@ -29,7 +29,7 @@ trait StubUtils {
     }
 
     def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
-      agentAdmin(arn.arn, agentCode.value)
+      agentAdmin(arn.value, agentCode.value)
     }
 
     def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {

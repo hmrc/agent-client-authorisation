@@ -39,13 +39,13 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
-      When("the Agency sends several invitations to the Client")
+      When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
@@ -62,13 +62,13 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, port)
       Given("An agent and a client are logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")

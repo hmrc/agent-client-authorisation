@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
@@ -51,10 +50,10 @@ trait ApiRequests {
   }
 
   def agenciesUrl = s"$baseUrl/agencies"
-  def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.arn}"
+  def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.value}"
   def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
   def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
-  def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.arn}/invitations/sent/$invitationId"
+  def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
 
   def rootResource()(implicit port: Int) = {
     new Resource(baseUrl, port).get()
@@ -77,8 +76,8 @@ trait ApiRequests {
     new Resource(agencyGetInvitationUrl(arn, invitationId), port).get()(hc)
   }
 
-  case class AgencyInvitationRequest(regime: Regime, clientId: String, postcode: String) {
-    val json: String = s"""{"regime": "${regime.value}", "clientId": "$clientId", "postcode": "$postcode"}"""
+  case class AgencyInvitationRequest(service: String, clientIdType: String, clientId: String, clientPostcode: String) {
+    val json: String = s"""{"service": "$service", "clientIdType": "$clientIdType", "clientId": "$clientId", "clientPostcode": "$clientPostcode"}"""
   }
 
   def agencySendInvitation(arn: Arn, invitation: AgencyInvitationRequest)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
@@ -96,10 +95,10 @@ trait ApiRequests {
   TODO:  split these into seperate traits?
    */
   def clientsUrl = s"$baseUrl/clients"
-  def clientUrl(nino: Nino) = s"$baseUrl/clients/${nino.value}"
+  def clientUrl(nino: Nino) = s"$baseUrl/clients/ni/${nino.value}"
 
-  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
-  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
+  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received"
+  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get

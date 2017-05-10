@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.test.UnitSpec
 
 class InvitationSpec extends UnitSpec {
@@ -29,7 +30,7 @@ class InvitationSpec extends UnitSpec {
       val invitation = Invitation(
         id = BSONObjectID.generate,
         arn = Arn("myAgency"),
-        regime = "regime",
+        service = "service",
         clientId = "clientId",
         postcode = "A11 1AA",
         events = List(StatusChangeEvent(DateTime.parse(created), Pending), StatusChangeEvent(DateTime.parse(lastUpdated), Accepted))

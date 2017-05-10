@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -164,19 +165,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       await(service.findInvitation("not a BSON Object Id")) shouldBe None
     }
   }
-
-  // TODO do we need this?
-//  "list" should {
-//    "delegate to InvitationsRepository" in {
-//      val invitation: Invitation = testInvitation
-//      when(invitationsRepository.list(invitation.regime, invitation.clientId))
-//        .thenReturn(Future successful List(invitation))
-//
-//      await(service.list(invitation.regime, invitation.clientId)) shouldBe Seq(invitation)
-//
-//      verify(invitationsRepository).list(invitation.regime, invitation.clientId)
-//    }
-//  }
 
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     arn,

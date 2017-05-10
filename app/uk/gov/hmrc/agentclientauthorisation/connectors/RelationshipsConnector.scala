@@ -21,7 +21,7 @@ import javax.inject._
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpPut, HttpResponse}
 
@@ -32,9 +32,10 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
 
   def createRelationship(arn: Arn, nino: Nino)(implicit hc: HeaderCarrier): Future[Unit] = {
     httpPut.PUT[String, HttpResponse](relationshipUrl(arn, nino).toString, "") map (_ => Unit)
+
   }
 
   def relationshipUrl(arn: Arn, nino: Nino) = {
-    new URL(baseUrl, s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(nino.value)}/${encodePathSegment(arn.arn)}")
+    new URL(baseUrl, s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(nino.value)}/${encodePathSegment(arn.value)}")
   }
 }
