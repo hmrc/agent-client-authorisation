@@ -42,7 +42,7 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
 
-      When("the Agency sends several invitations to the Client")
+      When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
         (nino, MtdItService),
         (nino, MtdItService)

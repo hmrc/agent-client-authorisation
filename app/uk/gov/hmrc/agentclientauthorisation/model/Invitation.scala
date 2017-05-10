@@ -75,7 +75,7 @@ case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 case class Invitation(
                        id: BSONObjectID,
                        arn: Arn,
-                       regime: String,
+                       service: String,
                        clientId: String,
                        postcode: String,
                        events: List[StatusChangeEvent]) {
@@ -113,7 +113,7 @@ object Invitation {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "regime" -> invitation.regime,
+      "service" -> invitation.service,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
       "arn" -> invitation.arn.arn,

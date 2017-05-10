@@ -33,9 +33,8 @@ import scala.concurrent.Future
 class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
 
-  //TODO replace regime with service
-  def create(arn: Arn, regime: String, clientId: String, postcode: String) =
-    invitationsRepository.create(arn, regime, clientId, postcode)
+  def create(arn: Arn, service: String, clientId: String, postcode: String) =
+    invitationsRepository.create(arn, service, clientId, postcode)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Either[String, Invitation]] = {
@@ -60,11 +59,11 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       .get
 
 
-  def clientsReceived(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
-    invitationsRepository.list(regime, clientId, status)
+  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+    invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
-    invitationsRepository.list(arn, regime, clientId, status)
+  def agencySent(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
+    invitationsRepository.list(arn, service, clientId, status)
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
     invitation.status match {

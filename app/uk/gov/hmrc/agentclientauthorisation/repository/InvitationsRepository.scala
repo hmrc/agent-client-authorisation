@@ -39,15 +39,15 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
   override def indexes: Seq[Index] = Seq(
     Index(Seq("arn" -> IndexType.Ascending)),
     Index(Seq("clientId" -> IndexType.Ascending)),
-    Index(Seq("regime" -> IndexType.Ascending))
+    Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, regime: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, service: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
       arn = arn,
-      regime = regime,
+      service = service,
       clientId = clientId,
       postcode = postcode,
       events = List(StatusChangeEvent(now, Pending))
@@ -56,9 +56,9 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     insert(request).map(_ => request)
   }
 
-  /*override def list(clientId : String, regime: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
+  /*override def list(clientId : String, service: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
     val searchOptions = Seq("clientId" -> clientId,
-                            "regime" -> regime,
+                            "service" -> service,
                             "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
       .filter(_._2.isDefined)
@@ -67,10 +67,10 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     find(searchOptions: _*)
   }*/
 
-  def list(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.arn),
                             "clientId" -> clientId,
-                            "regime" -> regime,
+                            "service" -> service,
                             "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
       .filter(_._2.isDefined)
@@ -79,9 +79,9 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     find(searchOptions: _*)
   }
 
-  def list(regime: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(service: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
     val searchOptions = Seq(
-      "regime" -> Some(regime),
+      "service" -> Some(service),
       "clientId" -> Some(clientId),
       statusSearchOption(status)
     )

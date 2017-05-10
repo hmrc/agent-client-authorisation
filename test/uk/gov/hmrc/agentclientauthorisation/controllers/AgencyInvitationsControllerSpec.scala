@@ -68,7 +68,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
-      Future successful allInvitations.filter(_.regime == "mtd-sa")
+      Future successful allInvitations.filter(_.service == "mtd-sa")
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(

@@ -39,7 +39,7 @@ object HalTestHelpers {
 object EmbeddedSection {
 
   case class EmbeddedInvitationLinks(selfLink: String, agencyLink:Option[String], cancelLink: Option[String], acceptLink: Option[String], rejectLink: Option[String])
-  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, regime: Regime, clientId: Nino, status: String, created: DateTime, lastUpdated: DateTime)
+  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, service: String, clientId: Nino, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {
@@ -73,7 +73,7 @@ class EmbeddedSection(embedded: JsValue) {
         find(invitation \ "_links" \ "reject" \ "href")
       ),
       arn = Arn(getString(invitation \ "arn")),
-      regime = Regime(getString(invitation \ "regime")),
+      service = getString(invitation \ "service"),
       clientId = Nino(getString(invitation \ "clientId")),
       status = getString(invitation \ "status"),
       created = getDateTime(invitation \ "created"),

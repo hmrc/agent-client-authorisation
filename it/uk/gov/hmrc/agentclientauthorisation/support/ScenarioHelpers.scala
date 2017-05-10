@@ -21,7 +21,6 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
@@ -29,7 +28,6 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
   def nino: Nino
   def arn: Arn
-  val MtdSaRegime: Regime = Regime("mtd-sa")//TODO delete
   val MtdItService = "HMRC-MTD-IT"
 
   def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(Nino, String), secondClient:(Nino, String)): Unit = {
@@ -50,7 +48,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, String)): Unit = {
       invitation.arn shouldBe arn
       invitation.clientId shouldBe expected._1
-      invitation.regime shouldBe expected._2 //TODO service
+      invitation.service shouldBe expected._2
       //TODO clientIdType
       invitation.status shouldBe "Pending"
     }
@@ -68,7 +66,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val i1 = clientResponse.firstInvitation
     i1.arn shouldBe arn
     i1.clientId shouldBe nino
-    i1.regime shouldBe MtdSaRegime
+    i1.service shouldBe MtdItService
     i1.status shouldBe "Pending"
 
     val selfLink = i1.links.selfLink
@@ -81,7 +79,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn
     i2.clientId shouldBe nino
-    i2.regime shouldBe MtdSaRegime
+    i2.service shouldBe MtdItService
     i2.status shouldBe "Pending"
     val links = clientResponse.links
     links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"

@@ -64,10 +64,10 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
 
   def getDetailsForAgencyInvitations(arn: Arn) = getDetailsForAgency(arn)
 
-  def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitations(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
-      invitationsService.agencySent(arn, regime, clientId, status).map { invitations =>
-        Ok(toHalResource(invitations, arn, regime, clientId, status))
+      invitationsService.agencySent(arn, service, clientId, status).map { invitations =>
+        Ok(toHalResource(invitations, arn, service, clientId, status))
       }
     }
   }

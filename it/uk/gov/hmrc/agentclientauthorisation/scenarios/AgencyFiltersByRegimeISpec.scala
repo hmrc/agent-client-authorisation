@@ -56,7 +56,7 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
   }
 
   def agencyFiltersByMtdSa(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdSaRegime.value))
+    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdItService))
 
     invitations.numberOfInvitations shouldBe 2
   }
