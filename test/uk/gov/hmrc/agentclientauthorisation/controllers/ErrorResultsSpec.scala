@@ -47,6 +47,7 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
       checkConstant(invalidInvitationStatus("My error message"), Status.FORBIDDEN, "INVALID_INVITATION_STATUS", "My error message")
       checkConstant(postcodeFormatInvalid("My error message"), Status.BAD_REQUEST, "POSTCODE_FORMAT_INVALID", "My error message")
       checkConstant(unsupportedService("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_SERVICE", "My error message")
+      checkConstant(unsupportedClientIdType("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_CLIENT_ID_TYPE", "My error message")
     }
 
   }

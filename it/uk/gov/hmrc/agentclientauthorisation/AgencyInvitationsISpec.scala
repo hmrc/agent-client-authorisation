@@ -40,7 +40,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   private val MtdItService = "HMRC-MTD-IT"
   private val nino = nextNino
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "NINO", nino.value, "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
 
   "GET root resource" should {
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
@@ -121,6 +121,15 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       val response = agencySendInvitation(arn, validInvitation.copy(service = "sa"))
       withClue(response.body) {
         response should matchErrorResult(unsupportedService("Unsupported service \"sa\", the only currently supported service is \"HMRC-MTD-IT\""))
+      }
+    }
+
+    "should not create invitation for an identifier type" in {
+      given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord()
+      val response = agencySendInvitation(arn, validInvitation.copy(clientIdType = "MTDITID"))
+      withClue(response.body) {
+        response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", the only currently supported type is \"ni\""))
       }
     }
 

@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
+import org.mockito.Matchers._
+import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
-import uk.gov.hmrc.play.test.UnitSpec
-import org.mockito.Mockito._
+import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
 import uk.gov.hmrc.domain.Nino
-import org.mockito.Matchers._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar {
+class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
   private val desConnector = mock[DesConnector]
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
@@ -43,7 +44,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   }
 
   private def responseFor(invite: AgentInvitation): Result = {
-    await(checkForErrors(invite)).head
+    await(checkForErrors(invite)).get
   }
   private def postcodeCheck(postcode: String = "AN11PA") = when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)))))
 
@@ -59,30 +60,36 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       responseFor(validInvite.copy(clientPostcode = "AAAAAA")) is BadRequest
     }
 
-    "fail with NotImplemented if the regime is not mtd-sa" in {
+    "fail with NotImplemented if the service is not HMRC-MTD-IT" in {
       postcodeCheck()
       responseFor(validInvite.copy(service = "mtd-vat")) is NotImplemented
     }
 
-    "pass when the postcode is valid, matches and has mtd-sa as the regime" in {
+    "only perform NINO format validation after establishing that clientId is a NINO " in {
       postcodeCheck()
-      await(checkForErrors(validInvite)) shouldBe Nil
+      val result: Result = responseFor(validInvite.copy(clientIdType = "not nino", clientId = "not a valid NINO"))
+      (jsonBodyOf(result) \ "code").as[String] shouldBe "UNSUPPORTED_CLIENT_ID_TYPE"
+    }
+
+    "pass when the postcode is valid, matches and has HMRC-MTD-IT as the service" in {
+      postcodeCheck()
+      await(checkForErrors(validInvite)) shouldBe None
     }
 
     "pass when the postcodes differ by case" in {
       postcodeCheck("an11pa")
-      await(checkForErrors(validInvite)) shouldBe Nil
+      await(checkForErrors(validInvite)) shouldBe None
 
       postcodeCheck()
-      await(checkForErrors(validInvite.copy(clientPostcode = "an11pa"))) shouldBe Nil
+      await(checkForErrors(validInvite.copy(clientPostcode = "an11pa"))) shouldBe None
     }
 
     "pass when the postcodes differ by spacing" in {
       postcodeCheck("AN1 1PA")
-      await(checkForErrors(validInvite)) shouldBe Nil
+      await(checkForErrors(validInvite)) shouldBe None
 
       postcodeCheck()
-      await(checkForErrors(validInvite.copy(clientPostcode = "AN1 1PA"))) shouldBe Nil
+      await(checkForErrors(validInvite.copy(clientPostcode = "AN1 1PA"))) shouldBe None
     }
   }
 }

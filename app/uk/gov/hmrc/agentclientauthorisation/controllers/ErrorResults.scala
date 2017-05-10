@@ -41,6 +41,7 @@ object ErrorResults {
   def nonUkAddress(countryCode: String)         = NotImplemented(toJson(ErrorBody("NON_UK_ADDRESS", s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
   def invalidInvitationStatus(message: String)  = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
   def unsupportedService(message: String)       = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
+  def unsupportedClientIdType(message: String)  = NotImplemented(toJson(ErrorBody("UNSUPPORTED_CLIENT_ID_TYPE", message)))
   def postcodeFormatInvalid(message: String)    = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
 
 }

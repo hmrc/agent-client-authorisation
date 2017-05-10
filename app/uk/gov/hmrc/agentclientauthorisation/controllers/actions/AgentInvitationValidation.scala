@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_SERVICE
+import uk.gov.hmrc.agentclientauthorisation.controllers.{SUPPORTED_CLIENT_IDENTIFIER_TYPE, SUPPORTED_SERVICE}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.domain.Nino
@@ -30,7 +30,7 @@ trait AgentInvitationValidation extends Results {
 
   val postcodeService: PostcodeService
 
-  private type Validation = (AgentInvitation) => Option[Result]
+  private type Validation = (AgentInvitation) => Future[Option[Result]]
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
@@ -44,8 +44,8 @@ trait AgentInvitationValidation extends Results {
   }
 
   private val hasValidNino: Validation = (invitation) => {
-    if (Nino.isValid(invitation.clientId)) None
-    else Some(InvalidNino)
+    if (Nino.isValid(invitation.clientId)) Future successful None
+    else Future successful Some(InvalidNino)
   }
 
   private val supportedService: (AgentInvitation) => Future[Option[Result]] = (invite) => {
@@ -53,13 +53,16 @@ trait AgentInvitationValidation extends Results {
     else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}", the only currently supported service is "$SUPPORTED_SERVICE""""))
   }
 
-  def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[Result]] = {
-    val ninoValid = hasValidNino(agentInvitation)
-    if (ninoValid.isEmpty) {
-      val res = Seq(hasValidPostcode, postCodeMatches, supportedService).map(x => x(agentInvitation))
-      Future.sequence(res).map(_.flatten)
-    } else {
-      Future successful Seq(ninoValid.get)
-    }
+  private val supportedClientIdType: (AgentInvitation) => Future[Option[Result]] = (invite) => {
+    if(SUPPORTED_CLIENT_IDENTIFIER_TYPE == invite.clientIdType) Future successful None
+    else Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", the only currently supported type is "$SUPPORTED_CLIENT_IDENTIFIER_TYPE""""))
+  }
+
+  def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+    Seq(hasValidPostcode, supportedService, supportedClientIdType, hasValidNino, postCodeMatches)
+      .foldLeft(Future.successful[Option[Result]](None))((acc, validation) => acc.flatMap {
+      case None => validation(agentInvitation)
+      case r => Future.successful(r)
+    })
   }
 }
