@@ -70,7 +70,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     "return 200 and an empty list when there are no invitations for the client" in {
       whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(Nino(clientId))))
 
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
+      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
@@ -84,7 +84,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
 
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
+      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
@@ -100,7 +100,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
       val expectedUrl = "http://somevalue"
       when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
 
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
+      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
