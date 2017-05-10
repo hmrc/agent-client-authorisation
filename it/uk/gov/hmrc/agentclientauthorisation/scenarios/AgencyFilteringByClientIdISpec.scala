@@ -49,8 +49,8 @@ trait AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers wi
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino2, MtdSaRegime)
+        (nino, MtdItService),
+        (nino2, MtdItService)
       )
 
       When(s"the Agency filters by client ID")

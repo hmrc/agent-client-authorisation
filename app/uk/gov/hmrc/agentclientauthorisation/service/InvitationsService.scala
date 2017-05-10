@@ -33,6 +33,7 @@ import scala.concurrent.Future
 class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
 
+  //TODO replace regime with service
   def create(arn: Arn, regime: String, clientId: String, postcode: String) =
     invitationsRepository.create(arn, regime, clientId, postcode)
 

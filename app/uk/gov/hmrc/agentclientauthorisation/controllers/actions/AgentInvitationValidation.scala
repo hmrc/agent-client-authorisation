@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_REGIME
+import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_SERVICE
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.domain.Nino
@@ -35,12 +35,12 @@ trait AgentInvitationValidation extends Results {
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
   val hasValidPostcode: (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    Future successful postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.postcode)).map(_ => None)
-      .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.postcode}", does not match the expected format.""")))
+    Future successful postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode)).map(_ => None)
+      .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode}", does not match the expected format.""")))
   }
 
   private def postCodeMatches(implicit hc: HeaderCarrier, ec: ExecutionContext): (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    postcodeService.clientPostcodeMatches(invite.clientId, invite.postcode)
+    postcodeService.clientPostcodeMatches(invite.clientId, invite.clientPostcode)
   }
 
   private val hasValidNino: Validation = (invitation) => {
@@ -48,15 +48,15 @@ trait AgentInvitationValidation extends Results {
     else Some(InvalidNino)
   }
 
-  private val supportedRegime: (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    if(SUPPORTED_REGIME == invite.regime) Future successful None
-    else Future successful Some(unsupportedRegime(s"""Unsupported regime "${invite.regime}", the only currently supported regime is "$SUPPORTED_REGIME""""))
+  private val supportedService: (AgentInvitation) => Future[Option[Result]] = (invite) => {
+    if(SUPPORTED_SERVICE == invite.service) Future successful None
+    else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}", the only currently supported service is "$SUPPORTED_SERVICE""""))
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[Result]] = {
     val ninoValid = hasValidNino(agentInvitation)
     if (ninoValid.isEmpty) {
-      val res = Seq(hasValidPostcode, postCodeMatches, supportedRegime).map(x => x(agentInvitation))
+      val res = Seq(hasValidPostcode, postCodeMatches, supportedService).map(x => x(agentInvitation))
       Future.sequence(res).map(_.flatten)
     } else {
       Future successful Seq(ninoValid.get)

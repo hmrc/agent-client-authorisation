@@ -55,7 +55,7 @@ class SandboxClientInvitationsController extends BaseController with HalWriter w
   private def invitation(clientId: String) = Invitation(
         BSONObjectID.generate,
         Arn("agencyReference"),
-        SUPPORTED_REGIME,
+        SUPPORTED_SERVICE,
         clientId,
         "A11 1AA",
         List(StatusChangeEvent(now(), Pending))

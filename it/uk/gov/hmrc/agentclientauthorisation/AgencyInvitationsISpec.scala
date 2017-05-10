@@ -23,7 +23,6 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec
@@ -39,9 +38,9 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   private val otherAgencyCode: AgentCode = AgentCode("123456") 
   private implicit val agentCode = AgentCode("LMNOP123456")
 
-  private val MtdRegime: Regime = Regime("mtd-sa")
+  private val MtdItService = "HMRC-MTD-IT"
   private val nino = nextNino
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, nino.value, "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "NINO", nino.value, "AA1 1AA")
 
   "GET root resource" should {
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
@@ -106,22 +105,22 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
+      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
+      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
         """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
-    "should not create invitation for an unsupported regime" in {
+    "should not create invitation for an unsupported service" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      val response = agencySendInvitation(arn, validInvitation.copy(regime = Regime("sa")))
+      val response = agencySendInvitation(arn, validInvitation.copy(service = "sa"))
       withClue(response.body) {
-        response should matchErrorResult(unsupportedRegime("Unsupported regime \"sa\", the only currently supported regime is \"mtd-sa\""))
+        response should matchErrorResult(unsupportedService("Unsupported service \"sa\", the only currently supported service is \"HMRC-MTD-IT\""))
       }
     }
 
@@ -140,14 +139,14 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).status shouldBe 201
+      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecord()
 
-      val response = agencySendInvitation(arn, validInvitation.copy(postcode = "A A1 1A A"))
+      val response = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "A A1 1A A"))
       withClue(response.body) {
         response.status shouldBe 201
       }
@@ -165,7 +164,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
     "should return 204 when invitation is Cancelled" ignore {
       given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
-      val location = agencySendInvitation(arn, validInvitation.copy(postcode = "AA11AA")).header("location")
+      val location = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).header("location")
       val response = agencyGetSentInvitation(arn, location.get)
       response.status shouldBe 204
     }

@@ -47,12 +47,12 @@ trait AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHel
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       And("Sends an invitations to Client 2")
-      agency sendInvitation(nino2, MtdSaRegime)
+      agency sendInvitation(nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
       clientAcceptsFirstInvitation(client)

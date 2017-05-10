@@ -74,7 +74,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
 
   def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
     if (clientId == request.nino.value) {
-      invitationsService.clientsReceived(SUPPORTED_REGIME, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
+      invitationsService.clientsReceived(SUPPORTED_SERVICE, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
       Future successful NoPermissionOnClient
     }

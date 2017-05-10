@@ -43,8 +43,8 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then("The agent filters by mtd-sa")

@@ -22,15 +22,13 @@ import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
-import uk.gov.hmrc.domain.{AgentCode, Nino}
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
-  private val MtdRegime: Regime = Regime("mtd-sa")
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdRegime, "AA123456A", "AA1 1AA")
+  private val MtdItService = "HMRC-MTD-IT"
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "NINO", "AA123456A", "AA1 1AA")
 
   override val sandboxMode = true
 
@@ -105,7 +103,8 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.arn
-    (invitation \ "regime").as[String] shouldBe MtdRegime.value
+    (invitation \ "service").as[String] shouldBe MtdItService
+//TODO    (invitation \ "clientIdType").as[String] shouldBe "NINO"
     (invitation \ "clientId").as[String] shouldBe "clientId"
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent

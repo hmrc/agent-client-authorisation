@@ -93,9 +93,10 @@ case class Invitation(
 
 /** Information provided by the agent to offer representation to HMRC */
 case class AgentInvitation(
-                        regime: String,
-                        clientId: String,
-                        postcode: String)
+  service: String,
+  clientIdType: String,
+  clientId: String,
+  clientPostcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

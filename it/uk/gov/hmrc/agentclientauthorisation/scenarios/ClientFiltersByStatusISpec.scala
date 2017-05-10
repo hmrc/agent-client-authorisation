@@ -44,8 +44,8 @@ trait ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with G
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")

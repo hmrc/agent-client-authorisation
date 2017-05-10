@@ -29,11 +29,12 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
   def nino: Nino
   def arn: Arn
-  val MtdSaRegime: Regime = Regime("mtd-sa")
+  val MtdSaRegime: Regime = Regime("mtd-sa")//TODO delete
+  val MtdItService = "HMRC-MTD-IT"
 
-  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(Nino, Regime), secondClient:(Nino, Regime)): Unit = {
+  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(Nino, String), secondClient:(Nino, String)): Unit = {
 
-    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1, regime = i._2))
+    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1, service = i._2))
 
     val location1 = locations.head
     val location2 = locations(1)
@@ -46,10 +47,11 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     checkInvite(response.firstInvitation)(firstClient)
     checkInvite(response.secondInvitation)(secondClient)
 
-    def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, Regime)): Unit = {
+    def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, String)): Unit = {
       invitation.arn shouldBe arn
       invitation.clientId shouldBe expected._1
-      invitation.regime shouldBe expected._2
+      invitation.regime shouldBe expected._2 //TODO service
+      //TODO clientIdType
       invitation.status shouldBe "Pending"
     }
 

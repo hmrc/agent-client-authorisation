@@ -35,7 +35,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private val desConnector = mock[DesConnector]
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
-  private val validInvite: AgentInvitation = AgentInvitation("mtd-sa", "AA123456A", "AN11PA")
+  private val validInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "NINO", "AA123456A", "AN11PA")
   private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {
@@ -51,17 +51,17 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
 
     "fail with Forbidden if the postcode doesn't match" in {
       postcodeCheck()
-      responseFor(validInvite.copy(postcode = "BN29AB")) is Forbidden
+      responseFor(validInvite.copy(clientPostcode = "BN29AB")) is Forbidden
     }
 
     "fail with BadRequest if the postcode is not valid" in {
       postcodeCheck()
-      responseFor(validInvite.copy(postcode = "AAAAAA")) is BadRequest
+      responseFor(validInvite.copy(clientPostcode = "AAAAAA")) is BadRequest
     }
 
     "fail with NotImplemented if the regime is not mtd-sa" in {
       postcodeCheck()
-      responseFor(validInvite.copy(regime = "mtd-vat")) is NotImplemented
+      responseFor(validInvite.copy(service = "mtd-vat")) is NotImplemented
     }
 
     "pass when the postcode is valid, matches and has mtd-sa as the regime" in {
@@ -74,7 +74,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validInvite)) shouldBe Nil
 
       postcodeCheck()
-      await(checkForErrors(validInvite.copy(postcode = "an11pa"))) shouldBe Nil
+      await(checkForErrors(validInvite.copy(clientPostcode = "an11pa"))) shouldBe Nil
     }
 
     "pass when the postcodes differ by spacing" in {
@@ -82,7 +82,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validInvite)) shouldBe Nil
 
       postcodeCheck()
-      await(checkForErrors(validInvite.copy(postcode = "AN1 1PA"))) shouldBe Nil
+      await(checkForErrors(validInvite.copy(clientPostcode = "AN1 1PA"))) shouldBe Nil
     }
   }
 }

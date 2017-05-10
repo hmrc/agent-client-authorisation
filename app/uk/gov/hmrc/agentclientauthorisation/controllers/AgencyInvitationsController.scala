@@ -44,7 +44,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
   }
 
   private def makeInvitation(arn: Arn, authRequest: AgentInvitation): Future[Result] = {
-    invitationsService.create(arn, authRequest.regime, authRequest.clientId, authRequest.postcode)
+    invitationsService.create(arn, authRequest.service, authRequest.clientId, authRequest.clientPostcode)
       .map(invitation => Created.withHeaders(location(invitation)))
   }
 

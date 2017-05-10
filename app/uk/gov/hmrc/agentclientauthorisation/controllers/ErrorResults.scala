@@ -40,7 +40,7 @@ object ErrorResults {
   val InvalidNino                               = BadRequest(toJson(ErrorBody("INVALID_NINO", "The NINO specified is not in a valid format")))
   def nonUkAddress(countryCode: String)         = NotImplemented(toJson(ErrorBody("NON_UK_ADDRESS", s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
   def invalidInvitationStatus(message: String)  = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
-  def unsupportedRegime(message: String)        = NotImplemented(toJson(ErrorBody("UNSUPPORTED_REGIME", message)))
+  def unsupportedService(message: String)       = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
   def postcodeFormatInvalid(message: String)    = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
 
 }

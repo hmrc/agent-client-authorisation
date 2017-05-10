@@ -1,5 +1,6 @@
 {
-  "regime": "mtd-sa",
+  "service": "HMRC-MTD-IT",
+  "clientIdType": "NINO",
   "clientId": "client123",
-  "postcode": "A11 1AA"
+  "clientPostcode": "A11 1AA"
 }

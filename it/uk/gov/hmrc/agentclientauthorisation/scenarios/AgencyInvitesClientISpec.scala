@@ -44,8 +44,8 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
@@ -67,8 +67,8 @@ trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with Giv
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
