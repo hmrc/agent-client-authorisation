@@ -36,8 +36,8 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
   }
 
-  def getSentInvitations(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
-    Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, regime, clientId, status))
+  def getSentInvitations(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
+    Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, clientId, status))
   }
 
   def getDetailsForAuthenticatedAgency() = Action { implicit request =>

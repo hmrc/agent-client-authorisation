@@ -165,19 +165,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
-  // TODO do we need this?
-//  "list" should {
-//    "delegate to InvitationsRepository" in {
-//      val invitation: Invitation = testInvitation
-//      when(invitationsRepository.list(invitation.regime, invitation.clientId))
-//        .thenReturn(Future successful List(invitation))
-//
-//      await(service.list(invitation.regime, invitation.clientId)) shouldBe Seq(invitation)
-//
-//      verify(invitationsRepository).list(invitation.regime, invitation.clientId)
-//    }
-//  }
-
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     arn,
     "mtd-sa",

@@ -58,8 +58,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Accepted))),
       Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
     )
 
@@ -67,8 +67,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       Future successful allInvitations
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("mtd-sa")), eqs(None), eqs(None))).thenReturn(
-      Future successful allInvitations.filter(_.service == "mtd-sa")
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None))).thenReturn(
+      Future successful allInvitations.filter(_.service == "HMRC-MTD-IT")
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
@@ -92,9 +92,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
     }
 
-    "filter by regime when a regime is specified" in {
+    "filter by service when a service is specified" in {
 
-      val response = await(controller.getSentInvitations(arn, Some("mtd-sa"), None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, Some("HMRC-MTD-IT"), None, None)(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
@@ -196,7 +196,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationId, arn, "mtd-sa", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

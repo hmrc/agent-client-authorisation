@@ -26,7 +26,7 @@
             "href": "/agent-client-authorisation/clients/client123/invitations/received/5889f19c5200005200ed1efc"
           }
         },
-        "regime": "mtd-sa",
+        "service": "HMRC-MTD-IT",
         "clientId": "client123",
         "postcode": "A11 1AA",
         "arn": "AARN9999999",
@@ -46,7 +46,7 @@
             "href": "/agent-client-authorisation/clients/client123/invitations/received/5889f19c5200005200ed1efd"
           }
         },
-        "regime": "mtd-sa",
+        "service": "HMRC-MTD-IT",
         "clientId": "client123",
         "postcode": "A11 1AA",
         "arn": "AARN9999999",

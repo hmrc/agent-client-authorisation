@@ -29,7 +29,7 @@ class InvitationSpec extends UnitSpec {
       val invitation = Invitation(
         id = BSONObjectID.generate,
         arn = Arn("myAgency"),
-        service = "regime",
+        service = "service",
         clientId = "clientId",
         postcode = "A11 1AA",
         events = List(StatusChangeEvent(DateTime.parse(created), Pending), StatusChangeEvent(DateTime.parse(lastUpdated), Accepted))

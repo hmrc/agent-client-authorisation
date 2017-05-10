@@ -56,8 +56,8 @@
         "self"
       ]
     },
-    "regime": {
-      "$ref": "regime.json"
+    "service": {
+      "$ref": "service.json"
     },
     "clientId": {
       "type": "string",
@@ -104,7 +104,7 @@
   },
   "required": [
     "_links",
-    "regime",
+    "service",
     "clientId",
     "postcode",
     "arn",

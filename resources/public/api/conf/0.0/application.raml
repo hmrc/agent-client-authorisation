@@ -22,12 +22,12 @@ uses:
 
 types:
 
-  # These Regime and Status RAML type duplicate the status and regime JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
+  # These Service and Status RAML type duplicate the service and status JSON Schema types. The RAML and JSON Schema types both need to be updated in concert.
   # The reason we need both is a current limitation in the api-documentation-raml-frontend whereby types referenced by query parameters must be RAML types and types referenced by bodies must be JSON Schemas.
-  Regime:
-    description: The tax regime
+  Service:
+    description: The Government Gateway service for the tax regime
     type: string
-    enum: [ mtd-sa ]
+    enum: [ HMRC-MTD-IT ]
 
   Status:
     displayName: Statuses
@@ -167,10 +167,10 @@ traits:
         description: Client's top level ID for their MTD registration (not regime specific).
         example:  client123
         required: false
-      regime:
-        type: Regime
-        description: The tax regime.
-        example:  mtd-sa
+      service:
+        type: Service
+        description: The Government Gateway service for the tax regime.
+        example:  HMRC-MTD-IT
         required: false
     responses:
       200:
