@@ -46,7 +46,7 @@ class RootController @Inject() (override val agenciesFakeConnector: AgenciesFake
   }
 
   private def toHalResource(arn: Arn): HalResource = {
-    val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None).url))
+    val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 

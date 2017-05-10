@@ -64,11 +64,10 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
 
   def getDetailsForAgencyInvitations(arn: Arn) = getDetailsForAgency(arn)
 
-  //TODO add clientTypeId and update RAML documentation
-  def getSentInvitations(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
+  def getSentInvitations(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = onlyForSaAgents.async { implicit request =>
     forThisAgency(arn) {
-      invitationsService.agencySent(arn, service, clientId, status).map { invitations =>
-        Ok(toHalResource(invitations, arn, service, clientId, status))
+      invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
+       Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
       }
     }
   }

@@ -62,8 +62,11 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
   def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
-    invitationsRepository.list(arn, service, clientId, status)
+  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
+    if (clientIdType.getOrElse("ni") == "ni")
+      invitationsRepository.list(arn, service, clientId, status)
+    else
+      Future successful List.empty
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
     invitation.status match {

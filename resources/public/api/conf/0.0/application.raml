@@ -164,13 +164,18 @@ traits:
         required: false
       clientId:
         type: string
-        description: Client's top level ID for their MTD registration (not regime specific).
+        description: Filter by client identifier.
         example:  client123
         required: false
       service:
         type: Service
-        description: The Government Gateway service for the tax regime.
+        description: Filter by the Government Gateway service for the tax regime.
         example:  HMRC-MTD-IT
+        required: false
+      clientIdType:
+        type: string
+        description: Filter invitations by client identifier type.
+        example: ni
         required: false
     responses:
       200:

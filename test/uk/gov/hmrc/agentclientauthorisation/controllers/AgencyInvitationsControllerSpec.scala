@@ -63,15 +63,19 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))).thenReturn(
       Future successful allInvitations
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None), eqs(None))).thenReturn(
       Future successful allInvitations.filter(_.service == "HMRC-MTD-IT")
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+      Future successful allInvitations.filter(_.status == Accepted)
+    )
+
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
   }
@@ -80,7 +84,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "for a matching agency should return the invitations" in {
 
-      val response = await(controller.getSentInvitations(arn, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -94,7 +98,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "filter by service when a service is specified" in {
 
-      val response = await(controller.getSentInvitations(arn, Some("HMRC-MTD-IT"), None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, Some("HMRC-MTD-IT"), None, None, None)(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
@@ -106,7 +110,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "filter by status when a status is specified" in {
 
-      val response = await(controller.getSentInvitations(arn, None, None, Some(Accepted))(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, Some(Accepted))(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
@@ -116,7 +120,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      val response = await(controller.getSentInvitations(arn, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -126,6 +130,19 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       (embeddedInvitations(jsonBody)(0) \ "status").asOpt[String] should not be None
       (embeddedInvitations(jsonBody)(0) \ "id").asOpt[String] shouldBe None
       (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe None
+    }
+
+    "include all query parameters in the self link" in {
+      val service = Some("HMRC-MTD-IT")
+      val clientIdType = Some("ni")
+      val clientId = Some("AA123456A")
+      val invitationStatus = Some(Accepted)
+      val response = await(controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus)(FakeRequest()))
+
+      status(response) shouldBe 200
+      val jsonBody = jsonBodyOf(response)
+
+      (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus).url
     }
 
   }

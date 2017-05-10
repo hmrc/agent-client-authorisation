@@ -37,7 +37,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   }
 
   def getSentInvitations(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
-    Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, clientId, status))
+    Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, None, clientId, status))
   }
 
   def getDetailsForAuthenticatedAgency() = Action { implicit request =>
