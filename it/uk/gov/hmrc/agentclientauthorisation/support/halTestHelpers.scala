@@ -21,7 +21,6 @@ import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 
 object HalTestHelpers {
@@ -39,7 +38,7 @@ object HalTestHelpers {
 object EmbeddedSection {
 
   case class EmbeddedInvitationLinks(selfLink: String, agencyLink:Option[String], cancelLink: Option[String], acceptLink: Option[String], rejectLink: Option[String])
-  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, service: String, clientId: Nino, status: String, created: DateTime, lastUpdated: DateTime)
+  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, service: String, clientIdType: String, clientId: Nino, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {
@@ -74,6 +73,7 @@ class EmbeddedSection(embedded: JsValue) {
       ),
       arn = Arn(getString(invitation \ "arn")),
       service = getString(invitation \ "service"),
+      clientIdType = getString(invitation \ "clientIdType"),
       clientId = Nino(getString(invitation \ "clientId")),
       status = getString(invitation \ "status"),
       created = getDateTime(invitation \ "created"),

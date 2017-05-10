@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_CLIENT_ID_TYPE
 import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.controllers.RestFormats
@@ -80,6 +81,8 @@ case class Invitation(
                        postcode: String,
                        events: List[StatusChangeEvent]) {
 
+  val clientIdType = SUPPORTED_CLIENT_ID_TYPE
+
   def firstEvent(): StatusChangeEvent = {
     events.head
   }
@@ -114,6 +117,7 @@ object Invitation {
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
       "service" -> invitation.service,
+      "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
       "arn" -> invitation.arn.arn,

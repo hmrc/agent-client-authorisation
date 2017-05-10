@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
   private val MtdItService = "HMRC-MTD-IT"
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "NINO", "AA123456A", "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", "AA123456A", "AA1 1AA")
 
   override val sandboxMode = true
 
@@ -104,7 +104,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.arn
     (invitation \ "service").as[String] shouldBe MtdItService
-//TODO    (invitation \ "clientIdType").as[String] shouldBe "ni"
+    (invitation \ "clientIdType").as[String] shouldBe "ni"
     (invitation \ "clientId").as[String] shouldBe "clientId"
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent

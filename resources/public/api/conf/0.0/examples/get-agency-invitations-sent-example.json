@@ -24,6 +24,7 @@
           }
         },
         "service": "HMRC-MTD-IT",
+        "clientIdType": "ni",
         "clientId": "client123",
         "postcode": "A11 1AA",
         "arn": "AARN9999999",
@@ -41,6 +42,7 @@
           }
         },
         "service": "HMRC-MTD-IT",
+        "clientIdType": "ni",
         "clientId": "client234",
         "postcode": "A22 2AA",
         "arn": "AARN9999999",

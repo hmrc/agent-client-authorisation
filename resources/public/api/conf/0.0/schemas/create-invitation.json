@@ -7,7 +7,7 @@
     },
     "clientIdType": {
       "type": "string",
-      "description" : "The type of identifier that clientId is. Currently must be \"NINO\""
+      "description" : "The type of identifier that clientId is. Currently must be \"ni\""
     },
     "clientId": {
       "type": "string",

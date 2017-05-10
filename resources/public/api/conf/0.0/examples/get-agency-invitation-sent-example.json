@@ -11,6 +11,7 @@
   "lastUpdated": "2017-01-25T15:20:14.917Z",
   "arn": "AARN9999999",
   "service": "HMRC-MTD-IT",
+  "clientIdType": "ni",
   "clientId": "client123",
   "postcode": "A11 1AA",
   "status": "Pending"

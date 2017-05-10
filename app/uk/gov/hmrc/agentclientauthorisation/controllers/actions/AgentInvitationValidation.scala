@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.controllers.{SUPPORTED_CLIENT_IDENTIFIER_TYPE, SUPPORTED_SERVICE}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{SUPPORTED_CLIENT_ID_TYPE, SUPPORTED_SERVICE}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.domain.Nino
@@ -54,8 +54,8 @@ trait AgentInvitationValidation extends Results {
   }
 
   private val supportedClientIdType: (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    if(SUPPORTED_CLIENT_IDENTIFIER_TYPE == invite.clientIdType) Future successful None
-    else Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", the only currently supported type is "$SUPPORTED_CLIENT_IDENTIFIER_TYPE""""))
+    if(SUPPORTED_CLIENT_ID_TYPE == invite.clientIdType) Future successful None
+    else Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", the only currently supported type is "$SUPPORTED_CLIENT_ID_TYPE""""))
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {

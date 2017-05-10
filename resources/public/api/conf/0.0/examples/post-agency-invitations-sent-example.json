@@ -1,6 +1,6 @@
 {
   "service": "HMRC-MTD-IT",
-  "clientIdType": "NINO",
+  "clientIdType": "ni",
   "clientId": "client123",
   "clientPostcode": "A11 1AA"
 }

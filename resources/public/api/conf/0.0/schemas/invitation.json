@@ -59,9 +59,13 @@
     "service": {
       "$ref": "service.json"
     },
+    "clientIdType": {
+      "type": "string",
+      "description" : "The type of identifier that clientId is. Currently must be \"ni\""
+    },
     "clientId": {
       "type": "string",
-      "description": "Client's top level ID for their MTD registration (not regime specific)"
+      "description" : "Client identifier (of type clientIdType)"
     },
     "postcode": {
       "type": "string",

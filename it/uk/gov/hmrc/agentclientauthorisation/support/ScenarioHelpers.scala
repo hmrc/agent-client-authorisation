@@ -47,9 +47,9 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, String)): Unit = {
       invitation.arn shouldBe arn
+      invitation.clientIdType shouldBe "ni"
       invitation.clientId shouldBe expected._1
       invitation.service shouldBe expected._2
-      //TODO clientIdType
       invitation.status shouldBe "Pending"
     }
 
