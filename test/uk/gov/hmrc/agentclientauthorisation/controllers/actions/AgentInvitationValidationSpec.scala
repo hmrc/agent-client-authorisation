@@ -36,7 +36,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private val desConnector = mock[DesConnector]
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
-  private val validInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "NINO", "AA123456A", "AN11PA")
+  private val validInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", "AN11PA")
   private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {
