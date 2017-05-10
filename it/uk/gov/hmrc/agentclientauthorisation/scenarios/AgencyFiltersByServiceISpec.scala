@@ -21,13 +21,13 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyFiltersByRegimeApiPlatformISpec extends AgencyFiltersByRegimeISpec
+class AgencyFiltersByServiceApiPlatformISpec extends AgencyFiltersByServiceISpec
 
-class AgencyFiltersByRegimeFrontendISpec extends AgencyFiltersByRegimeISpec {
+class AgencyFiltersByServiceFrontendISpec extends AgencyFiltersByServiceISpec {
   override val apiPlatform: Boolean = false
 }
 
-trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+trait AgencyFiltersByServiceISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -35,7 +35,7 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
 
   feature("Agencies can filter")  {
 
-    scenario("on the regime of invitations") {
+    scenario("on the service of invitations") {
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
@@ -47,22 +47,22 @@ trait AgencyFiltersByRegimeISpec extends FeatureSpec with ScenarioHelpers with G
         (nino, MtdItService)
       )
 
-      Then("The agent filters by mtd-sa")
-      agencyFiltersByMtdSa(agency)
+      Then("The agent filters by HMRC-MTD-IT")
+      agencyFiltersByMtdIt(agency)
 
       Then("The agent filters by mtd-vat")
       agencyFiltersByMtdVat(agency)
     }
   }
 
-  def agencyFiltersByMtdSa(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> MtdItService))
+  def agencyFiltersByMtdIt(agency: AgencyApi) = {
+    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> MtdItService))
 
     invitations.numberOfInvitations shouldBe 2
   }
 
   def agencyFiltersByMtdVat(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("regime" -> "mtd-vat"))
+    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> "mtd-vat"))
 
     invitations.numberOfInvitations shouldBe 0
   }

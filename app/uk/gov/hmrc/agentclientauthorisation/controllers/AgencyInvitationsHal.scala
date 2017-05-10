@@ -31,10 +31,10 @@ trait AgencyInvitationsHal {
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
-  def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
+  def toHalResource(invitations: List[Invitation], arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val invitationResources = invitations.map(toHalResource).toVector
 
-    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
+    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, service, clientId, status).url))
     Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 
