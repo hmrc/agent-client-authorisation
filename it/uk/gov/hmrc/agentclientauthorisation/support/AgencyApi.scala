@@ -28,7 +28,7 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
 
-  def sendInvitation(clientId: Nino, service: String = "HMRC-MTD-IT", clientIdType: String = "NINO", clientPostcode: String = "AA1 1AA"): String = {
+  def sendInvitation(clientId: Nino, service: String = "HMRC-MTD-IT", clientIdType: String = "ni", clientPostcode: String = "AA1 1AA"): String = {
 
     val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(service, clientIdType, clientId.value, clientPostcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
