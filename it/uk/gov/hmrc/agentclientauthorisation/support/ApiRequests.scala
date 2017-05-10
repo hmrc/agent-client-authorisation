@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
@@ -96,10 +95,10 @@ trait ApiRequests {
   TODO:  split these into seperate traits?
    */
   def clientsUrl = s"$baseUrl/clients"
-  def clientUrl(nino: Nino) = s"$baseUrl/clients/${nino.value}"
+  def clientUrl(nino: Nino) = s"$baseUrl/clients/ni/${nino.value}"
 
-  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received"
-  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/${urlEncode(id.value)}/invitations/received/$invitationId"
+  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received"
+  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get

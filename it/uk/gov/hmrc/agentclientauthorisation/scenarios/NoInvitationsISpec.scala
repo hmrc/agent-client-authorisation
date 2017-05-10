@@ -52,7 +52,7 @@ trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
     val clientResponse = client.getInvitations()
     clientResponse.numberOfInvitations shouldBe 0
     clientResponse.links.invitations shouldBe 'empty
-    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"
+    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
     clientResponse.embedded.isEmpty shouldBe true
   }
 }

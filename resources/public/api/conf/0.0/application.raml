@@ -279,7 +279,7 @@ traits:
           404:
             description: The invitation with the specified id does not exist.
 
-/agent-client-authorisation/clients/{clientId}/invitations/received:
+/agent-client-authorisation/clients/ni/{clientId}/invitations/received:
   is: [headers.acceptHeader, loginRequired, mustBeASaClient, clientRegistrationRequired, permissionOnClientRequired]
   uriParameters:
     clientId:

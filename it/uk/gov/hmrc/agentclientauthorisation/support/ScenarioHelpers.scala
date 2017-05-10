@@ -70,7 +70,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i1.status shouldBe "Pending"
 
     val selfLink = i1.links.selfLink
-    selfLink should startWith(s"/agent-client-authorisation/clients/${nino.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received/")
     i1.links.acceptLink shouldBe Some(s"$selfLink/accept")
     i1.links.rejectLink shouldBe Some(s"$selfLink/reject")
     i1.links.cancelLink shouldBe None
@@ -82,7 +82,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i2.service shouldBe MtdItService
     i2.status shouldBe "Pending"
     val links = clientResponse.links
-    links.selfLink shouldBe s"/agent-client-authorisation/clients/${nino.value}/invitations/received"
+    links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
     links.invitations shouldBe 'nonEmpty
     links.invitations.head shouldBe i1.links.selfLink
     links.invitations(1) shouldBe i2.links.selfLink

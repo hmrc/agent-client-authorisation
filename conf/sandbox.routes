@@ -9,10 +9,10 @@ GET      /agencies/:arn/invitations/sent/:invitation            @uk.gov.hmrc.age
 PUT      /agencies/:arn/invitations/sent/:invitation/cancel     @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxAgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentclientauthorisation.model.Arn, invitation: String)
 
 # Sandbox Client routes
-GET      /clients                                               @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForAuthenticatedClient()
-GET      /clients/:clientId                                     @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForClient(clientId: String)
-GET      /clients/:clientId/invitations                         @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForClient(clientId: String)
-PUT      /clients/:clientId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.acceptInvitation(clientId: String, invitationId: String)
-PUT      /clients/:clientId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.rejectInvitation(clientId: String, invitationId: String)
-GET      /clients/:clientId/invitations/received                 @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getInvitations(clientId: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
-GET      /clients/:clientId/invitations/received/:invitationId   @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getInvitation(clientId: String, invitationId: String)
+GET      /clients                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForAuthenticatedClient()
+GET      /clients/ni/:clientId                                            @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForClient(clientId: String)
+GET      /clients/ni/:clientId/invitations                                @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getDetailsForClient(clientId: String)
+PUT      /clients/ni/:clientId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.acceptInvitation(clientId: String, invitationId: String)
+PUT      /clients/ni/:clientId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.rejectInvitation(clientId: String, invitationId: String)
+GET      /clients/ni/:clientId/invitations/received                       @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getInvitations(clientId: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
+GET      /clients/ni/:clientId/invitations/received/:invitationId         @uk.gov.hmrc.agentclientauthorisation.controllers.sandbox.SandboxClientInvitationsController.getInvitation(clientId: String, invitationId: String)
