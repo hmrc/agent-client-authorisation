@@ -25,13 +25,11 @@ import uk.gov.hmrc.agentclientauthorisation.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.auth.microservice.connectors.Regime
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
 class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
-  private val MtdRegime = Regime("mtd-sa")
   private implicit val arn = Arn("ABCDEF12345678")
   private val nino = HardCodedSandboxIds.clientId
 
@@ -121,7 +119,8 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfLink/reject"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe "agencyReference"
-    (invitation \ "regime").as[String] shouldBe MtdRegime.value
+    (invitation \ "service").as[String] shouldBe "HMRC-MTD-IT"
+//TODO    (invitation \ "clientIdType").as[String] shouldBe "ni"
     (invitation \ "clientId").as[String] shouldBe clientId.value
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent

@@ -104,7 +104,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.arn
     (invitation \ "service").as[String] shouldBe MtdItService
-//TODO    (invitation \ "clientIdType").as[String] shouldBe "NINO"
+//TODO    (invitation \ "clientIdType").as[String] shouldBe "ni"
     (invitation \ "clientId").as[String] shouldBe "clientId"
     (invitation \ "status").as[String] shouldBe "Pending"
     (invitation \ "created").as[DateTime].getMillis should beRecent
