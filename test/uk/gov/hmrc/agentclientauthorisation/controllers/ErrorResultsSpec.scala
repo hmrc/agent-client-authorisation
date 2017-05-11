@@ -36,9 +36,9 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
       }
 
       checkConstant(GenericUnauthorized, Status.UNAUTHORIZED, "UNAUTHORIZED", "Bearer token is missing or not authorized.")
-      checkConstant(AgentRegistrationNotFound, Status.FORBIDDEN, "AGENT_REGISTRATION_NOT_FOUND", "The Agent's MTDfB registration was not found.")
+      checkConstant(AgentNotSubscribed, Status.FORBIDDEN, "AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")
       checkConstant(ClientRegistrationNotFound, Status.FORBIDDEN, "CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")
-      checkConstant(SaEnrolmentNotFound, Status.FORBIDDEN, "SA_ENROLMENT_NOT_FOUND", "The Client must have an active IR-SA enrolment.")
+      checkConstant(ClientNinoNotFound, Status.FORBIDDEN, "CLIENT_NINO_NOT_FOUND", "There must be a NINO in the client's user profile.")
       checkConstant(NotAnAgent, Status.FORBIDDEN, "NOT_AN_AGENT", "The logged in user is not an agent.")
       checkConstant(NoPermissionOnAgency, Status.FORBIDDEN, "NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency.")
       checkConstant(NoPermissionOnClient, Status.FORBIDDEN, "NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client.")
@@ -46,7 +46,8 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
       checkConstant(InvitationNotFound, Status.NOT_FOUND, "INVITATION_NOT_FOUND", "The specified invitation was not found.")
       checkConstant(invalidInvitationStatus("My error message"), Status.FORBIDDEN, "INVALID_INVITATION_STATUS", "My error message")
       checkConstant(postcodeFormatInvalid("My error message"), Status.BAD_REQUEST, "POSTCODE_FORMAT_INVALID", "My error message")
-      checkConstant(unsupportedRegime("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_REGIME", "My error message")
+      checkConstant(unsupportedService("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_SERVICE", "My error message")
+      checkConstant(unsupportedClientIdType("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_CLIENT_ID_TYPE", "My error message")
     }
 
   }

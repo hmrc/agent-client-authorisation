@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.util.Base64
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
@@ -78,11 +78,11 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
     given()
         .agentAdmin(arn, agentCode)
         .isLoggedIn()
-        .andHasMtdBusinessPartnerRecord()
+        .andIsSubscribedToAgentServices()
   }
 
   def authResponseFor(arn: Arn, trueClientIp: Option[String]): HttpResponse =
-    new Resource(s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent", port)
+    new Resource(s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent", port)
       .get()(HeaderCarrier(trueClientIp = trueClientIp))
 
 }

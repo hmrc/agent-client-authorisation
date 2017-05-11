@@ -41,18 +41,18 @@ trait AgencyFiltersByClientIdAndStatusISpec extends FeatureSpec with ScenarioHel
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, port)
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
       given().client(clientId = nino2).hasABusinessPartnerRecord()
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdSaRegime),
-        (nino, MtdSaRegime)
+        (nino, MtdItService),
+        (nino, MtdItService)
       )
 
       And("Sends an invitations to Client 2")
-      agency sendInvitation(nino2, MtdSaRegime)
+      agency sendInvitation(nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
       clientAcceptsFirstInvitation(client)

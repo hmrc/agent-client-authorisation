@@ -161,23 +161,24 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   protected var saAgentReference: Option[SaAgentReference] = None
 
 
-  def andHasMtdBusinessPartnerRecord(): A = {
-    stubFor(get(urlPathEqualTo(s"/agencies-fake/agencies/agentcode/$agentCode"))
-        .willReturn(aResponse()
-          .withStatus(200)
-          .withBody(
-            s"""
-              |{
-              | "arn": "$arn"
-              |}
-            """.stripMargin)))
-
+  def andIsSubscribedToAgentServices(): A = {
+    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"Activated"},
+         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"Activated"},
+         | {"key":"HMRC-AS-AGENT","identifiers":[{"key":"AnotherIdentifier", "value": "not the ARN"}, {"key":"AgentReferenceNumber","value":"${arn}"}],"state":"Activated"}]
+         """.stripMargin
+    )))
     this
   }
 
-  def andHasNoMtdBusinessPartnerRecord(): A = {
-    stubFor(get(urlPathEqualTo(s"/agencies-fake/agencies/agentcode/$agentCode"))
-      .willReturn(aResponse() .withStatus(404)))
+  def andIsNotSubscribedToAgentServices(): A = {
+    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"Activated"},
+         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"Activated"}]
+         """.stripMargin
+    )))
     this
   }
 

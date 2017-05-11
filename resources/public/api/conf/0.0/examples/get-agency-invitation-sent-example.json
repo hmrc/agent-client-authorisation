@@ -10,8 +10,9 @@
   "created": "2017-01-25T15:20:14.917Z",
   "lastUpdated": "2017-01-25T15:20:14.917Z",
   "arn": "AARN9999999",
-  "regime": "mtd-sa",
-  "clientId": "client123",
+  "service": "HMRC-MTD-IT",
+  "clientIdType": "ni",
+  "clientId": "AA999999A",
   "postcode": "A11 1AA",
   "status": "Pending"
 }

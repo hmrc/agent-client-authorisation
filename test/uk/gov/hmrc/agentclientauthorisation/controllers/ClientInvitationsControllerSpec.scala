@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.net.URL
-
 import org.joda.time.DateTime
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -26,16 +24,17 @@ import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.Accounts
+import uk.gov.hmrc.agentclientauthorisation.connectors.Authority
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.{Generator, Nino}
 
 import scala.concurrent.Future
 
 class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
 
-  val controller = new ClientInvitationsController(invitationsService, authConnector, agenciesFakeConnector)
+  val controller = new ClientInvitationsController(invitationsService, authConnector)
 
   val invitationId = BSONObjectID.generate.stringify
   val generator = new Generator()
@@ -68,9 +67,9 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
   "getInvitations" should {
 
     "return 200 and an empty list when there are no invitations for the client" in {
-      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
 
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful Nil)
+      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
@@ -78,29 +77,10 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
-    "include the agency URL in invitations" in {
-      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(Nino(clientId))))
-
-      val expectedUrl = "http://somevalue"
-      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
-
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
-        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
-          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
-
-      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
-      status(result) shouldBe 200
-
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "_links" \ "agency" \ "href").as[String] shouldBe expectedUrl
-    }
-
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      whenAuthIsCalled.thenReturn(Future successful Accounts(None, Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
 
-      val expectedUrl = "http://somevalue"
-      when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL(expectedUrl))
-
-      when(invitationsService.clientsReceived("mtd-sa", clientId, None)).thenReturn(Future successful List(
+      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 

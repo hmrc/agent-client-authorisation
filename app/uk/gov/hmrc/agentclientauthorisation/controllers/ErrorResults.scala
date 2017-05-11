@@ -29,9 +29,9 @@ object ErrorResults {
   }
 
   val GenericUnauthorized                       = Unauthorized(toJson(ErrorBody("UNAUTHORIZED", "Bearer token is missing or not authorized.")))
-  val AgentRegistrationNotFound                 = Forbidden(toJson(ErrorBody("AGENT_REGISTRATION_NOT_FOUND", "The Agent's MTDfB registration was not found.")))
+  val AgentNotSubscribed                        = Forbidden(toJson(ErrorBody("AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")))
   val ClientRegistrationNotFound                = Forbidden(toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")))
-  val SaEnrolmentNotFound                       = Forbidden(toJson(ErrorBody("SA_ENROLMENT_NOT_FOUND", "The Client must have an active IR-SA enrolment.")))
+  val ClientNinoNotFound                        = Forbidden(toJson(ErrorBody("CLIENT_NINO_NOT_FOUND", "There must be a NINO in the client's user profile.")))
   val NotAnAgent                                = Forbidden(toJson(ErrorBody("NOT_AN_AGENT", "The logged in user is not an agent.")))
   val NoPermissionOnAgency                      = Forbidden(toJson(ErrorBody("NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency.")))
   val NoPermissionOnClient                      = Forbidden(toJson(ErrorBody("NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client.")))
@@ -40,7 +40,8 @@ object ErrorResults {
   val InvalidNino                               = BadRequest(toJson(ErrorBody("INVALID_NINO", "The NINO specified is not in a valid format")))
   def nonUkAddress(countryCode: String)         = NotImplemented(toJson(ErrorBody("NON_UK_ADDRESS", s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
   def invalidInvitationStatus(message: String)  = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
-  def unsupportedRegime(message: String)        = NotImplemented(toJson(ErrorBody("UNSUPPORTED_REGIME", message)))
+  def unsupportedService(message: String)       = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
+  def unsupportedClientIdType(message: String)  = NotImplemented(toJson(ErrorBody("UNSUPPORTED_CLIENT_ID_TYPE", message)))
   def postcodeFormatInvalid(message: String)    = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
 
 }

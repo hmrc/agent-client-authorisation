@@ -25,11 +25,12 @@ import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{Action, AnyContent}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, Authority}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -43,7 +44,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   val invitationsService = mock[InvitationsService]
   val authConnector = mock[AuthConnector]
-  val agenciesFakeConnector = mock[AgenciesFakeConnector]
 
   def controller: ClientInvitationsController
 
@@ -55,7 +55,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def generator: Generator
 
   override def beforeEach(): Unit = {
-    reset(invitationsService, authConnector, agenciesFakeConnector)
+    reset(invitationsService, authConnector)
   }
 
   def clientStatusChangeEndpoint(toStatus: InvitationStatus, endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Either[String, Invitation]]]) {
@@ -126,8 +126,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     whenAuthIsCalled thenReturn aClientUser()
   }
 
-  def whenAuthIsCalled: OngoingStubbing[Future[Accounts]] = {
-    when(authConnector.currentAccounts()(any[HeaderCarrier], any[ExecutionContext]))
+  def whenAuthIsCalled: OngoingStubbing[Future[Authority]] = {
+    when(authConnector.currentAuthority()(any[HeaderCarrier], any[ExecutionContext]))
   }
 
   def noInvitation = Future successful None
@@ -145,7 +145,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: String = clientId) = Future successful Accounts(None, Some(Nino(nino)))
+  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)))
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 

@@ -1,20 +1,21 @@
 {
   "_links": {
     "reject": {
-      "href": "/agent-client-authorisation/clients/client123/invitations/received/5889f1cc5200001200ed1efe/reject"
+      "href": "/agent-client-authorisation/clients/AA999999A/invitations/received/5889f1cc5200001200ed1efe/reject"
     },
     "accept": {
-      "href": "/agent-client-authorisation/clients/client123/invitations/received/5889f1cc5200001200ed1efe/accept"
+      "href": "/agent-client-authorisation/clients/AA999999A/invitations/received/5889f1cc5200001200ed1efe/accept"
     },
     "self": {
-      "href": "/agent-client-authorisation/clients/client123/invitations/received/5889f1cc5200001200ed1efe"
+      "href": "/agent-client-authorisation/clients/AA999999A/invitations/received/5889f1cc5200001200ed1efe"
     }
   },
   "created": "2017-01-25T12:54:52.712Z",
   "lastUpdated": "2017-01-25T12:54:52.712Z",
   "arn": "AARN9999999",
-  "regime": "mtd-sa",
-  "clientId": "client123",
+  "service": "HMRC-MTD-IT",
+  "clientIdType": "ni",
+  "clientId": "AA999999A",
   "postcode": "A11 1AA",
   "status": "Pending"
 }

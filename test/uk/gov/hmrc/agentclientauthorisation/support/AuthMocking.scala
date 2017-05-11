@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.mockito.Matchers.{any, eq => eqs}
 import org.mockito.Mockito._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
-import uk.gov.hmrc.domain.{AgentCode, Generator, Nino}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Authority, AuthConnector}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.Upstream4xxResponse
 
 import scala.concurrent.Future
@@ -28,44 +28,50 @@ import scala.concurrent.Future
 trait AuthMocking {
 
   def authConnector: AuthConnector
-  def agenciesFakeConnector : AgenciesFakeConnector
   def generator: Generator
 
   private val defaultArn = Arn("12345")
 
-  def givenAgentIsLoggedIn(arn : Arn = defaultArn): Arn = {
-    givenAccountsAre(Accounts(Some(AgentCode("54321")), None))
-    givenAgencyRecordIs(AgentCode("54321"), arn)
-    arn
+  def givenAgentIsLoggedIn(arn: Arn = defaultArn) = {
+    givenAgencyArnIs(arn)
+    givenNoAccounts()
   }
 
   def givenAgentWithoutRecordIsLoggedIn() = {
-    givenAccountsAre(Accounts(Some(AgentCode("54321")), None))
-    givenUserHasNoAgency(AgentCode("54321"))
+    givenAccountsAre(Authority(None))
+    givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenUserHasNoAgency()
     val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {
-    givenAccountsAre(Accounts(None, Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedInWithNoSAAccount() = {
-    givenAccountsAre(Accounts(None, None))
+    givenAccountsAre(Authority(None))
+    givenUserHasNoAgency()
   }
 
-  def givenUserIsNotLoggedIn() = whenAccountsIsAskedFor().thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))
+  def givenUserIsNotLoggedIn() = {
+    whenAccountsIsAskedFor().thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))
+    when(authConnector.currentArn()(any(), any())).thenReturn(Future failed Upstream4xxResponse("msg", 401, 401))
+  }
 
-  def givenAccountsAre(accounts: Accounts) = whenAccountsIsAskedFor().thenReturn(Future successful accounts)
+  def givenAccountsAre(authority: Authority) = whenAccountsIsAskedFor().thenReturn(Future successful authority)
 
-  def whenAccountsIsAskedFor() = when(authConnector.currentAccounts()(any(), any()))
+  def givenNoAccounts() = whenAccountsIsAskedFor().thenReturn(Future failed new Exception)
 
-  def givenAgencyRecordIs(agentCode: AgentCode, arn: Arn) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful Some(arn))
+  def whenAccountsIsAskedFor() = when(authConnector.currentAuthority()(any(), any()))
 
-  def givenUserHasNoAgency(agentCode: AgentCode) = when(agenciesFakeConnector.findArn(eqs(agentCode))(any(), any())).thenReturn(Future successful None)
+  def givenAgencyArnIs(arn: Arn) = when(authConnector.currentArn()(any(), any())).thenReturn(Future successful Some(arn))
+
+  def givenUserHasNoAgency() = when(authConnector.currentArn()(any(), any())).thenReturn(Future successful None)
 
 
 }

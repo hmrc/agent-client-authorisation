@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 trait AgencyInvitationsHal {
 
@@ -27,14 +28,13 @@ trait AgencyInvitationsHal {
 
   def toHalResource(arn: Arn, selfLinkHref: String): HalResource = {
     val selfLink = Vector(HalLink("self", selfLinkHref))
-    val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None).url))
+    val invitationsSentLink = Vector(HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
-  def toHalResource(invitations: List[Invitation], arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
+  def toHalResource(invitations: List[Invitation], arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus]): HalResource = {
     val invitationResources = invitations.map(toHalResource).toVector
-
-    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, regime, clientId, status).url))
+    val selfLink = Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, status).url))
     Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 

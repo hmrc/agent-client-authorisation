@@ -23,6 +23,7 @@ import org.scalatest.concurrent.Eventually
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -49,7 +50,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
         case event =>
           event.arn shouldBe arn
           event.clientId shouldBe clientId
-          event.regime shouldBe "sa"
+          event.service shouldBe "sa"
           event.events.loneElement shouldBe StatusChangeEvent(now, Pending)
       }
     }
@@ -107,12 +108,12 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       }
     }
 
-    "return elements for the specified regime only" in {
+    "return elements for the specified service only" in {
       val arn = Arn("3")
       val clientId1 = "MTD-REG-3A"
       val clientId2 = "MTD-REG-3B"
 
-      addInvitations((arn, "mtd-sa", clientId1, "user-details-1"), (arn, "some-other-regime", clientId2, "user-details-2"))
+      addInvitations((arn, "mtd-sa", clientId1, "user-details-1"), (arn, "some-other-service", clientId2, "user-details-2"))
 
       val list = listByArn(arn, Some("mtd-sa"), None, None)
 
@@ -151,29 +152,29 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   "listing by clientId" should {
 
-    "return an empty list when there is no such regime-regimeId pair" in {
-      val regime = "sa"
+    "return an empty list when there is no such service-clientId pair" in {
+      val service = "sa"
       val clientId = "4A"
       val arn = Arn("4")
       val userDetailsLink = "user-details"
 
-      addInvitation((arn, regime, clientId, userDetailsLink))
+      addInvitation((arn, service, clientId, userDetailsLink))
 
-      listByClientId(regime, "no-such-id") shouldBe Nil
-      listByClientId("different-regime", clientId) shouldBe Nil
+      listByClientId(service, "no-such-id") shouldBe Nil
+      listByClientId("different-service", clientId) shouldBe Nil
     }
 
     "return a single agent request" in {
 
-      val regime = "sa"
+      val service = "sa"
       val clientId = "4A"
       val arn = Arn("4")
       val userDetailsLink = "user-details"
 
-      addInvitation((arn, regime, clientId, userDetailsLink))
+      addInvitation((arn, service, clientId, userDetailsLink))
 
-      inside(listByClientId(regime, clientId) loneElement) {
-        case Invitation(_, `arn`, `regime`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+      inside(listByClientId(service, clientId) loneElement) {
+        case Invitation(_, `arn`, `service`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -182,28 +183,28 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
       val firstAgent = Arn("5")
       val secondAgent = Arn("6")
-      val regime = "sa"
+      val service = "sa"
       val clientId = "MTD-REG-5A"
       val userDetailsLink = "user-details"
 
 
       addInvitations(
-        (firstAgent, regime, clientId, userDetailsLink),
-        (secondAgent, regime, clientId, userDetailsLink),
+        (firstAgent, service, clientId, userDetailsLink),
+        (secondAgent, service, clientId, userDetailsLink),
         (Arn("should-not-show-up"), "sa", "another-client", userDetailsLink)
       )
 
-      val requests = listByClientId(regime, clientId).sortBy(_.arn.arn)
+      val requests = listByClientId(service, clientId).sortBy(_.arn.value)
 
       requests.size shouldBe 2
 
       inside(requests head) {
-        case Invitation(_, `firstAgent`, `regime`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, `firstAgent`, `service`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(_, `secondAgent`, `regime`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, `secondAgent`, `service`, `clientId`, `userDetailsLink`, List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -227,8 +228,8 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   private def addInvitations(invitations: Invitation*) = {
     await(Future sequence invitations.map {
-      case (code: Arn, regime: String, clientId: String, userDetailsLink: String) =>
-        repository.create(code, regime, clientId, userDetailsLink)
+      case (code: Arn, service: String, clientId: String, userDetailsLink: String) =>
+        repository.create(code, service, clientId, userDetailsLink)
     })
   }
 
@@ -236,11 +237,11 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
   private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None))
 
-  private def listByArn(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
-                            await(repository.list(arn, regime, clientId, status))
+  private def listByArn(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) =
+                            await(repository.list(arn, service, clientId, status))
 
-  private def listByClientId(regime: String, clientId: String, status: Option[InvitationStatus] = None) =
-    await(repository.list(regime, clientId, status))
+  private def listByClientId(service: String, clientId: String, status: Option[InvitationStatus] = None) =
+    await(repository.list(service, clientId, status))
 
   private def update(id: BSONObjectID, status: InvitationStatus) = await(repository.update(id, status))
 

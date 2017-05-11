@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -33,8 +34,8 @@ import scala.concurrent.Future
 class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
 
-  def create(arn: Arn, regime: String, clientId: String, postcode: String) =
-    invitationsRepository.create(arn, regime, clientId, postcode)
+  def create(arn: Arn, service: String, clientId: String, postcode: String) =
+    invitationsRepository.create(arn, service, clientId, postcode)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Either[String, Invitation]] = {
@@ -59,11 +60,14 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       .get
 
 
-  def clientsReceived(regime: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
-    invitationsRepository.list(regime, clientId, status)
+  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+    invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, regime: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
-    invitationsRepository.list(arn, regime, clientId, status)
+  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
+    if (clientIdType.getOrElse("ni") == "ni")
+      invitationsRepository.list(arn, service, clientId, status)
+    else
+      Future successful List.empty
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
     invitation.status match {

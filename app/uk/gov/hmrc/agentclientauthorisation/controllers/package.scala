@@ -19,6 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation
 
 package object controllers {
 
-  val SUPPORTED_REGIME = "mtd-sa"
+  val SUPPORTED_SERVICE = "HMRC-MTD-IT"
+  // we use "ni" not "nino" for consistency with API urls in the self-assessment-api service
+  val SUPPORTED_CLIENT_ID_TYPE = "ni"
 
 }
