@@ -38,7 +38,7 @@ trait AgencyFiltersByClientIdTypeISpec extends FeatureSpec with ScenarioHelpers 
     scenario("on the clientIdType of invitations") {
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
 
       When("An agent sends several invitations")

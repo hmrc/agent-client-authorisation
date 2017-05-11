@@ -21,10 +21,10 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc._
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar}
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.test.UnitSpec
@@ -35,35 +35,34 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with A
   override val generator = new Generator()
 
   override val authConnector: AuthConnector = resettingMock[AuthConnector]
-  override val agenciesFakeConnector: AgenciesFakeConnector = resettingMock[AgenciesFakeConnector]
 
-  "onlyForSaAgents" should {
+  "onlyForAgents" should {
 
     "return 401 when invoked by not logged in user" in {
       givenUserIsNotLoggedIn()
-      response(onlyForSaAgents) shouldBe GenericUnauthorized
+      response(onlyForAgents) shouldBe GenericUnauthorized
     }
 
     "return 403 when a non agent user is logged in" in {
       givenClientIsLoggedIn()
-      response(onlyForSaAgents) shouldBe NotAnAgent
+      response(onlyForAgents) shouldBe AgentRegistrationNotFound
     }
 
     "return 403 when an agent without a MTD agency record is logged in" in {
       givenAgentWithoutRecordIsLoggedIn()
-      response(onlyForSaAgents) shouldBe AgentRegistrationNotFound
+      response(onlyForAgents) shouldBe AgentRegistrationNotFound
     }
 
     "return 200 when an agent with an MTD agency record is logged in" in {
       givenAgentIsLoggedIn()
-      val result = response(onlyForSaAgents)
+      val result = response(onlyForAgents)
       status(result) shouldBe 200
     }
 
     "pass agent details to the block when an agent with an MTD agency record is logged in" in {
       givenAgentIsLoggedIn()
       var blockCalled = false
-      val action = onlyForSaAgents { request =>
+      val action = onlyForAgents { request =>
         blockCalled = true
         request.arn shouldBe Arn("12345")
         Results.Ok
@@ -73,21 +72,21 @@ class AuthActionsSpec extends UnitSpec with MockitoSugar with AuthActions with A
     }
   }
 
-  "onlyForSaClients" should {
+  "onlyForClients" should {
     "return 401 when invoked by not logged in user" in {
       givenUserIsNotLoggedIn()
-      response(onlyForSaClients) shouldBe GenericUnauthorized
+      response(onlyForClients) shouldBe GenericUnauthorized
     }
 
     "return 403 when a user who has no MTD enrolment is logged in" in {
       pending // reinstate when client validation is implemented
       givenNonMTDClientIsLoggedIn()
-      response(onlyForSaClients) shouldBe ClientRegistrationNotFound
+      response(onlyForClients) shouldBe ClientRegistrationNotFound
     }
 
     "return 200 when a user is logged in" in {
       givenClientIsLoggedIn()
-      status(response(onlyForSaClients)) shouldBe 200
+      status(response(onlyForClients)) shouldBe 200
     }
 
   }

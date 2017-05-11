@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
@@ -123,7 +123,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   private def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
     val agency = new AgencyApi(this, arn, port)
-    given().agentAdmin(arn, agentCode).isLoggedIn().andHasMtdBusinessPartnerRecord()
+    given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
     given().client(clientId = clientId).hasABusinessPartnerRecord()
 
     agency.sendInvitation(clientId)

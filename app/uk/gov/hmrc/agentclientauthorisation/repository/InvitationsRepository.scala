@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
+
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
@@ -24,6 +25,7 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository, Repository}
 
@@ -68,7 +70,7 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
   }*/
 
   def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
-    val searchOptions = Seq("arn" -> Some(arn.arn),
+    val searchOptions = Seq("arn" -> Some(arn.value),
                             "clientId" -> clientId,
                             "service" -> service,
                             "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))

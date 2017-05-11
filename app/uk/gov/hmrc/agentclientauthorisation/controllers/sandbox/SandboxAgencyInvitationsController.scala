@@ -23,6 +23,7 @@ import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton

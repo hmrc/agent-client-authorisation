@@ -23,6 +23,7 @@ import org.scalatest.concurrent.Eventually
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -193,7 +194,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
         (Arn("should-not-show-up"), "sa", "another-client", userDetailsLink)
       )
 
-      val requests = listByClientId(service, clientId).sortBy(_.arn.arn)
+      val requests = listByClientId(service, clientId).sortBy(_.arn.value)
 
       requests.size shouldBe 2
 

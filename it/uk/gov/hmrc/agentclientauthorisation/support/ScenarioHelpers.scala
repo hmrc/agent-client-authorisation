@@ -20,6 +20,7 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
@@ -54,7 +55,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     }
 
     val links = response.links
-    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+    links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent"
     links.invitations shouldBe 'nonEmpty
     links.invitations.head shouldBe response.firstInvitation.links.selfLink
     links.invitations(1) shouldBe response.secondInvitation.links.selfLink
@@ -74,7 +75,6 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i1.links.acceptLink shouldBe Some(s"$selfLink/accept")
     i1.links.rejectLink shouldBe Some(s"$selfLink/reject")
     i1.links.cancelLink shouldBe None
-    i1.links.agencyLink.get should include(s"/agencies-fake/agencies/${arn.arn}")
 
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn

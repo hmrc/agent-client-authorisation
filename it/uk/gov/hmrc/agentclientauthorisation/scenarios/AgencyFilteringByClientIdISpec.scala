@@ -43,7 +43,7 @@ trait AgencyFilteringByClientIdISpec extends FeatureSpec with ScenarioHelpers wi
       val client2 = new ClientApi(this, nino2, port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       given().client(clientId = nino2).hasABusinessPartnerRecord()
 

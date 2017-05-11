@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
@@ -50,10 +50,10 @@ trait ApiRequests {
   }
 
   def agenciesUrl = s"$baseUrl/agencies"
-  def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.arn}"
+  def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.value}"
   def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
   def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
-  def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.arn}/invitations/sent/$invitationId"
+  def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
 
   def rootResource()(implicit port: Int) = {
     new Resource(baseUrl, port).get()

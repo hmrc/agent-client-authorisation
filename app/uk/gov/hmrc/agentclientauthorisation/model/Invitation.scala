@@ -20,12 +20,9 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_CLIENT_ID_TYPE
-import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.controllers.RestFormats
-
-
-case class Arn(arn: String)
 
 sealed trait InvitationStatus {
 
@@ -105,11 +102,6 @@ object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
-object Arn {
-  implicit val arnReads = new SimpleObjectReads[Arn]("arn", Arn.apply)
-  implicit val arnWrites = new SimpleObjectWrites[Arn](_.arn)
-}
-
 object Invitation {
   implicit val dateWrites = RestFormats.dateTimeWrite
   implicit val dateReads = RestFormats.dateTimeRead
@@ -120,7 +112,7 @@ object Invitation {
       "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
-      "arn" -> invitation.arn.arn,
+      "arn" -> invitation.arn.value,
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
       "status" -> invitation.status

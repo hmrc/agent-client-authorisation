@@ -38,14 +38,14 @@ trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors 
     val agency = new AgencyApi(this, arn, port)
     val client = new ClientApi(this, nino, port)
 
-    given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andHasMtdBusinessPartnerRecord()
+    given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
     given().client(clientId = nino).isLoggedInWithSessionId()
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()
     agencyResponse.numberOfInvitations shouldBe 0
     agencyResponse.links.invitations shouldBe 'empty
-    agencyResponse.links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.arn}/invitations/sent"
+    agencyResponse.links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent"
     agencyResponse.embedded.isEmpty shouldBe true
 
     info("the Clients received invitations should be empty")

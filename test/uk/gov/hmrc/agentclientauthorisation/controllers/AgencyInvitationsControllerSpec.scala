@@ -26,11 +26,12 @@ import play.api.libs.json.{JsArray, JsValue}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.Future
@@ -41,9 +42,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val invitationsService = resettingMock[InvitationsService]
   val generator = new Generator()
   val authConnector = resettingMock[AuthConnector]
-  val agenciesFakeConnector = resettingMock[AgenciesFakeConnector]
 
-  val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector, agenciesFakeConnector)
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector)
 
   val arn = Arn("arn1")
   val mtdSaPendingInvitationId = BSONObjectID.generate
@@ -54,8 +54,6 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     super.beforeEach()
 
     givenAgentIsLoggedIn(arn)
-
-    when(agenciesFakeConnector.agencyUrl(arn)).thenReturn(new URL("http://foo"))
 
     val allInvitations = List(
       Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
@@ -206,7 +204,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
 //      "agent-client-authorisation",
       "agencies",
-      arn.arn,
+      arn.value,
       "invitations",
       "sent",
       invitationId.stringify

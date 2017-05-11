@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Accounts, AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, Authority}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -30,13 +30,11 @@ trait AuthActions {
 
   def authConnector: AuthConnector
 
-  def agenciesFakeConnector: AgenciesFakeConnector
-
-  protected val withAccounts = new ActionBuilder[RequestWithAccounts] with ActionRefiner[Request, RequestWithAccounts] {
-    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithAccounts[A]]] = {
+  protected val withAuthority = new ActionBuilder[RequestWithAuthority] with ActionRefiner[Request, RequestWithAuthority] {
+    protected def refine[A](request: Request[A]): Future[Either[Result, RequestWithAuthority[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
-      authConnector.currentAccounts()
-        .map(accounts => new RequestWithAccounts(accounts, request))
+      authConnector.currentAuthority()
+        .map(authority => new RequestWithAuthority(authority, request))
         .map(Right(_))
         .recover({
           case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
@@ -45,32 +43,34 @@ trait AuthActions {
     }
   }
 
-  val onlyForSaAgents: ActionBuilder[AgentRequest] = withAccounts andThen new ActionRefiner[RequestWithAccounts, AgentRequest] {
-    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, AgentRequest[A]]] = {
+  protected val onlyForAgents = new ActionBuilder[AgentRequest] with ActionRefiner[Request, AgentRequest] {
+    protected def refine[A](request: Request[A]): Future[Either[Result, AgentRequest[A]]] = {
       implicit val hc = HeaderCarrier.fromHeadersAndSession(request.headers, None)
-      request.accounts.agent match {
-        case Some(r) => agenciesFakeConnector.findArn(r).map {
+      authConnector.currentArn()
+        .map {
           case Some(arn) => Right(AgentRequest(arn, request))
           case None => Left(AgentRegistrationNotFound)
         }
-        case None => Future successful Left(NotAnAgent)
-      }
+        .recover({
+          case e: uk.gov.hmrc.play.http.Upstream4xxResponse if e.upstreamResponseCode == 401 =>
+            Left(GenericUnauthorized)
+        })
     }
   }
 
 
-  val onlyForSaClients: ActionBuilder[SaClientRequest] = withAccounts andThen new ActionRefiner[RequestWithAccounts, SaClientRequest] {
-    override protected def refine[A](request: RequestWithAccounts[A]): Future[Either[Result, SaClientRequest[A]]] = {
-      request.accounts.nino match {
-        case Some(nino) => Future successful Right(SaClientRequest(nino, request))
-        case None => Future successful Left(SaEnrolmentNotFound)
+  val onlyForClients: ActionBuilder[ClientRequest] = withAuthority andThen new ActionRefiner[RequestWithAuthority, ClientRequest] {
+    override protected def refine[A](request: RequestWithAuthority[A]): Future[Either[Result, ClientRequest[A]]] = {
+      request.authority.nino match {
+        case Some(nino) => Future successful Right(ClientRequest(nino, request))
+        case None => Future successful Left(ClientEnrolmentNotFound)
       }
     }
   }
 }
 
-class RequestWithAccounts[A](val accounts: Accounts, request: Request[A]) extends WrappedRequest[A](request)
+class RequestWithAuthority[A](val authority: Authority, request: Request[A]) extends WrappedRequest[A](request)
 
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
-case class SaClientRequest[A](nino: Nino, request: Request[A]) extends WrappedRequest[A](request)
+case class ClientRequest[A](nino: Nino, request: Request[A]) extends WrappedRequest[A](request)

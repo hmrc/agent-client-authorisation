@@ -21,7 +21,7 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.JsValue
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino

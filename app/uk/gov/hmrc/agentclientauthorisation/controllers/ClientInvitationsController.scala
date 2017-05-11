@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgenciesFakeConnector, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
@@ -30,14 +30,13 @@ import scala.concurrent.Future
 
 @Singleton
 class ClientInvitationsController @Inject() (invitationsService: InvitationsService,
-                                  override val authConnector: AuthConnector,
-                                  override val agenciesFakeConnector: AgenciesFakeConnector) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal  {
+                                  override val authConnector: AuthConnector) extends BaseController with AuthActions with HalWriter with ClientInvitationsHal  {
 
-   def getDetailsForAuthenticatedClient() = onlyForSaClients.async { implicit request =>
+   def getDetailsForAuthenticatedClient() = onlyForClients.async { implicit request =>
     Future successful Ok(toHalResource(request.nino.value, request.path))
   }
 
-  def getDetailsForClient(clientId: String) = onlyForSaClients.async { implicit request =>
+  def getDetailsForClient(clientId: String) = onlyForClients.async { implicit request =>
     if (clientId == request.nino.value) {
       Future successful Ok(toHalResource(clientId, request.path))
     } else {
@@ -45,11 +44,11 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
-  def acceptInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def acceptInvitation(clientId: String, invitationId: String) = onlyForClients.async { implicit request =>
     actionInvitation(request.nino.value, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def rejectInvitation(clientId: String, invitationId: String) = onlyForClients.async { implicit request =>
     actionInvitation(request.nino.value, invitationId, invitationsService.rejectInvitation)
   }
 
@@ -64,7 +63,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
-  def getInvitation(clientId: String, invitationId: String) = onlyForSaClients.async { implicit request =>
+  def getInvitation(clientId: String, invitationId: String) = onlyForClients.async { implicit request =>
     invitationsService.findInvitation(invitationId).map {
       case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
       case None => InvitationNotFound
@@ -72,7 +71,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
-  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForSaClients.async { implicit request =>
+  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForClients.async { implicit request =>
     if (clientId == request.nino.value) {
       invitationsService.clientsReceived(SUPPORTED_SERVICE, clientId, status) map (results => Ok(toHalResource(results, clientId, status)))
     } else {
@@ -80,6 +79,5 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     }
   }
 
-  override protected def agencyLink(invitation: Invitation): Option[String] =
-    Some(agenciesFakeConnector.agencyUrl(invitation.arn).toString)
+  override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

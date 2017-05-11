@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import play.mvc.Http.HeaderNames._
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.domain.Nino
@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
 class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.arn)))
+  implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.value)))
 
   def sendInvitation(clientId: Nino, service: String = "HMRC-MTD-IT", clientIdType: String = "ni", clientPostcode: String = "AA1 1AA"): String = {
 

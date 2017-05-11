@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.hal.{Hal, HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.agentclientauthorisation.model.{Arn, Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Pending}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 trait AgencyInvitationsHal {
 

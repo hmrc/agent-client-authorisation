@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 
 object HardCodedSandboxIds {

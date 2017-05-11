@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 import scala.util.Random
 
