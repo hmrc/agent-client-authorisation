@@ -27,10 +27,6 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec
 
-class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
-  override val apiPlatform: Boolean = false
-}
-
 trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
 
   private implicit val arn = Arn("ABCDEF12345678")

@@ -21,8 +21,6 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyFiltersByServiceApiPlatformISpec extends AgencyFiltersByServiceISpec
-
 class AgencyFiltersByServiceFrontendISpec extends AgencyFiltersByServiceISpec {
   override val apiPlatform: Boolean = false
 }

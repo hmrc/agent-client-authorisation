@@ -25,8 +25,6 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec
-
 class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
