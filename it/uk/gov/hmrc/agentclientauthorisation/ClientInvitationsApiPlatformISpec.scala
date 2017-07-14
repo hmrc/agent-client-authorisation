@@ -25,27 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec
-
-class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
-  override val apiPlatform: Boolean = false
-}
-
-trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests with ErrorResultMatchers {
-
-  private implicit val arn = Arn("ABCDEF12345678")
-  private implicit val agentCode = AgentCode("LMNOP123456")
-  private val nino = nextNino
-  private val nino1 = nextNino
-
-  private val invitationsUrl = s"${clientUrl(nino)}/invitations"
-  private val invitationsReceivedUrl = s"$invitationsUrl/received"
-
-  "GET /" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(rootResource())
-  }
-
+class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   "GET /clients" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientsResource())
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
@@ -120,8 +100,28 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       response should matchErrorResult(NoPermissionOnClient)
     }
   }
+}
 
-  private def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
+class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
+  override val apiPlatform: Boolean = false
+}
+
+trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests with ErrorResultMatchers {
+
+  protected implicit val arn = Arn("ABCDEF12345678")
+  protected implicit val agentCode = AgentCode("LMNOP123456")
+  protected val nino = nextNino
+  protected val nino1 = nextNino
+
+  protected val invitationsUrl = s"${clientUrl(nino)}/invitations"
+  protected val invitationsReceivedUrl = s"$invitationsUrl/received"
+
+  "GET /" should {
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(baseUrl)
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(rootResource())
+  }
+
+  protected def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
     val agency = new AgencyApi(this, arn, port)
     given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
     given().client(clientId = clientId).hasABusinessPartnerRecord()

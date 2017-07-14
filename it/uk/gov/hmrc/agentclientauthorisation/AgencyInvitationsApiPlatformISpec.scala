@@ -25,28 +25,11 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec
-
 class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
 
-trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
-
-  private implicit val arn = Arn("ABCDEF12345678")
-  private val otherAgencyArn: Arn = Arn("98765")
-  private val otherAgencyCode: AgentCode = AgentCode("123456") 
-  private implicit val agentCode = AgentCode("LMNOP123456")
-
-  private val MtdItService = "HMRC-MTD-IT"
-  private val nino = nextNino
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
-
-  "GET root resource" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
-    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
-  }
-  
+class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "GET /agencies" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(agenciesResource)
     behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agenciesUrl)
@@ -178,8 +161,25 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       response.status shouldBe 204
     }
   }
+}
 
-   def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
+trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
+
+  protected implicit val arn = Arn("ABCDEF12345678")
+  protected val otherAgencyArn: Arn = Arn("98765")
+  protected val otherAgencyCode: AgentCode = AgentCode("123456")
+  protected implicit val agentCode = AgentCode("LMNOP123456")
+
+  protected val MtdItService = "HMRC-MTD-IT"
+  protected val nino = nextNino
+  protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
+
+  "GET root resource" should {
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
+    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
+  }
+
+  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
     "return a meaningful response for the authenticated agent" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
 

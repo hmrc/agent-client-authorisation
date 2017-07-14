@@ -22,13 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class NoInvitationsApiPlatformISpec extends NoInvitationsISpec
-
-class NoInvitationsFrontendISpec extends NoInvitationsISpec {
-  override val apiPlatform: Boolean = false
-}
-
-trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
+class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")

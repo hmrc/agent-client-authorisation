@@ -21,13 +21,7 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyInvitesClientApiPlatformISpec extends AgencyInvitesClientISpec
-
-class AgencyInvitesClientFrontendISpec extends AgencyInvitesClientISpec {
-  override val apiPlatform: Boolean = false
-}
-
-trait AgencyInvitesClientISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
