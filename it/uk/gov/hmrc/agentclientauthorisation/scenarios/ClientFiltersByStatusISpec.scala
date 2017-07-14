@@ -23,6 +23,10 @@ import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class ClientFiltersByStatusApiPlatformISpec extends ClientFiltersByStatusISpec
 
+class ClientFiltersByStatusFrontendISpec extends ClientFiltersByStatusISpec {
+  override val apiPlatform: Boolean = false
+}
+
 trait ClientFiltersByStatusISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()

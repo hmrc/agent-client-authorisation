@@ -24,6 +24,10 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 class NoInvitationsApiPlatformISpec extends NoInvitationsISpec
 
+class NoInvitationsFrontendISpec extends NoInvitationsISpec {
+  override val apiPlatform: Boolean = false
+}
+
 trait NoInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
   private implicit val arn = RandomArn()
