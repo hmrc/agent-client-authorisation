@@ -25,7 +25,7 @@ import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.model.{AuthEnrolment, Enrolments}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -39,25 +39,28 @@ case class Authority(
 class AuthConnector @Inject()(@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet, metrics: Metrics) extends HttpAPIMonitor {
   override val kenshooRegistry = metrics.defaultRegistry
 
-  def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] =
-    httpGetAs[JsValue]("/auth/authority").map( responseJson =>
+  def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] = {
+    val authorityUrl = new URL(baseUrl, "/auth/authority")
+
+    httpGet.GET[JsValue](authorityUrl.toString).map(responseJson =>
       Authority(
-        nino =  (responseJson \ "nino").asOpt[Nino],
-        findArn = () => enrolments(responseJson).map(_.arnOption)
+        nino = (responseJson \ "nino").asOpt[Nino],
+        findArn = () => enrolments(authorityUrl, responseJson).map(_.arnOption)
       )
     )
+  }
 
   def currentArn()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] =
     currentAuthority.flatMap(_.findArn())
 
-  private def enrolments(authorityJson: JsValue)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
-    httpGetAs[Set[AuthEnrolment]](enrolmentsRelativeUrl(authorityJson)).map(Enrolments(_))
+  private def enrolments(authorityUrl: URL, authorityJson: JsValue)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] = {
+    httpGet.GET[Set[AuthEnrolment]](enrolmentsAbsoluteUrl(authorityUrl, authorityJson).toString)
+      .map(Enrolments(_))
+  }
+
+  private[connectors] def enrolmentsAbsoluteUrl(authorityUrl: URL, authorityJson: JsValue) =
+    new URL(authorityUrl, enrolmentsRelativeUrl(authorityJson))
 
   private def enrolmentsRelativeUrl(authorityJson: JsValue) = (authorityJson \ "enrolments").as[String]
-
-  private def url(relativeUrl: String): URL = new URL(baseUrl, relativeUrl)
-
-  private def httpGetAs[T](relativeUrl: String)(implicit rds: HttpReads[T], hc: HeaderCarrier, ec: ExecutionContext): Future[T] =
-    httpGet.GET[T](url(relativeUrl).toString)(rds, hc)
 
 }
