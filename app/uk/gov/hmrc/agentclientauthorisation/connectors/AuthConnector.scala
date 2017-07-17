@@ -31,9 +31,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 case class Authority(
-      nino: Option[Nino],
-      findArn: () => Future[Option[Arn]] = () => Future successful None
-    )
+  nino: Option[Nino],
+  findArn: () => Future[Option[Arn]]
+)
 
 @Singleton
 class AuthConnector @Inject()(@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet, metrics: Metrics) extends HttpAPIMonitor {

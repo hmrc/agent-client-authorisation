@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.mockito.Matchers.{any, eq => eqs}
 import org.mockito.Mockito._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Authority, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, Authority}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.Upstream4xxResponse
@@ -38,23 +38,23 @@ trait AuthMocking {
   }
 
   def givenAgentWithoutRecordIsLoggedIn() = {
-    givenAccountsAre(Authority(None))
+    givenAccountsAre(Authority(None, () => ???))
     givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedIn() = {
-    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino), () => ???))
     givenUserHasNoAgency()
     val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {
-    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino), () => ???))
     givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedInWithNoSAAccount() = {
-    givenAccountsAre(Authority(None))
+    givenAccountsAre(Authority(None, () => ???))
     givenUserHasNoAgency()
   }
 

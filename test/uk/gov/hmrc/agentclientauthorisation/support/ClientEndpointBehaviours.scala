@@ -145,7 +145,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)))
+  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)), () => ???)
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 
