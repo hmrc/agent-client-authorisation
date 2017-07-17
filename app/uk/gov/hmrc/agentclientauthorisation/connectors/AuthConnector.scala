@@ -25,7 +25,7 @@ import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.model.{AuthEnrolment, Enrolments}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -39,13 +39,15 @@ case class Authority(
 class AuthConnector @Inject()(@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet, metrics: Metrics) extends HttpAPIMonitor {
   override val kenshooRegistry = metrics.defaultRegistry
 
-  def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] =
-    httpGetAs[JsValue]("/auth/authority").map(authorityFromJson)
+  def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] = {
+    val authorityUrl = new URL(baseUrl, "/auth/authority")
+    httpGet.GET[JsValue](authorityUrl.toString).map(authorityFromJson(authorityUrl, _))
+  }
 
-  private[connectors] def authorityFromJson(responseJson: JsValue): Authority =
+  private[connectors] def authorityFromJson(authorityUrl: URL, authorityJson: JsValue): Authority =
     Authority(
-      nino = (responseJson \ "nino").asOpt[Nino],
-      enrolmentsUrl = url(enrolmentsRelativeUrl(responseJson))
+      nino = (authorityJson \ "nino").asOpt[Nino],
+      enrolmentsUrl = new URL(authorityUrl, enrolmentsRelativeUrl(authorityJson))
     )
 
   def currentArn()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
@@ -60,10 +62,5 @@ class AuthConnector @Inject()(@Named("auth-baseUrl") baseUrl: URL, httpGet: Http
     httpGet.GET[Set[AuthEnrolment]](enrolmentsUrl.toString).map(Enrolments(_))
 
   private def enrolmentsRelativeUrl(authorityJson: JsValue) = (authorityJson \ "enrolments").as[String]
-
-  private def url(relativeUrl: String): URL = new URL(baseUrl, relativeUrl)
-
-  private def httpGetAs[T](relativeUrl: String)(implicit rds: HttpReads[T], hc: HeaderCarrier, ec: ExecutionContext): Future[T] =
-    httpGet.GET[T](url(relativeUrl).toString)(rds, hc)
 
 }
