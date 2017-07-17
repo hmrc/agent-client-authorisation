@@ -67,7 +67,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
   "getInvitations" should {
 
     "return 200 and an empty list when there are no invitations for the client" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), () => ???))
 
       when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful Nil)
 
@@ -78,7 +78,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), () => ???))
 
       when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
