@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import java.net.URL
+
 import org.mockito.Matchers.{any, eq => eqs}
 import org.mockito.Mockito._
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Authority, AuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, Authority}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.Upstream4xxResponse
@@ -26,6 +28,7 @@ import uk.gov.hmrc.play.http.Upstream4xxResponse
 import scala.concurrent.Future
 
 trait AuthMocking {
+  private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
 
   def authConnector: AuthConnector
   def generator: Generator
@@ -38,23 +41,23 @@ trait AuthMocking {
   }
 
   def givenAgentWithoutRecordIsLoggedIn() = {
-    givenAccountsAre(Authority(None))
+    givenAccountsAre(Authority(None, enrolmentsUrl = enrolmentsNotNeededForThisTest))
     givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedIn() = {
-    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
     givenUserHasNoAgency()
     val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {
-    givenAccountsAre(Authority(Some(generator.nextNino)))
+    givenAccountsAre(Authority(Some(generator.nextNino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
     givenUserHasNoAgency()
   }
 
   def givenClientIsLoggedInWithNoSAAccount() = {
-    givenAccountsAre(Authority(None))
+    givenAccountsAre(Authority(None, enrolmentsUrl = enrolmentsNotNeededForThisTest))
     givenUserHasNoAgency()
   }
 

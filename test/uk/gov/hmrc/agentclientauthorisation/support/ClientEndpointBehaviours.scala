@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import java.net.URL
+
 import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -41,6 +43,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ClientEndpointBehaviours extends TransitionInvitation {
   this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
+
+  private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
 
   val invitationsService = mock[InvitationsService]
   val authConnector = mock[AuthConnector]
@@ -145,7 +149,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)))
+  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)), enrolmentsNotNeededForThisTest)
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
 

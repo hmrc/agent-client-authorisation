@@ -31,27 +31,33 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 case class Authority(
-      nino: Option[Nino],
-      findArn: () => Future[Option[Arn]] = () => Future successful None
-    )
+  nino: Option[Nino],
+  enrolmentsUrl: URL
+)
 
 @Singleton
 class AuthConnector @Inject()(@Named("auth-baseUrl") baseUrl: URL, httpGet: HttpGet, metrics: Metrics) extends HttpAPIMonitor {
   override val kenshooRegistry = metrics.defaultRegistry
 
   def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] =
-    httpGetAs[JsValue]("/auth/authority").map( responseJson =>
-      Authority(
-        nino =  (responseJson \ "nino").asOpt[Nino],
-        findArn = () => enrolments(responseJson).map(_.arnOption)
-      )
+    httpGetAs[JsValue]("/auth/authority").map(authorityFromJson)
+
+  private[connectors] def authorityFromJson(responseJson: JsValue): Authority =
+    Authority(
+      nino = (responseJson \ "nino").asOpt[Nino],
+      enrolmentsUrl = url(enrolmentsRelativeUrl(responseJson))
     )
 
-  def currentArn()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] =
-    currentAuthority.flatMap(_.findArn())
+  def currentArn()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
+    currentAuthority.flatMap(arn)
+  }
 
-  private def enrolments(authorityJson: JsValue)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
-    httpGetAs[Set[AuthEnrolment]](enrolmentsRelativeUrl(authorityJson)).map(Enrolments(_))
+  def arn(authority: Authority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
+    enrolments(authority.enrolmentsUrl).map(_.arnOption)
+  }
+
+  private def enrolments(enrolmentsUrl: URL)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
+    httpGet.GET[Set[AuthEnrolment]](enrolmentsUrl.toString).map(Enrolments(_))
 
   private def enrolmentsRelativeUrl(authorityJson: JsValue) = (authorityJson \ "enrolments").as[String]
 
