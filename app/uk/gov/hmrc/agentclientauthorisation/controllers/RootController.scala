@@ -39,7 +39,7 @@ class RootController @Inject() (override val authConnector: AuthConnector)
   def getRootResource() = withAuthority.async { implicit request =>
     request.authority.nino match {
       case Some(nino)  => Future successful Ok(toHalResource(nino))
-      case _ => request.authority.findArn().map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentNotSubscribed))
+      case _ => authConnector.arn(request.authority).map(_.map(arn => Ok(toHalResource(arn))).getOrElse(AgentNotSubscribed))
     }
   }
 

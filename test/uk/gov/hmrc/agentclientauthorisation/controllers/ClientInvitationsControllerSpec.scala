@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import java.net.URL
+
 import org.joda.time.DateTime
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -33,6 +35,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import scala.concurrent.Future
 
 class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
+  private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
 
   val controller = new ClientInvitationsController(invitationsService, authConnector)
 
@@ -67,7 +70,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
   "getInvitations" should {
 
     "return 200 and an empty list when there are no invitations for the client" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
 
       when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful Nil)
 
@@ -78,7 +81,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId))))
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
 
       when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
