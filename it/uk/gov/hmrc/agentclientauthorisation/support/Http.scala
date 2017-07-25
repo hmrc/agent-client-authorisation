@@ -23,6 +23,7 @@ import play.api.mvc.Results
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -38,6 +39,7 @@ object Http {
   }
 
   def postEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+    import play.api.http.Writeable._
     request.post(Results.EmptyContent())
   }
 
