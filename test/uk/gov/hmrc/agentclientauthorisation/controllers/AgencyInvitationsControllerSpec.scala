@@ -34,7 +34,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthM
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach with TransitionInvitation {
 
@@ -61,19 +61,19 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None), eqs(None))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations.filter(_.service == "HMRC-MTD-IT")
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
   }
@@ -150,8 +150,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val invitation = anInvitation()
       val cancelledInvitation = transitionInvitation(invitation, Cancelled)
 
-      whenAnInvitationIsCancelled thenReturn (Future successful Right(cancelledInvitation))
-      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
+      whenFindingAnInvitation()(any()) thenReturn (Future successful Some(invitation))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
@@ -159,15 +159,15 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not cancel an already cancelled invitation" in {
-      whenAnInvitationIsCancelled thenReturn (Future successful Left("message"))
-      whenFindingAnInvitation thenReturn aFutureOptionInvitation()
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left("message"))
+      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
       response shouldBe invalidInvitationStatus("message")
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY if the invitation belongs to a different agency" in {
-      whenFindingAnInvitation thenReturn aFutureOptionInvitation()
+      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
@@ -175,14 +175,14 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY when the ARN in the invitation is not the same as the ARN in the URL" in {
-      whenFindingAnInvitation thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
+      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
       response shouldBe NoPermissionOnAgency
     }
 
     "return 404 if the invitation doesn't exist" in {
-      whenFindingAnInvitation thenReturn (Future successful None)
+      whenFindingAnInvitation()(any()) thenReturn (Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
       response shouldBe InvitationNotFound
@@ -216,7 +216,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))
 
-  private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[String]))
+  private def whenFindingAnInvitation()(implicit ec: ExecutionContext) = when(invitationsService.findInvitation(any[String]))
 
-  private def whenAnInvitationIsCancelled = when(invitationsService.cancelInvitation(any[Invitation]))
+  private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) = when(invitationsService.cancelInvitation(any[Invitation]))
 }

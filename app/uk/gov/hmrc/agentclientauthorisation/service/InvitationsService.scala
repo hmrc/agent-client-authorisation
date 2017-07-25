@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject._
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
@@ -28,17 +27,17 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
                          relationshipsConnector: RelationshipsConnector) {
 
-  def create(arn: Arn, service: String, clientId: String, postcode: String) =
+  def create(arn: Arn, service: String, clientId: String, postcode: String)(implicit ec: ExecutionContext) =
     invitationsRepository.create(arn, service, clientId, postcode)
 
 
-  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Either[String, Invitation]] = {
+  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
       relationshipsConnector.createRelationship(invitation.arn, Nino(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
@@ -47,29 +46,29 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
     }
   }
 
-  def cancelInvitation(invitation: Invitation): Future[Either[String, Invitation]] =
+  def cancelInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
 
-  def rejectInvitation(invitation: Invitation): Future[Either[String, Invitation]] =
+  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] =
     changeInvitationStatus(invitation, model.Rejected)
 
-  def findInvitation(invitationId: String): Future[Option[Invitation]] =
+  def findInvitation(invitationId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
     BSONObjectID.parse(invitationId)
       .map(bsonInvitationId => invitationsRepository.findById(bsonInvitationId))
       .recover { case _: IllegalArgumentException => Future successful None }
       .get
 
 
-  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] =
+  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse("ni") == "ni")
       invitationsRepository.list(arn, service, clientId, status)
     else
       Future successful List.empty
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus): Future[Either[String, Invitation]] = {
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
     invitation.status match {
       case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)

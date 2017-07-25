@@ -34,6 +34,7 @@ import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
@@ -97,7 +98,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         await(service.acceptInvitation(testInvitation))
       }
 
-      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus])
+      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus])(any())
     }
   }
 
@@ -183,7 +184,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   )
 
   private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] = {
-    when(invitationsRepository.update(any[BSONObjectID], eqs(status)))
+    when(invitationsRepository.update(any[BSONObjectID], eqs(status))(any()))
   }
 
   private def whenRelationshipIsCreated: OngoingStubbing[Future[Unit]] = {

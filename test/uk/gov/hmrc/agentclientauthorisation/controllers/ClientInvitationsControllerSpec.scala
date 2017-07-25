@@ -20,6 +20,7 @@ import java.net.URL
 
 import org.joda.time.DateTime
 import org.mockito.Mockito._
+import org.mockito.Matchers.{eq => eqs, _}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.JsArray
@@ -72,7 +73,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     "return 200 and an empty list when there are no invitations for the client" in {
       whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
 
-      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful Nil)
+      whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
       status(result) shouldBe 200
@@ -83,7 +84,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
       whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
 
-      when(invitationsService.clientsReceived("HMRC-MTD-IT", clientId, None)).thenReturn(Future successful List(
+      whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
           StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
