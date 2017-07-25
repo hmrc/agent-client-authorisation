@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 import javax.inject._
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino

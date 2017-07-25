@@ -18,15 +18,15 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector}
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ClientInvitationsController @Inject() (invitationsService: InvitationsService,
@@ -52,7 +52,7 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
     actionInvitation(request.nino.value, invitationId, invitationsService.rejectInvitation)
   }
 
-  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]]) = {
+  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]])(implicit ec: ExecutionContext) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
         case Right(_) => NoContent

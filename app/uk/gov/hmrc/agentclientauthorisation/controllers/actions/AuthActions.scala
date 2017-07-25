@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthConnector, Authority}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, Postcod
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AgencyInvitationsController @Inject()(override val postcodeService:PostcodeService,
@@ -43,7 +43,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
     }
   }
 
-  private def makeInvitation(arn: Arn, authRequest: AgentInvitation): Future[Result] = {
+  private def makeInvitation(arn: Arn, authRequest: AgentInvitation)(implicit ec: ExecutionContext): Future[Result] = {
     invitationsService.create(arn, authRequest.service, authRequest.clientId, authRequest.clientPostcode)
       .map(invitation => Created.withHeaders(location(invitation)))
   }

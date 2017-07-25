@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import play.api.hal.{Hal, HalLink, HalResource}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._

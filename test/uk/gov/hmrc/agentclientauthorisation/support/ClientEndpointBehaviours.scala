@@ -37,7 +37,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
+//import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -123,7 +123,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
 
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
-    when(invitationsService.findInvitation(invitationId))
+    when(invitationsService.findInvitation(eqs(invitationId))(any()))
   }
 
   def userIsLoggedIn = {
@@ -142,7 +142,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation())
 
-  def anUpdatedInvitation(): Future[Invitation] =
+  def anUpdatedInvitation()(implicit ec: ExecutionContext): Future[Invitation] =
     aFutureOptionInvitation() map (_.get)
 
   def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
@@ -151,7 +151,9 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)), enrolmentsNotNeededForThisTest)
 
-  def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier]))
+  def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
-  def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation]))
+  def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any()))
+
+  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(clientId), eqs(None))(any()))
 }

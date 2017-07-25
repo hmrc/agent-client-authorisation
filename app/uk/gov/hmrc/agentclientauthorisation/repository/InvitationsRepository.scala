@@ -27,11 +27,10 @@ import reactivemongo.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository, Repository}
+import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
 import scala.collection.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsRepository @Inject() (mongo: DB)
@@ -44,7 +43,7 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: String, clientId: String, postcode: String): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, service: String, clientId: String, postcode: String)(implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
@@ -69,7 +68,7 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     find(searchOptions: _*)
   }*/
 
-  def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.value),
                             "clientId" -> clientId,
                             "service" -> service,
@@ -81,7 +80,7 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     find(searchOptions: _*)
   }
 
-  def list(service: String, clientId: String, status: Option[InvitationStatus]): Future[List[Invitation]] = {
+  def list(service: String, clientId: String, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "service" -> Some(service),
       "clientId" -> Some(clientId),
@@ -97,11 +96,11 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'")
   }
 
-  def findRegimeID(clientId: String): Future[List[Invitation]] =
+  def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
     find()
 
 
-  def update(id: BSONObjectID, status: InvitationStatus): Future[Invitation] = withCurrentTime { now =>
+  def update(id: BSONObjectID, status: InvitationStatus)(implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
     update.map(_.map(_.updateType.savedValue).get)
   }
