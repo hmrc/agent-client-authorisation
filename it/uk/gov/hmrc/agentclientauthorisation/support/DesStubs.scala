@@ -42,6 +42,24 @@ trait DesStubs[A] {
     this
   }
 
+  def hasABusinessPartnerRecordWithMtdItId(postcode: String = "AA11AA", countryCode: String = "GB", mtdItId: String = "0123456789"): A = {
+    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      .withHeader("authorization", equalTo("Bearer secret"))
+      .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+            .withBody(s"""
+                         |{
+                         |  "businessAddressDetails": {
+                         |    "postalCode": "$postcode",
+                         |    "countryCode": "$countryCode"
+                         |  },
+                         |  "mtdbsa": "$mtdItId"
+                         |}
+                         |              """.stripMargin)))
+    this
+  }
+
   def hasNoBusinessPartnerRecord: A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
     .withHeader("authorization", equalTo("Bearer secret"))

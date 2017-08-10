@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,6 +34,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
 
       response.businessAddressDetails.countryCode shouldBe "GB"
       response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.mtdbsa shouldBe None
     }
 
     "return None if the client is not registered" in {
@@ -43,6 +45,20 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
       val response = await(connector.getBusinessDetails(client.clientId))
 
       response shouldBe None
+    }
+  }
+
+  "getMtdItId" should {
+    "return mtdItId for a registered client" in {
+      val client = given()
+        .client()
+        .hasABusinessPartnerRecordWithMtdItId()
+
+      val response = await(connector.getBusinessDetails(client.clientId)).get
+
+      response.businessAddressDetails.countryCode shouldBe "GB"
+      response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.mtdbsa shouldBe Some(MtdItId("0123456789"))
     }
   }
 
