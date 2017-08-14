@@ -23,7 +23,7 @@ import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
@@ -65,7 +65,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         BSONObjectID.generate,
         arn,
         SUPPORTED_SERVICE,
-        "clientId",
+        MtdItId("clientId"),
         "A11 1AA",
         List(StatusChangeEvent(now(), Pending))
       )

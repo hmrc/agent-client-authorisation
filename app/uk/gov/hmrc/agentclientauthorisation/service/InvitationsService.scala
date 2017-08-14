@@ -19,11 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject._
 
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -31,15 +31,27 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
-                         relationshipsConnector: RelationshipsConnector) {
+                                    relationshipsConnector: RelationshipsConnector,
+                                    desConnector: DesConnector ) {
+  def translateToMtdItId(clientId: String, clientIdType: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) : Future[Option[MtdItId]] = {
+    clientIdType match {
+      case "MTDITID" => Future successful Some(MtdItId(clientId))
+      case "ni" => {
+        desConnector.getBusinessDetails(Nino(clientId)).flatMap {
+          case Some(record) => Future successful record.mtdbsa
+        }
+      }
+      case _ => Future successful None
+    }
+  }
 
-  def create(arn: Arn, service: String, clientId: String, postcode: String)(implicit ec: ExecutionContext) =
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String)(implicit ec: ExecutionContext) =
     invitationsRepository.create(arn, service, clientId, postcode)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, Nino(invitation.clientId))
+      relationshipsConnector.createRelationship(invitation.arn, invitation.clientId)
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
       Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
@@ -59,7 +71,7 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       .get
 
 
-  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+  def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
   def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =

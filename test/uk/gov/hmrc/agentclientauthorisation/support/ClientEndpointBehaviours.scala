@@ -32,12 +32,11 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsControl
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
-//import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -136,7 +135,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def noInvitation = Future successful None
 
-  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA",
+  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", MtdItId(clientId), "A11 1AA",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
@@ -155,5 +154,5 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
-  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(clientId), eqs(None))(any()))
+  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(MtdItId(clientId)), eqs(None))(any()))
 }

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.net.URL
-
 import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -31,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,9 +54,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     givenAgentIsLoggedIn(arn)
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending)))
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
@@ -211,7 +209,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

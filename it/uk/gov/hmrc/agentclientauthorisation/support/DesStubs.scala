@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.domain.Nino
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.Nino
 
 trait DesStubs[A] {
   me: A with WiremockAware =>
@@ -42,21 +43,21 @@ trait DesStubs[A] {
     this
   }
 
-  def hasABusinessPartnerRecordWithMtdItId(postcode: String = "AA11AA", countryCode: String = "GB", mtdItId: String = "0123456789"): A = {
+  def hasABusinessPartnerRecordWithMtdItId(mtdItId: MtdItId = MtdItId("0123456789")): A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
           .withStatus(200)
             .withBody(s"""
-                         |{
-                         |  "businessAddressDetails": {
-                         |    "postalCode": "$postcode",
-                         |    "countryCode": "$countryCode"
-                         |  },
-                         |  "mtdbsa": "$mtdItId"
-                         |}
-                         |              """.stripMargin)))
+               |{
+               |  "businessAddressDetails": {
+               |    "postalCode": "AA11AA",
+               |    "countryCode": "GB"
+               |  },
+               |  "mtdbsa": "${mtdItId.value}"
+               |}
+               |""".stripMargin)))
     this
   }
 

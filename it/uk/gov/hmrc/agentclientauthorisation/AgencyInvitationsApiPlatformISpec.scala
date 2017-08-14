@@ -20,14 +20,14 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
-  override val apiPlatform: Boolean = false
-}
+//class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
+//  override val apiPlatform: Boolean = false
+//}
 
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "GET /agencies" should {
@@ -75,6 +75,8 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     s"Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+
       val location = agencySendInvitation(arn, validInvitation).header("location")
 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andIsSubscribedToAgentServices()
@@ -130,13 +132,14 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+
       agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       val response = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "A A1 1A A"))
       withClue(response.body) {
@@ -174,10 +177,10 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   protected val nino = nextNino
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
 
-  "GET root resource" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
-    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
-  }
+//  "GET root resource" should {
+//    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
+//    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
+//  }
 
   def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
     "return a meaningful response for the authenticated agent" in {

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
-import org.scalatest.Inside
+import org.scalatest.{Ignore, Inside}
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -28,6 +28,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
+@Ignore
 class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private implicit val arn = Arn("ABCDEF12345678")

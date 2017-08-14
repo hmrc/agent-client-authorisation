@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_CLIENT_ID_TYPE
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.controllers.RestFormats
 
@@ -74,7 +74,7 @@ case class Invitation(
                        id: BSONObjectID,
                        arn: Arn,
                        service: String,
-                       clientId: String,
+                       clientId: MtdItId,
                        postcode: String,
                        events: List[StatusChangeEvent]) {
 

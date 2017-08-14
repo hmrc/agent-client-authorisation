@@ -32,9 +32,9 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   override val sandboxMode = true
 
-  "GET /sandbox" should {
-    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
-  }
+//  "GET /sandbox" should {
+//    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
+//  }
 
   "GET /sandbox/agencies" should {
     behave like anEndpointWithAgencySentInvitationsLink(agenciesUrl)

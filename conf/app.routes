@@ -1,5 +1,5 @@
 # Agent routes
-GET      /                                                      @uk.gov.hmrc.agentclientauthorisation.controllers.RootController.getRootResource()
+#GET      /                                                      @uk.gov.hmrc.agentclientauthorisation.controllers.RootController.getRootResource()
 GET      /agencies                                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAuthenticatedAgency()
 GET      /agencies/:arn                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAgency(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 GET      /agencies/:arn/invitations                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAgencyInvitations(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
@@ -10,13 +10,13 @@ PUT      /agencies/:arn/invitations/sent/:invitationId/cancel   @uk.gov.hmrc.age
 
 # Client routes
 
-GET      /clients                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForAuthenticatedClient()
-GET      /clients/ni/:clientId                                            @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForClient(clientId: String)
-GET      /clients/ni/:clientId/invitations                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForClient(clientId: String)
-PUT      /clients/ni/:clientId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientId: String, invitationId: String)
-PUT      /clients/ni/:clientId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientId: String, invitationId: String)
-GET      /clients/ni/:clientId/invitations/received                       @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientId: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
-GET      /clients/ni/:clientId/invitations/received/:invitationId         @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientId: String, invitationId: String)
+#GET      /clients                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForAuthenticatedClient()
+#GET      /clients/ni/:clientId                                            @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForClient(clientId: String)
+#GET      /clients/ni/:clientId/invitations                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getDetailsForClient(clientId: String)
+#PUT      /clients/ni/:clientId/invitations/received/:invitationId/accept  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientId: String, invitationId: String)
+#PUT      /clients/ni/:clientId/invitations/received/:invitationId/reject  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientId: String, invitationId: String)
+#GET      /clients/ni/:clientId/invitations/received                       @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientId: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
+#GET      /clients/ni/:clientId/invitations/received/:invitationId         @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientId: String, invitationId: String)
 
 # Whitelist
 GET      /forbidden                                     @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
