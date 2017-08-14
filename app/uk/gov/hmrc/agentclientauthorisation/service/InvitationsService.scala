@@ -45,13 +45,13 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
     }
   }
 
-  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String)(implicit ec: ExecutionContext) =
-    invitationsRepository.create(arn, service, clientId, postcode)
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)(implicit ec: ExecutionContext) =
+    invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, invitation.clientId)
+      relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
       Future successful cannotTransitionBecauseNotPending(invitation, Accepted)

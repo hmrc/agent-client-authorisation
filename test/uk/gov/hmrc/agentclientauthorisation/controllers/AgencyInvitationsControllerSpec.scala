@@ -54,9 +54,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     givenAgentIsLoggedIn(arn)
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending)))
+      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
@@ -209,7 +209,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", MtdItId("clientId"), "postcode", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

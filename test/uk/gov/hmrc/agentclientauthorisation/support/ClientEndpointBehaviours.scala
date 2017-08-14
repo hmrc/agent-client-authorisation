@@ -135,7 +135,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def noInvitation = Future successful None
 
-  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", MtdItId(clientId), "A11 1AA",
+  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA", "nino1", "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =

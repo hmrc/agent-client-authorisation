@@ -31,8 +31,10 @@ class InvitationSpec extends UnitSpec {
         id = BSONObjectID.generate,
         arn = Arn("myAgency"),
         service = "service",
-        clientId = MtdItId("clientId"),
+        clientId = "clientId",
         postcode = "A11 1AA",
+        suppliedClientId = "nino1",
+        suppliedClientIdType = "ni",
         events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
       )
 

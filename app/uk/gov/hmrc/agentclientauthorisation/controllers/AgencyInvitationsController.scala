@@ -46,13 +46,11 @@ class AgencyInvitationsController @Inject()(override val postcodeService:Postcod
 
   private def makeInvitation(arn: Arn, authRequest: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
     invitationsService.translateToMtdItId(authRequest.clientId, authRequest.clientIdType).flatMap {
-      optionalClientId => optionalClientId match {
-          case None => Future successful BadRequest(s"invalid combination of client id ${authRequest.clientId} anf client id type ${authRequest.clientIdType}")
-          case Some(clientId) =>
-            invitationsService.create(
-              arn, authRequest.service, clientId, authRequest.clientPostcode).map(
-                invitation => Created.withHeaders(location(invitation)))
-        }
+      case None => Future successful BadRequest(s"invalid combination of client id ${authRequest.clientId} anf client id type ${authRequest.clientIdType}")
+      case Some(clientId) =>
+        invitationsService.create(
+          arn, authRequest.service, clientId, authRequest.clientPostcode, authRequest.clientId, authRequest.clientIdType).map(
+            invitation => Created.withHeaders(location(invitation)))
     }
   }
 

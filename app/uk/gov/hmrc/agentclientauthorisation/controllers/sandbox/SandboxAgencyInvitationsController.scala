@@ -65,8 +65,10 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         BSONObjectID.generate,
         arn,
         SUPPORTED_SERVICE,
-        MtdItId("clientId"),
+        "clientId",
         "A11 1AA",
+        "nino",
+        "ni",
         List(StatusChangeEvent(now(), Pending))
       )
 

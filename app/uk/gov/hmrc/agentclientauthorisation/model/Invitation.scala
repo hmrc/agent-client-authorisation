@@ -74,8 +74,10 @@ case class Invitation(
                        id: BSONObjectID,
                        arn: Arn,
                        service: String,
-                       clientId: MtdItId,
+                       clientId: String,
                        postcode: String,
+                       suppliedClientId: String,
+                       suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
 
   val clientIdType = SUPPORTED_CLIENT_ID_TYPE
@@ -113,6 +115,8 @@ object Invitation {
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
       "arn" -> invitation.arn.value,
+      "suppliedClientId" -> invitation.suppliedClientId,
+      "suppliedClientIdType" -> invitation.suppliedClientIdType,
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
       "status" -> invitation.status

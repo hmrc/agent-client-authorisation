@@ -217,24 +217,28 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       val nino: String = "nino"
       val postcode: String = "postcode"
 
-      service.create(arn, serviceId, mtdItId, postcode)
-      verify(invitationsRepository, times(1)).create(arn, serviceId, mtdItId, postcode)
+      service.create(arn, serviceId, mtdItId, postcode, nino, "ni")
+      verify(invitationsRepository, times(1)).create(arn, serviceId, mtdItId, postcode, nino, "ni")
     }
   }
 
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdItId,
+    mtdItId.value,
     "A11 1AA",
+    "nino",
+    "ni",
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
   )
 
   private def testInvitation = Invitation(generate,
     arn,
     "mtd-sa",
-    mtdItId,
+    mtdItId.value,
     "A11 1AA",
+    "nino",
+    "ni",
     List(StatusChangeEvent(now(), Pending))
   )
 

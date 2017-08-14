@@ -65,23 +65,23 @@ class ClientInvitationsController @Inject() (invitationsService: InvitationsServ
 //    }
 //  }
 //
-//  def getInvitation(clientId: String, invitationId: String) = onlyForClients.async { implicit request =>
-//    invitationsService.findInvitation(invitationId).map {
-//      case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
-//      case None => InvitationNotFound
-//      case _ => NoPermissionOnClient
-//    }
-//  }
-//
-//  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForClients.async { implicit request =>
-//    if (clientId == request.nino.value) {
-//      val mtdItId = MtdItId(clientId)
-//      invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
-//        results => Ok(toHalResource(results, mtdItId, status)))
-//    } else {
-//      Future successful NoPermissionOnClient
-//    }
-//  }
-//
+  def getInvitation(clientId: String, invitationId: String) = onlyForClients.async { implicit request =>
+    invitationsService.findInvitation(invitationId).map {
+      case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
+      case None => InvitationNotFound
+      case _ => NoPermissionOnClient
+    }
+  }
+
+  def getInvitations(clientId: String, status: Option[InvitationStatus]) = onlyForClients.async { implicit request =>
+    if (clientId == request.nino.value) {
+      val mtdItId = MtdItId(clientId)
+      invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
+        results => Ok(toHalResource(results, mtdItId, status)))
+    } else {
+      Future successful NoPermissionOnClient
+    }
+  }
+
 //  override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

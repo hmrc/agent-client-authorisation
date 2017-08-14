@@ -43,15 +43,17 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, m
     Index(Seq("clientId" -> IndexType.Ascending)),
     Index(Seq("service" -> IndexType.Ascending))
   )
-
-  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String)(implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+            (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
       arn = arn,
       service = service,
-      clientId = clientId,
+      clientId = clientId.value,
       postcode = postcode,
+      suppliedClientId = suppliedClientId,
+      suppliedClientIdType = suppliedClientIdType,
       events = List(StatusChangeEvent(now, Pending))
     )
 
