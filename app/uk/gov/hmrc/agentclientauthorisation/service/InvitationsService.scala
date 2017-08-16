@@ -30,22 +30,23 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
-                                    relationshipsConnector: RelationshipsConnector,
-                                    desConnector: DesConnector ) {
-  def translateToMtdItId(clientId: String, clientIdType: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) : Future[Option[MtdItId]] = {
+class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
+                                   relationshipsConnector: RelationshipsConnector,
+                                   desConnector: DesConnector) {
+  def translateToMtdItId(clientId: String, clientIdType: String)
+                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     clientIdType match {
       case "MTDITID" => Future successful Some(MtdItId(clientId))
-      case "ni" => {
+      case "ni" =>
         desConnector.getBusinessDetails(Nino(clientId)).flatMap {
           case Some(record) => Future successful record.mtdbsa
         }
-      }
       case _ => Future successful None
     }
   }
 
-  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)(implicit ec: ExecutionContext) =
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+            (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
 
@@ -71,16 +72,18 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
       .get
 
 
-  def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+  def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
+                     (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =
+  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
+                (implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse("ni") == "ni")
       invitationsRepository.list(arn, service, clientId, status)
-    else
-      Future successful List.empty
+    else Future successful List.empty
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)
+                                    (implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
     invitation.status match {
       case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)

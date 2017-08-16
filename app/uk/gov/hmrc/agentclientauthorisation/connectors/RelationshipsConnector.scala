@@ -29,12 +29,9 @@ import scala.concurrent.Future
 @Singleton
 class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL, httpPut: HttpPut) {
 
-  def createRelationship(arn: Arn, mtdItId: MtdItId)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def createRelationship(arn: Arn, mtdItId: MtdItId)(implicit hc: HeaderCarrier): Future[Unit] =
     httpPut.PUT[String, HttpResponse](relationshipUrl(arn, mtdItId).toString, "") map (_ => Unit)
 
-  }
-
-  def relationshipUrl(arn: Arn, mtdItId: MtdItId) = {
-    new URL(baseUrl, s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(mtdItId.value)}/${encodePathSegment(arn.value)}")
-  }
+  def relationshipUrl(arn: Arn, mtdItId: MtdItId): URL = new URL(baseUrl,
+    s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(mtdItId.value)}/${encodePathSegment(arn.value)}")
 }
