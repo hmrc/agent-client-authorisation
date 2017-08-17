@@ -22,7 +22,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -31,6 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
+                                   clientIdMappingRepository: ClientIdMappingRepository,
                                    relationshipsConnector: RelationshipsConnector,
                                    desConnector: DesConnector) {
   def translateToMtdItId(clientId: String, clientIdType: String)
@@ -38,9 +39,18 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     clientIdType match {
       case "MTDITID" => Future successful Some(MtdItId(clientId))
       case "ni" =>
-        desConnector.getBusinessDetails(Nino(clientId)).flatMap {
-          case Some(record) => Future successful record.mtdbsa
+        // convert to for yield
+
+        clientIdMappingRepository.find(clientId, clientIdType).map{
+          case x :: rest => Some(MtdItId(x.canonicalClientId))
+          case Nil => desConnector.getBusinessDetails(Nino(clientId)).flatMap{
+            case Some(record) =>  Future successful None  //record.mtdbsa
+//            case None =>  None
+          }
+
         }
+
+
       case _ => Future successful None
     }
   }

@@ -59,21 +59,21 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   "acceptInvitation" should {
-//    "create a relationship" when {
-//      "invitation status update succeeds" in {
-//        whenRelationshipIsCreated thenReturn(Future successful {})
-//        val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
-//        whenStatusIsChangedTo(Accepted) thenReturn(Future successful acceptedTestInvitation)
-//
-//        val response = await(service.acceptInvitation(testInvitation))
-//
-//        response shouldBe Right(acceptedTestInvitation)
-//      }
-//
-//      "invitation status update fails" in {
-//        pending
-//      }
-//    }
+    "create a relationship" when {
+      "invitation status update succeeds" in {
+        whenRelationshipIsCreated thenReturn(Future successful {})
+        val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
+        whenStatusIsChangedTo(Accepted) thenReturn(Future successful acceptedTestInvitation)
+
+        val response = await(service.acceptInvitation(testInvitation))
+
+        response shouldBe Right(acceptedTestInvitation)
+      }
+
+      "invitation status update fails" in {
+        pending
+      }
+    }
 
     "should not create a relationship" when {
       "invitation has already been accepted" in {
@@ -106,14 +106,14 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
 
   "rejectInvitation" should {
-//    "update the invitation status" in {
-//      val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
-//      whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
-//
-//      val response = await(service.rejectInvitation(testInvitation))
-//
-//      response shouldBe Right(rejectedTestInvitation)
-//    }
+    "update the invitation status" in {
+      val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
+      whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
+
+      val response = await(service.rejectInvitation(testInvitation))
+
+      response shouldBe Right(rejectedTestInvitation)
+    }
 
     "not reject a cancelled invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
@@ -135,14 +135,14 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   "cancelInvitation" should {
-//    "update the invitation status" in {
-//      val cancelledTestInvitation = transitionInvitation(testInvitation, Cancelled)
-//      whenStatusIsChangedTo(Cancelled) thenReturn cancelledTestInvitation
-//
-//      val response = await(service.cancelInvitation(testInvitation))
-//
-//      response shouldBe Right(cancelledTestInvitation)
-//    }
+    "update the invitation status" in {
+      val cancelledTestInvitation = transitionInvitation(testInvitation, Cancelled)
+      whenStatusIsChangedTo(Cancelled) thenReturn cancelledTestInvitation
+
+      val response = await(service.cancelInvitation(testInvitation))
+
+      response shouldBe Right(cancelledTestInvitation)
+    }
 
     "not cancel a cancelled invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Cancelled)))

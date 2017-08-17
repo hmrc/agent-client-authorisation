@@ -36,9 +36,13 @@ sealed trait InvitationStatus {
 }
 
 case object Pending extends InvitationStatus
+
 case object Rejected extends InvitationStatus
+
 case object Accepted extends InvitationStatus
+
 case object Cancelled extends InvitationStatus
+
 case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
@@ -70,6 +74,32 @@ object InvitationStatus {
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
+case class ClientIdMapping(id: BSONObjectID,
+                           canonicalClientId: String,
+                           canonicalClientIdType: String,
+                           suppliedClientId: String,
+                           suppliedClientIdType: String)
+
+object ClientIdMapping {
+  implicit val dateWrites = RestFormats.dateTimeWrite
+  implicit val dateReads = RestFormats.dateTimeRead
+  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
+  implicit val jsonWrites = new Writes[Invitation] {
+    def writes(invitation: Invitation) = Json.obj(
+      "canonicalClientId" -> invitation.clientIdType,
+      "canonicalClientIdType" -> invitation.clientId,
+      "suppliedClientId" -> invitation.suppliedClientId,
+      "suppliedClientIdType" -> invitation.suppliedClientIdType,
+      "created" -> invitation.firstEvent().time,
+      "lastUpdated" -> invitation.mostRecentEvent().time
+    )
+
+  }
+
+  val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
+}
+
+
 case class Invitation(
                        id: BSONObjectID,
                        arn: Arn,
@@ -95,10 +125,10 @@ case class Invitation(
 
 /** Information provided by the agent to offer representation to HMRC */
 case class AgentInvitation(
-  service: String,
-  clientIdType: String,
-  clientId: String,
-  clientPostcode: String)
+                            service: String,
+                            clientIdType: String,
+                            clientId: String,
+                            clientPostcode: String)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

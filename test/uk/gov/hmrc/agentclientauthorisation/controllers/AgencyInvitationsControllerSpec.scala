@@ -145,17 +145,17 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   }
 
   "cancelInvitation" should {
-//    "cancel a pending invitation" in {
-//      val invitation = anInvitation()
-//      val cancelledInvitation = transitionInvitation(invitation, Cancelled)
-//
-//      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
-//      whenFindingAnInvitation()(any()) thenReturn (Future successful Some(invitation))
-//
-//      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
-//
-//      status(response) shouldBe 204
-//    }
+    "cancel a pending invitation" in {
+      val invitation = anInvitation()
+      val cancelledInvitation = transitionInvitation(invitation, Cancelled)
+
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
+      whenFindingAnInvitation()(any()) thenReturn (Future successful Some(invitation))
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+
+      status(response) shouldBe 204
+    }
 
     "not cancel an already cancelled invitation" in {
       whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left("message"))
@@ -201,7 +201,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
-//      "agent-client-authorisation",
+     // "agent-client-authorisation",
       "agencies",
       arn.value,
       "invitations",

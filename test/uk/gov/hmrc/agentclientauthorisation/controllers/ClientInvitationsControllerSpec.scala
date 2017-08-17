@@ -41,57 +41,58 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
   val invitationId = BSONObjectID.generate.stringify
   val generator = new Generator()
-  val clientId = generator.nextNino.value
+  val nino = generator.nextNino
   val arn: Arn = Arn("12345")
 
 
-//  "Accepting an invitation" should {
-//    behave like clientStatusChangeEndpoint(
-//      Accepted,
-//      controller.acceptInvitation(clientId, invitationId),
-//      whenInvitationIsAccepted
-//    )
-//
-//    "not change the invitation status if relationship creation fails" in {
-//      pending
-//    }
-//  }
-//
-//
-//  "Rejecting an invitation" should {
-//    behave like clientStatusChangeEndpoint(
-//      Rejected,
-//      controller.rejectInvitation(clientId, invitationId),
-//      whenInvitationIsRejected
-//    )
-//  }
-//
-//
-//  "getInvitations" should {
-//
-//    "return 200 and an empty list when there are no invitations for the client" in {
-//      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
-//
-//      whenClientReceivedInvitation.thenReturn(Future successful Nil)
-//
-//      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
-//      status(result) shouldBe 200
-//
-//      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
-//    }
-//
-//    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-//      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
-//
-//      whenClientReceivedInvitation.thenReturn(Future successful List(
-//        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", MtdItId("client id"), "postcode", List(
-//          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
-//
-//      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
-//      status(result) shouldBe 200
-//
-//      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
-//      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
-//    }
-//  }
+  "Accepting an invitation" should {
+    behave like clientStatusChangeEndpoint(
+      Accepted,
+      controller.acceptInvitation(nino, invitationId),
+      whenInvitationIsAccepted
+    )
+
+    "not change the invitation status if relationship creation fails" in {
+      pending
+    }
+  }
+
+
+  "Rejecting an invitation" should {
+    behave like clientStatusChangeEndpoint(
+      Rejected,
+      controller.rejectInvitation(nino, invitationId),
+      whenInvitationIsRejected
+    )
+  }
+
+
+  "getInvitations" should {
+
+    "return 200 and an empty list when there are no invitations for the client" in {
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(nino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
+
+      whenClientReceivedInvitation.thenReturn(Future successful Nil)
+
+      val result: Result = await(controller.getInvitations(nino, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
+    }
+
+    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+      whenAuthIsCalled.thenReturn(Future successful Authority(Some(nino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
+
+      whenClientReceivedInvitation.thenReturn(Future successful List(
+        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode",
+          "supplied client id", "supplied client it type",List(
+          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+
+      val result: Result = await(controller.getInvitations(nino, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
+    }
+  }
 }

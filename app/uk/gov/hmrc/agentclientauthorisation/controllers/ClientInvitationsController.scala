@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,28 +41,29 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 //      Future successful Ok(toHalResource(request.nino.value, request.path))
 //  }
 
-  def getDetailsForClient(clientId: String): Action[AnyContent] = onlyForClients.async {
+  def getDetailsForClient(nino: Nino): Action[AnyContent] = Action.async {
     implicit request =>
       Future successful {
-        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
-        else NoPermissionOnClient
+        Ok(toHalResource(nino, request.path))
+//        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
+//        else NoPermissionOnClient
       }
   }
 
-  def acceptInvitation(clientId: String, invitationId: String): Action[AnyContent] = onlyForClients.async {
+  def acceptInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      actionInvitation(request.nino.value, invitationId, invitationsService.acceptInvitation)
+      actionInvitation(nino, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(clientId: String, invitationId: String): Action[AnyContent] = onlyForClients.async {
+  def rejectInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      actionInvitation(request.nino.value, invitationId, invitationsService.rejectInvitation)
+      actionInvitation(nino, invitationId, invitationsService.rejectInvitation)
   }
 
-  private def actionInvitation(clientId: String, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
+  private def actionInvitation(nino: Nino, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
                               (implicit ec: ExecutionContext) = {
     invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation) if invitation.clientId == clientId => action(invitation) map {
+      case Some(invitation) if invitation.clientId == nino.value => action(invitation) map {
         case Right(_) => NoContent
         case Left(message) => invalidInvitationStatus(message)
       }
@@ -70,22 +72,28 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(clientId: String, invitationId: String): Action[AnyContent] = onlyForClients.async {
+  def getInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == request.nino.value => Ok(toHalResource(x))
+        case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
   }
 
-  def getInvitations(clientId: String, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients.async {
+  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
-      if (clientId == request.nino.value) {
+
+      //TO DO translate nino => MtdItId
+      invitationsService.clientsReceived(SUPPORTED_SERVICE, MtdItId(nino.value), status) map (
+        //Change to return mtditid instead of suppliedClientId
+        results => Ok(toHalResource(results, nino, status)))
+
+      /*if (clientId == request.nino.value) {
         invitationsService.clientsReceived(SUPPORTED_SERVICE, MtdItId(clientId), status) map (
           //Change to return mtditid instead of suppliedClientId
           results => Ok(toHalResource(results, MtdItId(clientId), status)))
-      } else Future successful NoPermissionOnClient
+      } else Future successful NoPermissionOnClient*/
   }
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None

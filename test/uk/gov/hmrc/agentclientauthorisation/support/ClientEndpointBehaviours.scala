@@ -50,7 +50,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def controller: ClientInvitationsController
 
-  def clientId: String
+  def nino: Nino
 
   def invitationId: String
 
@@ -97,7 +97,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     "Return forbidden" when {
       "the invitation is for a different client" in {
         val request = FakeRequest()
-        whenAuthIsCalled thenReturn aClientUser(generator.nextNino.value)
+        whenAuthIsCalled thenReturn aClientUser(generator.nextNino)
         val invitation = anInvitation()
         whenFindingAnInvitation thenReturn (Future successful Some(invitation))
         action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
@@ -135,7 +135,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def noInvitation = Future successful None
 
-  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", clientId, "A11 1AA", "nino1", "ni",
+  def anInvitation() = Invitation(BSONObjectID(invitationId), arn, "mtd-sa", nino.value, "A11 1AA", "nino1", "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
@@ -148,11 +148,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: String = clientId) = Future successful Authority(Some(Nino(nino)), enrolmentsNotNeededForThisTest)
+  def aClientUser(nino: Nino = nino) = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
   def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
-  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(MtdItId(clientId)), eqs(None))(any()))
+  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(MtdItId(nino.value)), eqs(None))(any()))
 }

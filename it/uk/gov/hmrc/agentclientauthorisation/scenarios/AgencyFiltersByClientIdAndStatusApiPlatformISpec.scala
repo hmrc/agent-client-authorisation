@@ -51,9 +51,9 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       And("Sends an invitations to Client 2")
       agency sendInvitation(nino2, MtdItService)
 
-//      And("Client 1 accepts the first invitation")
-//      clientAcceptsFirstInvitation(client)
-//
+      And("Client 1 accepts the first invitation")
+      clientAcceptsFirstInvitation(client)
+
 //      Then("The agent filters by Client 1 and Pending")
 //      agencyFiltersByClient1Pending(client.mtdItId, agency)
 //
