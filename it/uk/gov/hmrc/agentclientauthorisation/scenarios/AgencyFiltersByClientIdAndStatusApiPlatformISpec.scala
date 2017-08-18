@@ -33,12 +33,12 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
 
     scenario("on the client id and status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
-      val client2 = new ClientApi(this, nino2, MtdItId("0023456789"), port)
+      val client = new ClientApi(this, nino, MtdItId("mtdItId1"), port)
+      val client2 = new ClientApi(this, nino2, MtdItId("mtdItId1"), port)
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
       given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
 

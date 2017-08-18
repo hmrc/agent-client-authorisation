@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain._
 
 trait StubUtils {
@@ -36,8 +36,8 @@ trait StubUtils {
       UnknownUser(oid)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f", clientId: Nino = new Generator().nextNino): Client = {
-      Client(oid, clientId)
+    def client(oid: String = "556737e15500005500eaf68f", canonicalClientId: MtdItId = MtdItId("mtdItId1"), clientId: Nino = new Generator().nextNino ): Client = {
+      Client(oid, clientId, canonicalClientId)
     }
   }
 
@@ -59,5 +59,6 @@ trait StubUtils {
   case class UnknownUser(override val oid: String)
     extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
-  case class Client(override val oid: String, override val clientId: Nino) extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
+  case class Client(override val oid: String, override val clientId: Nino, override val canonicalClientId: MtdItId )
+    extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

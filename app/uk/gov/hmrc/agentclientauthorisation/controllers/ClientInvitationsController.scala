@@ -19,14 +19,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,9 +62,11 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   private def actionInvitation(nino: Nino, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
                               (implicit ec: ExecutionContext) = {
     invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation) if invitation.clientId == nino.value => action(invitation) map {
-        case Right(_) => NoContent
-        case Left(message) => invalidInvitationStatus(message)
+      case Some(invitation)
+        if invitation.suppliedClientId == nino.value =>
+          action(invitation) map {
+            case Right(_) => NoContent
+            case Left(message) => invalidInvitationStatus(message)
       }
       case None => Future successful InvitationNotFound
       case _ => Future successful NoPermissionOnClient
@@ -83,17 +84,14 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
-
-      //TO DO translate nino => MtdItId
-      invitationsService.clientsReceived(SUPPORTED_SERVICE, MtdItId(nino.value), status) map (
-        //Change to return mtditid instead of suppliedClientId
-        results => Ok(toHalResource(results, nino, status)))
-
-      /*if (clientId == request.nino.value) {
-        invitationsService.clientsReceived(SUPPORTED_SERVICE, MtdItId(clientId), status) map (
-          //Change to return mtditid instead of suppliedClientId
-          results => Ok(toHalResource(results, MtdItId(clientId), status)))
-      } else Future successful NoPermissionOnClient*/
+      //      if (clientId == request.nino.value) {
+      invitationsService.translateToMtdItId(nino.value,"ni") flatMap {
+        case Some(mtdItId) =>
+          invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
+            results => Ok(toHalResource(results, nino, status)))
+        case None => Future successful InvitationNotFound
+      }
+      //else Future successful NoPermissionOnClient
   }
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None

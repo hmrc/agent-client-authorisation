@@ -183,27 +183,42 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       shouldBeNone.isEmpty shouldBe true
     }
 
-    "return an mtdItId if a nino is supplied for which there is a matching DES business partner record with an mtdItId" in {
+    "return an mtdItId if a nino is supplied for which there is a persisted match" in {
       val nino = "WX772755B"
 
+      when(clientIdMappingRepository.find(nino, "ni")).thenReturn(
+        Future successful List(ClientIdMapping(BSONObjectID.generate,mtdItId,clientIdTypeMtdItId,nino, "ni")))
+
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
+      shouldBeMtdItId.head.value shouldBe mtdItId
+      verifyZeroInteractions(desConnector)
+    }
+
+    "return an mtdItId if a nino is supplied for which there is no persisted match and there is a matching DES business partner record with an mtdItId" in {
+      val nino = "WX772755B"
+
+      when(clientIdMappingRepository.find(nino, "ni")).thenReturn(Future successful Nil)
       whenDesBusinessPartnerRecordExistsFor(Nino(nino), mtdItId)
 
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
       shouldBeMtdItId.head.value shouldBe mtdItId
+      verify(clientIdMappingRepository).create(mtdItId,clientIdTypeMtdItId,nino, "ni")
     }
 
-    "return None if a nino is supplied for which there is a matching DES business partner record without a mtdItId" in {
+    "return None if a nino is supplied for which there is no persisted match and a matching DES business partner record without a mtdItId" in {
       val nino = "WX772755B"
 
+      when(clientIdMappingRepository.find(nino, "ni")).thenReturn(Future successful Nil)
       whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(Nino(nino))
 
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
       shouldBeMtdItId shouldBe None
     }
 
-    "return None if a nino is supplied for which there is no matching DES business partner record" in {
+    "return None if a nino is supplied for which there is no persisted match and no matching DES business partner record" in {
       val nino = "WX772755B"
 
+      when(clientIdMappingRepository.find(nino, "ni")).thenReturn(Future successful Nil)
       whenDesBusinessPartnerRecordDoesNotExist
 
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))

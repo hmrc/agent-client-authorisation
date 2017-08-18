@@ -39,24 +39,14 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     clientIdType match {
       case "MTDITID" => Future successful Some(MtdItId(clientId))
       case "ni" =>
-
-        // solution 1
-        (for {
-          list <- clientIdMappingRepository.find(clientId, clientIdType)
-          businessDetails <- desConnector.getBusinessDetails(Nino(clientId))
-        } yield (list, businessDetails))
-          .map({
-            case (x :: tail, _) => Some(MtdItId(x.canonicalClientId))
-            case (Nil, Some(record)) => record.mtdbsa
-            case (Nil, None) => None
-          }).recover { case _ => None }
-
-
-        // solution 2
         clientIdMappingRepository.find(clientId, clientIdType).flatMap({
           case x :: tail => Future successful Some(MtdItId(x.canonicalClientId))
           case Nil => desConnector.getBusinessDetails(Nino(clientId)).map({
-            case Some(record) => record.mtdbsa
+            case Some(record) =>
+              if (record.mtdbsa.isDefined) {
+                clientIdMappingRepository.create(record.mtdbsa.head.value, "MTDITID", clientId, clientIdType)
+              }
+              record.mtdbsa
             case None => None
           })
         })
@@ -86,10 +76,11 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    BSONObjectID.parse(invitationId)
-      .map(bsonInvitationId => invitationsRepository.findById(bsonInvitationId))
-      .recover { case _: IllegalArgumentException => Future successful None }
-      .get
+    BSONObjectID.parse(invitationId).map(
+      bsonInvitationId =>
+        invitationsRepository.findById(bsonInvitationId)
+    ).recover { case _: IllegalArgumentException => Future successful None }
+    .get
 
 
   def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])

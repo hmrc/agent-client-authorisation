@@ -21,6 +21,8 @@ import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
 import reactivemongo.bson.BSONObjectID
+import reactivemongo.bson.BSONObjectID.parse
+import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -53,6 +55,20 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
           event.service shouldBe "sa"
           event.events.loneElement shouldBe StatusChangeEvent(now, Pending)
       }
+    }
+
+    "create a new StatusChangedEvent which can be found using a reconstructed id" in {
+      val arn = Arn("1")
+      val clientId = MtdItId("1A")
+
+      val invitation: model.Invitation = await(addInvitation((arn, "sa", clientId, "nino1", "ni", "postcode")))
+
+      val id: BSONObjectID = invitation.id
+      val stringifiedId: String = id.stringify
+      val reconstructedId: BSONObjectID = parse(stringifiedId).get
+      val foundInvitation: model.Invitation = await(repository.findById(reconstructedId)).head
+
+      id shouldBe foundInvitation.id
     }
   }
 
