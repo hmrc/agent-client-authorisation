@@ -39,17 +39,27 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     clientIdType match {
       case "MTDITID" => Future successful Some(MtdItId(clientId))
       case "ni" =>
-        // convert to for yield
 
-        clientIdMappingRepository.find(clientId, clientIdType).map{
-          case x :: rest => Some(MtdItId(x.canonicalClientId))
-          case Nil => desConnector.getBusinessDetails(Nino(clientId)).flatMap{
-            case Some(record) =>  Future successful None  //record.mtdbsa
-//            case None =>  None
-          }
+        // solution 1
+        (for {
+          list <- clientIdMappingRepository.find(clientId, clientIdType)
+          businessDetails <- desConnector.getBusinessDetails(Nino(clientId))
+        } yield (list, businessDetails))
+          .map({
+            case (x :: tail, _) => Some(MtdItId(x.canonicalClientId))
+            case (Nil, Some(record)) => record.mtdbsa
+            case (Nil, None) => None
+          }).recover { case _ => None }
 
-        }
 
+        // solution 2
+        clientIdMappingRepository.find(clientId, clientIdType).flatMap({
+          case x :: tail => Future successful Some(MtdItId(x.canonicalClientId))
+          case Nil => desConnector.getBusinessDetails(Nino(clientId)).map({
+            case Some(record) => record.mtdbsa
+            case None => None
+          })
+        })
 
       case _ => Future successful None
     }

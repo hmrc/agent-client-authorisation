@@ -27,7 +27,7 @@ import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.{Generator, Nino}
@@ -39,10 +39,11 @@ import scala.concurrent.Future
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository = mock[InvitationsRepository]
+  val clientIdMappingRepository = mock[ClientIdMappingRepository]
   val relationshipsConnector = mock[RelationshipsConnector]
   val desConnector = mock[DesConnector]
 
-  val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector)
+  val service = new InvitationsService(invitationsRepository, clientIdMappingRepository, relationshipsConnector, desConnector)
 
   val arn = Arn("12345")
   val nino = new Generator().nextNino
@@ -50,7 +51,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   val mtdItId = MtdItId("0123456789")
 
   implicit val hc = HeaderCarrier()
-
 
 
   override protected def beforeEach(): Unit = {
@@ -61,9 +61,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   "acceptInvitation" should {
     "create a relationship" when {
       "invitation status update succeeds" in {
-        whenRelationshipIsCreated thenReturn(Future successful {})
+        whenRelationshipIsCreated thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
-        whenStatusIsChangedTo(Accepted) thenReturn(Future successful acceptedTestInvitation)
+        whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
 
         val response = await(service.acceptInvitation(testInvitation))
 
@@ -94,7 +94,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "should not change the invitation status when relationship creation fails" in {
-      whenRelationshipIsCreated thenReturn(Future failed ReactiveMongoException("Mongo error"))
+      whenRelationshipIsCreated thenReturn (Future failed ReactiveMongoException("Mongo error"))
 
       intercept[ReactiveMongoException] {
         await(service.acceptInvitation(testInvitation))
@@ -174,21 +174,21 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     val clientIdTypeMtdItId: String = "MTDITID"
 
     "return the mtfItId if supplied" in {
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId,clientIdTypeMtdItId))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId, clientIdTypeMtdItId))
       shouldBeMtdItId.head.value shouldBe mtdItId
     }
 
     "return None if an invalid client id type is supplied" in {
-      val shouldBeNone: Option[MtdItId] = await(service.translateToMtdItId("id","noSuchType"))
+      val shouldBeNone: Option[MtdItId] = await(service.translateToMtdItId("id", "noSuchType"))
       shouldBeNone.isEmpty shouldBe true
     }
 
     "return an mtdItId if a nino is supplied for which there is a matching DES business partner record with an mtdItId" in {
       val nino = "WX772755B"
 
-      whenDesBusinessPartnerRecordExistsFor(Nino(nino),mtdItId)
+      whenDesBusinessPartnerRecordExistsFor(Nino(nino), mtdItId)
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino,"ni"))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
       shouldBeMtdItId.head.value shouldBe mtdItId
     }
 
@@ -197,7 +197,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
       whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(Nino(nino))
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino,"ni"))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
       shouldBeMtdItId shouldBe None
     }
 
@@ -206,7 +206,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
       whenDesBusinessPartnerRecordDoesNotExist
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino,"ni"))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino, "ni"))
       shouldBeMtdItId shouldBe None
     }
   }
@@ -252,7 +252,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   private def whenDesBusinessPartnerRecordExistsFor(nino: Nino, mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] = {
     when(desConnector.getBusinessDetails(nino)).thenReturn(
-      Future successful Some(BusinessDetails(AddressDetails("postcode", None),Some(MtdItId(mtdItId)))))
+      Future successful Some(BusinessDetails(AddressDetails("postcode", None), Some(MtdItId(mtdItId)))))
   }
 
   private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] = {
@@ -261,6 +261,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] = {
-    when(desConnector.getBusinessDetails(nino)).thenReturn( Future successful None)
+    when(desConnector.getBusinessDetails(nino)).thenReturn(Future successful None)
   }
 }
