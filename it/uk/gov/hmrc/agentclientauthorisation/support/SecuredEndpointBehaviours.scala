@@ -40,11 +40,11 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
   }
 
   def anEndpointAccessibleForSaClientsOnly(id: Nino)(makeRequest: => HttpResponse): Unit = {
-    "return 401 when the requester is not authenticated" in {
-      given().client(clientId = id).isNotLoggedIn()
-      makeRequest.status shouldBe 401
-      makeRequest.body shouldBe bodyOf(GenericUnauthorized)
-    }
+//    "return 401 when the requester is not authenticated" in {
+//      given().client(clientId = id).isNotLoggedIn()
+//      makeRequest.status shouldBe 401
+//      makeRequest.body shouldBe bodyOf(GenericUnauthorized)
+//    }
 
   }
 }

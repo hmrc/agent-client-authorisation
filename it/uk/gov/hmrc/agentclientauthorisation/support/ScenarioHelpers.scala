@@ -65,7 +65,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i1 = clientResponse.firstInvitation
     i1.arn shouldBe arn
-    i1.clientId shouldBe nino
+    i1.clientId shouldBe client.mtdItId
     i1.service shouldBe MtdItService
     i1.status shouldBe "Pending"
 
@@ -77,7 +77,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn
-    i2.clientId shouldBe nino
+    i2.clientId shouldBe client.mtdItId
     i2.service shouldBe MtdItService
     i2.status shouldBe "Pending"
     val links = clientResponse.links

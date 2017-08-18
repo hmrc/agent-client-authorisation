@@ -34,7 +34,7 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
     scenario("on the client id and status of invitations") {
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, MtdItId("mtdItId1"), port)
-      val client2 = new ClientApi(this, nino2, MtdItId("mtdItId1"), port)
+      val client2 = new ClientApi(this, nino2, MtdItId("mtdItId2"), port)
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
@@ -54,11 +54,11 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       And("Client 1 accepts the first invitation")
       clientAcceptsFirstInvitation(client)
 
-//      Then("The agent filters by Client 1 and Pending")
-//      agencyFiltersByClient1Pending(client.mtdItId, agency)
-//
-//      Then("The agent filters by Client 2 and Accepted")
-//      agencyFiltersByClient2Accepted(client2.mtdItId, agency)
+      Then("The agent filters by Client 1 and Pending")
+      agencyFiltersByClient1Pending(client.mtdItId, agency)
+
+      Then("The agent filters by Client 2 and Accepted")
+      agencyFiltersByClient2Accepted(client2.mtdItId, agency)
     }
   }
 

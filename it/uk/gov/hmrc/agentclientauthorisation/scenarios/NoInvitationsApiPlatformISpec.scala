@@ -31,10 +31,10 @@ class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with 
 
   "Before the Agency has sent any invitations" in {
     val agency = new AgencyApi(this, arn, port)
-    val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
+    val client = new ClientApi(this, nino, MtdItId("mtdItId"), port)
 
     given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-    given().client(clientId = nino).isLoggedInWithSessionId()
+    given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(MtdItId("mtdItId"))
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()
@@ -43,11 +43,11 @@ class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with 
     agencyResponse.links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent"
     agencyResponse.embedded.isEmpty shouldBe true
 
-//    info("the Clients received invitations should be empty")
-//    val clientResponse = client.getInvitations()
-//    clientResponse.numberOfInvitations shouldBe 0
-//    clientResponse.links.invitations shouldBe 'empty
-//    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
-//    clientResponse.embedded.isEmpty shouldBe true
+    info("the Clients received invitations should be empty")
+    val clientResponse = client.getInvitations()
+    clientResponse.numberOfInvitations shouldBe 0
+    clientResponse.links.invitations shouldBe 'empty
+    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
+    clientResponse.embedded.isEmpty shouldBe true
   }
 }

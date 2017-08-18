@@ -22,7 +22,6 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-@Ignore
 class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
@@ -33,11 +32,10 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
 
     scenario("on the status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
+      val client = new ClientApi(this, nino, MtdItId("mtdItId"), port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+      given().client(clientId = nino, canonicalClientId = MtdItId("mtdItId")).hasABusinessPartnerRecordWithMtdItId(MtdItId("mtdItId")).aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

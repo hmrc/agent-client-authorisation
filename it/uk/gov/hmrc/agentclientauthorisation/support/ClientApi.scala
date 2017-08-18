@@ -23,7 +23,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.logging.SessionId
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
-class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val mtdItId: MtdItId = MtdItId("0123456789"), implicit val port: Int) {
+class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val mtdItId: MtdItId = MtdItId("mtdItId"), implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
 

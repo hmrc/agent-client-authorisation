@@ -153,17 +153,6 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       agencySendInvitation(arn, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
     }
   }
-
-  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
-
-    "should return 204 when invitation is Cancelled" ignore {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      val location = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).header("location")
-      val response = agencyGetSentInvitation(arn, location.get)
-      response.status shouldBe 204
-    }
-  }
 }
 
 trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
