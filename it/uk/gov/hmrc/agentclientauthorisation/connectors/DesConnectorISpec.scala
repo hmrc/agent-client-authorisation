@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,7 +58,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
 
       response.businessAddressDetails.countryCode shouldBe "GB"
       response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
-      response.mtdbsa shouldBe Some(MtdItId("0123456789"))
+      response.mtdbsa shouldBe Some(mtdItId1)
     }
   }
 

@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
@@ -35,7 +35,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
-      val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
+      val client = new ClientApi(this, nino, mtdItId1, port)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

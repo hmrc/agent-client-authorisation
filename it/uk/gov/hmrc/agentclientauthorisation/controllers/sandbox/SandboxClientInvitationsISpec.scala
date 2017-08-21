@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 @Ignore
 class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
-  private implicit val arn = Arn("ABCDEF12345678")
+  private implicit val arn = HardCodedSandboxIds.arn
   private val nino = HardCodedSandboxIds.clientId
 
   override val sandboxMode: Boolean = true

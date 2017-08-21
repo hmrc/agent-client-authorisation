@@ -23,4 +23,11 @@ object TestConstants {
   val mtdItId1: MtdItId = MtdItId("mtdItId")
 
   val nino1: Nino = new Generator().nextNino
+  val nino2: Nino = new Generator().nextNino
+
+  val arn = "ABCDEF123456"
+
+  val agentCode = "12345"
+
+  val MtdItService = "HMRC-MTD-IT"
 }

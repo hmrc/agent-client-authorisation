@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,27 +42,24 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   }
 
 
+  val ninoValue = nino1.value
+
   "create" should {
 
     "create a new StatusChangedEvent of Pending" in {
 
-      val arn = Arn("1")
-      val clientId = MtdItId("1A")
-
-      inside(addInvitation((arn, "sa", clientId, "nino1", "ni", "postcode"))) {
+      inside(addInvitation((Arn(arn), "sa", mtdItId1, nino1.value, "ni", "postcode"))) {
         case event =>
-          event.arn shouldBe arn
-          event.clientId shouldBe clientId.value
+          event.arn shouldBe Arn(arn)
+          event.clientId shouldBe mtdItId1.value
           event.service shouldBe "sa"
           event.events.loneElement shouldBe StatusChangeEvent(now, Pending)
       }
     }
 
     "create a new StatusChangedEvent which can be found using a reconstructed id" in {
-      val arn = Arn("1")
-      val clientId = MtdItId("1A")
 
-      val invitation: model.Invitation = await(addInvitation((arn, "sa", clientId, "nino1", "ni", "postcode")))
+      val invitation: model.Invitation = await(addInvitation((Arn(arn), "sa", mtdItId1, nino1.value, "ni", "postcode")))
 
       val id: BSONObjectID = invitation.id
       val stringifiedId: String = id.stringify
@@ -76,7 +74,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "create a new StatusChangedEvent" in {
 
-      val created = addInvitation((Arn("2"), "sa", MtdItId("2A"), "nino1", "ni", "postcode"))
+      val created = addInvitation((Arn(arn), "sa", mtdItId1, nino1.value, "ni", "postcode"))
       val updated = update(created.id, Accepted)
 
       inside(updated) {
@@ -93,23 +91,22 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "return previously created and updated elements" in {
 
-      val arn = Arn("3")
       val saUtr1 = "SAUTR3A"
       val vrn2 = "VRN3B"
 
       val requests = addInvitations(
-        (arn, "sa", MtdItId(saUtr1), "nino1", "ni", "postcode-1"), (arn, "vat", MtdItId(vrn2), "nino1", "ni", "postcode-2"))
+        (Arn(arn), "sa", MtdItId(saUtr1), ninoValue, "ni", "postcode-1"), (Arn(arn), "vat", MtdItId(vrn2), ninoValue, "ni", "postcode-2"))
       update(requests.last.id, Accepted)
 
-      val list = listByArn(arn).sortBy(_.clientId)
+      val list = listByArn(Arn(arn)).sortBy(_.clientId)
 
       inside(list head) {
-        case Invitation(_, `arn`, "sa", `saUtr1`, "postcode-1", "nino1", "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, Arn(`arn`), "sa", `saUtr1`, "postcode-1", `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(list(1)) {
-        case Invitation(_, `arn`, "vat", `vrn2`, "postcode-2", "nino1", "ni", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
+        case Invitation(_, Arn(`arn`), "vat", `vrn2`, "postcode-2", `ninoValue`, "ni", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
           date1 shouldBe now
           date2 shouldBe now
       }
@@ -117,50 +114,49 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "return elements only for the given agent code" in {
 
-      addInvitations(
-        (Arn("123A"), "sa", MtdItId("1234567890"), "nino1", "ni", "postcode"), (Arn("123B"), "sa", MtdItId("1234567891"), "nino1", "ni", "postcode"))
+      val arn2 = "ABCDEF123457"
 
-      inside(listByArn(Arn("123B")) loneElement) {
-        case Invitation(_, Arn("123B"), "sa", "1234567891", "postcode", "nino1", "ni", List(StatusChangeEvent(date, Pending))) =>
+      addInvitations(
+        (Arn(arn), "sa", mtdItId1, nino1.value, "ni", "postcode"), (Arn(arn2), "sa", mtdItId1, nino1.value, "ni", "postcode"))
+
+      inside(listByArn(Arn(arn)) loneElement) {
+        case Invitation(_, Arn(`arn`), "sa", `mtdItId1`.value, "postcode", `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
 
     "return elements for the specified service only" in {
-      val arn = Arn("3")
       val clientId1 = MtdItId("MTD-REG-3A")
       val clientId2 = MtdItId("MTD-REG-3B")
 
-      addInvitations((arn, "mtd-sa", clientId1, "nino1", "ni", "postcode-1"), (arn, "some-other-service", clientId2, "nino1", "ni", "postcode-2"))
+      addInvitations((Arn(arn), "mtd-sa", clientId1, nino1.value, "ni", "postcode-1"), (Arn(arn), "some-other-service", clientId2, nino1.value, "ni", "postcode-2"))
 
-      val list = listByArn(arn, Some("mtd-sa"), None, None)
+      val list = listByArn(Arn(arn), Some("mtd-sa"), None, None)
 
       list.size shouldBe 1
       list.head.clientId shouldBe clientId1.value
     }
 
     "return elements for the specified client only" in {
-      val arn = Arn("3")
       val clientId1 = MtdItId("MTD-REG-3A")
       val clientId2 = MtdItId("MTD-REG-3B")
 
-      addInvitations((arn, "mtd-sa", clientId1, "nino1", "ni", "postcode-1"), (arn, "mtd-sa", clientId2, "nino1", "ni", "postcode-2"))
+      addInvitations((Arn(arn), "mtd-sa", clientId1, nino1.value, "ni", "postcode-1"), (Arn(arn), "mtd-sa", clientId2, nino1.value, "ni", "postcode-2"))
 
-      val list = listByArn(arn, None, Some(clientId1.value), None)
+      val list = listByArn(Arn(arn), None, Some(clientId1.value), None)
 
       list.size shouldBe 1
       list.head.clientId shouldBe clientId1.value
     }
 
     "return elements with the specified status" in {
-      val arn = Arn("3")
       val clientId1 = MtdItId("MTD-REG-3A")
       val clientId2 = MtdItId("MTD-REG-3B")
 
-      val invitations = addInvitations((arn, "mtd-sa", clientId1, "nino1", "ni", "postcode-1"), (arn, "mtd-sa", clientId2, "nino1", "ni", "postcode-2"))
+      val invitations = addInvitations((Arn(arn), "mtd-sa", clientId1, nino1.value, "ni", "postcode-1"), (Arn(arn), "mtd-sa", clientId2, nino1.value, "ni", "postcode-2"))
       update(invitations.head.id, Accepted)
 
-      val list = listByArn(arn, None, None, Some(Pending))
+      val list = listByArn(Arn(arn), None, None, Some(Pending))
 
       list.size shouldBe 1
       list.head.clientId shouldBe clientId2.value
@@ -172,27 +168,23 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
     "return an empty list when there is no such service-clientId pair" in {
       val service = "sa"
-      val clientId = MtdItId("4A")
-      val arn = Arn("4")
       val postcode = "postcode"
 
-      addInvitation((arn, service, clientId, "nino1", "ni", postcode))
+      addInvitation((Arn(arn), service, mtdItId1, nino1.value, "ni", postcode))
 
       listByClientId(service, MtdItId("no-such-id")) shouldBe Nil
-      listByClientId("different-service", clientId) shouldBe Nil
+      listByClientId("different-service", mtdItId1) shouldBe Nil
     }
 
     "return a single agent request" in {
 
       val service = "sa"
-      val clientId = MtdItId("4A")
-      val arn = Arn("4")
       val postcode = "postcode"
 
-      addInvitation((arn, service, clientId, "nino1", "ni", postcode))
+      addInvitation((Arn(arn), service, mtdItId1, nino1.value, "ni", postcode))
 
-      inside(listByClientId(service, clientId) loneElement) {
-        case Invitation(_, `arn`, `service`, clientId.value, `postcode`, "nino1", "ni", List(StatusChangeEvent(date, Pending))) =>
+      inside(listByClientId(service, mtdItId1) loneElement) {
+        case Invitation(_, Arn(`arn`), `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -202,41 +194,38 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val firstAgent = Arn("5")
       val secondAgent = Arn("6")
       val service = "sa"
-      val clientId = MtdItId("MTD-REG-5A")
       val postcode = "postcode"
 
 
       addInvitations(
-        (firstAgent, service, clientId, "nino1", "ni", postcode),
-        (secondAgent, service, clientId, "nino1", "ni", postcode),
-        (Arn("should-not-show-up"), "sa",  MtdItId("another-client"), "nino1", "ni", postcode)
+        (firstAgent, service, mtdItId1, nino1.value, "ni", postcode),
+        (secondAgent, service, mtdItId1, nino1.value, "ni", postcode),
+        (Arn("should-not-show-up"), "sa",  MtdItId("another-client"), nino1.value, "ni", postcode)
       )
 
-      val requests = listByClientId(service, clientId).sortBy(_.arn.value)
+      val requests = listByClientId(service, mtdItId1).sortBy(_.arn.value)
 
       requests.size shouldBe 2
 
       inside(requests head) {
-        case Invitation(_, `firstAgent`, `service`, clientId.value, `postcode`, "nino1", "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, `firstAgent`, `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(_, `secondAgent`, `service`, clientId.value, `postcode`, "nino1", "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, `secondAgent`, `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
 
     "return elements with the specified status" in {
-      val arn = Arn("3")
-      val clientId = "MTD-REG-3A"
 
       val invitations =
         addInvitations(
-          (arn, "mtd-sa", MtdItId(clientId), "nino1", "ni", "postcode-1"), (arn, "mtd-sa", MtdItId(clientId), "nino1", "ni", "postcode-1"))
+          (Arn(arn), "mtd-sa", mtdItId1, nino1.value, "ni", "postcode-1"), (Arn(arn), "mtd-sa", mtdItId1, nino1.value, "ni", "postcode-1"))
       update(invitations.head.id, Accepted)
 
-      val list = listByClientId("mtd-sa", MtdItId(clientId), Some(Pending))
+      val list = listByClientId("mtd-sa", mtdItId1, Some(Pending))
 
       list.size shouldBe 1
       list.head.status shouldBe Pending

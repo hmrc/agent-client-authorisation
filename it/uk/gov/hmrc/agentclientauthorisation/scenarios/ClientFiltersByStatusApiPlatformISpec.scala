@@ -21,6 +21,7 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -32,10 +33,10 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
 
     scenario("on the status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, MtdItId("mtdItId"), port)
+      val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino, canonicalClientId = MtdItId("mtdItId")).hasABusinessPartnerRecordWithMtdItId(MtdItId("mtdItId")).aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino, canonicalClientId = mtdItId1).hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

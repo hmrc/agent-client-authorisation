@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 trait DesStubs[A] {
   me: A with WiremockAware =>
@@ -43,7 +44,7 @@ trait DesStubs[A] {
     this
   }
 
-  def hasABusinessPartnerRecordWithMtdItId(mtdItId: MtdItId = MtdItId("0123456789")): A = {
+  def hasABusinessPartnerRecordWithMtdItId(mtdItId: MtdItId = mtdItId1): A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
