@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.support
 
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.{Generator, Nino}
 
-package object controllers {
+object TestConstants {
+  val mtdItId1: MtdItId = MtdItId("mtdItId")
 
-  val SUPPORTED_SERVICE = "HMRC-MTD-IT"
-  // we use "ni" not "nino" for consistency with API urls in the self-assessment-api service
-  val SUPPORTED_CLIENT_ID_TYPE = "ni"
-
+  val nino1: Nino = new Generator().nextNino
 }
