@@ -28,8 +28,9 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -54,9 +55,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     givenAgentIsLoggedIn(arn)
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
+      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(

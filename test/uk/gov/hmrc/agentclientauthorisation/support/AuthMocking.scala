@@ -48,7 +48,6 @@ trait AuthMocking {
   def givenClientIsLoggedIn() = {
     givenAccountsAre(Authority(Some(generator.nextNino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
     givenUserHasNoAgency()
-    val nino = generator.nextNino
   }
 
   def givenNonMTDClientIsLoggedIn() = {

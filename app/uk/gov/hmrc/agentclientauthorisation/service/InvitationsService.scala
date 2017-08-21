@@ -20,9 +20,10 @@ import javax.inject._
 
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
-import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
+import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -37,14 +38,14 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   def translateToMtdItId(clientId: String, clientIdType: String)
                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     clientIdType match {
-      case "MTDITID" => Future successful Some(MtdItId(clientId))
-      case "ni" =>
+      case CLIENT_ID_TYPE_MTDITID => Future successful Some(MtdItId(clientId))
+      case CLIENT_ID_TYPE_NINO =>
         clientIdMappingRepository.find(clientId, clientIdType).flatMap({
           case x :: tail => Future successful Some(MtdItId(x.canonicalClientId))
           case Nil => desConnector.getBusinessDetails(Nino(clientId)).map({
             case Some(record) =>
               if (record.mtdbsa.isDefined) {
-                clientIdMappingRepository.create(record.mtdbsa.head.value, "MTDITID", clientId, clientIdType)
+                clientIdMappingRepository.create(record.mtdbsa.head.value, CLIENT_ID_TYPE_MTDITID, clientId, clientIdType)
               }
               record.mtdbsa
             case None => None
@@ -89,7 +90,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
 
   def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse("ni") == "ni")
+    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
       invitationsRepository.list(arn, service, clientId, status)
     else Future successful List.empty
 

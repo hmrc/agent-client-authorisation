@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import play.api.mvc.{Action, AnyContent}
+import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
@@ -85,7 +86,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
       //      if (clientId == request.nino.value) {
-      invitationsService.translateToMtdItId(nino.value,"ni") flatMap {
+      invitationsService.translateToMtdItId(nino.value,CLIENT_ID_TYPE_NINO) flatMap {
         case Some(mtdItId) =>
           invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
             results => Ok(toHalResource(results, nino, status)))

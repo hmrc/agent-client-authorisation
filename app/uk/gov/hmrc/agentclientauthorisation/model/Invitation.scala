@@ -19,8 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.controllers.SUPPORTED_CLIENT_ID_TYPE
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.controllers.RestFormats
 
@@ -110,7 +110,7 @@ case class Invitation(
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
 
-  val clientIdType = SUPPORTED_CLIENT_ID_TYPE
+  val clientIdType = CLIENT_ID_TYPE_NINO
 
   def firstEvent(): StatusChangeEvent = {
     events.head

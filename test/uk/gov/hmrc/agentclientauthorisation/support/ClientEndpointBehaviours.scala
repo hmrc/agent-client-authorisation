@@ -32,7 +32,8 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsControl
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.{HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -50,14 +51,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def controller: ClientInvitationsController
 
-  def nino: Nino
-
   def invitationId: String
 
   def arn: Arn
   def generator: Generator
-
-  val canonicalId = MtdItId("mtdItId1")
 
   override def beforeEach(): Unit = {
     reset(invitationsService, authConnector)
@@ -137,11 +134,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def noInvitation = Future successful None
 
-  def anInvitation(nino:Nino) = Invitation(BSONObjectID(invitationId), arn, "MTDITID", canonicalId.value, "A11 1AA", nino.value, "ni",
+  def anInvitation(nino:Nino) = Invitation(BSONObjectID(invitationId), arn, "MTDITID", mtdItId1.value, "A11 1AA", nino.value, "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
-    Future successful Some(anInvitation(nino))
+    Future successful Some(anInvitation(nino1))
 
   def anUpdatedInvitation()(implicit ec: ExecutionContext): Future[Invitation] =
     aFutureOptionInvitation() map (_.get)
@@ -150,11 +147,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: Nino = nino) = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
+  def aClientUser(nino: Nino = nino1) = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
 
   def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
   def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
-  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(canonicalId), eqs(None))(any()))
+  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
 }
