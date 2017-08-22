@@ -19,21 +19,22 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import java.net.URL
 
 import org.joda.time.DateTime
+import org.mockito.Matchers.{any, eq => eqs}
 import org.mockito.Mockito._
-import org.mockito.Matchers.{eq => eqs, _}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.Authority
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.play.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
   private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
@@ -42,14 +43,14 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
 
   val invitationId = BSONObjectID.generate.stringify
   val generator = new Generator()
-  val clientId = generator.nextNino.value
+  val nino = nino1
   val arn: Arn = Arn("12345")
 
 
   "Accepting an invitation" should {
-    behave like clientStatusChangeEndpoint(
+    behave like clientStatusChangeEndpoint(nino1)(
       Accepted,
-      controller.acceptInvitation(clientId, invitationId),
+      controller.acceptInvitation(nino1, invitationId),
       whenInvitationIsAccepted
     )
 
@@ -58,37 +59,47 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with MockitoS
     }
   }
 
-
   "Rejecting an invitation" should {
-    behave like clientStatusChangeEndpoint(
+    behave like clientStatusChangeEndpoint(nino1)(
       Rejected,
-      controller.rejectInvitation(clientId, invitationId),
+      controller.rejectInvitation(nino1, invitationId),
       whenInvitationIsRejected
     )
   }
 
-
   "getInvitations" should {
-
     "return 200 and an empty list when there are no invitations for the client" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
-
+      //whenAuthIsCalled.thenReturn(Future successful Authority(Some(nino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
+      when(invitationsService.translateToMtdItId(
+        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
-      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
       status(result) shouldBe 200
 
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
+    "return 404 when no translation found for supplied client id and type" in {
+      when(invitationsService.translateToMtdItId(
+        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful None)
+
+      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
+      status(result) shouldBe 404
+    }
+
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      whenAuthIsCalled.thenReturn(Future successful Authority(Some(Nino(clientId)), enrolmentsUrl = enrolmentsNotNeededForThisTest))
+      //whenAuthIsCalled.thenReturn(Future successful Authority(Some(nino), enrolmentsUrl = enrolmentsNotNeededForThisTest))
+
+      when(invitationsService.translateToMtdItId(
+        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
 
       whenClientReceivedInvitation.thenReturn(Future successful List(
-        Invitation(BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "mtd-sa", "client id", "postcode", List(
-          StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+        Invitation(
+          BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "MTDITID", mtdItId1.value, "postcode", nino1.value, "ni",
+          List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
-      val result: Result = await(controller.getInvitations(clientId, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
       status(result) shouldBe 200
 
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None

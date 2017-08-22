@@ -24,17 +24,18 @@ import play.api.libs.json.{JsArray, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
-  private val MtdItService = "HMRC-MTD-IT"
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", "AA123456A", "AA1 1AA")
+
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino1.value, "AA1 1AA")
 
   override val sandboxMode = true
 
-  "GET /sandbox" should {
-    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
-  }
+//  "GET /sandbox" should {
+//    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
+//  }
 
   "GET /sandbox/agencies" should {
     behave like anEndpointWithAgencySentInvitationsLink(agenciesUrl)

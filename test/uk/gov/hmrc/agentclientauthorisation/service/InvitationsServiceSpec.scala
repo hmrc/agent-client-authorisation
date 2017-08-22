@@ -25,12 +25,13 @@ import org.scalatest.mock.MockitoSugar
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
-import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -38,17 +39,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
-  val invitationsRepository = mock[InvitationsRepository]
-  val relationshipsConnector = mock[RelationshipsConnector]
+  val invitationsRepository: InvitationsRepository = mock[InvitationsRepository]
+  val clientIdMappingRepository: ClientIdMappingRepository = mock[ClientIdMappingRepository]
+  val relationshipsConnector: RelationshipsConnector = mock[RelationshipsConnector]
+  val desConnector: DesConnector = mock[DesConnector]
 
-  val service = new InvitationsService(invitationsRepository, relationshipsConnector)
+  val service = new InvitationsService(invitationsRepository, clientIdMappingRepository, relationshipsConnector, desConnector)
 
-  val arn = Arn("12345")
-  val nino = new Generator().nextNino
-  val ninoAsString = nino.value
+  val ninoAsString: String = nino1.value
 
   implicit val hc = HeaderCarrier()
-
 
 
   override protected def beforeEach(): Unit = {
@@ -59,9 +59,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   "acceptInvitation" should {
     "create a relationship" when {
       "invitation status update succeeds" in {
-        whenRelationshipIsCreated thenReturn(Future successful {})
+        whenRelationshipIsCreated thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
-        whenStatusIsChangedTo(Accepted) thenReturn(Future successful acceptedTestInvitation)
+        whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
 
         val response = await(service.acceptInvitation(testInvitation))
 
@@ -92,7 +92,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "should not change the invitation status when relationship creation fails" in {
-      whenRelationshipIsCreated thenReturn(Future failed ReactiveMongoException("Mongo error"))
+      whenRelationshipIsCreated thenReturn (Future failed ReactiveMongoException("Mongo error"))
 
       intercept[ReactiveMongoException] {
         await(service.acceptInvitation(testInvitation))
@@ -167,19 +167,79 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
+  "translateToMtdItId" should {
+    "return the mtfItId if supplied" in {
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId1.value, "MTDITID"))
+      shouldBeMtdItId.head.value shouldBe mtdItId1.value
+    }
+
+    "return None if an invalid client id type is supplied" in {
+      val shouldBeNone: Option[MtdItId] = await(service.translateToMtdItId("id", "noSuchType"))
+      shouldBeNone.isEmpty shouldBe true
+    }
+
+    "return an mtdItId if a nino is supplied for which there is a persisted match" in {
+      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(
+        Future successful List(ClientIdMapping(BSONObjectID.generate, mtdItId1.value, "MTDITID", nino1.value, "ni")))
+
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      shouldBeMtdItId.head shouldBe mtdItId1
+      verifyZeroInteractions(desConnector)
+    }
+
+    "return an mtdItId if a nino is supplied for which there is no persisted match and there is a matching DES business partner record with an mtdItId" in {
+      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
+      whenDesBusinessPartnerRecordExistsFor(Nino(nino1.value), mtdItId1.value)
+
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      shouldBeMtdItId.head shouldBe mtdItId1
+      verify(clientIdMappingRepository).create(mtdItId1.value, "MTDITID", nino1.value, "ni")
+    }
+
+    "return None if a nino is supplied for which there is no persisted match and a matching DES business partner record without a mtdItId" in {
+      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
+      whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(Nino(nino1.value))
+
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      shouldBeMtdItId shouldBe None
+    }
+
+    "return None if a nino is supplied for which there is no persisted match and no matching DES business partner record" in {
+      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
+      whenDesBusinessPartnerRecordDoesNotExist
+
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      shouldBeMtdItId shouldBe None
+    }
+  }
+
+  "create" should {
+    "create an invitation" in {
+      val serviceId: String = "serviceId"
+      val postcode: String = "postcode"
+
+      service.create(Arn(arn), serviceId, mtdItId1, postcode, nino1.value, "ni")
+      verify(invitationsRepository, times(1)).create(Arn(arn), serviceId, mtdItId1, postcode, nino1.value, "ni")
+    }
+  }
+
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
-    arn,
+    Arn(arn),
     "mtd-sa",
-    ninoAsString,
+    mtdItId1.value,
     "A11 1AA",
+    nino1.value,
+    "ni",
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
   )
 
   private def testInvitation = Invitation(generate,
-    arn,
+    Arn(arn),
     "mtd-sa",
-    ninoAsString,
+    mtdItId1.value,
     "A11 1AA",
+    nino1.value,
+    "ni",
     List(StatusChangeEvent(now(), Pending))
   )
 
@@ -188,6 +248,20 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def whenRelationshipIsCreated: OngoingStubbing[Future[Unit]] = {
-    when(relationshipsConnector.createRelationship(arn, nino))
+    when(relationshipsConnector.createRelationship(Arn(arn), mtdItId1))
+  }
+
+  private def whenDesBusinessPartnerRecordExistsFor(nino: Nino, mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] = {
+    when(desConnector.getBusinessDetails(nino)).thenReturn(
+      Future successful Some(BusinessDetails(AddressDetails("postcode", None), Some(MtdItId(mtdItId)))))
+  }
+
+  private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] = {
+    when(desConnector.getBusinessDetails(nino)).thenReturn(
+      Future successful Some(BusinessDetails(AddressDetails("postcode", None), None)))
+  }
+
+  private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] = {
+    when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful None)
   }
 }

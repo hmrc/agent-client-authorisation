@@ -19,28 +19,30 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 import javax.inject.{Inject, Named, Singleton}
 
-import play.api.libs.json.Json
+import play.api.libs.json.Json.reads
+import play.api.libs.json.Reads
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.logging.Authorization
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class BusinessDetails(businessAddressDetails: AddressDetails)
+case class BusinessDetails(businessAddressDetails: AddressDetails, mtdbsa: Option[MtdItId])
+
 case class AddressDetails(countryCode: String, postalCode: Option[String])
 
 object BusinessDetails {
-  implicit val addressReads = Json.reads[AddressDetails]
-  implicit val reads = Json.reads[BusinessDetails]
+  implicit val addressReads: Reads[AddressDetails] = reads[AddressDetails]
+  implicit val businessDetailsReads: Reads[BusinessDetails] = reads[BusinessDetails]
 }
 
-
 @Singleton
-class DesConnector @Inject() (@Named("des-baseUrl") baseUrl: URL,
-                               @Named("des.authorizationToken") authorizationToken: String,
-                               @Named("des.environment") environment: String,
-                               httpGet: HttpGet) {
+class DesConnector @Inject()(@Named("des-baseUrl") baseUrl: URL,
+                             @Named("des.authorizationToken") authorizationToken: String,
+                             @Named("des.environment") environment: String,
+                             httpGet: HttpGet) {
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
     getWithDesHeaders(new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)

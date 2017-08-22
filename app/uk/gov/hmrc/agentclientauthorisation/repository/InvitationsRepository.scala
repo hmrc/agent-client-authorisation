@@ -24,8 +24,9 @@ import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.json.BSONFormats
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
@@ -34,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsRepository @Inject() (mongo: DB)
-extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, Invitation.mongoFormats, ReactiveMongoFormats.objectIdFormats)
+extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, mongoFormats, ReactiveMongoFormats.objectIdFormats)
     with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
@@ -42,31 +43,22 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     Index(Seq("clientId" -> IndexType.Ascending)),
     Index(Seq("service" -> IndexType.Ascending))
   )
-
-  def create(arn: Arn, service: String, clientId: String, postcode: String)(implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+            (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
       arn = arn,
       service = service,
-      clientId = clientId,
+      clientId = clientId.value,
       postcode = postcode,
+      suppliedClientId = suppliedClientId,
+      suppliedClientIdType = suppliedClientIdType,
       events = List(StatusChangeEvent(now, Pending))
     )
 
     insert(request).map(_ => request)
   }
-
-  /*override def list(clientId : String, service: Option[String], status: Option[InvitationStatus] ): Future[List[Invitation]] = {
-    val searchOptions = Seq("clientId" -> clientId,
-                            "service" -> service,
-                            "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
-
-      .filter(_._2.isDefined)
-      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
-
-    find(searchOptions: _*)
-  }*/
 
   def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.value),
@@ -80,10 +72,10 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, I
     find(searchOptions: _*)
   }
 
-  def list(service: String, clientId: String, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(service: String, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "service" -> Some(service),
-      "clientId" -> Some(clientId),
+      "clientId" -> Some(clientId.value),
       statusSearchOption(status)
     )
       .filter(_._2.isDefined)

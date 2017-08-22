@@ -19,7 +19,9 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -31,15 +33,15 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
 
     scenario("on the status of clients invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, port)
-      Given("An agent and a client are logged in")
+      val client = new ClientApi(this, nino, mtdItId1, port)
+
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino, canonicalClientId=mtdItId1).hasABusinessPartnerRecordWithMtdItId(client.mtdItId).aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdItService),
-        (nino, MtdItService)
+        (client, MtdItService),
+        (client, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
@@ -54,15 +56,16 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
 
     scenario("on cancelled status") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, port)
+      val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
       given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdItService),
-        (nino, MtdItService)
+        (client, MtdItService),
+        (client, MtdItService)
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")

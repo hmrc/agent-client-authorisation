@@ -46,7 +46,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private def responseFor(invite: AgentInvitation): Result = {
     await(checkForErrors(invite)).get
   }
-  private def postcodeCheck(postcode: String = "AN11PA") = when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)))))
+  private def postcodeCheck(postcode: String = "AN11PA") = when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)), None)))
 
   "checkForErrors" should {
 

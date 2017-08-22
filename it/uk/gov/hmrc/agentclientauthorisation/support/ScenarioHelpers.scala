@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
@@ -31,9 +30,9 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
   def arn: Arn
   val MtdItService = "HMRC-MTD-IT"
 
-  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(Nino, String), secondClient:(Nino, String)): Unit = {
+  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(ClientApi, String), secondClient:(ClientApi, String)): Unit = {
 
-    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1, service = i._2))
+    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1.clientId, service = i._2))
 
     val location1 = locations.head
     val location2 = locations(1)
@@ -43,10 +42,10 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val response = agency.sentInvitations()
     response.numberOfInvitations shouldBe 2
 
-    checkInvite(response.firstInvitation)(firstClient)
-    checkInvite(response.secondInvitation)(secondClient)
+    checkInvite(response.firstInvitation)(firstClient._1.mtdItId, firstClient._2)
+    checkInvite(response.secondInvitation)((secondClient._1.mtdItId, secondClient._2))
 
-    def checkInvite(invitation: EmbeddedInvitation)(expected:(Nino, String)): Unit = {
+    def checkInvite(invitation: EmbeddedInvitation)(expected:(MtdItId, String)): Unit = {
       invitation.arn shouldBe arn
       invitation.clientIdType shouldBe "ni"
       invitation.clientId shouldBe expected._1
@@ -66,7 +65,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i1 = clientResponse.firstInvitation
     i1.arn shouldBe arn
-    i1.clientId shouldBe nino
+    i1.clientId shouldBe client.mtdItId
     i1.service shouldBe MtdItService
     i1.status shouldBe "Pending"
 
@@ -78,7 +77,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
     val i2 = clientResponse.secondInvitation
     i2.arn shouldBe arn
-    i2.clientId shouldBe nino
+    i2.clientId shouldBe client.mtdItId
     i2.service shouldBe MtdItService
     i2.status shouldBe "Pending"
     val links = clientResponse.links

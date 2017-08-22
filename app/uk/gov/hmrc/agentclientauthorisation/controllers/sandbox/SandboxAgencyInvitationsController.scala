@@ -23,6 +23,7 @@ import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.{CLIENT_ID_TYPE_NINO, SUPPORTED_SERVICE}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -41,7 +42,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, None, clientId, status))
   }
 
-  def getDetailsForAuthenticatedAgency() = Action { implicit request =>
+  def getDetailsForAuthenticatedAgency = Action { implicit request =>
     Ok(toHalResource(HardCodedSandboxIds.arn, prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
   }
 
@@ -67,6 +68,8 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         SUPPORTED_SERVICE,
         "clientId",
         "A11 1AA",
+        "nino",
+        CLIENT_ID_TYPE_NINO,
         List(StatusChangeEvent(now(), Pending))
       )
 

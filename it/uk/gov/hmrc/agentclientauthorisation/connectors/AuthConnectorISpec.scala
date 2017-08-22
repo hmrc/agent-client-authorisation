@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -28,7 +29,7 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
   "currentArn" should {
     "return None when the agent has no HMRC-AS-AGENT enrolment" in {
       given()
-        .agentAdmin("ABCDEF123456", "12345")
+        .agentAdmin(arn, agentCode)
         .isLoggedIn()
         .andIsNotSubscribedToAgentServices()
 
@@ -37,11 +38,11 @@ class AuthConnectorISpec extends UnitSpec with AppAndStubs {
 
     "return the ARN when the agent has an HMRC-AS-AGENT enrolment" in {
       given()
-        .agentAdmin("ABCDEF123456", "12345")
+        .agentAdmin(arn, agentCode)
         .isLoggedIn()
         .andIsSubscribedToAgentServices()
 
-      await(newAuthConnector().currentArn()) shouldBe Some(Arn("ABCDEF123456"))
+      await(newAuthConnector().currentArn()) shouldBe Some(Arn(arn))
     }
   }
 

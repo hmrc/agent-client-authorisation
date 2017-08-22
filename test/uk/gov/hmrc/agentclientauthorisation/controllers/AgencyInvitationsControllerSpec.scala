@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.net.URL
-
 import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -30,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Generator
@@ -38,27 +37,27 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach with TransitionInvitation {
 
-  val postcodeService = resettingMock[PostcodeService]
-  val invitationsService = resettingMock[InvitationsService]
+  val postcodeService: PostcodeService = resettingMock[PostcodeService]
+  val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val generator = new Generator()
-  val authConnector = resettingMock[AuthConnector]
+  val authConnector: AuthConnector = resettingMock[AuthConnector]
 
   val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector)
 
   val arn = Arn("arn1")
-  val mtdSaPendingInvitationId = BSONObjectID.generate
-  val mtdSaAcceptedInvitationId = BSONObjectID.generate
-  val otherRegimePendingInvitationId = BSONObjectID.generate
+  val mtdSaPendingInvitationId: BSONObjectID = BSONObjectID.generate
+  val mtdSaAcceptedInvitationId: BSONObjectID = BSONObjectID.generate
+  val otherRegimePendingInvitationId: BSONObjectID = BSONObjectID.generate
 
-  override protected def beforeEach() = {
+  override protected def beforeEach(): Unit = {
     super.beforeEach()
 
     givenAgentIsLoggedIn(arn)
 
     val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
+      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
+      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
     )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
@@ -140,7 +139,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
-      (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus).url
+      (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
+        routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus).url
     }
 
   }
@@ -202,7 +202,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
-//      "agent-client-authorisation",
+     // "agent-client-authorisation",
       "agencies",
       arn.value,
       "invitations",
@@ -211,7 +211,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

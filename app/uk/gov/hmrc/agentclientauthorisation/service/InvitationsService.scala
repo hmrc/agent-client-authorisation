@@ -19,27 +19,51 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject._
 
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
-import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
+import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InvitationsService @Inject() (invitationsRepository: InvitationsRepository,
-                         relationshipsConnector: RelationshipsConnector) {
+class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
+                                   clientIdMappingRepository: ClientIdMappingRepository,
+                                   relationshipsConnector: RelationshipsConnector,
+                                   desConnector: DesConnector) {
+  def translateToMtdItId(clientId: String, clientIdType: String)
+                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
+    clientIdType match {
+      case CLIENT_ID_TYPE_MTDITID => Future successful Some(MtdItId(clientId))
+      case CLIENT_ID_TYPE_NINO =>
+        clientIdMappingRepository.find(clientId, clientIdType).flatMap({
+          case x :: tail => Future successful Some(MtdItId(x.canonicalClientId))
+          case Nil => desConnector.getBusinessDetails(Nino(clientId)).map({
+            case Some(record) =>
+              if (record.mtdbsa.isDefined) {
+                clientIdMappingRepository.create(record.mtdbsa.head.value, CLIENT_ID_TYPE_MTDITID, clientId, clientIdType)
+              }
+              record.mtdbsa
+            case None => None
+          })
+        })
 
-  def create(arn: Arn, service: String, clientId: String, postcode: String)(implicit ec: ExecutionContext) =
-    invitationsRepository.create(arn, service, clientId, postcode)
+      case _ => Future successful None
+    }
+  }
+
+  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+            (implicit ec: ExecutionContext): Future[Invitation] =
+    invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, Invitation]] = {
     if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, Nino(invitation.clientId))
+      relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
         .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
     } else {
       Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
@@ -53,22 +77,25 @@ class InvitationsService @Inject() (invitationsRepository: InvitationsRepository
     changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    BSONObjectID.parse(invitationId)
-      .map(bsonInvitationId => invitationsRepository.findById(bsonInvitationId))
-      .recover { case _: IllegalArgumentException => Future successful None }
-      .get
+    BSONObjectID.parse(invitationId).map(
+      bsonInvitationId =>
+        invitationsRepository.findById(bsonInvitationId)
+    ).recover { case _: IllegalArgumentException => Future successful None }
+    .get
 
 
-  def clientsReceived(service: String, clientId: String, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+  def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
+                     (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse("ni") == "ni")
+  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
+                (implicit ec: ExecutionContext): Future[List[Invitation]] =
+    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
       invitationsRepository.list(arn, service, clientId, status)
-    else
-      Future successful List.empty
+    else Future successful List.empty
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)
+                                    (implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
     invitation.status match {
       case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)

@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.{Generator, Nino}
 
-class GenerateApplicationIdWhitelistingSpec  extends UnitSpec {
+object TestConstants {
+  val mtdItId1: MtdItId = MtdItId("mtdItId")
 
+  val nino1: Nino = new Generator().nextNino
+  val nino2: Nino = new Generator().nextNino
 
-  "Application IDS" should {
+  val arn = "ABCDEF123456"
 
-    "be generated" ignore {
+  val agentCode = "12345"
 
-      List("your ids go here").sorted.zipWithIndex.foreach{
-        case (id, index) =>
-
-          println(s"""api.access.white-list.applicationIds.$index: "$id"""")
-      }
-    }
-  }
+  val MtdItService = "HMRC-MTD-IT"
 }

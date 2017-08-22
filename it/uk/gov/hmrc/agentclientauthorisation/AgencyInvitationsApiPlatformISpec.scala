@@ -20,14 +20,15 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.AgentCode
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
-  override val apiPlatform: Boolean = false
-}
+//class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
+//  override val apiPlatform: Boolean = false
+//}
 
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "GET /agencies" should {
@@ -36,46 +37,48 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   }
 
   "GET /agencies/:arn" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyResource(arn))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl(arn))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyUrl(arn))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyResource(arn1))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl(arn1))
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyUrl(arn1))
   }
 
   "GET /agencies/:arn/invitations" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyInvitationsUrl(arn))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyInvitationsUrl(arn))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyInvitationsUrl(arn1))
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyInvitationsUrl(arn1))
   }
 
   "GET /agencies/:arn/invitations/sent" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     s"return 403 NO_PERMISSION_ON_AGENCY for someone else's invitation list" in {
       given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andIsSubscribedToAgentServices()
-      val response = agencyGetSentInvitations(arn)
+      val response = agencyGetSentInvitations(arn1)
       response should matchErrorResult(NoPermissionOnAgency)
     }
   }
 
   "POST /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly{
-      agencySendInvitation(arn, validInvitation)
+      agencySendInvitation(arn1, validInvitation)
     }
   }
 
   "GET /agencies/:arn/invitations/sent/:invitationId" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     "Return 404 for an invitation that doesn't exist" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      val response = agencyGetSentInvitation(arn, BSONObjectID.generate.stringify)
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      val response = agencyGetSentInvitation(arn1, BSONObjectID.generate.stringify)
       response should matchErrorResult(InvitationNotFound)
     }
 
     s"Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      val location = agencySendInvitation(arn, validInvitation).header("location")
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+
+      val location = agencySendInvitation(arn1, validInvitation).header("location")
 
       given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andIsSubscribedToAgentServices()
       val response = new Resource(location.get, port).get()
@@ -86,108 +89,97 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "/agencies/:arn/invitations" should {
 
     "should not create invitation if postcodes do not match" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
         """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
     "should not create invitation for an unsupported service" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      val response = agencySendInvitation(arn, validInvitation.copy(service = "sa"))
+      val response = agencySendInvitation(arn1, validInvitation.copy(service = "sa"))
       withClue(response.body) {
         response should matchErrorResult(unsupportedService("Unsupported service \"sa\", the only currently supported service is \"HMRC-MTD-IT\""))
       }
     }
 
     "should not create invitation for an identifier type" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      val response = agencySendInvitation(arn, validInvitation.copy(clientIdType = "MTDITID"))
+      val response = agencySendInvitation(arn1, validInvitation.copy(clientIdType = "MTDITID"))
       withClue(response.body) {
         response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", the only currently supported type is \"ni\""))
       }
     }
 
     "should not create invitation for non-UK address" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
-      agencySendInvitation(arn, validInvitation) should matchErrorResult(nonUkAddress("AU"))
+      agencySendInvitation(arn1, validInvitation) should matchErrorResult(nonUkAddress("AU"))
     }
 
     "should not create invitation for invalid NINO" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
+      agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
     }
 
     "should create invitation if postcode has no spaces" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
-      val response = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "A A1 1A A"))
+      val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "A A1 1A A"))
       withClue(response.body) {
         response.status shouldBe 201
       }
     }
 
     "should not create invitation if DES does not return any Business Partner Record" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasNoBusinessPartnerRecord
-      agencySendInvitation(arn, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
-    }
-  }
-
-  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyCancelInvitation(arn, "invitaionId"))
-
-    "should return 204 when invitation is Cancelled" ignore {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
-      val location = agencySendInvitation(arn, validInvitation.copy(clientPostcode = "AA11AA")).header("location")
-      val response = agencyGetSentInvitation(arn, location.get)
-      response.status shouldBe 204
+      agencySendInvitation(arn1, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
     }
   }
 }
 
 trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
 
-  protected implicit val arn = Arn("ABCDEF12345678")
+  protected implicit val arn1 = Arn(arn)
   protected val otherAgencyArn: Arn = Arn("98765")
   protected val otherAgencyCode: AgentCode = AgentCode("123456")
-  protected implicit val agentCode = AgentCode("LMNOP123456")
+  protected implicit val agentCode1 = AgentCode(agentCode)
 
-  protected val MtdItService = "HMRC-MTD-IT"
-  protected val nino = nextNino
+  protected val nino: Nino = nextNino
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
 
-  "GET root resource" should {
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
-    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
-  }
+//  "GET root resource" should {
+//    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
+//    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
+//  }
 
   def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
     "return a meaningful response for the authenticated agent" in {
-      given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
 
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn1))
     }
   }
 

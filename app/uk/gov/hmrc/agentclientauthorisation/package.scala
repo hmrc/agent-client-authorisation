@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc
 
-
-package object controllers {
-
+/**
+  * Created by paulhodgson on 18/08/2017.
+  */
+package object agentclientauthorisation {
   val SUPPORTED_SERVICE = "HMRC-MTD-IT"
-  // we use "ni" not "nino" for consistency with API urls in the self-assessment-api service
-  val SUPPORTED_CLIENT_ID_TYPE = "ni"
-
+  val CLIENT_ID_TYPE_NINO = "ni"
+  val CLIENT_ID_TYPE_MTDITID = "MTDITID"
 }

@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
@@ -32,16 +33,19 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
 
     scenario("on the client id and status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, port)
+      val client = new ClientApi(this, nino, MtdItId("mtdItId1"), port)
+      val client2 = new ClientApi(this, nino2, MtdItId("mtdItId2"), port)
+
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).isLoggedInWithSessionId().hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(clientId = nino2).hasABusinessPartnerRecord()
+      given().client(clientId = nino).hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
+      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdItService),
-        (nino, MtdItService)
+        (client, MtdItService),
+        (client, MtdItService)
       )
 
       And("Sends an invitations to Client 2")
@@ -51,21 +55,21 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       clientAcceptsFirstInvitation(client)
 
       Then("The agent filters by Client 1 and Pending")
-      agencyFiltersByClient1Pending(agency)
+      agencyFiltersByClient1Pending(client.mtdItId, agency)
 
       Then("The agent filters by Client 2 and Accepted")
-      agencyFiltersByClient2Accepted(agency)
+      agencyFiltersByClient2Accepted(client2.mtdItId, agency)
     }
   }
 
-  def agencyFiltersByClient1Pending(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> nino.value, "status" -> "Pending"))
+  def agencyFiltersByClient1Pending(mtdItId: MtdItId, agency: AgencyApi) = {
+    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Pending"))
 
     invitations.numberOfInvitations shouldBe 1
   }
 
-  def agencyFiltersByClient2Accepted(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> nino2.value, "status" -> "Accepted"))
+  def agencyFiltersByClient2Accepted(mtdItId: MtdItId, agency: AgencyApi) = {
+    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Accepted"))
 
     invitations.numberOfInvitations shouldBe 0
   }

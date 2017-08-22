@@ -19,8 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
@@ -30,10 +32,10 @@ class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with 
 
   "Before the Agency has sent any invitations" in {
     val agency = new AgencyApi(this, arn, port)
-    val client = new ClientApi(this, nino, port)
+    val client = new ClientApi(this, nino, mtdItId1, port)
 
     given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-    given().client(clientId = nino).isLoggedInWithSessionId()
+    given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()

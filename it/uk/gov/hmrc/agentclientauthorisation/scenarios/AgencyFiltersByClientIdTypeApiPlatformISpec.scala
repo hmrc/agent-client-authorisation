@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
@@ -31,14 +32,16 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with Scena
 
     scenario("on the clientIdType of invitations") {
       val agency = new AgencyApi(this, arn, port)
+      val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
+
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino).hasABusinessPartnerRecord()
+      given().client(clientId = client.clientId).hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
-        (nino, MtdItService),
-        (nino, MtdItService)
+        (client, MtdItService),
+        (client, MtdItService)
       )
 
       Then("The agent filters by clientIdType=ni")

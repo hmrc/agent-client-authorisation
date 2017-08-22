@@ -23,13 +23,14 @@ import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.domain.AgentCode
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
 
-  val agentCode = AgentCode("ABCDEF123456")
-  val arn = Arn("A11111A")
+  val agentCode1 = AgentCode(agentCode)
+  val arn1 = Arn(arn)
 
-  override protected def additionalConfiguration = super.additionalConfiguration ++ Map(
+  override protected def additionalConfiguration: Map[String, Any] = super.additionalConfiguration ++ Map(
     "microservice.whitelist.enabled" -> "true",
     "microservice.whitelist.ips" -> Base64.getEncoder.encodeToString("192.168.1.2,192.168.1.3".getBytes))
 
@@ -38,20 +39,20 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
     "respond with NOT_IMPLEMENTED if whitelist is enabled and there is no IP address in header" in {
       givenLoggedInAgentIsAuthorised()
 
-      authResponseFor(arn, None).status shouldBe 501
+      authResponseFor(arn1, None).status shouldBe 501
     }
 
     "respond with forbidden if whitelist is enabled and there is an IP address in header that is not on the list" in {
       givenLoggedInAgentIsAuthorised()
 
-      authResponseFor(arn, Some("192.168.1.1")).status shouldBe 403
+      authResponseFor(arn1, Some("192.168.1.1")).status shouldBe 403
     }
 
     "be enabled if whitelist is enabled and there is an IP address in header that is on the list" in {
       givenLoggedInAgentIsAuthorised()
 
-      authResponseFor(arn, Some("192.168.1.2")).status shouldBe 200
-      authResponseFor(arn, Some("192.168.1.3")).status shouldBe 200
+      authResponseFor(arn1, Some("192.168.1.2")).status shouldBe 200
+      authResponseFor(arn1, Some("192.168.1.3")).status shouldBe 200
     }
   }
 
@@ -76,7 +77,7 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
 
   def givenLoggedInAgentIsAuthorised(): Unit = {
     given()
-        .agentAdmin(arn, agentCode)
+        .agentAdmin(arn1, agentCode1)
         .isLoggedIn()
         .andIsSubscribedToAgentServices()
   }
