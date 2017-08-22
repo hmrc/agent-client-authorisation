@@ -46,8 +46,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
 
-  val invitationsService = mock[InvitationsService]
-  val authConnector = mock[AuthConnector]
+  val invitationsService: InvitationsService = mock[InvitationsService]
+  val authConnector: AuthConnector = mock[AuthConnector]
 
   def controller: ClientInvitationsController
 
@@ -64,7 +64,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
     "Return no content" in {
       val request = FakeRequest()
-     // userIsLoggedIn
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
       action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
@@ -76,7 +75,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
     "Return not found when the invitation doesn't exist" in {
       val request = FakeRequest()
-      //userIsLoggedIn
       whenFindingAnInvitation thenReturn noInvitation
 
       val response = await(endpoint(request))
@@ -124,7 +122,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     when(invitationsService.findInvitation(eqs(invitationId))(any()))
   }
 
-  def userIsLoggedIn = {
+  def userIsLoggedIn: OngoingStubbing[Future[Authority]] = {
     whenAuthIsCalled thenReturn aClientUser()
   }
 
@@ -132,7 +130,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
     when(authConnector.currentAuthority()(any[HeaderCarrier], any[ExecutionContext]))
   }
 
-  def noInvitation = Future successful None
+  def noInvitation: Future[None.type] = Future successful None
 
   def anInvitation(nino:Nino) = Invitation(BSONObjectID(invitationId), arn, "MTDITID", mtdItId1.value, "A11 1AA", nino.value, "ni",
     List(StatusChangeEvent(now(), Pending)))
@@ -143,15 +141,18 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def anUpdatedInvitation()(implicit ec: ExecutionContext): Future[Invitation] =
     aFutureOptionInvitation() map (_.get)
 
-  def userIsNotLoggedIn = Future failed Upstream4xxResponse("Not logged in", 401, 401)
+  def userIsNotLoggedIn: Future[Nothing] = Future failed Upstream4xxResponse("Not logged in", 401, 401)
 
-  def anException = Future failed Upstream5xxResponse("Service failed", 500, 500)
+  def anException: Future[Nothing] = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: Nino = nino1) = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
+  def aClientUser(nino: Nino = nino1): Future[Authority] = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
 
-  def whenInvitationIsAccepted = when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
+  def whenInvitationIsAccepted: OngoingStubbing[Future[Either[String, Invitation]]] =
+    when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
-  def whenInvitationIsRejected = when(invitationsService.rejectInvitation(any[Invitation])(any()))
+  def whenInvitationIsRejected: OngoingStubbing[Future[Either[String, Invitation]]] =
+    when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
-  def whenClientReceivedInvitation = when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
+  def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
+    when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
 }

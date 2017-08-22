@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 //  "GET /clients" should {
@@ -109,10 +110,10 @@ class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
 
 trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests with ErrorResultMatchers {
 
-  protected implicit val arn = Arn("ABCDEF12345678")
-  protected implicit val agentCode = AgentCode("LMNOP123456")
-  protected val nino = nextNino
-  protected val nino1 = nextNino
+  protected implicit val arn1 = Arn(arn)
+  protected implicit val agentCode1 = AgentCode(agentCode)
+  protected val nino: Nino = nextNino
+  protected val nino1: Nino = nextNino
 
   protected val invitationsUrl = s"${clientUrl(nino)}/invitations"
   protected val invitationsReceivedUrl = s"$invitationsUrl/received"
@@ -123,8 +124,8 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 //  }
 
   protected def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
-    val agency = new AgencyApi(this, arn, port)
-    given().agentAdmin(arn, agentCode).isLoggedIn().andIsSubscribedToAgentServices()
+    val agency = new AgencyApi(this, arn1, port)
+    given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
     given().client(clientId = clientId).hasABusinessPartnerRecord()
 
     agency.sendInvitation(clientId)
@@ -137,7 +138,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
     "return a meaningful response for the authenticated clients" in {
-      given().client(clientId = nino).aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).aRelationshipIsCreatedWith(arn1)
 
       val response = new Resource(url, port).get()
 
