@@ -29,12 +29,15 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class BusinessDetails(businessAddressDetails: AddressDetails, mtdbsa: Option[MtdItId])
+case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
 
-case class AddressDetails(countryCode: String, postalCode: Option[String])
+case class BusinessData(businessAddressDetails: BusinessAddressDetails)
+
+case class BusinessAddressDetails(countryCode: String, postalCode: Option[String])
 
 object BusinessDetails {
-  implicit val addressReads: Reads[AddressDetails] = reads[AddressDetails]
+  implicit val businessAddressDetailsReads: Reads[BusinessAddressDetails] = reads[BusinessAddressDetails]
+  implicit val businessDataReads: Reads[BusinessData] = reads[BusinessData]
   implicit val businessDetailsReads: Reads[BusinessDetails] = reads[BusinessDetails]
 }
 
