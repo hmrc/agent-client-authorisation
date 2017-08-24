@@ -33,5 +33,5 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     httpPut.PUT[String, HttpResponse](relationshipUrl(arn, mtdItId).toString, "") map (_ => Unit)
 
   def relationshipUrl(arn: Arn, mtdItId: MtdItId): URL = new URL(baseUrl,
-    s"/agent-client-relationships/relationships/mtd-sa/${encodePathSegment(mtdItId.value)}/${encodePathSegment(arn.value)}")
+    s"/agent-client-relationships/agent/${encodePathSegment(arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(mtdItId.value)}")
 }

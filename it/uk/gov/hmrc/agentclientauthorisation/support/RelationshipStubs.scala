@@ -24,7 +24,7 @@ trait RelationshipStubs[A] {
   def canonicalClientId: MtdItId
 
   def aRelationshipIsCreatedWith(arn: Arn): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/relationships/mtd-sa/${canonicalClientId.value}/${arn.value}"))
+    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
