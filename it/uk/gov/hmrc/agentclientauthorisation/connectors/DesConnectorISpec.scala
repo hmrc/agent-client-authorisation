@@ -32,8 +32,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
 
       val response = await(connector.getBusinessDetails(client.clientId)).get
 
-      response.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
+      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
       response.mtdbsa shouldBe None
     }
 
@@ -52,12 +52,23 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
     "return mtdItId for a registered client" in {
       val client = given()
         .client()
-        .hasABusinessPartnerRecordWithMtdItId()
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
       val response = await(connector.getBusinessDetails(client.clientId)).get
 
-      response.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
+      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.mtdbsa shouldBe Some(mtdItId1)
+    }
+
+    "return mtdItId if the business data is empty" in {
+      val client = given()
+        .client()
+        .hasBusinessPartnerRecordWithEmptyBusinessData(mtdItId1)
+
+      val response = await(connector.getBusinessDetails(client.clientId)).get
+
+      response.businessData.size shouldBe 0
       response.mtdbsa shouldBe Some(mtdItId1)
     }
   }

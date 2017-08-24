@@ -21,7 +21,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessAddressDetails, BusinessData, BusinessDetails, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
@@ -46,7 +46,9 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private def responseFor(invite: AgentInvitation): Result = {
     await(checkForErrors(invite)).get
   }
-  private def postcodeCheck(postcode: String = "AN11PA") = when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(BusinessDetails(AddressDetails("GB", Some(postcode)), None)))
+  private def postcodeCheck(postcode: String = "AN11PA") =
+    when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(
+      Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", Some(postcode)))), None)))
 
   "checkForErrors" should {
 

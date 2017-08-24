@@ -34,12 +34,36 @@ trait DesStubs[A] {
         .willReturn(aResponse()
           .withStatus(200)
             .withBody(s"""
-              |{
-              |  "businessAddressDetails": {
-              |    "postalCode": "$postcode",
-              |    "countryCode": "$countryCode"
-              |  }
-              |}
+                         |  {
+                         |  "safeId": "XV0000100093327",
+                         |  "nino": "ZR987654C",
+                         |  "propertyIncome": false,
+                         |  "businessData": [
+                         |    {
+                         |      "incomeSourceId": "XWIS00000000219",
+                         |      "accountingPeriodStartDate": "2017-05-06",
+                         |      "accountingPeriodEndDate": "2018-05-05",
+                         |      "tradingName": "Surname DADTN",
+                         |      "businessAddressDetails": {
+                         |        "addressLine1": "100 Sutton Street",
+                         |        "addressLine2": "Wokingham",
+                         |        "addressLine3": "Surrey",
+                         |        "addressLine4": "London",
+                         |        "postalCode": "$postcode",
+                         |        "countryCode": "$countryCode"
+                         |      },
+                         |      "businessContactDetails": {
+                         |        "phoneNumber": "01111222333",
+                         |        "mobileNumber": "04444555666",
+                         |        "faxNumber": "07777888999",
+                         |        "emailAddress": "aaa@aaa.com"
+                         |      },
+                         |      "tradingStartDate": "2016-05-06",
+                         |      "cashOrAccruals": "cash",
+                         |      "seasonal": true
+                         |    }
+                         |  ]
+                         |}
               """.stripMargin)))
     this
   }
@@ -51,14 +75,56 @@ trait DesStubs[A] {
         .willReturn(aResponse()
           .withStatus(200)
             .withBody(s"""
-               |{
-               |  "businessAddressDetails": {
-               |    "postalCode": "AA11AA",
-               |    "countryCode": "GB"
-               |  },
-               |  "mtdbsa": "${mtdItId.value}"
-               |}
-               |""".stripMargin)))
+                         |  {
+                         |  "safeId": "XV0000100093327",
+                         |  "nino": "ZR987654C",
+                         |  "mtdbsa": "${mtdItId.value}",
+                         |  "propertyIncome": false,
+                         |  "businessData": [
+                         |    {
+                         |      "incomeSourceId": "XWIS00000000219",
+                         |      "accountingPeriodStartDate": "2017-05-06",
+                         |      "accountingPeriodEndDate": "2018-05-05",
+                         |      "tradingName": "Surname DADTN",
+                         |      "businessAddressDetails": {
+                         |        "addressLine1": "100 Sutton Street",
+                         |        "addressLine2": "Wokingham",
+                         |        "addressLine3": "Surrey",
+                         |        "addressLine4": "London",
+                         |        "postalCode": "AA11AA",
+                         |        "countryCode": "GB"
+                         |      },
+                         |      "businessContactDetails": {
+                         |        "phoneNumber": "01111222333",
+                         |        "mobileNumber": "04444555666",
+                         |        "faxNumber": "07777888999",
+                         |        "emailAddress": "aaa@aaa.com"
+                         |      },
+                         |      "tradingStartDate": "2016-05-06",
+                         |      "cashOrAccruals": "cash",
+                         |      "seasonal": true
+                         |    }
+                         |  ]
+                         |}
+             |""".stripMargin)))
+    this
+  }
+
+  def hasBusinessPartnerRecordWithEmptyBusinessData(mtdItId: MtdItId = mtdItId1): A = {
+    stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      .withHeader("authorization", equalTo("Bearer secret"))
+      .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+            .withBody(s"""
+                         |  {
+                         |  "safeId": "XV0000100093327",
+                         |  "nino": "ZR987654C",
+                         |  "mtdbsa": "${mtdItId.value}",
+                         |  "propertyIncome": false,
+                         |  "businessData": []
+                         |}
+             |""".stripMargin)))
     this
   }
 
