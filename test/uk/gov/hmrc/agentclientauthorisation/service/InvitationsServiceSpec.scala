@@ -25,7 +25,7 @@ import org.scalatest.mock.MockitoSugar
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AddressDetails, BusinessDetails, DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -253,12 +253,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   private def whenDesBusinessPartnerRecordExistsFor(nino: Nino, mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] = {
     when(desConnector.getBusinessDetails(nino)).thenReturn(
-      Future successful Some(BusinessDetails(AddressDetails("postcode", None), Some(MtdItId(mtdItId)))))
+      Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), Some(MtdItId(mtdItId)))))
   }
 
   private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] = {
     when(desConnector.getBusinessDetails(nino)).thenReturn(
-      Future successful Some(BusinessDetails(AddressDetails("postcode", None), None)))
+      Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), None)))
   }
 
   private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] = {
