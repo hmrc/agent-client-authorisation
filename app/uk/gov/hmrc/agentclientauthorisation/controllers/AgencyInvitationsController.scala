@@ -89,11 +89,11 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
 
   def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] = getDetailsForAgency(arn)
 
-  def getSentInvitations(arn: Arn, service: Option[String], clientIdType: Option[String],
+  def getSentInvitations(givenArn: Arn, service: Option[String], clientIdType: Option[String],
                          clientId: Option[String], status: Option[InvitationStatus]): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
-        forThisAgency(arn) {
+        forThisAgency(givenArn) {
           invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
             Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
           }

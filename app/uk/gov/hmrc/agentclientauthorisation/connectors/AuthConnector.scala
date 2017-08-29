@@ -21,6 +21,7 @@ import javax.inject._
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
@@ -43,7 +44,7 @@ case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest
 
 @Singleton
 class AuthConnector @Inject()(metrics: Metrics,
-                              microserviceAuthConnector: MicroserviceAuthConnector)
+                              microserviceAuthConnector: PlayAuthConnector)
   extends HttpAPIMonitor with AuthorisedFunctions with BaseController {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -81,8 +82,14 @@ class AuthConnector @Inject()(metrics: Metrics,
         case Some(_) ~ allEnrols ⇒
           val nino = extractEnrolmentData(allEnrols.enrolments, clientEnrol, clientEnrolId)
           if (nino.isDefined) action(request)(Nino(nino.get))
-          else Future successful GenericUnauthorized
-        case _ => Future successful GenericUnauthorized
+          else {
+            Logger.warn("Nino does not match")
+            Future successful GenericUnauthorized
+          }
+        case _ => {
+          Logger.warn("Client Not Authorised")
+          Future successful GenericUnauthorized
+        }
       }
     }
   }

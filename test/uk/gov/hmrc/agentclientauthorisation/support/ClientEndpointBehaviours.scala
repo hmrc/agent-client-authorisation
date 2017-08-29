@@ -44,8 +44,6 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ClientEndpointBehaviours extends TransitionInvitation {
   this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
 
-  private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
-
   val invitationsService: InvitationsService = mock[InvitationsService]
   val authConnector: AuthConnector = mock[AuthConnector]
 
@@ -62,35 +60,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def clientStatusChangeEndpoint(nino: Nino)(toStatus: InvitationStatus, endpoint: => Action[AnyContent], action: => OngoingStubbing[Future[Either[String, Invitation]]]) {
 
-    "Return no content" in {
-      val request = FakeRequest()
-      val invitation = anInvitation(nino)
-      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-      action thenReturn (Future successful Right(transitionInvitation(invitation, toStatus)))
-
-      val response = await(endpoint(request))
-
-      response.header.status shouldBe 204
-    }
-
-    "Return not found when the invitation doesn't exist" in {
-      val request = FakeRequest()
-      whenFindingAnInvitation thenReturn noInvitation
-
-      val response = await(endpoint(request))
-
-      response shouldBe InvitationNotFound
-    }
-
-//    "Return unauthorised when the user is not logged in to MDTP" in {
-//      val request = FakeRequest()
-//      whenAuthIsCalled thenReturn userIsNotLoggedIn
-//
-//      val response = await(endpoint(request))
-//
-//      response shouldBe GenericUnauthorized
-//    }
-
     "Return forbidden" when {
 //      "the invitation is for a different client" in {
 //        val request = FakeRequest()
@@ -104,30 +73,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 //        response shouldBe NoPermissionOnClient
 //      }
 
-      "the invitation cannot be actioned" in {
-        val request = FakeRequest()
-        userIsLoggedIn
-        whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-        action thenReturn (Future successful Left("failure message"))
-
-        val response = await(endpoint(request))
-
-        response shouldBe invalidInvitationStatus("failure message")
-      }
     }
   }
 
-
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
     when(invitationsService.findInvitation(eqs(invitationId))(any()))
-  }
-
-  def userIsLoggedIn: OngoingStubbing[Future[Authority]] = {
-    whenAuthIsCalled thenReturn aClientUser()
-  }
-
-  def whenAuthIsCalled: OngoingStubbing[Future[Authority]] = {
-    when(authConnector.currentAuthority()(any[HeaderCarrier], any[ExecutionContext]))
   }
 
   def noInvitation: Future[None.type] = Future successful None
@@ -138,14 +88,13 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation(nino1))
 
-  def anUpdatedInvitation()(implicit ec: ExecutionContext): Future[Invitation] =
-    aFutureOptionInvitation() map (_.get)
+//  def anUpdatedInvitation()(implicit ec: ExecutionContext): Future[Invitation] =  aFutureOptionInvitation() map (_.get)
 
-  def userIsNotLoggedIn: Future[Nothing] = Future failed Upstream4xxResponse("Not logged in", 401, 401)
+//  def userIsNotLoggedIn: Future[Nothing] = Future failed Upstream4xxResponse("Not logged in", 401, 401)
 
-  def anException: Future[Nothing] = Future failed Upstream5xxResponse("Service failed", 500, 500)
+//  def anException: Future[Nothing] = Future failed Upstream5xxResponse("Service failed", 500, 500)
 
-  def aClientUser(nino: Nino = nino1): Future[Authority] = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
+//  def aClientUser(nino: Nino = nino1): Future[Authority] = Future successful Authority(Some(nino), enrolmentsNotNeededForThisTest)
 
   def whenInvitationIsAccepted: OngoingStubbing[Future[Either[String, Invitation]]] =
     when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
