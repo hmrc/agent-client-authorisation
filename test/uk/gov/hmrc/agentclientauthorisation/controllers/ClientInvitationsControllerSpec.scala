@@ -31,30 +31,28 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
-import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar}
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours {
-  private val enrolmentsNotNeededForThisTest = new URL("http://localhost/enrolments-not-specified")
-
-  val metrics = resettingMock[Metrics]
-  val microserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
+class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours with TestData {
+  val metrics: Metrics = resettingMock[Metrics]
+  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
   val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector) {
-    override val authConnector = mockPlayAuthConnector
+    override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
-  val invitationId = BSONObjectID.generate.stringify
+  val invitationId: String = BSONObjectID.generate.stringify
   val generator = new Generator()
-  val nino = nino1
-  val arn: Arn = Arn("12345")
+  val nino: Nino = nino1
+  //val arn: Arn = Arn("12345")
 
   private def authStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)

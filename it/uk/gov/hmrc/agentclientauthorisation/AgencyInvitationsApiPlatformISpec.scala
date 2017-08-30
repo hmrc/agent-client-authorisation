@@ -52,7 +52,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     s"return 403 NO_PERMISSION_ON_AGENCY for someone else's invitation list" in {
-      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       val response = agencyGetSentInvitations(arn1)
       response should matchErrorResult(NoPermissionOnAgency)
     }
@@ -68,19 +68,19 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     "Return 404 for an invitation that doesn't exist" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       val response = agencyGetSentInvitation(arn1, BSONObjectID.generate.stringify)
       response should matchErrorResult(InvitationNotFound)
     }
 
-    s"Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+    "Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       val location = agencySendInvitation(arn1, validInvitation).header("location")
 
-      given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(Arn("98765"), AgentCode("123456")).isLoggedInAndIsSubscribed
       val response = new Resource(location.get, port).get()
       response should matchErrorResult(NoPermissionOnAgency)
     }
@@ -89,20 +89,20 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "/agencies/:arn/invitations" should {
 
     "should not create invitation if postcodes do not match" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
         """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
     "should not create invitation for an unsupported service" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn1, validInvitation.copy(service = "sa"))
       withClue(response.body) {
@@ -111,7 +111,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "should not create invitation for an identifier type" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn1, validInvitation.copy(clientIdType = "MTDITID"))
       withClue(response.body) {
@@ -120,26 +120,26 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "should not create invitation for non-UK address" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
       agencySendInvitation(arn1, validInvitation) should matchErrorResult(nonUkAddress("AU"))
     }
 
     "should not create invitation for invalid NINO" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecord()
       agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
     }
 
     "should create invitation if postcode has no spaces" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "A A1 1A A"))
@@ -149,7 +149,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "should not create invitation if DES does not return any Business Partner Record" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       given().client(clientId = nino).hasNoBusinessPartnerRecord
       agencySendInvitation(arn1, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
     }
@@ -173,7 +173,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
     "return a meaningful response for the authenticated agent" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
 
       val response = new Resource(url, port).get()
 
@@ -185,7 +185,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url:String): Unit = {
     "return 403 for someone else's invitations" in {
-      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedIn().andIsSubscribedToAgentServices()
+      given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedInAndIsSubscribed.andIsSubscribedToAgentServices()
       new Resource(url, port).get() should matchErrorResult(NoPermissionOnAgency)
     }
   }

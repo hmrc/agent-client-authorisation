@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime._
-import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 import scala.concurrent.Future
 
-package object controllers {
+trait TestData {
 
   val arn = Arn("arn1")
 
@@ -45,27 +44,30 @@ package object controllers {
       state = "", delegatedAuthRule = None)
   )
 
-  val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment)))
-
   val clientEnrolment = Set(
     Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", nino1.value)), confidenceLevel = ConfidenceLevel.L200,
       state = "", delegatedAuthRule = None)
   )
 
-//  val clientFixedEnrolment = Set(
-//    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("AgentReferenceNumber", "AA112233A")), confidenceLevel = ConfidenceLevel.L200,
-//      state = "", delegatedAuthRule = None)
-//  )
-
   val clientAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(clientEnrolment)))
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(clientEnrolment)))
 
-//  val clientFixedAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-//    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(clientFixedEnrolment)))
+  val clientNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(Set.empty[Enrolment])))
+
+  val clientNoAffinityGroup: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](None, Enrolments(clientEnrolment)))
+
+  val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment)))
 
   val neitherHaveAffinityOrEnrolment: Future[~[Option[AffinityGroup], Enrolments]] =
     Future.successful(new ~[Option[AffinityGroup], Enrolments](None, Enrolments(Set.empty[Enrolment])))
 
+  val agentNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(Set.empty[Enrolment])))
+
+  val agentIncorrectAffinity: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment)))
 
 }

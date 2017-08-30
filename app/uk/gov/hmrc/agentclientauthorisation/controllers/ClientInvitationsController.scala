@@ -41,11 +41,11 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   //      Future successful Ok(toHalResource(request.nino.value, request.path))
   //  }
 
-  def getDetailsForClient(nino: Nino): Action[AnyContent] = onlyForClients {
+  def getDetailsForClient(givenNino: Nino): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit nino =>
         Future successful {
-          Ok(toHalResource(nino, request.path))
+          Ok(toHalResource(givenNino, request.path))
           //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
           //        else NoPermissionOnClient
         }

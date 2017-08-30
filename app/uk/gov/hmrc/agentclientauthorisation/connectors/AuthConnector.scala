@@ -24,7 +24,6 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
-import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core
@@ -67,6 +66,7 @@ class AuthConnector @Inject()(metrics: Metrics,
         case Some(affinityG) ~ allEnrols ⇒
           (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
             case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
+            case (_, None) => Future successful AgentNotSubscribed
             case _ => Future successful GenericUnauthorized
           }
         case _ => Future successful GenericUnauthorized
@@ -84,12 +84,11 @@ class AuthConnector @Inject()(metrics: Metrics,
           if (nino.isDefined) action(request)(Nino(nino.get))
           else {
             Logger.warn("Nino does not match")
-            Future successful GenericUnauthorized
+            Future successful ClientNinoNotFound
           }
-        case _ => {
+        case _ =>
           Logger.warn("Client Not Authorised")
           Future successful GenericUnauthorized
-        }
       }
     }
   }

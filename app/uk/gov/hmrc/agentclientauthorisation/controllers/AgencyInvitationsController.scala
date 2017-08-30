@@ -42,13 +42,13 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter
     with AgentInvitationValidation with AgencyInvitationsHal {
 
-  def createInvitation(arn: Arn): Action[AnyContent] = onlyForAgents {
+  def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
         val invitationJson: Option[JsValue] = request.body.asJson
         localWithJsonBody ({ agentInvitation =>
           checkForErrors(agentInvitation).flatMap(
-            _.fold(makeInvitation(arn, agentInvitation))(error => Future successful error))
+            _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
         }, invitationJson.get)
   }
 
@@ -79,10 +79,10 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
         Future successful Ok(toHalResource(arn, request.path))
   }
 
-  def getDetailsForAgency(arn: Arn): Action[AnyContent] = onlyForAgents {
+  def getDetailsForAgency(givenArn: Arn): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
-        forThisAgency(arn) {
+        forThisAgency(givenArn) {
           Future successful Ok(toHalResource(arn, request.path))
         }
   }
@@ -100,10 +100,10 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
         }
   }
 
-  def getSentInvitation(arn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
+  def getSentInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
-        forThisAgency(arn) {
+        forThisAgency(givenArn) {
           invitationsService.findInvitation(invitationId).map {
             _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
           }
@@ -116,12 +116,12 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     else block
   }
 
-  def cancelInvitation(arn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
+  def cancelInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
-        forThisAgency(arn) {
+        forThisAgency(givenArn) {
           invitationsService.findInvitation(invitationId) flatMap {
-            case Some(i) if i.arn == arn => invitationsService.cancelInvitation(i) map {
+            case Some(i) if i.arn == givenArn => invitationsService.cancelInvitation(i) map {
               case Right(_) => NoContent
               case Left(message) => invalidInvitationStatus(message)
             }

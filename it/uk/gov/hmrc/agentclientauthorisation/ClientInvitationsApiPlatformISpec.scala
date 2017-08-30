@@ -125,7 +125,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   protected def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
     val agency = new AgencyApi(this, arn1, port)
-    given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
+    given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
     given().client(clientId = clientId).hasABusinessPartnerRecord()
 
     agency.sendInvitation(clientId)
