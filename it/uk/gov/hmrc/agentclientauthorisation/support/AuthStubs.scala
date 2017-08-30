@@ -79,6 +79,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def oid: String
+
   def clientId: Nino
 
   def isLoggedIn(): A = {
@@ -87,20 +88,19 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
-         |  "new-session":"/auth/oid/$oid/session",
-         |  "enrolments":"/auth/oid/$oid/enrolments",
-         |  "uri":"/auth/oid/$oid",
-         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
-         |  "credentials":{
-         |    "gatewayId":"0000001592621267"
-         |  },
-         |  "nino": "${clientId.value}",
-         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
-         |  "credentialStrength":"strong",
-         |  "confidenceLevel":50,
-         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
-         |  "levelOfAssurance":"1",
-         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |  "affinityGroup": "Individual",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-NI",
+         |      "identifiers": [
+         |        {
+         |          "key": "NINO",
+         |          "value": "${clientId.value}"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
          |}
        """.stripMargin
     )))
@@ -116,23 +116,22 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   def isLoggedInWithSessionId(): A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).withHeader("X-Session-ID", containing(clientId.value)).willReturn(aResponse().withStatus(200).withBody(
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).withHeader("X-Session-ID", containing(clientId.value)).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
-         |  "new-session":"/auth/oid/$oid/session",
-         |  "enrolments":"/auth/oid/$oid/enrolments",
-         |  "uri":"/auth/oid/$oid",
-         |  "loggedInAt":"2016-06-20T10:44:29.634Z",
-         |  "credentials":{
-         |    "gatewayId":"0000001592621267"
-         |  },
-         |  "nino": "${clientId.value}",
-         |  "lastUpdated":"2016-06-20T10:44:29.634Z",
-         |  "credentialStrength":"strong",
-         |  "confidenceLevel":50,
-         |  "userDetailsLink":"$wiremockBaseUrl/user-details/id/$oid",
-         |  "levelOfAssurance":"1",
-         |  "previouslyLoggedInAt":"2016-06-20T09:48:37.112Z"
+         |  "affinityGroup": "Individual",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-NI",
+         |      "identifiers": [
+         |        {
+         |          "key": "NINO",
+         |          "value": "${clientId.value}"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
          |}
        """.stripMargin
     )))
@@ -155,33 +154,12 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def oid: String
+
   def arn: String
+
   def agentCode: String
 
   protected var saAgentReference: Option[SaAgentReference] = None
-
-
-  def andIsSubscribedToAgentServices(): A = {
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"Activated"},
-         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"Activated"},
-         | {"key":"HMRC-AS-AGENT","identifiers":[{"key":"AnotherIdentifier", "value": "not the ARN"}, {"key":"AgentReferenceNumber","value":"$arn"}],"state":"Activated"}]
-         """.stripMargin
-    )))
-    this
-  }
-
-  def andIsNotSubscribedToAgentServices(): A = {
-    stubFor(get(urlPathEqualTo(s"/auth/oid/$oid/enrolments")).willReturn(aResponse().withStatus(200).withBody(
-      s"""
-         |[{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IrAgentReference","value":"HZ1234"}],"state":"Activated"},
-         | {"key":"HMRC-AGENT-AGENT","identifiers":[{"key":"AgentRefNumber","value":"JARN1234567"}],"state":"Activated"}]
-         """.stripMargin
-    )))
-    this
-  }
-
 
   def isLoggedInAndIsSubscribed: A = {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
@@ -189,69 +167,163 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
-         |   "affinityGroup":"Agent",
-         |   "allEnrolments":[
-         |      {
-         |         "key":"HMRC-AS-AGENT",
-         |         "identifiers":[
-         |            {
-         |               "key":"AgentReferenceNumber",
-         |               "value":"$arn"
-         |            }
-         |         ],
-         |         "state":"Activated"
-         |      }
-         |   ]
+         |  "affinityGroup": "Agent",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-AS-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AgentReferenceNumber",
+         |          "value": "$arn"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "IR-PAYE-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "IrAgentReference",
+         |          "value": "HZ1234"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "HMRC-AS-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AnotherIdentifier",
+         |          "value": "not the ARN"
+         |        },
+         |        {
+         |          "key": "AgentReferenceNumber",
+         |          "value": "$arn"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
          |}
        """.stripMargin
     )))
     this
   }
 
-  def isLoggedInAndNotSubscribed(): A = {
+  def isLoggedInAndNotSubscribed: A = {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
-         |   "affinityGroup":"Agent",
-         |   "allEnrolments":[
-         |      {
-         |         "key":"HMRC-AGENT-AGENT",
-         |         "identifiers":[
-         |            {
-         |               "key":"AgentRefNumber",
-         |               "value":"JARN1234567"
-         |            }
-         |         ],
-         |         "state":"Activated"
-         |      }
-         |   ]
+         |  "affinityGroup": "Agent",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-AGENT-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AgentRefNumber",
+         |          "value": "JARN1234567"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "IR-PAYE-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "IrAgentReference",
+         |          "value": "HZ1234"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
          |}
        """.stripMargin
     )))
     this
   }
 
-  def isLoggedInWithSessionId(): A = {
+  def isLoggedInWithSessionIdAndSubscribed: A = {
     stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).withHeader("X-Session-ID", containing(arn)).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
-         |   "affinityGroup":"Agent",
-         |   "allEnrolments":[
-         |      {
-         |         "key":"HMRC-AS-AGENT",
-         |         "identifiers":[
-         |            {
-         |               "key":"AgentReferenceNumber",
-         |               "value":"$arn"
-         |            }
-         |         ],
-         |         "state":"Activated"
-         |      }
-         |   ]
+         |  "affinityGroup": "Agent",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-AS-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AgentReferenceNumber",
+         |          "value": "$arn"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "IR-PAYE-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "IrAgentReference",
+         |          "value": "HZ1234"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "HMRC-AS-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AnotherIdentifier",
+         |          "value": "not the ARN"
+         |        },
+         |        {
+         |          "key": "AgentReferenceNumber",
+         |          "value": "$arn"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
+         |}
+       """.stripMargin
+    )))
+    this
+  }
+
+
+  def isLoggedInWithSessionIdAndNotSubscribed: A = {
+    stubFor(get(urlPathEqualTo(s"/authorise/read/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(get(urlPathEqualTo(s"/authorise/write/agent/$agentCode")).willReturn(aResponse().withStatus(200)))
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).withHeader("X-Session-ID", containing(arn)).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "affinityGroup": "Agent",
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-AGENT-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "AgentRefNumber",
+         |          "value": "JARN1234567"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    },
+         |    {
+         |      "key": "IR-PAYE-AGENT",
+         |      "identifiers": [
+         |        {
+         |          "key": "IrAgentReference",
+         |          "value": "HZ1234"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
          |}
        """.stripMargin
     )))

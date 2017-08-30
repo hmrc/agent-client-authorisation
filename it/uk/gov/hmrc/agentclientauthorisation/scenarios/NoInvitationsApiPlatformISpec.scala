@@ -34,7 +34,7 @@ class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with 
     val agency = new AgencyApi(this, arn, port)
     val client = new ClientApi(this, nino, mtdItId1, port)
 
-    given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
+    given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
     given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
     info("the Agency sent invitations should be empty")

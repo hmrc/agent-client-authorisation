@@ -35,8 +35,8 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionId().andIsSubscribedToAgentServices()
-      given().client(clientId = nino, canonicalClientId = mtdItId1).hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithSessionId().hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
