@@ -91,12 +91,12 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return unauthorised when user's nino does not match" in {
+    "Return ClientNinoNotFound when user's nino does not match" in {
       authStub(agentAffinityAndEnrolments)
 
       val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
 
-      response shouldBe GenericUnauthorized
+      response shouldBe ClientNinoNotFound
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -146,12 +146,12 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return unauthorised when user's nino does not match" in {
+    "Return ClientNinoNotFound when user's nino does not match" in {
       authStub(agentAffinityAndEnrolments)
 
       val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
 
-      response shouldBe GenericUnauthorized
+      response shouldBe ClientNinoNotFound
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {

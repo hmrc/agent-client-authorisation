@@ -59,12 +59,12 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
       status(response) shouldBe OK
     }
 
-    "return UNAUTHORISED when the user has no HMRC-AS-AGENT enrolment" in {
+    "return FORBIDDEN when the user has no HMRC-AS-AGENT enrolment" in {
       authStub(agentNoEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
-      status(response) shouldBe UNAUTHORIZED
+      status(response) shouldBe FORBIDDEN
     }
 
     "return UNAUTHORISED when the user does not belong to Agent affinity group" in {
@@ -93,12 +93,12 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
       status(response) shouldBe OK
     }
 
-    "return UNAUTHORISED when the user has no HMRC-NI enrolment" in {
+    "return FORBIDDEN when the user has no HMRC-NI enrolment" in {
       authStub(clientNoEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
 
-      status(response) shouldBe UNAUTHORIZED
+      status(response) shouldBe FORBIDDEN
     }
 
     "return UNAUTHORISED when the user does not belong to an affinity group" in {
