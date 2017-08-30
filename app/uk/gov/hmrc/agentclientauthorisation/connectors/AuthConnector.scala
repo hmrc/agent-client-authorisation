@@ -97,28 +97,4 @@ class AuthConnector @Inject()(metrics: Metrics,
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
     enrolls.find(_.key == enrolKey).flatMap(_.getIdentifier(enrolId)).map(_.value)
-
-  //  def currentAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Authority] = {
-  //    val authorityUrl = new URL(baseUrl, "/auth/authority")
-  //    httpGet.GET[JsValue](authorityUrl.toString).map(authorityFromJson(authorityUrl, _))
-  //  }
-  //
-  //  private[connectors] def authorityFromJson(authorityUrl: URL, authorityJson: JsValue): Authority =
-  //    Authority(
-  //      nino = (authorityJson \ "nino").asOpt[Nino],
-  //      enrolmentsUrl = new URL(authorityUrl, enrolmentsRelativeUrl(authorityJson))
-  //    )
-  //
-  //  def currentArn()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
-  //    currentAuthority.flatMap(arn)
-  //  }
-  //
-  //  def arn(authority: Authority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Arn]] = {
-  //    enrolments(authority.enrolmentsUrl).map(_.arnOption)
-  //  }
-  //
-  //  private def enrolments(enrolmentsUrl: URL)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Enrolments] =
-  //    httpGet.GET[Set[AuthEnrolment]](enrolmentsUrl.toString).map(Enrolments(_))
-  //
-  //  private def enrolmentsRelativeUrl(authorityJson: JsValue) = (authorityJson \ "enrolments").as[String]
 }

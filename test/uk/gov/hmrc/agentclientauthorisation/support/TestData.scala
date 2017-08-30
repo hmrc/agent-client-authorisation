@@ -70,4 +70,7 @@ trait TestData {
   val agentIncorrectAffinity: Future[~[Option[AffinityGroup], Enrolments]] =
     Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment)))
 
+  val failedStub: Future[~[Option[AffinityGroup], Enrolments]] =
+    Future failed new NullPointerException
+
 }

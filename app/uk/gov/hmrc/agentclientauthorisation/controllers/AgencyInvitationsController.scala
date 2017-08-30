@@ -19,8 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.libs.json.{JsError, JsSuccess, JsValue}
+import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
@@ -46,7 +46,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     implicit request =>
       implicit arn =>
         val invitationJson: Option[JsValue] = request.body.asJson
-        localWithJsonBody ({ agentInvitation =>
+        localWithJsonBody({ agentInvitation =>
           checkForErrors(agentInvitation).flatMap(
             _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
         }, invitationJson.get)

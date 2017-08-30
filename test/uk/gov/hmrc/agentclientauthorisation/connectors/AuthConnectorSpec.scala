@@ -75,14 +75,22 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
       status(response) shouldBe UNAUTHORIZED
     }
 
-    "return UNAUTHORISED when the auth fails to return an AffinityGroup or Enrolments" in {
+    "return UNAUTHORISED when auth fails to return an AffinityGroup or Enrolments" in {
       authStub(neitherHaveAffinityOrEnrolment)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
       status(response) shouldBe UNAUTHORIZED
     }
-  }
+
+    "return UNAUTHORISED when auth throws an error" in {
+      authStub(failedStub)
+
+      val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
+
+      status(response) shouldBe UNAUTHORIZED
+    }
+  } 
 
   "onlyForClients" should {
     "successfully grant access to a Client with HMRC-NI enrolment" in {
@@ -111,6 +119,14 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
     "return UNAUTHORISED when the auth fails to return an AffinityGroup or Enrolments" in {
       authStub(neitherHaveAffinityOrEnrolment)
+
+      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+
+      status(response) shouldBe UNAUTHORIZED
+    }
+
+    "return UNAUTHORISED when auth throws an error" in {
+      authStub(failedStub)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
 

@@ -30,7 +30,6 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core._
@@ -227,7 +226,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
-     // "agent-client-authorisation",
+      // "agent-client-authorisation",
       "agencies",
       arn.value,
       "invitations",

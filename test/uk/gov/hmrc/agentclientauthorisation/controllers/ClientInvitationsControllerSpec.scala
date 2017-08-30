@@ -16,27 +16,23 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.net.URL
-
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
 import org.mockito.Matchers.{any, eq => eqs}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +48,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val invitationId: String = BSONObjectID.generate.stringify
   val generator = new Generator()
   val nino: Nino = nino1
-  //val arn: Arn = Arn("12345")
 
   private def authStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)
@@ -168,7 +163,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       authStub(clientAffinityAndEnrolments)
 
       when(invitationsService.translateToMtdItId(
-        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
+        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
@@ -179,7 +174,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "return 404 when no translation found for supplied client id and type" in {
       when(invitationsService.translateToMtdItId(
-        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful None)
+        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful None)
 
       val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
       status(result) shouldBe 404
@@ -187,7 +182,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
       when(invitationsService.translateToMtdItId(
-        eqs(nino1.value),eqs("ni"))(any[HeaderCarrier],any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
+        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
 
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
@@ -197,8 +192,8 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
       status(result) shouldBe 200
 
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations") (0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations") (0) \ "invitationId").asOpt[String] shouldBe None
     }
   }
 }
