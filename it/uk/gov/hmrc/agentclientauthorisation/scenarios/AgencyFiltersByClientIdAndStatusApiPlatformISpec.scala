@@ -38,9 +38,9 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
-      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
+      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
+      given().client(clientId = nino2).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(

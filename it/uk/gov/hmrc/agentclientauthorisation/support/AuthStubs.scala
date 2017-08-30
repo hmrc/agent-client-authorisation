@@ -27,12 +27,12 @@ trait WiremockAware {
 trait BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
-  def isNotLoggedIn(): A = {
+  def isNotLoggedIn: A = {
     // /authorise/... response is forwarded in AuthorisationFilter as is (if status is 401 or 403), which does not have
     // Content-length by default. That kills Play's WS lib, which is used in tests. (Somehow it works in the filter though.)
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(401)))
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
     this
   }
 }
@@ -82,10 +82,10 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
 
   def clientId: Nino
 
-  def isLoggedIn(): A = {
+  def isLoggedIn: A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
-    stubFor(get(urlPathEqualTo(s"/auth/authority")).willReturn(aResponse().withStatus(200).withBody(
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
          |  "affinityGroup": "Individual",
@@ -113,7 +113,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     this
   }
 
-  def isLoggedInWithSessionId(): A = {
+  def isLoggedInWithSessionId: A = {
     stubFor(get(urlPathMatching(s"/authorise/read/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(get(urlPathMatching(s"/authorise/write/agent/.*")).willReturn(aResponse().withStatus(401).withHeader(HeaderNames.CONTENT_LENGTH, "0")))
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).withHeader("X-Session-ID", containing(clientId.value)).willReturn(aResponse().withStatus(200).withBody(

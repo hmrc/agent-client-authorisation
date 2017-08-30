@@ -31,6 +31,7 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
@@ -70,6 +71,8 @@ class AuthConnector @Inject()(metrics: Metrics,
             case _ => Future successful GenericUnauthorized
           }
         case _ => Future successful GenericUnauthorized
+      } recover {
+        case _ => GenericUnauthorized
       }
     }
   }
@@ -82,13 +85,12 @@ class AuthConnector @Inject()(metrics: Metrics,
         case Some(_) ~ allEnrols ⇒
           val nino = extractEnrolmentData(allEnrols.enrolments, clientEnrol, clientEnrolId)
           if (nino.isDefined) action(request)(Nino(nino.get))
-          else {
-            Logger.warn("Nino does not match")
-            Future successful ClientNinoNotFound
-          }
+          else Future successful ClientNinoNotFound
         case _ =>
           Logger.warn("Client Not Authorised")
           Future successful GenericUnauthorized
+      } recover {
+        case _ => GenericUnauthorized
       }
     }
   }
