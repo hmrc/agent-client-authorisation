@@ -86,21 +86,22 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return ClientNinoNotFound when user's nino does not match" in {
-      authStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
-
-      response shouldBe ClientNinoNotFound
-    }
-
-    "Return unauthorised when the user is not logged in to MDTP" in {
-      authStub(neitherHaveAffinityOrEnrolment)
-
-      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
-
-      response shouldBe GenericUnauthorized
-    }
+    // These tests will be uncommented with client auth is re-added
+//    "Return GenericUnauthorised when user's nino does not match" in {
+//      authStub(clientAffinityAndEnrolments)
+//
+//      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
+//
+//      response shouldBe GenericUnauthorized
+//    }
+//
+//    "Return unauthorised when the user is not logged in to MDTP" in {
+//      authStub(neitherHaveAffinityOrEnrolment)
+//
+//      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
+//
+//      response shouldBe GenericUnauthorized
+//    }
 
     "not change the invitation status if relationship creation fails" in {
       pending
@@ -141,21 +142,22 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return ClientNinoNotFound when user's nino does not match" in {
-      authStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
-
-      response shouldBe ClientNinoNotFound
-    }
-
-    "Return unauthorised when the user is not logged in to MDTP" in {
-      authStub(neitherHaveAffinityOrEnrolment)
-
-      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
-
-      response shouldBe GenericUnauthorized
-    }
+    // These tests will be uncommented when client auth is re-added
+//    "Return GenericUnauthorised when user's nino does not match" in {
+//      authStub(agentAffinityAndEnrolments)
+//
+//      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
+//
+//      response shouldBe GenericUnauthorized
+//    }
+//
+//    "Return unauthorised when the user is not logged in to MDTP" in {
+//      authStub(neitherHaveAffinityOrEnrolment)
+//
+//      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
+//
+//      response shouldBe GenericUnauthorized
+//    }
   }
 
   "getInvitations" should {

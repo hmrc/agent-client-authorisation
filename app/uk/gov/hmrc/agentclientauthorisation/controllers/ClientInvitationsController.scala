@@ -41,9 +41,8 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   //      Future successful Ok(toHalResource(request.nino.value, request.path))
   //  }
 
-  def getDetailsForClient(givenNino: Nino): Action[AnyContent] = onlyForClients {
+  def getDetailsForClient(givenNino: Nino): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit nino =>
         Future successful {
           Ok(toHalResource(givenNino, request.path))
           //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
@@ -51,15 +50,13 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
         }
   }
 
-  def acceptInvitation(nino: Nino, invitationId: String): Action[AnyContent] = onlyForClients {
+  def acceptInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit implicitNino =>
         actionInvitation(nino, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(nino: Nino, invitationId: String): Action[AnyContent] = onlyForClients {
+  def rejectInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit implicitNino =>
         actionInvitation(nino, invitationId, invitationsService.rejectInvitation)
   }
 
@@ -77,9 +74,8 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(nino: Nino, invitationId: String): Action[AnyContent] = onlyForClients {
+  def getInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit implicitNino =>
         invitationsService.findInvitation(invitationId).map {
           case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
           case None => InvitationNotFound
@@ -87,9 +83,8 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
         }
   }
 
-  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
+  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit implicitNino =>
         //      if (clientId == request.nino.value) {
         invitationsService.translateToMtdItId(nino.value, CLIENT_ID_TYPE_NINO) flatMap {
           case Some(mtdItId) =>

@@ -90,7 +90,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
       status(response) shouldBe UNAUTHORIZED
     }
-  } 
+  }
 
   "onlyForClients" should {
     "successfully grant access to a Client with HMRC-NI enrolment" in {
