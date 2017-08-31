@@ -21,7 +21,7 @@ import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
@@ -30,8 +30,9 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Generator
 
@@ -46,6 +47,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+
+  val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
   val controller = new AgencyInvitationsController(postcodeService, invitationsService)(metrics, microserviceAuthConnector) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
@@ -72,6 +75,33 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
+  }
+
+
+  "createInvitations" should {
+    "create an invitation when given correct Arn" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val inviteCreated = Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+
+      when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
+      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
+      when(invitationsService.create(any[Arn](), any[String](), any[MtdItId](), any[String](), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
+
+      val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
+
+      status(response) shouldBe 201
+      response.header.headers.get("Location") shouldBe Some(s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.stringify}")
+    }
+
+    "not create an invitation when given arn is incorrect" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val response = await(controller.createInvitation(new Arn("1234"))(FakeRequest().withJsonBody(jsonBody)))
+
+      status(response) shouldBe 403
+    }
   }
 
   "getSentInvitations" should {
