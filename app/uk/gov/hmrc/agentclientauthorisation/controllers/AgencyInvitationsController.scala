@@ -45,11 +45,13 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
-        val invitationJson: Option[JsValue] = request.body.asJson
-        localWithJsonBody({ agentInvitation =>
-          checkForErrors(agentInvitation).flatMap(
-            _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
-        }, invitationJson.get)
+        forThisAgency(givenArn) {
+          val invitationJson: Option[JsValue] = request.body.asJson
+          localWithJsonBody({ agentInvitation =>
+            checkForErrors(agentInvitation).flatMap(
+              _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+          }, invitationJson.get)
+        }
   }
 
   private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
