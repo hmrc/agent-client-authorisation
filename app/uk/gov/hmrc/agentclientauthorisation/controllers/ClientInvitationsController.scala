@@ -36,28 +36,28 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
                                             microserviceAuthConnector: MicroserviceAuthConnector)
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
 
-  //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
-  //    implicit request =>
-  //      Future successful Ok(toHalResource(request.nino.value, request.path))
-  //  }
+//  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
+//    implicit request =>
+//      Future successful Ok(toHalResource(request.nino.value, request.path))
+//  }
 
   def getDetailsForClient(givenNino: Nino): Action[AnyContent] = Action.async {
     implicit request =>
-        Future successful {
-          Ok(toHalResource(givenNino, request.path))
-          //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
-          //        else NoPermissionOnClient
-        }
+      Future successful {
+        Ok(toHalResource(givenNino, request.path))
+        //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
+        //        else NoPermissionOnClient
+      }
   }
 
   def acceptInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-        actionInvitation(nino, invitationId, invitationsService.acceptInvitation)
+      actionInvitation(nino, invitationId, invitationsService.acceptInvitation)
   }
 
   def rejectInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-        actionInvitation(nino, invitationId, invitationsService.rejectInvitation)
+      actionInvitation(nino, invitationId, invitationsService.rejectInvitation)
   }
 
   private def actionInvitation(nino: Nino, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
@@ -76,22 +76,22 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 
   def getInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-        invitationsService.findInvitation(invitationId).map {
-          case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
-          case None => InvitationNotFound
-          case _ => NoPermissionOnClient
-        }
+      invitationsService.findInvitation(invitationId).map {
+        case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
+        case None => InvitationNotFound
+        case _ => NoPermissionOnClient
+      }
   }
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
-        //      if (clientId == request.nino.value) {
-        invitationsService.translateToMtdItId(nino.value, CLIENT_ID_TYPE_NINO) flatMap {
-          case Some(mtdItId) =>
-            invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
-              results => Ok(toHalResource(results, nino, status)))
-          case None => Future successful InvitationNotFound
-        }
+      //      if (clientId == request.nino.value) {
+      invitationsService.translateToMtdItId(nino.value, CLIENT_ID_TYPE_NINO) flatMap {
+        case Some(mtdItId) =>
+          invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
+            results => Ok(toHalResource(results, nino, status)))
+        case None => Future successful InvitationNotFound
+      }
     //else Future successful NoPermissionOnClient
   }
 

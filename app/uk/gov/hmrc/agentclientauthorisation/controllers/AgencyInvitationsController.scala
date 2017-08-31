@@ -55,8 +55,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
   private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
-      case Success(JsError(errs)) => Future.successful(BadRequest(s"Invalid payload: $errs"))
-      case Failure(e) => Future.successful(BadRequest(s"could not parse body due to ${e.getMessage}"))
+      case Success(JsError(errs)) => Future successful BadRequest(s"Invalid payload: $errs")
+      case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
   private def makeInvitation(arn: Arn, authRequest: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
