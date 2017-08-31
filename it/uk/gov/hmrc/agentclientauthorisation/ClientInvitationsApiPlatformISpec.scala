@@ -68,14 +68,14 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(nino, invitationId))
 
     "return 404 when invitation not found" in {
-      given().client(clientId = nino).isLoggedIn()
+      given().client(clientId = nino).isLoggedIn
 
       val response = clientGetReceivedInvitation(nino, invitationId)
       response should matchErrorResult(InvitationNotFound)
     }
 
     "return 404 when invitationId is not a valid BSONObjectID" in {
-      given().client(clientId = nino).isLoggedIn()
+      given().client(clientId = nino).isLoggedIn
 
       val response = clientGetReceivedInvitation(nino, "invite-id-never-used")
       response should matchErrorResult(InvitationNotFound)
@@ -125,20 +125,20 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   protected def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
     val agency = new AgencyApi(this, arn1, port)
-    given().agentAdmin(arn1, agentCode1).isLoggedIn().andIsSubscribedToAgentServices()
-    given().client(clientId = clientId).hasABusinessPartnerRecord()
+    given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+    given().client(clientId = clientId).isLoggedInWithSessionId.hasABusinessPartnerRecord()
 
     agency.sendInvitation(clientId)
 
     val client = new ClientApi(this, clientId, MtdItId("0123456789"), port)
-    given().client(clientId = client.clientId).isLoggedIn()
+    given().client(clientId = client.clientId).isLoggedIn
     val invitations = client.getInvitations()
     invitations.firstInvitation
   }
 
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url:String): Unit = {
     "return a meaningful response for the authenticated clients" in {
-      given().client(clientId = nino).aRelationshipIsCreatedWith(arn1)
+      given().client(clientId = nino).isLoggedIn.aRelationshipIsCreatedWith(arn1)
 
       val response = new Resource(url, port).get()
 
@@ -150,14 +150,14 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     }
   }
 
-//  def anEndpointThatPreventsAccessToAnotherClientsInvitations(url:String): Unit = {
-//    "return 403 NO_PERMISSION_ON_CLIENT for someone else's invitations" in {
-//
-//      given().client(clientId = nino1).isLoggedIn()
-//
-//      val response = new Resource(url, port).get
-//
-//      response should matchErrorResult(NoPermissionOnClient)
-//    }
-//  }
+  def anEndpointThatPreventsAccessToAnotherClientsInvitations(url:String): Unit = {
+    "return 403 NO_PERMISSION_ON_CLIENT for someone else's invitations" in {
+
+      given().client(clientId = nino1).isLoggedIn
+
+      val response = new Resource(url, port).get
+
+      response should matchErrorResult(NoPermissionOnClient)
+    }
+  }
 }

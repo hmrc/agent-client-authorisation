@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime.now
 import org.mockito.Matchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -23,42 +24,38 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, AuthMocking, ResettingMockitoSugar, TransitionInvitation}
+import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with AuthMocking with BeforeAndAfterEach with TransitionInvitation {
+class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation with TestData {
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val generator = new Generator()
   val authConnector: AuthConnector = resettingMock[AuthConnector]
+  val metrics: Metrics = resettingMock[Metrics]
+  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
+  val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
-  val controller = new AgencyInvitationsController(postcodeService, invitationsService, authConnector)
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService)(metrics, microserviceAuthConnector) {
+    override val authConnector: PlayAuthConnector = mockPlayAuthConnector
+  }
 
-  val arn = Arn("arn1")
-  val mtdSaPendingInvitationId: BSONObjectID = BSONObjectID.generate
-  val mtdSaAcceptedInvitationId: BSONObjectID = BSONObjectID.generate
-  val otherRegimePendingInvitationId: BSONObjectID = BSONObjectID.generate
+  private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-
-    givenAgentIsLoggedIn(arn)
-
-    val allInvitations = List(
-      Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
-      Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
-      Invitation(otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
-    )
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations
@@ -81,6 +78,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "for a matching agency should return the invitations" in {
 
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
@@ -95,6 +94,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "filter by service when a service is specified" in {
 
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val response = await(controller.getSentInvitations(arn, Some("HMRC-MTD-IT"), None, None, None)(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -107,6 +108,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "filter by status when a status is specified" in {
 
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val response = await(controller.getSentInvitations(arn, None, None, None, Some(Accepted))(FakeRequest()))
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -117,6 +120,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
@@ -130,6 +136,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "include all query parameters in the self link" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val service = Some("HMRC-MTD-IT")
       val clientIdType = Some("ni")
       val clientId = Some("AA123456A")
@@ -147,6 +156,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   "cancelInvitation" should {
     "cancel a pending invitation" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       val invitation = anInvitation()
       val cancelledInvitation = transitionInvitation(invitation, Cancelled)
 
@@ -159,6 +171,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not cancel an already cancelled invitation" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left("message"))
       whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
 
@@ -167,7 +182,10 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY if the invitation belongs to a different agency" in {
-      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(new Arn("1234"))
 
       val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
 
@@ -175,6 +193,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "return 403 NO_PERMISSION_ON_AGENCY when the ARN in the invitation is not the same as the ARN in the URL" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
@@ -182,6 +203,9 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "return 404 if the invitation doesn't exist" in {
+
+      agentAuthStub(agentAffinityAndEnrolments)
+
       whenFindingAnInvitation()(any()) thenReturn (Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
@@ -202,7 +226,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
-     // "agent-client-authorisation",
+      // "agent-client-authorisation",
       "agencies",
       arn.value,
       "invitations",

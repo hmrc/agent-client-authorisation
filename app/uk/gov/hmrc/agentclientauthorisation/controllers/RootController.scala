@@ -18,22 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
 
-import play.api.hal.{Hal, HalLink, HalResource}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import play.api.libs.json.Json
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.Future
 import scala.language.postfixOps
 
 @Singleton
-class RootController @Inject() (override val authConnector: AuthConnector)
-    extends BaseController with AuthActions with HalWriter {
+class RootController @Inject()
+  extends BaseController with HalWriter {
  // private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url))
 //
 //  def getRootResource() = withAuthority.async { implicit request =>

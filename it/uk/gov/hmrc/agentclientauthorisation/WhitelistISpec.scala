@@ -78,8 +78,7 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
   def givenLoggedInAgentIsAuthorised(): Unit = {
     given()
         .agentAdmin(arn1, agentCode1)
-        .isLoggedIn()
-        .andIsSubscribedToAgentServices()
+        .isLoggedInAndIsSubscribed
   }
 
   def authResponseFor(arn: Arn, trueClientIp: Option[String]): HttpResponse =

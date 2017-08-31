@@ -27,13 +27,13 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
 
   def anEndpointAccessibleForMtdAgentsOnly(makeRequest: => HttpResponse): Unit = {
     "return 401 when the requester is an Agent but not authenticated" in {
-      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isNotLoggedIn()
+      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isNotLoggedIn
       makeRequest.status shouldBe 401
       makeRequest.body shouldBe bodyOf(GenericUnauthorized)
     }
 
     "return 403 Forbidden when the requester is a logged as a NON MTD Agent" in {
-      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isLoggedIn().andIsNotSubscribedToAgentServices()
+      given().agentAdmin(RandomArn(), AgentCode("tehCode")).isLoggedInAndNotSubscribed
       makeRequest.status shouldBe 403
       makeRequest.body shouldBe bodyOf(AgentNotSubscribed)
     }

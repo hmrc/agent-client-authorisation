@@ -18,35 +18,35 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
 
+import com.kenshoo.play.metrics.Metrics
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ClientInvitationsController @Inject()(invitationsService: InvitationsService,
-                                            override val authConnector: AuthConnector) extends BaseController
-  with AuthActions with HalWriter with ClientInvitationsHal {
+class ClientInvitationsController @Inject()(invitationsService: InvitationsService)
+                                           (implicit metrics: Metrics,
+                                            microserviceAuthConnector: MicroserviceAuthConnector)
+  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
 
 //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
 //    implicit request =>
 //      Future successful Ok(toHalResource(request.nino.value, request.path))
 //  }
 
-  def getDetailsForClient(nino: Nino): Action[AnyContent] = Action.async {
+  def getDetailsForClient(givenNino: Nino): Action[AnyContent] = Action.async {
     implicit request =>
       Future successful {
-        Ok(toHalResource(nino, request.path))
-//        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
-//        else NoPermissionOnClient
+        Ok(toHalResource(givenNino, request.path))
+        //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
+        //        else NoPermissionOnClient
       }
   }
 
@@ -65,10 +65,10 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation)
         if invitation.suppliedClientId == nino.value =>
-          action(invitation) map {
-            case Right(_) => NoContent
-            case Left(message) => invalidInvitationStatus(message)
-      }
+        action(invitation) map {
+          case Right(_) => NoContent
+          case Left(message) => invalidInvitationStatus(message)
+        }
       case None => Future successful InvitationNotFound
       case _ => Future successful NoPermissionOnClient
     }
@@ -86,13 +86,13 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
       //      if (clientId == request.nino.value) {
-      invitationsService.translateToMtdItId(nino.value,CLIENT_ID_TYPE_NINO) flatMap {
+      invitationsService.translateToMtdItId(nino.value, CLIENT_ID_TYPE_NINO) flatMap {
         case Some(mtdItId) =>
           invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
             results => Ok(toHalResource(results, nino, status)))
         case None => Future successful InvitationNotFound
       }
-      //else Future successful NoPermissionOnClient
+    //else Future successful NoPermissionOnClient
   }
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None

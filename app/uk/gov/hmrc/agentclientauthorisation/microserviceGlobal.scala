@@ -36,9 +36,6 @@ import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.play.audit.filters.AuditFilter
 import uk.gov.hmrc.play.audit.http.config.ErrorAuditingSettings
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
-import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
-import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
 import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
@@ -55,9 +52,7 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
     bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
     bind(classOf[ControllerConfig]).to(classOf[ControllerConfiguration])
-    bind(classOf[AuthParamsControllerConfig]).to(classOf[AuthParamsControllerConfiguration])
     bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
-    bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ServicesConfig]).toInstance(MicroserviceGlobal)
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
@@ -80,24 +75,25 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
   private class PropertyProvider(confKey: String) extends Provider[String] {
     override lazy val get = getConfString(confKey, throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
+
 }
 
-class MongoDbProvider @Inject() (reactiveMongoComponent: ReactiveMongoComponent) extends Provider[DB] {
+class MongoDbProvider @Inject()(reactiveMongoComponent: ReactiveMongoComponent) extends Provider[DB] {
   def get = reactiveMongoComponent.mongoConnector.db()
 }
 
 @Singleton
-class ControllerConfiguration @Inject() (configuration: Configuration) extends ControllerConfig {
+class ControllerConfiguration @Inject()(configuration: Configuration) extends ControllerConfig {
   lazy val controllerConfigs = configuration.underlying.as[Config]("controllers")
 }
 
 @Singleton
-class AuthParamsControllerConfiguration @Inject() (controllerConfig: ControllerConfig) extends AuthParamsControllerConfig {
+class AuthParamsControllerConfiguration @Inject()(controllerConfig: ControllerConfig) {
   lazy val controllerConfigs = controllerConfig.controllerConfigs
 }
 
 @Singleton
-class MicroserviceAuditFilter @Inject() (override val auditConnector: AuditConnector, controllerConfig: ControllerConfig) extends AuditFilter with AppName with MicroserviceFilterSupport {
+class MicroserviceAuditFilter @Inject()(override val auditConnector: AuditConnector, controllerConfig: ControllerConfig) extends AuditFilter with AppName with MicroserviceFilterSupport {
   override def controllerNeedsAuditing(controllerName: String) = controllerConfig.paramsForController(controllerName).needsAuditing
 }
 
@@ -107,15 +103,7 @@ class MicroserviceLoggingFilter @Inject()(controllerConfig: ControllerConfig) ex
 }
 
 @Singleton
-class MicroserviceAuthFilter @Inject() (
-      override val authParamsConfig: AuthParamsControllerConfig,
-      override val authConnector: AuthConnector,
-      controllerConfig: ControllerConfig) extends AuthorisationFilter with MicroserviceFilterSupport {
-  override def controllerNeedsAuth(controllerName: String): Boolean = controllerConfig.paramsForController(controllerName).needsAuth
-}
-
-@Singleton
-class WhitelistFilter @Inject() (configuration: Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
+class WhitelistFilter @Inject()(configuration: Configuration) extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
 
   def enabled(): Boolean = configuration.getBoolean("microservice.whitelist.enabled").getOrElse(true)
 
@@ -132,13 +120,12 @@ class WhitelistFilter @Inject() (configuration: Configuration) extends AkamaiWhi
     new String(Base64.getDecoder.decode(configuration.getString(key).getOrElse("")), "UTF-8").split(",")
 }
 
-class Filters @Inject() (
-  whitelistFilter: WhitelistFilter,
-  metricsFilter: MetricsFilter,
-  auditFilter: MicroserviceAuditFilter,
-  loggingFilter: MicroserviceLoggingFilter,
-  authFilter: MicroserviceAuthFilter
-) extends HttpFilters {
+class Filters @Inject()(
+                         whitelistFilter: WhitelistFilter,
+                         metricsFilter: MetricsFilter,
+                         auditFilter: MicroserviceAuditFilter,
+                         loggingFilter: MicroserviceLoggingFilter
+                       ) extends HttpFilters {
 
   private lazy val whitelistFilterSeq = if (whitelistFilter.enabled()) {
     Logger.info("Starting microservice with IP whitelist enabled")
@@ -151,18 +138,17 @@ class Filters @Inject() (
   override def filters = whitelistFilterSeq ++ Seq(
     metricsFilter,
     auditFilter,
-    loggingFilter,
-    authFilter)
+    loggingFilter)
 }
 
 object MicroserviceGlobal
   extends GlobalSettings
-  with GraphiteConfig
-  with RemovingOfTrailingSlashes
-  with JsonErrorHandling
-  with ErrorAuditingSettings
-  with ServiceLocatorRegistration
-  with ServiceLocatorConfig {
+    with GraphiteConfig
+    with RemovingOfTrailingSlashes
+    with JsonErrorHandling
+    with ErrorAuditingSettings
+    with ServiceLocatorRegistration
+    with ServiceLocatorConfig {
 
   lazy val appName = Play.current.configuration.getString("appName").getOrElse("APP NAME NOT SET")
   lazy val loggerDateFormat: Option[String] = Play.current.configuration.getString("logger.json.dateformat")

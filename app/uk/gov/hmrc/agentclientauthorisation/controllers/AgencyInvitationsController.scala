@@ -18,33 +18,46 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
 
-import play.api.libs.json.JsValue
+import com.kenshoo.play.metrics.Metrics
+import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
+import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
-import uk.gov.hmrc.agentclientauthorisation.controllers.actions.{AgentInvitationValidation, AgentRequest, AuthActions}
+import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class AgencyInvitationsController @Inject()(override val postcodeService: PostcodeService,
-                                            invitationsService: InvitationsService,
-                                            override val authConnector: AuthConnector)
-  extends BaseController with AuthActions with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
+                                            invitationsService: InvitationsService)
+                                           (implicit metrics: Metrics,
+                                            microserviceAuthConnector: MicroserviceAuthConnector)
+  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter
+    with AgentInvitationValidation with AgencyInvitationsHal {
 
-  def createInvitation(arn: Arn): Action[JsValue] = onlyForAgents.async(parse.json) {
+  def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents {
     implicit request =>
-      withJsonBody[AgentInvitation] { agentInvitation =>
-        checkForErrors(agentInvitation).flatMap(
-          _.fold(makeInvitation(arn, agentInvitation))(error => Future successful error))
-      }
+      implicit arn =>
+        val invitationJson: Option[JsValue] = request.body.asJson
+        localWithJsonBody({ agentInvitation =>
+          checkForErrors(agentInvitation).flatMap(
+            _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+        }, invitationJson.get)
   }
+
+  private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
+    Try(request.validate[AgentInvitation]) match {
+      case Success(JsSuccess(payload, _)) => f(payload)
+      case Success(JsError(errs)) => Future successful BadRequest(s"Invalid payload: $errs")
+      case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
+    }
 
   private def makeInvitation(arn: Arn, authRequest: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
     invitationsService.translateToMtdItId(authRequest.clientId, authRequest.clientIdType).flatMap {
@@ -60,57 +73,62 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
   private def location(invitation: Invitation) =
     LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
 
-  def getDetailsForAuthenticatedAgency: Action[AnyContent] = onlyForAgents.async {
+  def getDetailsForAuthenticatedAgency: Action[AnyContent] = onlyForAgents {
     implicit request =>
-      Future successful Ok(toHalResource(request.arn, request.path))
+      implicit arn =>
+        Future successful Ok(toHalResource(arn, request.path))
   }
 
-  def getDetailsForAgency(arn: Arn): Action[AnyContent] = onlyForAgents.async {
+  def getDetailsForAgency(givenArn: Arn): Action[AnyContent] = onlyForAgents {
     implicit request =>
-      forThisAgency(arn) {
-        Future successful Ok(toHalResource(arn, request.path))
-      }
+      implicit arn =>
+        forThisAgency(givenArn) {
+          Future successful Ok(toHalResource(arn, request.path))
+        }
   }
 
   def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] = getDetailsForAgency(arn)
 
-  def getSentInvitations(arn: Arn, service: Option[String], clientIdType: Option[String],
-                         clientId: Option[String], status: Option[InvitationStatus]): Action[AnyContent] = onlyForAgents.async {
+  def getSentInvitations(givenArn: Arn, service: Option[String], clientIdType: Option[String],
+                         clientId: Option[String], status: Option[InvitationStatus]): Action[AnyContent] = onlyForAgents {
     implicit request =>
-      forThisAgency(arn) {
-        invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
-          Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
+      implicit arn =>
+        forThisAgency(givenArn) {
+          invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
+            Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
+          }
         }
-      }
   }
 
-  def getSentInvitation(arn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents.async {
+  def getSentInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
     implicit request =>
-      forThisAgency(arn) {
-        invitationsService.findInvitation(invitationId).map {
-          _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
+      implicit arn =>
+        forThisAgency(givenArn) {
+          invitationsService.findInvitation(invitationId).map {
+            _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
+          }
         }
-      }
   }
 
-  private def forThisAgency(arn: Arn)(block: => Future[Result])(implicit request: AgentRequest[_]) = {
-    if (arn != request.arn)
+  private def forThisAgency(requestedArn: Arn)(block: => Future[Result])(implicit arn: Arn) = {
+    if (requestedArn != arn)
       Future successful NoPermissionOnAgency
     else block
   }
 
-  def cancelInvitation(arn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents.async {
+  def cancelInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
     implicit request =>
-      forThisAgency(arn) {
-        invitationsService.findInvitation(invitationId) flatMap {
-          case Some(i) if i.arn == arn => invitationsService.cancelInvitation(i) map {
-            case Right(_) => NoContent
-            case Left(message) => invalidInvitationStatus(message)
+      implicit arn =>
+        forThisAgency(givenArn) {
+          invitationsService.findInvitation(invitationId) flatMap {
+            case Some(i) if i.arn == givenArn => invitationsService.cancelInvitation(i) map {
+              case Right(_) => NoContent
+              case Left(message) => invalidInvitationStatus(message)
+            }
+            case None => Future successful InvitationNotFound
+            case _ => Future successful NoPermissionOnAgency
           }
-          case None => Future successful InvitationNotFound
-          case _ => Future successful NoPermissionOnAgency
         }
-      }
   }
 
   override protected def agencyLink(invitation: Invitation) = None
