@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,30 +41,30 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 //      Future successful Ok(toHalResource(request.nino.value, request.path))
 //  }
 
-  def getDetailsForClient(givenNino: Nino): Action[AnyContent] = Action.async {
+  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = Action.async {
     implicit request =>
       Future successful {
-        Ok(toHalResource(givenNino, request.path))
+        Ok(toHalResource(mtdItId, request.path))
         //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
         //        else NoPermissionOnClient
       }
   }
 
-  def acceptInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
+  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      actionInvitation(nino, invitationId, invitationsService.acceptInvitation)
+      actionInvitation(mtdItId, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
+  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      actionInvitation(nino, invitationId, invitationsService.rejectInvitation)
+      actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
   }
 
-  private def actionInvitation(nino: Nino, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
+  private def actionInvitation(mtdItId: MtdItId, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
                               (implicit ec: ExecutionContext) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation)
-        if invitation.suppliedClientId == nino.value =>
+        if invitation.clientId == mtdItId.value =>
         action(invitation) map {
           case Right(_) => NoContent
           case Left(message) => invalidInvitationStatus(message)
@@ -74,24 +74,19 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(nino: Nino, invitationId: String): Action[AnyContent] = Action.async {
+  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
+        case Some(x) if x.clientId == mtdItId.value => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
   }
 
-  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
+  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
       //      if (clientId == request.nino.value) {
-      invitationsService.translateToMtdItId(nino.value, CLIENT_ID_TYPE_NINO) flatMap {
-        case Some(mtdItId) =>
-          invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (
-            results => Ok(toHalResource(results, nino, status)))
-        case None => Future successful InvitationNotFound
-      }
+      invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map ( results => Ok(toHalResource(results, mtdItId, status)))
     //else Future successful NoPermissionOnClient
   }
 

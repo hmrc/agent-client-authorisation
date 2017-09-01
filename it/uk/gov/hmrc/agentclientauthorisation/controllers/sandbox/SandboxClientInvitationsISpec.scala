@@ -18,13 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
-import org.scalatest.{Ignore, Inside}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Ignore, Inside}
 import play.api.libs.json.JsValue
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.play.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -32,7 +32,6 @@ import uk.gov.hmrc.play.test.UnitSpec
 class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private implicit val arn = HardCodedSandboxIds.arn
-  private val nino = HardCodedSandboxIds.clientId
 
   override val sandboxMode: Boolean = true
 
@@ -45,12 +44,12 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   }
 
   "GET /sandbox/clients/ni/:clientId" should {
-    behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(nino))
+    behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(mtdItId1))
   }
 
   "GET /sandbox/clients/ni/:clientId/invitations" should {
     "return a meaningful response" in {
-      val url = clientReceivedInvitationsUrl(nino)
+      val url = clientReceivedInvitationsUrl(mtdItId1)
 
       val response = new Resource(url, port).get()
 
@@ -62,14 +61,14 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
   "PUT of /sandbox/clients/ni/:clientId/invitations/received/:invitationId/accept" should {
     "return a 204 response code" in {
 
-      val response = clientAcceptInvitation(nino, "invitationId")
+      val response = clientAcceptInvitation(mtdItId1, "invitationId")
       response.status shouldBe 204
     }
   }
 
   "PUT of /sandbox/clients/ni/:clientId/invitations/received/:invitationId/reject" should {
     "return a 204 response code" in {
-      val response = clientRejectInvitation(nino, "invitationId")
+      val response = clientRejectInvitation(mtdItId1, "invitationId")
       response.status shouldBe 204
     }
   }
@@ -79,12 +78,12 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       val testStartTime = now().getMillis
 
-      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(nino).json)
+      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(mtdItId1).json)
 
       response.embedded.invitations.size shouldBe 2
-      checkInvitation(nino, response.firstInvitation.underlying, testStartTime)
-      checkInvitation(nino, response.secondInvitation.underlying, testStartTime)
-      response.links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
+      checkInvitation(mtdItId1, response.firstInvitation.underlying, testStartTime)
+      checkInvitation(mtdItId1, response.secondInvitation.underlying, testStartTime)
+      response.links.selfLink shouldBe s"/agent-client-authorisation/clients/MTDITID/${mtdItId1.value}/invitations/received"
       response.embedded.invitations.map(_.links.selfLink) shouldBe response.links.invitations
     }
   }
@@ -93,9 +92,9 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     "return an invitation" in {
       val testStartTime = now().getMillis
 
-      val response = clientGetReceivedInvitation(nino, "invitationId")
+      val response = clientGetReceivedInvitation(mtdItId1, "invitationId")
       response.status shouldBe 200
-      checkInvitation(nino, response.json, testStartTime)
+      checkInvitation(mtdItId1, response.json, testStartTime)
     }
   }
 
@@ -105,11 +104,11 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
       response.status shouldBe 200
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(nino))
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdItId1))
     }
    }
 
-  private def checkInvitation(clientId: Nino, invitation: JsValue, testStartTime: Long): Unit = {
+  private def checkInvitation(clientId: MtdItId, invitation: JsValue, testStartTime: Long): Unit = {
 
     def selfLink: String = (invitation \ "_links" \ "self" \ "href").as[String]
 
