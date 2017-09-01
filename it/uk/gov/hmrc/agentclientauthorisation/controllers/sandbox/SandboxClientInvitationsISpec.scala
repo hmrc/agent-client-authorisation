@@ -43,11 +43,11 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     behave like anEndpointWithClientReceivedInvitationsLink(clientsUrl)
   }
 
-  "GET /sandbox/clients/ni/:clientId" should {
+  "GET /sandbox/clients/MTDITID/:mtdItId" should {
     behave like anEndpointWithClientReceivedInvitationsLink(clientUrl(mtdItId1))
   }
 
-  "GET /sandbox/clients/ni/:clientId/invitations" should {
+  "GET /sandbox/clients/MTDITID/:mtdItId/invitations" should {
     "return a meaningful response" in {
       val url = clientReceivedInvitationsUrl(mtdItId1)
 
@@ -58,7 +58,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  "PUT of /sandbox/clients/ni/:clientId/invitations/received/:invitationId/accept" should {
+  "PUT of /sandbox/clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
     "return a 204 response code" in {
 
       val response = clientAcceptInvitation(mtdItId1, "invitationId")
@@ -66,14 +66,14 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  "PUT of /sandbox/clients/ni/:clientId/invitations/received/:invitationId/reject" should {
+  "PUT of /sandbox/clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject" should {
     "return a 204 response code" in {
       val response = clientRejectInvitation(mtdItId1, "invitationId")
       response.status shouldBe 204
     }
   }
 
-  "GET /clients/ni/:clientId/invitations/received" should {
+  "GET /clients/MTDITID/:mtdItId/invitations/received" should {
     "return some invitations" in {
 
       val testStartTime = now().getMillis
@@ -88,7 +88,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  "GET /clients/ni/:clientId/invitations/received/invitationId" should {
+  "GET /clients/MTDITID/:mtdItId/invitations/received/invitationId" should {
     "return an invitation" in {
       val testStartTime = now().getMillis
 
@@ -114,7 +114,7 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    selfLink should startWith(s"/agent-client-authorisation/clients/ni/${clientId.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/MTDITID/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfLink/accept"
     (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfLink/reject"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None

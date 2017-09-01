@@ -32,27 +32,27 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 //    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
 //  }
 
-  "GET /clients/ni/:clientId" should {
+  "GET /clients/MTDITID/:mtdItId" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientResource(mtdItId1))
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdItId1))
     //behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl(nino))
   }
 
-  "GET /clients/ni/:clientId/invitations" should {
+  "GET /clients/MTDITID/:mtdItId/invitations" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(new Resource(invitationsUrl, port).get())
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
     //behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(invitationsUrl)
   }
 
-  "PUT of /clients/ni/:clientId/invitations/received/:invitationId/accept" should {
+  "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "invitation-id-not-used"))
   }
 
-  "PUT of /clients/ni/:clientId/invitations/received/:invitationId/reject" should {
+  "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "invitation-id-not-used"))
   }
 
-  "GET /clients/ni/:clientId/invitations/received" should {
+  "GET /clients/MTDITID/:mtdItId/invitations/received" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitations(mtdItId1))
 
 //    "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
@@ -62,7 +62,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 //    }
   }
 
-  "GET /clients/ni/:clientId/invitations/received/:invitation" should {
+  "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
     // an invitationId that is a valid BSONObjectID but for which no invitation exists
     val invitationId: String = "585d24f57a83a131006bb746"
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
