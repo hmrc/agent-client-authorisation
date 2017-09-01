@@ -27,7 +27,7 @@ import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -40,11 +40,10 @@ import scala.concurrent.Future
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository: InvitationsRepository = mock[InvitationsRepository]
-  val clientIdMappingRepository: ClientIdMappingRepository = mock[ClientIdMappingRepository]
   val relationshipsConnector: RelationshipsConnector = mock[RelationshipsConnector]
   val desConnector: DesConnector = mock[DesConnector]
 
-  val service = new InvitationsService(invitationsRepository, clientIdMappingRepository, relationshipsConnector, desConnector)
+  val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector)
 
   val ninoAsString: String = nino1.value
 
@@ -178,34 +177,20 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       shouldBeNone.isEmpty shouldBe true
     }
 
-    "return an mtdItId if a nino is supplied for which there is a persisted match" in {
-      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(
-        Future successful List(ClientIdMapping(BSONObjectID.generate, mtdItId1.value, "MTDITID", nino1.value, "ni")))
-
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
-      shouldBeMtdItId.head shouldBe mtdItId1
-      verifyZeroInteractions(desConnector)
-    }
-
     "return an mtdItId if a nino is supplied for which there is no persisted match and there is a matching DES business partner record with an mtdItId" in {
-      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
       whenDesBusinessPartnerRecordExistsFor(Nino(nino1.value), mtdItId1.value)
 
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
       shouldBeMtdItId.head shouldBe mtdItId1
-      verify(clientIdMappingRepository).create(mtdItId1.value, "MTDITID", nino1.value, "ni")
     }
 
-    "return None if a nino is supplied for which there is no persisted match and a matching DES business partner record without a mtdItId" in {
-      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
+    "return None if a nino is supplied for which there is a matching DES business partner record without a mtdItId" in {
       whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(Nino(nino1.value))
-
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
       shouldBeMtdItId shouldBe None
     }
 
-    "return None if a nino is supplied for which there is no persisted match and no matching DES business partner record" in {
-      when(clientIdMappingRepository.find(nino1.value, "ni")).thenReturn(Future successful Nil)
+    "return None if a nino is supplied for which there is no matching DES business partner record" in {
       whenDesBusinessPartnerRecordDoesNotExist
 
       val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
