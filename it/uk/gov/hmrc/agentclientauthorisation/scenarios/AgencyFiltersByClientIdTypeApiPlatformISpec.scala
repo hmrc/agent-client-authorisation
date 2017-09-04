@@ -35,7 +35,7 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with Scena
       val client = new ClientApi(this, nino, MtdItId("0123456789"), port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
+      given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
       given().client(clientId = client.clientId).hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
 
       When("An agent sends several invitations")

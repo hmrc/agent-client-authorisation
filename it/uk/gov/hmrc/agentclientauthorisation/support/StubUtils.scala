@@ -32,10 +32,6 @@ trait StubUtils {
       agentAdmin(arn.value, agentCode.value)
     }
 
-    def user(oid: String = "1234567890abcdef00000000"): UnknownUser = {
-      UnknownUser(oid)
-    }
-
     def client(oid: String = "556737e15500005500eaf68f", canonicalClientId: MtdItId = MtdItId("mtdItId1"), clientId: Nino = new Generator().nextNino ): Client = {
       Client(oid, clientId, canonicalClientId)
     }
@@ -55,9 +51,6 @@ trait StubUtils {
                          override val agentCode: String)
     extends BaseUser with AgentAuthStubs[AgentAdmin] {
   }
-
-  case class UnknownUser(override val oid: String)
-    extends BaseUser with UnknownUserAuthStubs[UnknownUser]
 
   case class Client(override val oid: String, override val clientId: Nino, override val canonicalClientId: MtdItId )
     extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
