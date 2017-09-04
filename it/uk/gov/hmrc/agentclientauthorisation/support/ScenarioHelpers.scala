@@ -19,14 +19,14 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.Nino
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
   self : FeatureSpec =>
 
-  def nino: Nino
+  def mtdItId: MtdItId = mtdItId1
   def arn: Arn
   val MtdItService = "HMRC-MTD-IT"
 
@@ -38,7 +38,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val location2 = locations(1)
     location1 should not(be(location2))
 
-    info(s"the Agency should see 2 pending invitations to Client $nino")
+    info(s"the Agency should see 2 pending invitations to Client $mtdItId")
     val response = agency.sentInvitations()
     response.numberOfInvitations shouldBe 2
 
@@ -70,7 +70,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i1.status shouldBe "Pending"
 
     val selfLink = i1.links.selfLink
-    selfLink should startWith(s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/MTDITID/${mtdItId.value}/invitations/received/")
     i1.links.acceptLink shouldBe Some(s"$selfLink/accept")
     i1.links.rejectLink shouldBe Some(s"$selfLink/reject")
     i1.links.cancelLink shouldBe None
@@ -81,7 +81,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i2.service shouldBe MtdItService
     i2.status shouldBe "Pending"
     val links = clientResponse.links
-    links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
+    links.selfLink shouldBe s"/agent-client-authorisation/clients/MTDITID/${mtdItId1.value}/invitations/received"
     links.invitations shouldBe 'nonEmpty
     links.invitations.head shouldBe i1.links.selfLink
     links.invitations(1) shouldBe i2.links.selfLink

@@ -18,11 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
@@ -48,7 +47,7 @@ class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with 
     val clientResponse = client.getInvitations()
     clientResponse.numberOfInvitations shouldBe 0
     clientResponse.links.invitations shouldBe 'empty
-    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/ni/${nino.value}/invitations/received"
+    clientResponse.links.selfLink shouldBe s"/agent-client-authorisation/clients/MTDITID/${mtdItId1.value}/invitations/received"
     clientResponse.embedded.isEmpty shouldBe true
   }
 }

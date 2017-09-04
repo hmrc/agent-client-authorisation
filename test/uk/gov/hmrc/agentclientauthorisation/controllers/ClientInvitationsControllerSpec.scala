@@ -32,9 +32,8 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nin
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.play.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
@@ -60,7 +59,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
       whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
 
-      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
     }
@@ -70,7 +69,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       whenFindingAnInvitation thenReturn noInvitation
 
-      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe InvitationNotFound
     }
@@ -81,7 +80,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsAccepted thenReturn (Future successful Left("failure message"))
 
-      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe invalidInvitationStatus("failure message")
     }
@@ -116,7 +115,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
       whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
 
-      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
     }
@@ -126,7 +125,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       whenFindingAnInvitation thenReturn noInvitation
 
-      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe InvitationNotFound
     }
@@ -137,7 +136,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsRejected thenReturn (Future successful Left("failure message"))
 
-      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe invalidInvitationStatus("failure message")
     }
@@ -163,35 +162,21 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   "getInvitations" should {
     "return 200 and an empty list when there are no invitations for the client" in {
       authStub(clientAffinityAndEnrolments)
-
-      when(invitationsService.translateToMtdItId(
-        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
-      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200
 
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
-    "return 404 when no translation found for supplied client id and type" in {
-      when(invitationsService.translateToMtdItId(
-        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful None)
-
-      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
-      status(result) shouldBe 404
-    }
-
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      when(invitationsService.translateToMtdItId(
-        eqs(nino1.value), eqs("ni"))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future successful Some(mtdItId1))
-
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
           BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "MTDITID", mtdItId1.value, "postcode", nino1.value, "ni",
           List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
-      val result: Result = await(controller.getInvitations(nino1, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200
 
       ((jsonBodyOf(result) \ "_embedded" \ "invitations") (0) \ "id").asOpt[String] shouldBe None

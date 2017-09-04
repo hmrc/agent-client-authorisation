@@ -32,28 +32,28 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 //    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
 //  }
 
-  "GET /clients/ni/:clientId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientResource(nino))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(nino))
+  "GET /clients/MTDITID/:mtdItId" should {
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientResource(mtdItId1))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdItId1))
     //behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl(nino))
   }
 
-  "GET /clients/ni/:clientId/invitations" should {
+  "GET /clients/MTDITID/:mtdItId/invitations" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(new Resource(invitationsUrl, port).get())
     behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
     //behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(invitationsUrl)
   }
 
-  "PUT of /clients/ni/:clientId/invitations/received/:invitationId/accept" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(nino, "invitation-id-not-used"))
+  "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "invitation-id-not-used"))
   }
 
-  "PUT of /clients/ni/:clientId/invitations/received/:invitationId/reject" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(nino, "invitation-id-not-used"))
+  "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject" should {
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "invitation-id-not-used"))
   }
 
-  "GET /clients/ni/:clientId/invitations/received" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitations(nino))
+  "GET /clients/MTDITID/:mtdItId/invitations/received" should {
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitations(mtdItId1))
 
 //    "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 //
@@ -62,22 +62,22 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 //    }
   }
 
-  "GET /clients/ni/:clientId/invitations/received/:invitation" should {
+  "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
     // an invitationId that is a valid BSONObjectID but for which no invitation exists
     val invitationId: String = "585d24f57a83a131006bb746"
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(nino, invitationId))
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
 
     "return 404 when invitation not found" in {
       given().client(clientId = nino).isLoggedIn
 
-      val response = clientGetReceivedInvitation(nino, invitationId)
+      val response = clientGetReceivedInvitation(mtdItId1, invitationId)
       response should matchErrorResult(InvitationNotFound)
     }
 
     "return 404 when invitationId is not a valid BSONObjectID" in {
       given().client(clientId = nino).isLoggedIn
 
-      val response = clientGetReceivedInvitation(nino, "invite-id-never-used")
+      val response = clientGetReceivedInvitation(mtdItId1, "invite-id-never-used")
       response should matchErrorResult(InvitationNotFound)
     }
 
@@ -115,7 +115,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   protected val nino: Nino = nextNino
   protected val nino1: Nino = nextNino
 
-  protected val invitationsUrl = s"${clientUrl(nino)}/invitations"
+  protected val invitationsUrl = s"${clientUrl(mtdItId1)}/invitations"
   protected val invitationsReceivedUrl = s"$invitationsUrl/received"
 
 //  "GET /" should {

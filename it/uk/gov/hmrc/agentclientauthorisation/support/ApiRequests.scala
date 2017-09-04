@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
@@ -95,37 +94,37 @@ trait ApiRequests {
   TODO:  split these into seperate traits?
    */
   def clientsUrl = s"$baseUrl/clients"
-  def clientUrl(nino: Nino) = s"$baseUrl/clients/ni/${nino.value}"
+  def clientUrl(mtdItId: MtdItId) = s"$baseUrl/clients/MTDITID/${mtdItId.value}"
 
-  def clientReceivedInvitationsUrl(id: Nino): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received"
-  def clientReceivedInvitationUrl(id: Nino, invitationId:String): String = s"$baseUrl/clients/ni/${urlEncode(id.value)}/invitations/received/$invitationId"
+  def clientReceivedInvitationsUrl(mtdItId: MtdItId): String = s"$baseUrl/clients/MTDITID/${urlEncode(mtdItId.value)}/invitations/received"
+  def clientReceivedInvitationUrl(mtdItId: MtdItId, invitationId:String): String = s"$baseUrl/clients/MTDITID/${urlEncode(mtdItId.value)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
   }
 
-  def clientResource(nino: Nino)(implicit port: Int) = {
-    new Resource(clientUrl(nino), port).get
+  def clientResource(mtdItId: MtdItId)(implicit port: Int) = {
+    new Resource(clientUrl(mtdItId), port).get
   }
-  def clientGetReceivedInvitations(clientId: Nino, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(mtdItId: MtdItId, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
-    new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
+    new Resource(clientReceivedInvitationsUrl(mtdItId) + params, port).get()(hc)
   }
 
-  def clientGetReceivedInvitation(clientId: Nino, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
-    getReceivedInvitationResource(clientReceivedInvitationUrl(clientId, invitationId))
+  def clientGetReceivedInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+    getReceivedInvitationResource(clientReceivedInvitationUrl(mtdItId, invitationId))
   }
 
   def getReceivedInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     new Resource(link, port).get()(hc)
   }
 
-  def clientAcceptInvitation(clientId: Nino, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
-    updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/accept")
+  def clientAcceptInvitation(mtdItId: MtdItId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
+    updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/accept")
   }
 
-  def clientRejectInvitation(clientId: Nino, invitationId:String)(implicit port: Int, hc: HeaderCarrier) =
-    updateInvitationResource(clientReceivedInvitationsUrl(clientId) + s"/$invitationId/reject")
+  def clientRejectInvitation(mtdItId: MtdItId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) =
+    updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/reject")
 
   def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     new Resource(link, port).putEmpty()(hc)

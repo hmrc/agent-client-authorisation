@@ -25,16 +25,17 @@ import uk.gov.hmrc.domain.{AgentCode, Nino}
 class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   override val arn = RandomArn()
-  override val nino: Nino = nextNino
 
   private implicit val agentCode = AgentCode("LMNOP123456")
+
+  private val nino: Nino = nextNino
   private val nino2: Nino = nextNino
 
   feature("Agencies can filter")  {
 
     scenario("on the status of clients invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client1 = new ClientApi(this, nino, MtdItId("0123456789"), port)
+      val client1 = new ClientApi(this, nino, mtdItId, port)
       val client2 = new ClientApi(this, nino2, MtdItId("0023456789"), port)
 
       Given("An agent is logged in")

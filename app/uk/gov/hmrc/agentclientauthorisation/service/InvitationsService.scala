@@ -20,10 +20,9 @@ import javax.inject._
 
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
-import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{ClientIdMappingRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation._
-import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -32,26 +31,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
-                                   clientIdMappingRepository: ClientIdMappingRepository,
-                                   relationshipsConnector: RelationshipsConnector,
-                                   desConnector: DesConnector) {
+                                   relationshipsConnector: RelationshipsConnector, desConnector: DesConnector) {
   def translateToMtdItId(clientId: String, clientIdType: String)
                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     clientIdType match {
       case CLIENT_ID_TYPE_MTDITID => Future successful Some(MtdItId(clientId))
       case CLIENT_ID_TYPE_NINO =>
-        clientIdMappingRepository.find(clientId, clientIdType).flatMap({
-          case x :: tail => Future successful Some(MtdItId(x.canonicalClientId))
-          case Nil => desConnector.getBusinessDetails(Nino(clientId)).map({
-            case Some(record) =>
-              if (record.mtdbsa.isDefined) {
-                clientIdMappingRepository.create(record.mtdbsa.head.value, CLIENT_ID_TYPE_MTDITID, clientId, clientIdType)
-              }
-              record.mtdbsa
-            case None => None
-          })
-        })
-
+        desConnector.getBusinessDetails(Nino(clientId)).map{
+          case Some(record) => record.mtdbsa
+          case None => None
+        }
       case _ => Future successful None
     }
   }
