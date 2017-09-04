@@ -20,7 +20,7 @@ import javax.inject._
 
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
-import uk.gov.hmrc.agentclientauthorisation.{model, _}
+import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -37,10 +37,10 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     clientIdType match {
       case CLIENT_ID_TYPE_MTDITID => Future successful Some(MtdItId(clientId))
       case CLIENT_ID_TYPE_NINO =>
-        desConnector.getBusinessDetails(Nino(clientId)).map({
+        desConnector.getBusinessDetails(Nino(clientId)).map{
           case Some(record) => record.mtdbsa
           case None => None
-        })
+        }
       case _ => Future successful None
     }
   }
