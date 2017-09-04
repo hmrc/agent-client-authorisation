@@ -26,9 +26,8 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
@@ -40,10 +39,10 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   val mockAuthConnector: AuthConnector = new AuthConnector(mockMetrics, mockPlayAuthConnector)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
-  private type ClientAuthAction = Request[AnyContent] => Nino => Future[Result]
+  private type ClientAuthAction = Request[AnyContent] => MtdItId => Future[Result]
 
   val agentAction: AgentAuthAction = { implicit request => implicit arn => Future successful Ok }
-  val clientAction: ClientAuthAction = { implicit request => implicit nino => Future successful Ok }
+  val clientAction: ClientAuthAction = { implicit request => implicit mtdItId => Future successful Ok }
 
   private def authStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)
@@ -93,7 +92,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   }
 
   "onlyForClients" should {
-    "successfully grant access to a Client with HMRC-NI enrolment" in {
+    "successfully grant access to a Client with HMRC-MTD_IT enrolment" in {
       authStub(clientAffinityAndEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))

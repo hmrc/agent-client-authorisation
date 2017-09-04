@@ -24,20 +24,20 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
+import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-case class Authority(nino: Option[Nino],
+case class Authority(mtdItId: Option[MtdItId],
                      enrolmentsUrl: URL)
 
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
@@ -51,14 +51,12 @@ class AuthConnector @Inject()(metrics: Metrics,
   override def authConnector: core.AuthConnector = microserviceAuthConnector
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
-  private type ClientAuthAction = Request[AnyContent] => Nino => Future[Result]
+  private type ClientAuthAction = Request[AnyContent] => MtdItId => Future[Result]
 
   private val affinityGroupAllEnrolls: Retrieval[~[Option[AffinityGroup], core.Enrolments]] = affinityGroup and allEnrolments
   private val AuthProvider: AuthProviders = AuthProviders(GovernmentGateway)
   private val agentEnrol = "HMRC-AS-AGENT"
   private val agentEnrolId = "AgentReferenceNumber"
-  private val clientEnrol = "HMRC-NI"
-  private val clientEnrolId = "NINO"
   private val isAnAgent = true
 
   def onlyForAgents(action: AgentAuthAction): Action[AnyContent] = {
@@ -83,8 +81,8 @@ class AuthConnector @Inject()(metrics: Metrics,
     Action.async { implicit request =>
       authorised(AuthProvider).retrieve(affinityGroupAllEnrolls) {
         case Some(_) ~ allEnrols ⇒
-          val nino = extractEnrolmentData(allEnrols.enrolments, clientEnrol, clientEnrolId)
-          if (nino.isDefined) action(request)(Nino(nino.get))
+          val mtdItId = extractEnrolmentData(allEnrols.enrolments, SUPPORTED_SERVICE, CLIENT_ID_TYPE_MTDITID)
+          if (mtdItId.isDefined) action(request)(MtdItId(mtdItId.get))
           else Future successful ClientNinoNotFound
         case _ =>
           Logger.warn("Client Not Authorised")

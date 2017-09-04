@@ -21,6 +21,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 
 import scala.concurrent.Future
@@ -40,12 +41,12 @@ trait TestData {
   )
 
   val agentEnrolment = Set(
-    Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), confidenceLevel = ConfidenceLevel.L200,
+    Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), confidenceLevel = L200,
       state = "", delegatedAuthRule = None)
   )
 
   val clientEnrolment = Set(
-    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", nino1.value)), confidenceLevel = ConfidenceLevel.L200,
+    Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), confidenceLevel = L200,
       state = "", delegatedAuthRule = None)
   )
 
