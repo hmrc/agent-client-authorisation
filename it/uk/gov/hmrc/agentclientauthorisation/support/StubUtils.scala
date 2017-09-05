@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain._
 
@@ -25,15 +26,15 @@ trait StubUtils {
   class PreconditionBuilder {
 
     def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
-       AgentAdmin(arn, oid = "556737e15500005500eaf68e", agentCode)
+       AgentAdmin(arn)
     }
 
     def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
       agentAdmin(arn.value, agentCode.value)
     }
 
-    def client(oid: String = "556737e15500005500eaf68f", canonicalClientId: MtdItId = MtdItId("mtdItId1"), clientId: Nino = new Generator().nextNino ): Client = {
-      Client(oid, clientId, canonicalClientId)
+    def client(canonicalClientId: MtdItId = MtdItId("mtdItId1"), clientId: Nino = nino1 ): Client = {
+      Client(clientId, canonicalClientId)
     }
   }
 
@@ -45,13 +46,10 @@ trait StubUtils {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  case class AgentAdmin(
-                         override val arn: String,
-                         override val oid: String,
-                         override val agentCode: String)
+  case class AgentAdmin(override val arn: String)
     extends BaseUser with AgentAuthStubs[AgentAdmin] {
   }
 
-  case class Client(override val oid: String, override val clientId: Nino, override val canonicalClientId: MtdItId )
+  case class Client(override val clientId: Nino, override val canonicalClientId: MtdItId )
     extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

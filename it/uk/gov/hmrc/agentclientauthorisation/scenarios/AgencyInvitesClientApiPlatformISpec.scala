@@ -18,10 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -36,7 +35,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino, canonicalClientId=mtdItId1).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client.mtdItId).aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino, canonicalClientId=mtdItId1).isLoggedIn.hasABusinessPartnerRecordWithMtdItId(client.mtdItId).aRelationshipIsCreatedWith(arn)
 
       When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
@@ -59,7 +58,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).isLoggedIn.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       When("the Agency sends several invitations to the Client")
