@@ -44,14 +44,17 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   val agentAction: AgentAuthAction = { implicit request => implicit arn => Future successful Ok }
   val clientAction: ClientAuthAction = { implicit request => implicit mtdItId => Future successful Ok }
 
-  private def authStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
+  private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)
+
+  private def clientAuthStub(returnValue: Future[Enrolments]) =
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any())).thenReturn(returnValue)
 
   override def beforeEach(): Unit = reset(mockPlayAuthConnector)
 
   "onlyForAgents" should {
     "return OK for an Agent with HMRC-AS-AGENT enrolment" in {
-      authStub(agentAffinityAndEnrolments)
+      agentAuthStub(agentAffinityAndEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
@@ -59,7 +62,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     }
 
     "return FORBIDDEN when the user has no HMRC-AS-AGENT enrolment" in {
-      authStub(agentNoEnrolments)
+      agentAuthStub(agentNoEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
@@ -67,7 +70,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     }
 
     "return UNAUTHORISED when the user does not belong to Agent affinity group" in {
-      authStub(agentIncorrectAffinity)
+      agentAuthStub(agentIncorrectAffinity)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
@@ -75,7 +78,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     }
 
     "return UNAUTHORISED when auth fails to return an AffinityGroup or Enrolments" in {
-      authStub(neitherHaveAffinityOrEnrolment)
+      agentAuthStub(neitherHaveAffinityOrEnrolment)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
@@ -83,7 +86,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     }
 
     "return UNAUTHORISED when auth throws an error" in {
-      authStub(failedStub)
+      agentAuthStub(failedStubForAgent)
 
       val response: Result = await(mockAuthConnector.onlyForAgents(agentAction).apply(FakeRequest()))
 
@@ -93,7 +96,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
   "onlyForClients" should {
     "successfully grant access to a Client with HMRC-MTD_IT enrolment" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
 
@@ -101,31 +104,15 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     }
 
     "return FORBIDDEN when the user has no HMRC-NI enrolment" in {
-      authStub(clientNoEnrolments)
+      clientAuthStub(clientNoEnrolments)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
 
-    "return UNAUTHORISED when the user does not belong to an affinity group" in {
-      authStub(clientNoAffinityGroup)
-
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
-
-      status(response) shouldBe UNAUTHORIZED
-    }
-
-    "return UNAUTHORISED when the auth fails to return an AffinityGroup or Enrolments" in {
-      authStub(neitherHaveAffinityOrEnrolment)
-
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
-
-      status(response) shouldBe UNAUTHORIZED
-    }
-
     "return UNAUTHORISED when auth throws an error" in {
-      authStub(failedStub)
+      clientAuthStub(failedStubForClient)
 
       val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
 

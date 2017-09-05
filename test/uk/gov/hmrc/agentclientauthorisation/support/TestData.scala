@@ -50,28 +50,25 @@ trait TestData {
       state = "", delegatedAuthRule = None)
   )
 
-  val clientAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(clientEnrolment)))
+  val clientEnrolments: Future[Enrolments] = Future successful Enrolments(clientEnrolment)
 
-  val clientNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(Set.empty[Enrolment])))
-
-  val clientNoAffinityGroup: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](None, Enrolments(clientEnrolment)))
+  val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
 
   val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment)))
+    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment))
 
   val neitherHaveAffinityOrEnrolment: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](None, Enrolments(Set.empty[Enrolment])))
+    Future successful new ~[Option[AffinityGroup], Enrolments](None, Enrolments(Set.empty[Enrolment]))
 
   val agentNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(Set.empty[Enrolment])))
+    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(Set.empty[Enrolment]))
 
   val agentIncorrectAffinity: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future.successful(new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment)))
+    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment))
 
-  val failedStub: Future[~[Option[AffinityGroup], Enrolments]] =
+  val failedStubForAgent: Future[~[Option[AffinityGroup], Enrolments]] =
     Future failed new NullPointerException
+
+  val failedStubForClient: Future[Enrolments] = Future failed new NullPointerException
 
 }

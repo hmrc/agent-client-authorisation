@@ -59,8 +59,8 @@ class AuthConnector @Inject()(metrics: Metrics,
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
 
-  def onlyForAgents(action: AgentAuthAction): Action[AnyContent] = {
-    Action.async { implicit request ⇒
+  def onlyForAgents(action: AgentAuthAction): Action[AnyContent] = Action.async {
+    implicit request ⇒
       authorised(AuthProvider).retrieve(affinityGroupAllEnrolls) {
         case Some(affinityG) ~ allEnrols ⇒
           (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
@@ -72,25 +72,20 @@ class AuthConnector @Inject()(metrics: Metrics,
       } recover {
         case _ => GenericUnauthorized
       }
-    }
   }
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
-  def onlyForClients(action: ClientAuthAction): Action[AnyContent] = {
-    Action.async { implicit request =>
-      authorised(AuthProvider).retrieve(affinityGroupAllEnrolls) {
-        case Some(_) ~ allEnrols ⇒
+  def onlyForClients(action: ClientAuthAction): Action[AnyContent] = Action.async {
+    implicit request =>
+      authorised(AuthProvider).retrieve(allEnrolments) {
+        allEnrols =>
           val mtdItId = extractEnrolmentData(allEnrols.enrolments, SUPPORTED_SERVICE, CLIENT_ID_TYPE_MTDITID)
           if (mtdItId.isDefined) action(request)(MtdItId(mtdItId.get))
           else Future successful ClientNinoNotFound
-        case _ =>
-          Logger.warn("Client Not Authorised")
-          Future successful GenericUnauthorized
       } recover {
         case _ => GenericUnauthorized
       }
-    }
   }
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =

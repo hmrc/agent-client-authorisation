@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
-import org.mockito.Matchers.{any, eq => eqs}
+import org.mockito.Matchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.JsArray
@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.{Generator, Nino}
 
@@ -48,12 +49,12 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val generator = new Generator()
   val nino: Nino = nino1
 
-  private def authStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any())).thenReturn(returnValue)
+  private def clientAuthStub(returnValue: Future[Enrolments]) =
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any())).thenReturn(returnValue)
 
   "Accepting an invitation" should {
     "Return no content" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -65,7 +66,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "Return not found when the invitation doesn't exist" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -75,7 +76,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "the invitation cannot be actioned" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsAccepted thenReturn (Future successful Left("failure message"))
@@ -85,22 +86,21 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    // These tests will be uncommented with client auth is re-added
-//    "Return GenericUnauthorised when user's nino does not match" in {
-//      authStub(clientAffinityAndEnrolments)
-//
-//      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
-//
-//      response shouldBe GenericUnauthorized
-//    }
-//
-//    "Return unauthorised when the user is not logged in to MDTP" in {
-//      authStub(neitherHaveAffinityOrEnrolment)
-//
-//      val response = await(controller.acceptInvitation(nino1, invitationId)(FakeRequest()))
-//
-//      response shouldBe GenericUnauthorized
-//    }
+    "Return GenericUnauthorised when user's nino does not match" in {
+      clientAuthStub(clientEnrolments)
+
+      val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
+
+      response shouldBe GenericUnauthorized
+    }
+
+    "Return unauthorised when the user is not logged in to MDTP" in {
+      clientAuthStub(failedStubForClient)
+
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
+
+      response shouldBe GenericUnauthorized
+    }
 
     "not change the invitation status if relationship creation fails" in {
       pending
@@ -109,7 +109,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   "Rejecting an invitation" should {
     "Return no content" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -121,7 +121,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "Return not found when the invitation doesn't exist" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -131,7 +131,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "the invitation cannot be actioned" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsRejected thenReturn (Future successful Left("failure message"))
@@ -141,27 +141,26 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    // These tests will be uncommented when client auth is re-added
-//    "Return GenericUnauthorised when user's nino does not match" in {
-//      authStub(agentAffinityAndEnrolments)
-//
-//      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
-//
-//      response shouldBe GenericUnauthorized
-//    }
-//
-//    "Return unauthorised when the user is not logged in to MDTP" in {
-//      authStub(neitherHaveAffinityOrEnrolment)
-//
-//      val response = await(controller.rejectInvitation(nino1, invitationId)(FakeRequest()))
-//
-//      response shouldBe GenericUnauthorized
-//    }
+    "Return GenericUnauthorised when user's nino does not match" in {
+      clientAuthStub(clientEnrolments)
+
+      val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
+
+      response shouldBe GenericUnauthorized
+    }
+
+    "Return unauthorised when the user is not logged in to MDTP" in {
+      clientAuthStub(failedStubForClient)
+
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
+
+      response shouldBe GenericUnauthorized
+    }
   }
 
   "getInvitations" should {
     "return 200 and an empty list when there are no invitations for the client" in {
-      authStub(clientAffinityAndEnrolments)
+      clientAuthStub(clientEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))

@@ -39,10 +39,9 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(mtdItId1, nino).isLoggedIn.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(mtdItId1, nino).isLoggedIn.hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-      given().client(mtdItId2, nino2).isLoggedIn.hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given().client(mtdItId1, nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+      given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
@@ -54,9 +53,11 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       agency sendInvitation(nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
+      given().client(mtdItId1, nino).isLoggedIn
       clientAcceptsFirstInvitation(client)
 
       Then("The agent filters by Client 1 and Pending")
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
       agencyFiltersByClient1Pending(mtdItId1, agency)
 
       Then("The agent filters by Client 2 and Accepted")

@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.domain.{Nino, SaAgentReference}
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.SaAgentReference
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -35,27 +36,27 @@ trait BasicUserAuthStubs[A] {
 trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
-  def clientId: Nino
+  def canonicalClientId: MtdItId
 
   def isLoggedIn: A = {
-//    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
-//      s"""
-//         |{
-//         |  "allEnrolments": [
-//         |    {
-//         |      "key": "HMRC-NI",
-//         |      "identifiers": [
-//         |        {
-//         |          "key": "NINO",
-//         |          "value": "${clientId.value}"
-//         |        }
-//         |      ],
-//         |      "state": "Activated"
-//         |    }
-//         |  ]
-//         |}
-//       """.stripMargin
-//    )))
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-MTD-IT",
+         |      "identifiers": [
+         |        {
+         |          "key": "MTDITID",
+         |          "value": "${canonicalClientId.value}"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
+         |}
+       """.stripMargin
+    )))
 
     this
   }

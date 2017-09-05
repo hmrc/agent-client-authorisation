@@ -25,6 +25,10 @@ trait StubUtils {
 
   class PreconditionBuilder {
 
+    def agentAdmin(arn: Arn): AgentAdmin = {
+      AgentAdmin(arn.value)
+    }
+
     def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
        AgentAdmin(arn)
     }

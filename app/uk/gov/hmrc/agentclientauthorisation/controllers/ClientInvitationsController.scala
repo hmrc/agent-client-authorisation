@@ -41,8 +41,9 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 //      Future successful Ok(toHalResource(request.nino.value, request.path))
 //  }
 
-  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = Action.async {
+  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
     implicit request =>
+      implicit implicitMtdItId =>
       Future successful {
         Ok(toHalResource(mtdItId, request.path))
         //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
@@ -50,13 +51,15 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
       }
   }
 
-  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
+      implicit implicitMtdItId =>
       actionInvitation(mtdItId, invitationId, invitationsService.acceptInvitation)
   }
 
-  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
+      implicit implicitMtdItId =>
       actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
   }
 
@@ -74,8 +77,9 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
+      implicit implicitMtdItId =>
       invitationsService.findInvitation(invitationId).map {
         case Some(x) if x.clientId == mtdItId.value => Ok(toHalResource(x))
         case None => InvitationNotFound
@@ -83,8 +87,9 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
       }
   }
 
-  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
+  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request =>
+      implicit implicitMtdItId =>
       //      if (clientId == request.nino.value) {
       invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map ( results => Ok(toHalResource(results, mtdItId, status)))
     //else Future successful NoPermissionOnClient
