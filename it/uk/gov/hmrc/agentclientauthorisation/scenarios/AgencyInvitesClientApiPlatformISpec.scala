@@ -18,15 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with
+  Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
-  private implicit val agentCode = AgentCode("LMNOP123456")
   val nino: Nino = nextNino
 
   feature("Agencies can filter")  {
@@ -35,8 +34,9 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, mtdItId1, port)
 
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
-      given().client(clientId = nino, canonicalClientId=mtdItId1).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client.mtdItId).aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino, canonicalClientId = mtdItId1)
+        .hasABusinessPartnerRecordWithMtdItId(client.mtdItId).aRelationshipIsCreatedWith(arn)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
@@ -45,12 +45,14 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn
       clientsViewOfPendingInvitations(client)
 
       When(s"the Client accepts the first Agency invitation")
       clientAcceptsFirstInvitation(client)
 
       Then(s"the Agency filters their sent invitations by status")
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
       agencyFiltersByStatus(agency, "accepted")
     }
 
@@ -58,9 +60,8 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
-      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId().aRelationshipIsCreatedWith(arn)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
@@ -69,9 +70,11 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn
       clientsViewOfPendingInvitations(client)
 
       When(s"the agency cancels the invitation")
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
       agencyCancelsInvitation(agency)
 
       Then(s"the Agency filters their sent invitations by status")

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
@@ -36,28 +36,33 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
                                             microserviceAuthConnector: MicroserviceAuthConnector)
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
 
-//  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
-//    implicit request =>
-//      Future successful Ok(toHalResource(request.nino.value, request.path))
-//  }
+  //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
+  //    implicit request =>
+  //      Future successful Ok(toHalResource(request.nino.value, request.path))
+  //  }
 
-  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = Action.async {
+  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      Future successful {
-        Ok(toHalResource(mtdItId, request.path))
-        //        if (clientId == request.nino.value) Ok(toHalResource(clientId, request.path))
-        //        else NoPermissionOnClient
-      }
+      implicit authMtdItId =>
+        forThisClient(mtdItId) {
+          Future successful Ok(toHalResource(mtdItId, request.path))
+        }
   }
 
-  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
-      actionInvitation(mtdItId, invitationId, invitationsService.acceptInvitation)
+      implicit authMtdItId =>
+        forThisClient(mtdItId) {
+          actionInvitation(mtdItId, invitationId, invitationsService.acceptInvitation)
+        }
   }
 
-  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
-      actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
+      implicit authMtdItId =>
+        forThisClient(mtdItId) {
+          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
+        }
   }
 
   private def actionInvitation(mtdItId: MtdItId, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
@@ -74,21 +79,30 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = Action.async {
+  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
     implicit request =>
-      invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == mtdItId.value => Ok(toHalResource(x))
-        case None => InvitationNotFound
-        case _ => NoPermissionOnClient
-      }
+      implicit authMtdItId =>
+        forThisClient(mtdItId) {
+          invitationsService.findInvitation(invitationId).map {
+            case Some(x) if x.clientId == mtdItId.value => Ok(toHalResource(x))
+            case None => InvitationNotFound
+            case _ => NoPermissionOnClient
+          }
+        }
   }
 
-  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
+  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request =>
-      //      if (clientId == request.nino.value) {
-      invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map ( results => Ok(toHalResource(results, mtdItId, status)))
-    //else Future successful NoPermissionOnClient
+      implicit authMtdItId =>
+        forThisClient(mtdItId) {
+          invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (results => Ok(toHalResource(results, mtdItId, status)))
+        }
   }
+
+  private def forThisClient(mtdItId: MtdItId)(block: => Future[Result])(implicit authMtdItId: MtdItId) =
+    if (authMtdItId.value != mtdItId.value)
+      Future successful NoPermissionOnClient
+    else block
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

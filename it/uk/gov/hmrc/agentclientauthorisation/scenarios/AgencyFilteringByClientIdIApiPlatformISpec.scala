@@ -39,7 +39,7 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
       val client2 = new ClientApi(this, nino2, MtdItId("0023456789"), port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
+      given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(client1.mtdItId)
       given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
 

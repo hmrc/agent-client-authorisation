@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
@@ -33,14 +34,14 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
 
     scenario("on the client id and status of invitations") {
       val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, MtdItId("mtdItId1"), port)
-      val client2 = new ClientApi(this, nino2, MtdItId("mtdItId2"), port)
+      val client = new ClientApi(this, nino, mtdItId1, port)
+      val mtdItId2 = MtdItId("mtdItId2")
+      val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
-      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecord().aRelationshipIsCreatedWith(arn)
-      given().client(clientId = nino).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client.mtdItId)
-      given().client(clientId = nino2).isLoggedInWithSessionId.hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
+      given().client(mtdItId1, nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+      given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
@@ -52,13 +53,15 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       agency sendInvitation(nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
+      given().client(mtdItId1, nino).isLoggedIn
       clientAcceptsFirstInvitation(client)
 
       Then("The agent filters by Client 1 and Pending")
-      agencyFiltersByClient1Pending(client.mtdItId, agency)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+      agencyFiltersByClient1Pending(mtdItId1, agency)
 
       Then("The agent filters by Client 2 and Accepted")
-      agencyFiltersByClient2Accepted(client2.mtdItId, agency)
+      agencyFiltersByClient2Accepted(mtdItId2, agency)
     }
   }
 

@@ -33,7 +33,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
     scenario("on the service of invitations") {
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInWithSessionIdAndSubscribed
+      given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
       val client = new ClientApi(this, nino, mtdItId1, port)
 
