@@ -70,7 +70,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       )
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino).isLoggedIn
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn
       clientsViewOfPendingInvitations(client)
 
       When(s"the agency cancels the invitation")

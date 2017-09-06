@@ -52,6 +52,16 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def clientAuthStub(returnValue: Future[Enrolments]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any())).thenReturn(returnValue)
 
+  "getDetailsForClient" should {
+    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
+      clientAuthStub(clientEnrolments)
+
+      val response = await(controller.getDetailsForClient(MtdItId("invalid"))(FakeRequest()))
+
+      response shouldBe NoPermissionOnClient
+    }
+  }
+
   "Accepting an invitation" should {
     "Return no content" in {
       clientAuthStub(clientEnrolments)
@@ -86,12 +96,12 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return GenericUnauthorised when user's nino does not match" in {
+    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientEnrolments)
 
       val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
-      response shouldBe GenericUnauthorized
+      response shouldBe NoPermissionOnClient
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -141,12 +151,12 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe invalidInvitationStatus("failure message")
     }
 
-    "Return GenericUnauthorised when user's nino does not match" in {
+    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientEnrolments)
 
       val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
-      response shouldBe GenericUnauthorized
+      response shouldBe NoPermissionOnClient
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -155,6 +165,16 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
+    }
+  }
+
+  "getInvitation" should {
+    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
+      clientAuthStub(clientEnrolments)
+
+      val response = await(controller.getInvitation(MtdItId("invalid"), "1234")(FakeRequest()))
+
+      response shouldBe NoPermissionOnClient
     }
   }
 
@@ -167,6 +187,14 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       status(result) shouldBe 200
 
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
+    }
+
+    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
+      clientAuthStub(clientEnrolments)
+
+      val response = await(controller.getInvitations(MtdItId("invalid"), None)(FakeRequest()))
+
+      response shouldBe NoPermissionOnClient
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
