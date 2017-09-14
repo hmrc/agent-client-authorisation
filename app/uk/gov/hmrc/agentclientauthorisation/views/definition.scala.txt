@@ -27,7 +27,7 @@
     "context": "agent-client-authorisation",
     "versions": [{
       "version": "0.0",
-      "status": "PROTOTYPED",
+      "status": "DEPRECATED",
       "access": @Json.toJson(access)
     }]
   }
