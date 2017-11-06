@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime.parse
 import play.api.libs.json.Json.toJson
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.play.test.UnitSpec
 
 class InvitationSpec extends UnitSpec {
