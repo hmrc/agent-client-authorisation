@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
-import org.mockito.Matchers.any
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.JsArray
@@ -26,6 +26,7 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
@@ -40,8 +41,9 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val mockAuditService: AuditService = resettingMock[AuditService]
 
-  val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector) {
+  val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, mockAuditService) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 

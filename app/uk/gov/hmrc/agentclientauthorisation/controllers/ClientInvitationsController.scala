@@ -19,13 +19,15 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{Action, AnyContent, Result}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ClientInvitationsController @Inject()(invitationsService: InvitationsService)
                                            (implicit metrics: Metrics,
-                                            microserviceAuthConnector: MicroserviceAuthConnector)
+                                            microserviceAuthConnector: MicroserviceAuthConnector,
+                                            auditService: AuditService)
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
 
   //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
@@ -66,12 +69,14 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   }
 
   private def actionInvitation(mtdItId: MtdItId, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
-                              (implicit ec: ExecutionContext) = {
+                              (implicit hc: HeaderCarrier, request: Request[AnyContent]) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation)
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {
-          case Right(_) => NoContent
+          case Right(invite) =>
+            auditService.sendAgentInvitationResponse(invite.id.toString(), invite.arn, invite.status, mtdItId)
+            NoContent
           case Left(message) => invalidInvitationStatus(message)
         }
       case None => Future successful InvitationNotFound

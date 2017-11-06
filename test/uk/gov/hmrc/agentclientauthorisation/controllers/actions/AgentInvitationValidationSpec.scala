@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
