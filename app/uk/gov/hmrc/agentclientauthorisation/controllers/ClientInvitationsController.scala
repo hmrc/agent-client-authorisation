@@ -77,9 +77,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
       case Some(invitation)
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {
-          case Right(invite) =>
-            auditService.sendAgentInvitationResponse(invite.id.stringify, invite.arn, invite.status, mtdItId)
-            NoContent
+          case Right(_) => NoContent
           case Left(message) => invalidInvitationStatus(message)
         }
       case None => Future successful InvitationNotFound

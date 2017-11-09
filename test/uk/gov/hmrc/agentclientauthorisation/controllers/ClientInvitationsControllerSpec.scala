@@ -71,7 +71,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response.header.status shouldBe 204
-      verifyAuditEvents()
+      verifyAgentClientRelationshipCreatedAuditEvent()
     }
 
     "Return not found when the invitation doesn't exist" in {
@@ -129,7 +129,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
-      verifyInvitationResponseAuditEvent()
     }
 
     "Return not found when the invitation doesn't exist" in {
@@ -140,7 +139,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe InvitationNotFound
-      verifyNoAuditEventSent()
     }
 
     "the invitation cannot be actioned" in {
@@ -152,7 +150,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe invalidInvitationStatus("failure message")
-      verifyNoAuditEventSent()
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
@@ -161,7 +158,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
-      verifyNoAuditEventSent()
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -170,7 +166,6 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
-      verifyNoAuditEventSent()
     }
   }
 

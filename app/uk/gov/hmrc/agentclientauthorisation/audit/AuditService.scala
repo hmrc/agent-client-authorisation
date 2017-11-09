@@ -39,17 +39,6 @@ object AgentClientInvitationEvent extends Enumeration {
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
-  def sendAgentInvitationResponse(invitationId: String, arn: Arn, invitationStatus: InvitationStatus, mtdItId: MtdItId)
-                                 (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
-    auditEvent(AgentClientInvitationEvent.AgentClientInvitationResponse, "agent-client-invitation-response",
-      Seq(
-        "invitationId" -> invitationId,
-        "agentReferenceNumber" -> arn.value,
-        "regimeId" -> mtdItId.value,
-        "regime" -> "HMRC-MTD-IT",
-        "clientResponse" -> invitationStatus.toString))
-  }
-
   def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, mtdItId: MtdItId)
                                  (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
     auditEvent(AgentClientInvitationEvent.AgentClientRelationshipCreated, "agent-client-relationship-created",
