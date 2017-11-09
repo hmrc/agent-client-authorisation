@@ -32,7 +32,7 @@ import scala.concurrent.Future
 import scala.util.Try
 
 object AgentClientInvitationEvent extends Enumeration {
-  val AgentClientInvitationResponse = Value
+  val AgentClientInvitationResponse, AgentClientRelationshipCreated = Value
   type AgentClientInvitationEvent = Value
 }
 
@@ -48,6 +48,17 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "regimeId" -> mtdItId.value,
         "regime" -> "HMRC-MTD-IT",
         "clientResponse" -> invitationStatus.toString))
+  }
+
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, mtdItId: MtdItId)
+                                 (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
+    auditEvent(AgentClientInvitationEvent.AgentClientRelationshipCreated, "agent-client-relationship-created",
+      Seq(
+        "invitationId" -> invitationId,
+        "agentReferenceNumber" -> arn.value,
+        "regimeId" -> mtdItId.value,
+        "regime" -> "HMRC-MTD-IT"
+      ))
   }
 
   private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(implicit hc: HeaderCarrier, request: Request[Any]): Future[Unit] = {

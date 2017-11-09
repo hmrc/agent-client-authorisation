@@ -79,6 +79,47 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
         sentEvent.tags("X-Request-ID") shouldBe "dummy request id"
       }
     }
+
+    "send an AgentClientRelationshipCreated Event" in {
+      val mockConnector = mock[AuditConnector]
+      val service = new AuditService(mockConnector)
+
+      val hc = HeaderCarrier(
+        authorization = Some(Authorization("dummy bearer token")),
+        sessionId = Some(SessionId("dummy session id")),
+        requestId = Some(RequestId("dummy request id")))
+
+      val arn: Arn = Arn("HX2345")
+      val invitationId: String = "1"
+
+      await(service.sendAgentClientRelationshipCreated(
+        invitationId,
+        arn,
+        mtdItId1)(
+        hc,
+        FakeRequest("GET", "/path")))
+
+      eventually {
+        val captor = ArgumentCaptor.forClass(classOf[DataEvent])
+        verify(mockConnector).sendEvent(captor.capture())(any[HeaderCarrier], any[ExecutionContext])
+        val sentEvent = captor.getValue.asInstanceOf[DataEvent]
+
+        sentEvent.auditType shouldBe "AgentClientRelationshipCreated"
+        sentEvent.auditSource shouldBe "agent-client-authorisation"
+        sentEvent.detail("invitationId") shouldBe "1"
+        sentEvent.detail("agentReferenceNumber") shouldBe "HX2345"
+        sentEvent.detail("regimeId") shouldBe "mtdItId"
+        sentEvent.detail("regime") shouldBe "HMRC-MTD-IT"
+
+        sentEvent.tags.contains("Authorization") shouldBe false
+        sentEvent.detail("Authorization") shouldBe "dummy bearer token"
+
+        sentEvent.tags("transactionName") shouldBe "agent-client-relationship-created"
+        sentEvent.tags("path") shouldBe "/path"
+        sentEvent.tags("X-Session-ID") shouldBe "dummy session id"
+        sentEvent.tags("X-Request-ID") shouldBe "dummy request id"
+      }
+    }
   }
 
 }

@@ -17,12 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime.now
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Millis, Seconds, Span}
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -30,17 +33,23 @@ import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
 
-trait ClientEndpointBehaviours extends TransitionInvitation {
-  this: UnitSpec with MockitoSugar with BeforeAndAfterEach =>
+trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
+  this: UnitSpec with ResettingMockitoSugar =>
 
-  val invitationsService: InvitationsService = mock[InvitationsService]
-  val authConnector: AuthConnector = mock[AuthConnector]
+  override implicit val patienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
+
+  val invitationsService: InvitationsService = resettingMock[InvitationsService]
+  val authConnector: AuthConnector = resettingMock[AuthConnector]
+  val auditConnector: AuditConnector = resettingMock[AuditConnector]
+  val auditService: AuditService = new AuditService(auditConnector)
 
   def controller: ClientInvitationsController
 
@@ -49,10 +58,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
   def arn: Arn
 
   def generator: Generator
-
-  override def beforeEach(): Unit = {
-    reset(invitationsService, authConnector)
-  }
 
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
     when(invitationsService.findInvitation(eqs(invitationId))(any()))
@@ -74,4 +79,63 @@ trait ClientEndpointBehaviours extends TransitionInvitation {
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
     when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
+
+  def assertInvitationResponseEvent(event: DataEvent) = {
+    event.auditSource shouldBe "agent-client-authorisation"
+    event.auditType shouldBe "AgentClientInvitationResponse"
+    val details = event.detail.toSeq
+    details should contain allOf(
+      "invitationId" -> invitationId,
+      "agentReferenceNumber" -> arn.value,
+      "regimeId" -> mtdItId1.value,
+      "regime" -> "HMRC-MTD-IT")
+  }
+
+  def assertCreateRelationshipEvent(event: DataEvent) = {
+    event.auditSource shouldBe "agent-client-authorisation"
+    event.auditType shouldBe "AgentClientRelationshipCreated"
+    val details = event.detail.toSeq
+    details should contain allOf(
+      "invitationId" -> invitationId,
+      "agentReferenceNumber" -> arn.value,
+      "regimeId" -> mtdItId1.value,
+      "regime" -> "HMRC-MTD-IT")
+  }
+
+  def verifyInvitationResponseAuditEvent() = {
+    eventually {
+      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
+      verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
+      val event: DataEvent = argumentCaptor.getValue
+      assertInvitationResponseEvent(event)
+    }
+  }
+
+  def verifyAgentClientRelationshipCreatedAuditEvent() = {
+    eventually {
+      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
+      verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
+      val event: DataEvent = argumentCaptor.getValue
+      assertCreateRelationshipEvent(event)
+    }
+  }
+
+  import scala.collection.JavaConverters._
+
+  def verifyAuditEvents() = {
+    eventually {
+      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
+      verify(auditConnector, times(2)).sendEvent(argumentCaptor.capture())(any(), any())
+      val events: Seq[DataEvent] = argumentCaptor.getAllValues.asScala
+      assertCreateRelationshipEvent(events(0))
+      assertInvitationResponseEvent(events(1))
+
+    }
+  }
+
+  def verifyNoAuditEventSent() = {
+    Thread.sleep(scaled(Span(1000, Millis)).millisPart)
+    verify(auditConnector, never()).sendEvent(any(classOf[DataEvent]))(any(), any())
+  }
 }
+
