@@ -80,17 +80,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
     when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
 
-  def assertInvitationResponseEvent(event: DataEvent) = {
-    event.auditSource shouldBe "agent-client-authorisation"
-    event.auditType shouldBe "AgentClientInvitationResponse"
-    val details = event.detail.toSeq
-    details should contain allOf(
-      "invitationId" -> invitationId,
-      "agentReferenceNumber" -> arn.value,
-      "regimeId" -> mtdItId1.value,
-      "regime" -> "HMRC-MTD-IT")
-  }
-
   def assertCreateRelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
@@ -102,34 +91,12 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
       "regime" -> "HMRC-MTD-IT")
   }
 
-  def verifyInvitationResponseAuditEvent() = {
-    eventually {
-      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
-      verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
-      val event: DataEvent = argumentCaptor.getValue
-      assertInvitationResponseEvent(event)
-    }
-  }
-
   def verifyAgentClientRelationshipCreatedAuditEvent() = {
     eventually {
       val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
       verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
       val event: DataEvent = argumentCaptor.getValue
       assertCreateRelationshipEvent(event)
-    }
-  }
-
-  import scala.collection.JavaConverters._
-
-  def verifyAuditEvents() = {
-    eventually {
-      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
-      verify(auditConnector, times(2)).sendEvent(argumentCaptor.capture())(any(), any())
-      val events: Seq[DataEvent] = argumentCaptor.getAllValues.asScala
-      assertCreateRelationshipEvent(events(0))
-      assertInvitationResponseEvent(events(1))
-
     }
   }
 
