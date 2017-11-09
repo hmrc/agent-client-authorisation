@@ -20,13 +20,11 @@ import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
@@ -37,13 +35,12 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 
 import scala.concurrent.Future
 
-class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with ClientEndpointBehaviours with TestData {
+class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockAuditService: AuditService = resettingMock[AuditService]
 
-  val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, mockAuditService) {
+  val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
@@ -73,8 +70,8 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
-
       response.header.status shouldBe 204
+      verifyAuditEvents()
     }
 
     "Return not found when the invitation doesn't exist" in {
@@ -83,8 +80,8 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenFindingAnInvitation thenReturn noInvitation
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
-
       response shouldBe InvitationNotFound
+      verifyNoAuditEventSent()
     }
 
     "the invitation cannot be actioned" in {
@@ -94,8 +91,8 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenInvitationIsAccepted thenReturn (Future successful Left("failure message"))
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
-
       response shouldBe invalidInvitationStatus("failure message")
+      verifyNoAuditEventSent()
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
@@ -104,6 +101,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
+      verifyNoAuditEventSent()
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -112,6 +110,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
+      verifyNoAuditEventSent()
     }
 
     "not change the invitation status if relationship creation fails" in {
@@ -130,6 +129,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
+      verifyInvitationResponseAuditEvent()
     }
 
     "Return not found when the invitation doesn't exist" in {
@@ -140,6 +140,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe InvitationNotFound
+      verifyNoAuditEventSent()
     }
 
     "the invitation cannot be actioned" in {
@@ -151,6 +152,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe invalidInvitationStatus("failure message")
+      verifyNoAuditEventSent()
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
@@ -159,6 +161,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
+      verifyNoAuditEventSent()
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {
@@ -167,6 +170,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
+      verifyNoAuditEventSent()
     }
   }
 
@@ -200,6 +204,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+      clientAuthStub(clientEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
           BSONObjectID("abcdefabcdefabcdefabcdef"), arn, "MTDITID", mtdItId1.value, "postcode", nino1.value, "ni",

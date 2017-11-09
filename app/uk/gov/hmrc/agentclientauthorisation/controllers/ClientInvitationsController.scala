@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 @Singleton
 class ClientInvitationsController @Inject()(invitationsService: InvitationsService)
@@ -56,7 +57,9 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitationsService.acceptInvitation)
+          actionInvitation(mtdItId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
+            case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId, x.arn, mtdItId)
+          })
         }
   }
 
@@ -75,7 +78,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {
           case Right(invite) =>
-            auditService.sendAgentInvitationResponse(invite.id.toString(), invite.arn, invite.status, mtdItId)
+            auditService.sendAgentInvitationResponse(invite.id.stringify, invite.arn, invite.status, mtdItId)
             NoContent
           case Left(message) => invalidInvitationStatus(message)
         }
