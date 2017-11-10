@@ -33,22 +33,20 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
 import uk.gov.hmrc.api.config._
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
-import uk.gov.hmrc.play.audit.filters.AuditFilter
-import uk.gov.hmrc.play.audit.http.config.ErrorAuditingSettings
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
-import uk.gov.hmrc.play.filters._
 import uk.gov.hmrc.play.graphite.GraphiteConfig
-import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPut}
 import uk.gov.hmrc.play.microservice.bootstrap.JsonErrorHandling
 import uk.gov.hmrc.play.microservice.bootstrap.Routing.RemovingOfTrailingSlashes
+import uk.gov.hmrc.play.microservice.config.ErrorAuditingSettings
+import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
 class GuiceModule() extends AbstractModule with ServicesConfig {
   def configure() = {
-    bind(classOf[HttpGet]).to(classOf[WSHttp])
-    bind(classOf[HttpPut]).to(classOf[WSHttp])
+    bind(classOf[HttpGet]).toInstance(WSHttp)
+    bind(classOf[HttpPut]).toInstance(WSHttp)
     bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
     bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
     bind(classOf[ControllerConfig]).to(classOf[ControllerConfiguration])
@@ -161,7 +159,7 @@ object MicroserviceGlobal
   }
 
   override val auditConnector = new MicroserviceAuditConnector
-  override lazy val slConnector = ServiceLocatorConnector(new WSHttp(auditConnector))
+  override lazy val slConnector = ServiceLocatorConnector(WSHttp)
   override implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")

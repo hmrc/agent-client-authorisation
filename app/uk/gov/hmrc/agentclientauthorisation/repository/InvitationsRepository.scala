@@ -23,7 +23,7 @@ import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.json.BSONFormats
+import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
 

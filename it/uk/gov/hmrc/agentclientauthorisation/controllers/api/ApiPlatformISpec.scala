@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
-import uk.gov.hmrc.play.http.HttpResponse
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.language.postfixOps

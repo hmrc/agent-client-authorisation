@@ -21,8 +21,8 @@ import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvi
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.logging.SessionId
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.logging.SessionId
 
 class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) {
 

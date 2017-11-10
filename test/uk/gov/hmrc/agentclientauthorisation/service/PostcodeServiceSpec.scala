@@ -23,11 +23,11 @@ import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.http.HeaderCarrier
 
 class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val desConnector: DesConnector = mock[DesConnector]

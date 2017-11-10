@@ -29,10 +29,12 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 import scala.language.postfixOps

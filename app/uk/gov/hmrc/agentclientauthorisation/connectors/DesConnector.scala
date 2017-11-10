@@ -24,10 +24,10 @@ import play.api.libs.json.Reads
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.logging.Authorization
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpReads }
+import uk.gov.hmrc.http.logging.Authorization
 
 case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
 
@@ -51,10 +51,10 @@ class DesConnector @Inject()(@Named("des-baseUrl") baseUrl: URL,
     getWithDesHeaders(new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
 
 
-  private def getWithDesHeaders(url: String)(implicit hc: HeaderCarrier): Future[Option[BusinessDetails]] = {
+  private def getWithDesHeaders(url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
-    httpGet.GET[Option[BusinessDetails]](url)(implicitly[HttpReads[Option[BusinessDetails]]], desHeaderCarrier)
+    httpGet.GET[Option[BusinessDetails]](url)(implicitly[HttpReads[Option[BusinessDetails]]], desHeaderCarrier, ec)
   }
 }

@@ -28,11 +28,11 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class AgencyInvitationsController @Inject()(override val postcodeService: PostcodeService,

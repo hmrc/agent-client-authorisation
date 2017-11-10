@@ -22,13 +22,12 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.logging.{Authorization, RequestId, SessionId}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.{Authorization, RequestId, SessionId}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext

@@ -21,7 +21,7 @@ import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext

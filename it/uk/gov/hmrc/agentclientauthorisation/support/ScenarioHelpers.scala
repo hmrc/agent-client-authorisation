@@ -42,7 +42,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     val response = agency.sentInvitations()
     response.numberOfInvitations shouldBe 2
 
-    checkInvite(response.firstInvitation)(firstClient._1.mtdItId, firstClient._2)
+    checkInvite(response.firstInvitation)((firstClient._1.mtdItId, firstClient._2))
     checkInvite(response.secondInvitation)((secondClient._1.mtdItId, secondClient._2))
 
     def checkInvite(invitation: EmbeddedInvitation)(expected:(MtdItId, String)): Unit = {
