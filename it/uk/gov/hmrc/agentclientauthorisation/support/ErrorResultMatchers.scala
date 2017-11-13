@@ -20,7 +20,7 @@ import akka.stream.ActorMaterializer
 import com.fasterxml.jackson.databind.JsonMappingException
 import org.scalatest.matchers.{MatchResult, Matcher}
 import play.api.mvc.Result
-import uk.gov.hmrc.play.http.HttpResponse
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.util.Try

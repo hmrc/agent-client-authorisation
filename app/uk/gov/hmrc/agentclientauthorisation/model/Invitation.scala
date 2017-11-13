@@ -22,7 +22,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.play.controllers.RestFormats
+import uk.gov.hmrc.http.controllers.RestFormats
 
 sealed trait InvitationStatus {
 

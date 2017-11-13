@@ -23,9 +23,9 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessDetails, DesConn
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class PostcodeService @Inject() (desConnector: DesConnector) {

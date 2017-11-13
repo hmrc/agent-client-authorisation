@@ -19,19 +19,16 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "play-reactivemongo" % "5.2.0",
+    "uk.gov.hmrc" %% "play-reactivemongo" % "6.1.0",
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % "5.14.0",
-    "uk.gov.hmrc" %% "play-auth" % "1.2.0",
-    "uk.gov.hmrc" %% "play-health" % "2.1.0",
-    "uk.gov.hmrc" %% "play-ui" % "7.4.0",
+    "uk.gov.hmrc" %% "microservice-bootstrap" % "6.10.0",
+    "uk.gov.hmrc" %% "auth-client" % "2.3.0",
     "uk.gov.hmrc" %% "play-config" % "4.2.0",
-    "uk.gov.hmrc" %% "logback-json-logger" % "3.1.0",
     "uk.gov.hmrc" %% "play-hal" % "1.2.0",
-    "uk.gov.hmrc" %% "play-hmrc-api" % "1.4.0",
+    "uk.gov.hmrc" %% "play-hmrc-api" % "2.1.0",
     "uk.gov.hmrc" %% "play-whitelist-filter" % "2.0.0",
-    "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "2.3.0",
-    "uk.gov.hmrc" %% "domain" % "4.1.0",
+    "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "2.4.0",
+    "uk.gov.hmrc" %% "domain" % "5.0.0",
     "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.5.0"
   )
 

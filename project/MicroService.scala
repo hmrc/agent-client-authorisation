@@ -43,7 +43,7 @@ trait MicroService {
     .settings(routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._"))
     .settings(
       targetJvm := "jvm-1.8",
-      scalaVersion := "2.11.8",
+      scalaVersion := "2.11.11",
       libraryDependencies ++= appDependencies,
       fork in Test := false,
       unmanagedSourceDirectories in Test += baseDirectory.value / "testcommon",

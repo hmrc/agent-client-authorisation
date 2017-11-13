@@ -20,7 +20,7 @@ import play.api.libs.json.JsValue
 import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.controllers.api.ApiTestSupport.Endpoint
 import uk.gov.hmrc.agentclientauthorisation.support.Resource
-import uk.gov.hmrc.play.http.HttpResponse
+import uk.gov.hmrc.http.HttpResponse
 
 import scala.util.Try
 import scala.xml.{Elem, XML}

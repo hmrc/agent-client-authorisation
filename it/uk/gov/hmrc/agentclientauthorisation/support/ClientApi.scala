@@ -20,8 +20,8 @@ import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvi
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.logging.SessionId
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.logging.SessionId
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val mtdItId: MtdItId = MtdItId("mtdItId"), implicit val port: Int) {
 

@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.play.controllers.RestFormats
+import uk.gov.hmrc.http.controllers.RestFormats
 
 object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)

@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHe
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.play.controllers.RestFormats
+import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
 @Ignore

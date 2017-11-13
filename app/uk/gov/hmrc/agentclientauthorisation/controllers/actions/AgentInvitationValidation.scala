@@ -22,9 +22,9 @@ import uk.gov.hmrc.agentclientauthorisation.{CLIENT_ID_TYPE_NINO, SUPPORTED_SERV
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait AgentInvitationValidation extends Results {
 
