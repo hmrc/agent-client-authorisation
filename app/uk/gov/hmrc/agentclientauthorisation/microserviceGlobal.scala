@@ -58,6 +58,7 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bindBaseUrl("des")
     bindProperty("des.environment", "des.environment")
     bindProperty("des.authorizationToken", "des.authorization-token")
+    bindProperty("invitation.expiryDuration", "invitation.expiryDuration")
   }
 
   private def bindBaseUrl(serviceName: String) =

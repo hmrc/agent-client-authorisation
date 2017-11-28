@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
@@ -47,6 +47,16 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "agentReferenceNumber" -> arn.value,
         "regimeId" -> mtdItId.value,
         "regime" -> "HMRC-MTD-IT"
+      ))
+  }
+
+  def sendInvitationExpired(invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
+    auditEvent(AgentClientInvitationEvent.AgentClientInvitationResponse, "Client responded to agent invitation",
+      Seq(
+        "invitationId" -> invitation.id.stringify,
+        "agentReferenceNumber" -> invitation.arn
+//        "regimeId" -> "TODO", populate with values once a regime/service has been modelled into core
+//        "regime" -> "HMRC-MTD-IT"
       ))
   }
 

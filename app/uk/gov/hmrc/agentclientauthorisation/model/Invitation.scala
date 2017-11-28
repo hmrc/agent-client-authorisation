@@ -37,6 +37,8 @@ sealed trait InvitationStatus {
 
 case object Pending extends InvitationStatus
 
+case object Expired extends InvitationStatus
+
 case object Rejected extends InvitationStatus
 
 case object Accepted extends InvitationStatus
@@ -51,6 +53,7 @@ object InvitationStatus {
     case Rejected => Some("Rejected")
     case Accepted => Some("Accepted")
     case Cancelled => Some("Cancelled")
+    case Expired => Some("Expired")
     case _ => None
   }
 
@@ -59,6 +62,7 @@ object InvitationStatus {
     case "rejected" => Rejected
     case "accepted" => Accepted
     case "cancelled" => Cancelled
+    case "expired" => Expired
     case _ => Unknown(status)
   }
 

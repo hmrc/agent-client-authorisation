@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
@@ -125,7 +125,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
           invitationsService.findInvitation(invitationId) flatMap {
             case Some(i) if i.arn == givenArn => invitationsService.cancelInvitation(i) map {
               case Right(_) => NoContent
-              case Left(message) => invalidInvitationStatus(message)
+              case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
             }
             case None => Future successful InvitationNotFound
             case _ => Future successful NoPermissionOnAgency

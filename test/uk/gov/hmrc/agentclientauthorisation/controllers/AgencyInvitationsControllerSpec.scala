@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
@@ -193,7 +193,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val cancelledInvitation = transitionInvitation(invitation, Cancelled)
 
       whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
-      whenFindingAnInvitation()(any()) thenReturn (Future successful Some(invitation))
+      whenFindingAnInvitation() thenReturn (Future successful Some(invitation))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 
@@ -204,8 +204,8 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left("message"))
-      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(StatusUpdateFailure(Cancelled,"message")))
+      whenFindingAnInvitation() thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("message")
@@ -215,7 +215,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(new Arn("1234"))
+      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(new Arn("1234"))
 
       val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
 
@@ -226,7 +226,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
+      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe NoPermissionOnAgency
@@ -236,7 +236,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenFindingAnInvitation()(any()) thenReturn (Future successful None)
+      whenFindingAnInvitation() thenReturn (Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe InvitationNotFound
@@ -270,7 +270,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))
 
-  private def whenFindingAnInvitation()(implicit ec: ExecutionContext) = when(invitationsService.findInvitation(any[InvitationId]))
+  private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
 
   private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) = when(invitationsService.cancelInvitation(any[Invitation]))
 }

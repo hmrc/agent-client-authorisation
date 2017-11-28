@@ -38,6 +38,7 @@ object ErrorResults {
   val PostcodeDoesNotMatch                      = Forbidden(toJson(ErrorBody("POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC.")))
   val InvitationNotFound                        = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val InvalidNino                               = BadRequest(toJson(ErrorBody("INVALID_NINO", "The NINO specified is not in a valid format")))
+  val InvitationExpired                         = Gone(toJson(ErrorBody("INVITATION_EXPIRED", "Invitation has expired")))
   def nonUkAddress(countryCode: String)         = NotImplemented(toJson(ErrorBody("NON_UK_ADDRESS", s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
   def invalidInvitationStatus(message: String)  = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
   def unsupportedService(message: String)       = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
