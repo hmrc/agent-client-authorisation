@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.DateTime
+import java.nio.charset.Charset
+import java.security.MessageDigest
+
+import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.http.controllers.RestFormats
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 sealed trait InvitationStatus {
 
@@ -99,9 +103,65 @@ object ClientIdMapping {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
+case class InvitationId(value: String) {
+  require(value.size == 10, "The size of invitation id should not exceed 10")
+}
+
+object InvitationId {
+
+  private def idWrites = (__ \ "value")
+    .write[String]
+    .contramap((id: InvitationId) => id.value.toString)
+
+  private def idReads = (__ \ "value")
+    .read[String]
+    .map(x => InvitationId(x))
+
+  implicit val idFormats = Format(idReads, idWrites)
+
+  def create(arn: Arn,
+             clientId: MtdItId,
+             serviceName: String,
+             timestamp: DateTime = DateTime.now(DateTimeZone.UTC))(implicit prefix: Char): InvitationId = {
+
+    def to5BitNum(bitsLittleEndian: Seq[Boolean]) =
+      bitsLittleEndian.zipWithIndex.map { case (bit, power) => if (bit) 1 << power else 0 }.sum
+
+    def byteToBits(byte: Byte): Seq[Boolean] = {
+      def isBitOn(pos: Int): Boolean = {
+        val maskSingleBit = (0x01 << pos)
+        (byte & maskSingleBit) != 0
+      }
+
+      val msbToLsb = 7 to 0 by -1
+      msbToLsb.map(isBitOn)
+    }
+
+    def to5BitChar(fiveBitNum: Int) =
+      "ABCDEFGHJKLMNOPRSTUWXYZ123456789" (fiveBitNum)
+
+    val id = s"${arn.value}.${clientId.value},$serviceName-${timestamp.getMillis}"
+
+    val idBytes = MessageDigest
+      .getInstance("SHA-256")
+      .digest(id.getBytes("UTF-8"))
+      .take(5)
+
+    val bitList = idBytes
+      .flatMap(x => byteToBits(x))
+      .grouped(5)
+      .toSeq
+
+    val midPart = bitList.map(x => to5BitChar(to5BitNum(x))).mkString
+    val checkDigit = to5BitChar(CRC5.calculate(s"$prefix$midPart"))
+
+    InvitationId(s"${prefix.toString}$midPart$checkDigit")
+  }
+}
 
 case class Invitation(
                        id: BSONObjectID,
+                       invitationId: InvitationId,
                        arn: Arn,
                        service: String,
                        clientId: String,
@@ -140,6 +200,7 @@ object Invitation {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
+      "invitationId" -> invitation.invitationId.value,
       "service" -> invitation.service,
       "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,
@@ -159,4 +220,40 @@ object Invitation {
 
 object AgentInvitation {
   implicit val format = Json.format[AgentInvitation]
+}
+
+
+object CRC5 {
+
+  /* Params for CRC-5/EPC */
+  val bitWidth = 5
+  val poly = 0x09
+  val initial = 0x09
+  val xorOut = 0
+
+  val table: Seq[Int] = {
+    val widthMask = (1 << bitWidth) - 1
+    val shpoly = poly << (8 - bitWidth)
+    for (i <- 0 until 256) yield {
+      var crc = i
+      for (_ <- 0 until 8) {
+        crc = if ((crc & 0x80) != 0) (crc << 1) ^ shpoly else crc << 1
+      }
+      (crc >> (8 - bitWidth)) & widthMask
+    }
+  }
+
+  val ASCII = Charset.forName("ASCII")
+
+  def calculate(string: String): Int = calculate(string.getBytes())
+
+  def calculate(input: Array[Byte]): Int = {
+    val start = 0
+    val length = input.length
+    var crc = initial ^ xorOut
+    for (i <- 0 until length) {
+      crc = table((crc << (8 - bitWidth)) ^ (input(start + i) & 0xff)) & 0xff
+    }
+    crc ^ xorOut
+  }
 }

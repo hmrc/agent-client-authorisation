@@ -73,7 +73,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
   }
 
   private def location(invitation: Invitation) =
-    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url
+    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
 
   def getDetailsForAuthenticatedAgency: Action[AnyContent] = onlyForAgents {
     implicit request =>
@@ -102,7 +102,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
         }
   }
 
-  def getSentInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
+  def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
         forThisAgency(givenArn) {
@@ -118,7 +118,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     else block
   }
 
-  def cancelInvitation(givenArn: Arn, invitationId: String): Action[AnyContent] = onlyForAgents {
+  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
     implicit request =>
       implicit arn =>
         forThisAgency(givenArn) {

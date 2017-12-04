@@ -39,16 +39,16 @@ trait AgencyInvitationsHal {
   }
 
   private def invitationLinks(invitations: List[Invitation]): Vector[HalLink] = {
-    invitations.map { i => HalLink("invitations", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.id.stringify).toString) }.toVector
+    invitations.map { i => HalLink("invitations", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.invitationId).toString) }.toVector
   }
 
   def toHalResource(invitation: Invitation): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.id.stringify).url)))
+    var links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
-      links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(invitation.arn, invitation.id.stringify).url)
+      links = links ++ HalLink("cancel", routes.AgencyInvitationsController.cancelInvitation(invitation.arn, invitation.invitationId).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }

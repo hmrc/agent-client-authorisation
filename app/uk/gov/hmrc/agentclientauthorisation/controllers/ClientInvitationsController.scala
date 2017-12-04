@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationId, InvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,27 +53,27 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
         }
   }
 
-  def acceptInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
+  def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
-            case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId, x.arn, mtdItId)
+          actionInvitation(mtdItId, invitationId.value, invitation => invitationsService.acceptInvitation(invitation).andThen {
+            case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, mtdItId)
           })
         }
   }
 
-  def rejectInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
+  def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
+          actionInvitation(mtdItId, invitationId.value, invitationsService.rejectInvitation)
         }
   }
 
   private def actionInvitation(mtdItId: MtdItId, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
                               (implicit hc: HeaderCarrier, request: Request[AnyContent]) = {
-    invitationsService.findInvitation(invitationId) flatMap {
+    invitationsService.findInvitation(InvitationId(invitationId)) flatMap {
       case Some(invitation)
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {
@@ -85,7 +85,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     }
   }
 
-  def getInvitation(mtdItId: MtdItId, invitationId: String): Action[AnyContent] = onlyForClients {
+  def getInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {

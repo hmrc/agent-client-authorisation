@@ -34,8 +34,8 @@ import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InvitationsRepository @Inject() (mongo: DB)
-extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, mongoFormats, ReactiveMongoFormats.objectIdFormats)
+class InvitationsRepository @Inject()(mongo: DB)
+  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", () => mongo, mongoFormats, ReactiveMongoFormats.objectIdFormats)
     with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
@@ -43,11 +43,13 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, m
     Index(Seq("clientId" -> IndexType.Ascending)),
     Index(Seq("service" -> IndexType.Ascending))
   )
+
   def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
+      invitationId = InvitationId.create(arn, clientId, service)('A'),
       arn = arn,
       service = service,
       clientId = clientId.value,
@@ -62,9 +64,9 @@ extends ReactiveRepository[Invitation, BSONObjectID]("invitations", ()=>mongo, m
 
   def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.value),
-                            "clientId" -> clientId,
-                            "service" -> service,
-                            "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
+      "clientId" -> clientId,
+      "service" -> service,
+      "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
       .filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
