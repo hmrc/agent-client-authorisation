@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import org.joda.time.DateTime
 import org.joda.time.DateTime._
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.~
 
@@ -31,14 +31,18 @@ trait TestData {
 
   val arn = Arn("arn1")
 
-  val mtdSaPendingInvitationId: BSONObjectID = BSONObjectID.generate
-  val mtdSaAcceptedInvitationId: BSONObjectID = BSONObjectID.generate
-  val otherRegimePendingInvitationId: BSONObjectID = BSONObjectID.generate
+  val mtdSaPendingInvitationDbId: BSONObjectID = BSONObjectID.generate
+  val mtdSaAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
+  val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
+
+  val mtdSaPendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
+  val mtdSaAcceptedInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
+  val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "mtd-other", DateTime.parse("2001-01-03"))('A')
 
   val allInvitations = List(
-    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
-    Invitation(mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
-    Invitation(otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
+    Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
+    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
   )
 
   val agentEnrolment = Set(

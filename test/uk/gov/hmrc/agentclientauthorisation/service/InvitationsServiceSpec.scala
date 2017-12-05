@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
+import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
@@ -161,8 +163,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   "findInvitation" should {
-    "return None when the passed invitationId cannot be parsed as a BSONObjectId" in {
-      await(service.findInvitation("not a BSON Object Id")) shouldBe None
+    "return None when the passed invitationId is not in the repository" in {
+      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future.successful(List.empty))
+      await(service.findInvitation(InvitationId("INVALIDINV"))) shouldBe None
     }
   }
 
@@ -209,6 +212,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
+    InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     "mtd-sa",
     mtdItId1.value,
@@ -219,6 +223,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   )
 
   private def testInvitation = Invitation(generate,
+    InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     "mtd-sa",
     mtdItId1.value,

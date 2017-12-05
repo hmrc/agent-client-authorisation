@@ -84,7 +84,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val inviteCreated = Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
 
       when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
@@ -93,7 +93,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 201
-      response.header.headers.get("Location") shouldBe Some(s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.stringify}")
+      response.header.headers.get("Location") shouldBe Some(s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
     }
 
     "not create an invitation when given arn is incorrect" in {
@@ -196,7 +196,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
       whenFindingAnInvitation()(any()) thenReturn (Future successful Some(invitation))
 
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 
       status(response) shouldBe 204
     }
@@ -208,7 +208,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left("message"))
       whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation()
 
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("message")
     }
 
@@ -218,7 +218,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(new Arn("1234"))
 
-      val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnAgency
     }
@@ -229,7 +229,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       whenFindingAnInvitation()(any()) thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe NoPermissionOnAgency
     }
 
@@ -239,7 +239,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       whenFindingAnInvitation()(any()) thenReturn (Future successful None)
 
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId.stringify)(FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe InvitationNotFound
     }
 
@@ -254,7 +254,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   private def embeddedInvitations(agencyInvitationsSent: JsValue): JsArray =
     (agencyInvitationsSent \ "_embedded" \ "invitations").as[JsArray]
 
-  private def expectedAgencySentInvitationLink(arn: Arn, invitationId: BSONObjectID) =
+  private def expectedAgencySentInvitationLink(arn: Arn, invitationId: InvitationId) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
       // "agent-client-authorisation",
@@ -262,16 +262,16 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       arn.value,
       "invitations",
       "sent",
-      invitationId.stringify
+      invitationId.value
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))
 
-  private def whenFindingAnInvitation()(implicit ec: ExecutionContext) = when(invitationsService.findInvitation(any[String]))
+  private def whenFindingAnInvitation()(implicit ec: ExecutionContext) = when(invitationsService.findInvitation(any[InvitationId]))
 
   private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) = when(invitationsService.cancelInvitation(any[Invitation]))
 }

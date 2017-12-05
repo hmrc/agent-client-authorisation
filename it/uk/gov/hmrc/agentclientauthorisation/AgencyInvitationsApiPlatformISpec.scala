@@ -20,6 +20,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -69,7 +70,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
     "Return 404 for an invitation that doesn't exist" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
-      val response = agencyGetSentInvitation(arn1, BSONObjectID.generate.stringify)
+      val response = agencyGetSentInvitation(arn1, "ABBBBBBBBC")
       response should matchErrorResult(InvitationNotFound)
     }
 

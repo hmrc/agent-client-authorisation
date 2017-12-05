@@ -119,43 +119,51 @@ object InvitationId {
 
   implicit val idFormats = Format(idReads, idWrites)
 
+  private[model] def byteToBitsLittleEndian(byte: Byte): Seq[Boolean] = {
+    def isBitOn(bitPos: Int): Boolean = {
+      val maskSingleBit = 0x01 << bitPos
+      (byte & maskSingleBit) != 0
+    }
+
+    (0 to 7).map(isBitOn)
+  }
+
+  private[model] def to5BitNum(bitsLittleEndian: Seq[Boolean]) = {
+    require(bitsLittleEndian.size == 5)
+
+    bitsLittleEndian
+      .take(5)
+      .zipWithIndex
+      .map{ case (bit, power) => if(bit) 1 << power else 0 }
+      .sum
+  }
+
+  private[model] def bytesTo5BitNums(bytes: Seq[Byte]): Seq[Int] = {
+    require(bytes.size % 5 == 0)
+    require(bytes.nonEmpty)
+
+    bytes.flatMap(byteToBitsLittleEndian).grouped(5).map(to5BitNum).toSeq
+  }
+
+  private[model] def to5BitAlphaNumeric(fiveBitNum: Int) = {
+    require(fiveBitNum >= 0 && fiveBitNum <= 31)
+
+    "ABCDEFGHJKLMNOPRSTUWXYZ123456789"(fiveBitNum)
+  }
+
+  private[model] def sha256(bytes: Array[Byte]) = MessageDigest.getInstance("SHA-256").digest(bytes)
+
   def create(arn: Arn,
              clientId: MtdItId,
              serviceName: String,
-             timestamp: DateTime = DateTime.now(DateTimeZone.UTC))(implicit prefix: Char): InvitationId = {
+             timestamp: DateTime = DateTime.now(DateTimeZone.UTC))(prefix: Char): InvitationId = {
+    val idUnhashed = s"${arn.value}.${clientId.value},$serviceName-${timestamp.getMillis}"
+    val idBytes = sha256(idUnhashed.getBytes("UTF-8")).take(5)
+    val idChars = bytesTo5BitNums(idBytes).map(to5BitAlphaNumeric).mkString
+    val idWithPrefix = s"$prefix$idChars"
+    val checkDigit = to5BitAlphaNumeric(CRC5.calculate(idWithPrefix))
 
-    def to5BitNum(bitsLittleEndian: Seq[Boolean]) =
-      bitsLittleEndian.zipWithIndex.map { case (bit, power) => if (bit) 1 << power else 0 }.sum
-
-    def byteToBits(byte: Byte): Seq[Boolean] = {
-      def isBitOn(pos: Int): Boolean = {
-        val maskSingleBit = (0x01 << pos)
-        (byte & maskSingleBit) != 0
-      }
-
-      val msbToLsb = 7 to 0 by -1
-      msbToLsb.map(isBitOn)
-    }
-
-    def to5BitChar(fiveBitNum: Int) =
-      "ABCDEFGHJKLMNOPRSTUWXYZ123456789" (fiveBitNum)
-
-    val id = s"${arn.value}.${clientId.value},$serviceName-${timestamp.getMillis}"
-
-    val idBytes = MessageDigest
-      .getInstance("SHA-256")
-      .digest(id.getBytes("UTF-8"))
-      .take(5)
-
-    val bitList = idBytes
-      .flatMap(x => byteToBits(x))
-      .grouped(5)
-      .toSeq
-
-    val midPart = bitList.map(x => to5BitChar(to5BitNum(x))).mkString
-    val checkDigit = to5BitChar(CRC5.calculate(s"$prefix$midPart"))
-
-    InvitationId(s"${prefix.toString}$midPart$checkDigit")
+    InvitationId(s"$idWithPrefix$checkDigit")
   }
 }
 
@@ -200,7 +208,6 @@ object Invitation {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "invitationId" -> invitation.invitationId.value,
       "service" -> invitation.service,
       "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,

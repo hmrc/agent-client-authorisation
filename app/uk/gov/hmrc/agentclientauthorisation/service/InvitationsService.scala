@@ -68,7 +68,6 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] = {
     invitationsRepository.find("invitationId" -> invitationId)
       .map(_.headOption)
-      .recover { case _: IllegalArgumentException => None }
   }
 
   def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
