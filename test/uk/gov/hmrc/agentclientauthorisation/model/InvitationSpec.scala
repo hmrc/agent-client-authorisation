@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.test.UnitSpec
 import InvitationId._
 import org.joda.time.DateTime
+import uk.gov.hmrc.agentclientauthorisation.util.{CRC5, CRC5Spec}
 
 class InvitationSpec extends UnitSpec {
   "Dates in the serialised JSON" should {

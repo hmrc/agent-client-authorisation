@@ -63,7 +63,6 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
-    // an invitationId that is a valid BSONObjectID but for which no invitation exists
     val invitationId: String = "ABBBBBBBBC"
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
 

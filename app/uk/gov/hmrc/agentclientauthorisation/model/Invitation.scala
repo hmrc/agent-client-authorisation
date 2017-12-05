@@ -24,6 +24,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
+import uk.gov.hmrc.agentclientauthorisation.util.CRC5
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -151,14 +152,12 @@ object InvitationId {
     "ABCDEFGHJKLMNOPRSTUWXYZ123456789"(fiveBitNum)
   }
 
-  private[model] def sha256(bytes: Array[Byte]) = MessageDigest.getInstance("SHA-256").digest(bytes)
-
   def create(arn: Arn,
              clientId: MtdItId,
              serviceName: String,
              timestamp: DateTime = DateTime.now(DateTimeZone.UTC))(prefix: Char): InvitationId = {
     val idUnhashed = s"${arn.value}.${clientId.value},$serviceName-${timestamp.getMillis}"
-    val idBytes = sha256(idUnhashed.getBytes("UTF-8")).take(5)
+    val idBytes = MessageDigest.getInstance("SHA-256").digest(idUnhashed.getBytes("UTF-8")).take(5)
     val idChars = bytesTo5BitNums(idBytes).map(to5BitAlphaNumeric).mkString
     val idWithPrefix = s"$prefix$idChars"
     val checkDigit = to5BitAlphaNumeric(CRC5.calculate(idWithPrefix))
@@ -227,40 +226,4 @@ object Invitation {
 
 object AgentInvitation {
   implicit val format = Json.format[AgentInvitation]
-}
-
-
-object CRC5 {
-
-  /* Params for CRC-5/EPC */
-  val bitWidth = 5
-  val poly = 0x09
-  val initial = 0x09
-  val xorOut = 0
-
-  val table: Seq[Int] = {
-    val widthMask = (1 << bitWidth) - 1
-    val shpoly = poly << (8 - bitWidth)
-    for (i <- 0 until 256) yield {
-      var crc = i
-      for (_ <- 0 until 8) {
-        crc = if ((crc & 0x80) != 0) (crc << 1) ^ shpoly else crc << 1
-      }
-      (crc >> (8 - bitWidth)) & widthMask
-    }
-  }
-
-  val ASCII = Charset.forName("ASCII")
-
-  def calculate(string: String): Int = calculate(string.getBytes())
-
-  def calculate(input: Array[Byte]): Int = {
-    val start = 0
-    val length = input.length
-    var crc = initial ^ xorOut
-    for (i <- 0 until length) {
-      crc = table((crc << (8 - bitWidth)) ^ (input(start + i) & 0xff)) & 0xff
-    }
-    crc ^ xorOut
-  }
 }

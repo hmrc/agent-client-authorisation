@@ -18,12 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationId
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -77,7 +75,8 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+      given().client(clientId =
+        nino).hasABusinessPartnerRecordWithMtdItId()
 
       val location = agencySendInvitation(arn1, validInvitation).header("location")
 
