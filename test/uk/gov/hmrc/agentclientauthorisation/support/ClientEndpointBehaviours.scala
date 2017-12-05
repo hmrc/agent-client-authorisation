@@ -53,7 +53,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def controller: ClientInvitationsController
 
-  def invitationId: String
+  def invitationDbId: String
+  def invitationId: InvitationId
 
   def arn: Arn
 
@@ -65,7 +66,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def noInvitation: Future[None.type] = Future successful None
 
-  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationId), arn, "MTDITID", mtdItId1.value, "A11 1AA", nino.value, "ni",
+  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, "MTDITID", mtdItId1.value, "A11 1AA", nino.value, "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
@@ -85,7 +86,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     event.auditType shouldBe "AgentClientRelationshipCreated"
     val details = event.detail.toSeq
     details should contain allOf(
-      "invitationId" -> invitationId,
+      "invitationId" -> invitationId.value,
       "agentReferenceNumber" -> arn.value,
       "regimeId" -> mtdItId1.value,
       "regime" -> "HMRC-MTD-IT")

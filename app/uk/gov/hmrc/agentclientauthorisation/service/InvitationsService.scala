@@ -65,13 +65,10 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] =
     changeInvitationStatus(invitation, model.Rejected)
 
-  def findInvitation(invitationId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    BSONObjectID.parse(invitationId).map(
-      bsonInvitationId =>
-        invitationsRepository.findById(bsonInvitationId)
-    ).recover { case _: IllegalArgumentException => Future successful None }
-    .get
-
+  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] = {
+    invitationsRepository.find("invitationId" -> invitationId)
+      .map(_.headOption)
+  }
 
   def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =

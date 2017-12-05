@@ -31,10 +31,10 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {
 
   def createInvitation(arn: Arn) = Action { implicit request =>
-    Created.withHeaders(location(arn, "invitationId"))
+    Created.withHeaders(location(arn, InvitationId("ABBBBBBBBC")))
   }
 
-  private def location(arn: Arn, invitationId: String) = {
+  private def location(arn: Arn, invitationId: InvitationId) = {
     LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
   }
 
@@ -64,6 +64,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
 
   private def invitation(arn: Arn) = Invitation(
         BSONObjectID.generate,
+        InvitationId("ABBBBBBBBC"),
         arn,
         SUPPORTED_SERVICE,
         "clientId",
