@@ -175,7 +175,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientEnrolments)
 
-      val response = await(controller.getInvitation(MtdItId("invalid"), InvitationId("1234"))(FakeRequest()))
+      val response = await(controller.getInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
     }
@@ -204,7 +204,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       clientAuthStub(clientEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
-          BSONObjectID("abcdefabcdefabcdefabcdef"), InvitationId("ABBBBBBBBC"), arn, "MTDITID", mtdItId1.value, "postcode", nino1.value, "ni",
+          BSONObjectID("abcdefabcdefabcdefabcdef"), invitationId, arn, "MTDITID", mtdItId1.value, "postcode", nino1.value, "ni",
           List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))

@@ -57,7 +57,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId.value, invitation => invitationsService.acceptInvitation(invitation).andThen {
+          actionInvitation(mtdItId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
             case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, mtdItId)
           })
         }
@@ -67,13 +67,13 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId.value, invitationsService.rejectInvitation)
+          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
         }
   }
 
-  private def actionInvitation(mtdItId: MtdItId, invitationId: String, action: Invitation => Future[Either[String, Invitation]])
+  private def actionInvitation(mtdItId: MtdItId, invitationId: InvitationId, action: Invitation => Future[Either[String, Invitation]])
                               (implicit hc: HeaderCarrier, request: Request[AnyContent]) = {
-    invitationsService.findInvitation(InvitationId(invitationId)) flatMap {
+    invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation)
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {

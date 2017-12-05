@@ -86,7 +86,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     event.auditType shouldBe "AgentClientRelationshipCreated"
     val details = event.detail.toSeq
     details should contain allOf(
-      "invitationId" -> invitationDbId,
+      "invitationId" -> invitationId.value,
       "agentReferenceNumber" -> arn.value,
       "regimeId" -> mtdItId1.value,
       "regime" -> "HMRC-MTD-IT")

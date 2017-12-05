@@ -45,11 +45,11 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 
   "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "invitation-id-not-used"))
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "ABBBBBBBBC"))
   }
 
   "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "invitation-id-not-used"))
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "ABBBBBBBBC"))
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received" should {
@@ -64,7 +64,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 
   "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
     // an invitationId that is a valid BSONObjectID but for which no invitation exists
-    val invitationId: String = "585d24f57a83a131006bb746"
+    val invitationId: String = "ABBBBBBBBC"
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
 
     "return 404 when invitation not found" in {
@@ -74,10 +74,10 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       response should matchErrorResult(InvitationNotFound)
     }
 
-    "return 404 when invitationId is not a valid BSONObjectID" in {
+    "return 404 when invitationId is not valid" in {
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn
 
-      val response = clientGetReceivedInvitation(mtdItId1, "invite-id-never-used")
+      val response = clientGetReceivedInvitation(mtdItId1, "INVALIDINV")
       response should matchErrorResult(InvitationNotFound)
     }
 
