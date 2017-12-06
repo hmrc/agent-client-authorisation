@@ -60,7 +60,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   "PUT of /sandbox/agencies/:arn/invitations/received/:invitationId/cancel" should {
     "return a 204 response code" in {
-      val response = agencyCancelInvitation(arn, "ABBBBBBBBC")
+      val response = agencyCancelInvitation(arn, "ABBBBBBBBBBCC")
 
       response.status shouldBe 204
     }
@@ -89,7 +89,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     "return an invitation" in {
       val testStartTime = now().getMillis
 
-      val response = agencyGetSentInvitation(arn, "ABBBBBBBBC")
+      val response = agencyGetSentInvitation(arn, "ABBBBBBBBBBCC")
 
       response.status shouldBe 200
       checkInvitation(response.json, testStartTime)

@@ -68,7 +68,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
     "Return 404 for an invitation that doesn't exist" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
-      val response = agencyGetSentInvitation(arn1, "ABBBBBBBBC")
+      val response = agencyGetSentInvitation(arn1, "ABBBBBBBBBBCC")
       response should matchErrorResult(InvitationNotFound)
     }
 

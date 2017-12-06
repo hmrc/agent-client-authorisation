@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.binders
 
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.agentclientauthorisation.model.{InvitationId, InvitationStatus}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.domain.Nino
 
 object PathBinders {
