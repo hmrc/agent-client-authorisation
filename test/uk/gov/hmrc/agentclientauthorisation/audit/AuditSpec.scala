@@ -46,7 +46,7 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
         requestId = Some(RequestId("dummy request id")))
 
       val arn: Arn = Arn("HX2345")
-      val invitationId: String = "ABBBBBBBBC"
+      val invitationId: String = "ABBBBBBBBBBCC"
 
       await(service.sendAgentClientRelationshipCreated(
         invitationId,
@@ -62,7 +62,7 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
 
         sentEvent.auditType shouldBe "AgentClientRelationshipCreated"
         sentEvent.auditSource shouldBe "agent-client-authorisation"
-        sentEvent.detail("invitationId") shouldBe "ABBBBBBBBC"
+        sentEvent.detail("invitationId") shouldBe "ABBBBBBBBBBCC"
         sentEvent.detail("agentReferenceNumber") shouldBe "HX2345"
         sentEvent.detail("regimeId") shouldBe "mtdItId"
         sentEvent.detail("regime") shouldBe "HMRC-MTD-IT"

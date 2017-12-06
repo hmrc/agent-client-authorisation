@@ -23,7 +23,6 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.test.FakeRequest
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
@@ -32,9 +31,9 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.Generator
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -45,11 +45,11 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 
   "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "ABBBBBBBBC"))
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "ABBBBBBBBBBCC"))
   }
 
   "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "ABBBBBBBBC"))
+    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientRejectInvitation(mtdItId1, "ABBBBBBBBBBCC"))
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received" should {
@@ -63,7 +63,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
-    val invitationId: String = "ABBBBBBBBC"
+    val invitationId: String = "ABBBBBBBBBBCC"
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
 
     "return 404 when invitation not found" in {

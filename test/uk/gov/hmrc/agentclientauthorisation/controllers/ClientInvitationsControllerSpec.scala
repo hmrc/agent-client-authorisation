@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
@@ -46,7 +46,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   }
 
   val invitationDbId: String = BSONObjectID.generate.stringify
-  val invitationId: InvitationId = InvitationId("ABBBBBBBBC")
+  val invitationId: InvitationId = InvitationId("ABBBBBBBBBBCC")
   val generator = new Generator()
   val nino: Nino = nino1
 

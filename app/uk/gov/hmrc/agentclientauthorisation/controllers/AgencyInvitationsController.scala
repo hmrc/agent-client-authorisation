@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{Invitation
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future

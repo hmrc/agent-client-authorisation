@@ -24,14 +24,14 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.{CLIENT_ID_TYPE_NINO, SUPPORTED_SERVICE}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
 class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {
 
   def createInvitation(arn: Arn) = Action { implicit request =>
-    Created.withHeaders(location(arn, InvitationId("ABBBBBBBBC")))
+    Created.withHeaders(location(arn, InvitationId("ABBBBBBBBBBCC")))
   }
 
   private def location(arn: Arn, invitationId: InvitationId) = {
@@ -64,7 +64,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
 
   private def invitation(arn: Arn) = Invitation(
         BSONObjectID.generate,
-        InvitationId("ABBBBBBBBC"),
+        InvitationId("ABBBBBBBBBBCC"),
         arn,
         SUPPORTED_SERVICE,
         "clientId",
