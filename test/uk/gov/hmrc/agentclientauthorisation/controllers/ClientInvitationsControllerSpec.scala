@@ -27,6 +27,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
@@ -90,7 +91,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-      whenInvitationIsAccepted thenReturn (Future successful Left("failure message"))
+      whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted,"failure message")))
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("failure message")
@@ -147,7 +148,7 @@ class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       clientAuthStub(clientEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-      whenInvitationIsRejected thenReturn (Future successful Left("failure message"))
+      whenInvitationIsRejected thenReturn (Future successful Left(StatusUpdateFailure(Rejected, "failure message")))
 
       val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 

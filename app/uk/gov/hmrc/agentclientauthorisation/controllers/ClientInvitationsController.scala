@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -71,14 +71,14 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
         }
   }
 
-  private def actionInvitation(mtdItId: MtdItId, invitationId: InvitationId, action: Invitation => Future[Either[String, Invitation]])
+  private def actionInvitation(mtdItId: MtdItId, invitationId: InvitationId, action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])
                               (implicit hc: HeaderCarrier, request: Request[AnyContent]) = {
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation)
         if invitation.clientId == mtdItId.value =>
         action(invitation) map {
           case Right(_) => NoContent
-          case Left(message) => invalidInvitationStatus(message)
+          case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
         }
       case None => Future successful InvitationNotFound
       case _ => Future successful NoPermissionOnClient

@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.{Generator, Nino}
@@ -60,7 +60,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def generator: Generator
 
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] = {
-    when(invitationsService.findInvitation(eqs(invitationId))(any()))
+    when(invitationsService.findInvitation(eqs(invitationId))(any(), any(), any()))
   }
 
   def noInvitation: Future[None.type] = Future successful None
@@ -71,10 +71,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation(nino1))
 
-  def whenInvitationIsAccepted: OngoingStubbing[Future[Either[String, Invitation]]] =
+  def whenInvitationIsAccepted: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
     when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
-  def whenInvitationIsRejected: OngoingStubbing[Future[Either[String, Invitation]]] =
+  def whenInvitationIsRejected: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
     when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =

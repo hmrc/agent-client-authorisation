@@ -16,21 +16,38 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import java.util.concurrent.TimeUnit.DAYS
 import javax.inject._
 
+import org.joda.time.DateTime
+import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
+
+import scala.concurrent.duration
+import scala.concurrent.duration.Duration
 import uk.gov.hmrc.http.HeaderCarrier
+
+
+case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
-                                   relationshipsConnector: RelationshipsConnector, desConnector: DesConnector) {
+                                   relationshipsConnector: RelationshipsConnector,
+                                   desConnector: DesConnector,
+                                   auditService: AuditService,
+                                   @Named("invitation.expiryDuration") invitationExpiryDurationValue: String) {
+
+  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue)
+  private val invitationExpiryUnits = invitationExpiryDuration.unit
+
   def translateToMtdItId(clientId: String, clientIdType: String)
                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     clientIdType match {
@@ -48,25 +65,49 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
-
-  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, Invitation]] = {
-    if (invitation.status == Pending) {
-      relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
-        .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
-    } else {
-      Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
+  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+    invitation.status match {
+      case Pending => {
+        relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
+          .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
+      }
+      case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
-  def cancelInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] =
+  private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = DateTime.now) = {
+    val createTime = invitation.firstEvent.time
+    val fromTime = if (invitationExpiryUnits == DAYS) createTime.millisOfDay().withMinimumValue() else createTime
+    val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
+    elapsedTime gt invitationExpiryDuration
+  }
+
+  private def updateStatusToExpired(invitation: Invitation)(implicit ec: ExecutionContext,
+                                                            hc: HeaderCarrier, request: Request[Any]): Future[Invitation] = {
+    changeInvitationStatus(invitation, Expired).map { a =>
+      if (a.isLeft) throw new Exception("Failed to transition invitation state to Expired")
+      auditService.sendInvitationExpired(invitation)
+      a.right.get
+    }
+  }
+
+  def cancelInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
 
-  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[String, Invitation]] =
+  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Rejected)
 
-  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] = {
+  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier,
+                                           request: Request[Any]): Future[Option[Invitation]] = {
     invitationsRepository.find("invitationId" -> invitationId)
       .map(_.headOption)
+      .flatMap { invitationResult =>
+        if (invitationResult.isEmpty) Future successful None else {
+          val invitation = invitationResult.get
+          if (isInvitationExpired(invitation)) updateStatusToExpired(invitation).map(Some(_))
+          else Future successful invitationResult
+        }
+      }
   }
 
   def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
@@ -80,7 +121,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     else Future successful List.empty
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)
-                                    (implicit ec: ExecutionContext): Future[Either[String, Invitation]] = {
+                                    (implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     invitation.status match {
       case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
@@ -88,6 +129,6 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   }
 
   private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) = {
-    Left(s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus.")
+    Left(StatusUpdateFailure(invitation.status, s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus."))
   }
 }
