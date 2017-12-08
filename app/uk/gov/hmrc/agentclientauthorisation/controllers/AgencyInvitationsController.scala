@@ -67,7 +67,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
         BadRequest(s"invalid combination of client id ${authRequest.clientId} anf client id type ${authRequest.clientIdType}")
       case Some(clientId) =>
         invitationsService.create(
-          arn, authRequest.service, clientId, authRequest.clientPostcode, authRequest.clientId, authRequest.clientIdType).map(
+          // TODO maybe change .get below
+          arn, Service.valueOfId(authRequest.service).get, clientId, authRequest.clientPostcode, authRequest.clientId, authRequest.clientIdType).map(
           invitation => Created.withHeaders(location(invitation)))
     }
   }
@@ -96,7 +97,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     implicit request =>
       implicit arn =>
         forThisAgency(givenArn) {
-          invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
+          invitationsService.agencySent(arn, service.map(Service(_)), clientIdType, clientId, status).map { invitations =>
             Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
           }
         }

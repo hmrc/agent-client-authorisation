@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -101,7 +101,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          invitationsService.clientsReceived(SUPPORTED_SERVICE, mtdItId, status) map (results => Ok(toHalResource(results, mtdItId, status)))
+          invitationsService.clientsReceived(Service.MtdIt, mtdItId, status) map (results => Ok(toHalResource(results, mtdItId, status)))
         }
   }
 

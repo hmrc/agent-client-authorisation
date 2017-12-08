@@ -72,7 +72,10 @@ class AuthConnector @Inject()(metrics: Metrics,
           }
         case _ => Future successful GenericUnauthorized
       } recover {
-        case _ => GenericUnauthorized
+        case e @ _ => {
+          Logger.error("Failed to auth", e)
+          GenericUnauthorized
+        }
       }
   }
 

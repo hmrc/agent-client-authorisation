@@ -61,7 +61,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     }
   }
 
-  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
@@ -110,11 +110,11 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       }
   }
 
-  def clientsReceived(service: String, clientId: MtdItId, status: Option[InvitationStatus])
+  def clientsReceived(service: Service, clientId: MtdItId, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
-  def agencySent(arn: Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
+  def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
       invitationsRepository.list(arn, service, clientId, status)

@@ -21,6 +21,7 @@ import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -103,11 +104,20 @@ object ClientIdMapping {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
+//object ClientId {
+//  // TODO maybe add a validator or pattern to each type
+//  sealed abstract class Type
+//  case object MtdItId extends Type
+//  case object Nino extends Type
+//}
+//
+//case class ClientId(val idType: ClientId.Type, val value: String)
+
 case class Invitation(
                        id: BSONObjectID,
                        invitationId: InvitationId,
                        arn: Arn,
-                       service: String,
+                       service: Service,
                        clientId: String,
                        postcode: String,
                        suppliedClientId: String,
@@ -138,13 +148,38 @@ object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
+sealed class Service(val id: String) {
+
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: Service => this.id.equals(that.id)
+      case _ => false
+  }
+}
+
+object Service {
+  case object MtdIt extends Service("HMRC-MTD-IT")
+  case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD")
+  val values = Seq(MtdIt, PersonalIncomeRecord)
+  def valueOfId(id: String): Option[Service] = values.filter(_.id == id).headOption
+  def apply(id: String) = {
+    new Service(id)
+  }
+  def unapply(service: Service): Option[String] = Some(service.id)
+
+  val reads = new SimpleObjectReads[Service]("id", Service.apply)
+  val writes = new SimpleObjectWrites[Service](_.id)
+  val format = Format(reads, writes)
+}
+
 object Invitation {
+
   implicit val dateWrites = RestFormats.dateTimeWrite
   implicit val dateReads = RestFormats.dateTimeRead
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "service" -> invitation.service,
+      "service" -> invitation.service.id,
       "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
@@ -154,10 +189,11 @@ object Invitation {
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
       "status" -> invitation.status
-
     )
 
   }
+
+  implicit val serviceFormat = Service.format
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 

@@ -66,7 +66,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         BSONObjectID.generate,
         InvitationId("ABBBBBBBBBBCC"),
         arn,
-        SUPPORTED_SERVICE,
+        Service.MtdIt,
         "clientId",
         "A11 1AA",
         "nino",

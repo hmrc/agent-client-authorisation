@@ -106,7 +106,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn1, validInvitation.copy(service = "sa"))
       withClue(response.body) {
-        response should matchErrorResult(unsupportedService("Unsupported service \"sa\", the only currently supported service is \"HMRC-MTD-IT\""))
+        response should matchErrorResult(unsupportedService("Unsupported service \"sa\""))
       }
     }
 

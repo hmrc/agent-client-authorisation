@@ -45,12 +45,13 @@ class InvitationsRepository @Inject()(mongo: DB)
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: String, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
-      invitationId = InvitationId.create(arn, clientId, service)('A'),
+      // TODO update to use different prefix for service
+      invitationId = InvitationId.create(arn, clientId, service.id)('A'),
       arn = arn,
       service = service,
       clientId = clientId.value,
@@ -63,10 +64,10 @@ class InvitationsRepository @Inject()(mongo: DB)
     insert(request).map(_ => request)
   }
 
-  def list(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq("arn" -> Some(arn.value),
       "clientId" -> clientId,
-      "service" -> service,
+      "service" -> service.map(_.id),
       "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
 
       .filter(_._2.isDefined)
@@ -75,9 +76,9 @@ class InvitationsRepository @Inject()(mongo: DB)
     find(searchOptions: _*)
   }
 
-  def list(service: String, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(service: Service, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
-      "service" -> Some(service),
+      "service" -> Some(service.id),
       "clientId" -> Some(clientId.value),
       statusSearchOption(status)
     )

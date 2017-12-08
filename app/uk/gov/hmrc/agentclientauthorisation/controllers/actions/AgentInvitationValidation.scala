@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.{CLIENT_ID_TYPE_NINO, SUPPORTED_SERVICE}
-import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
+import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentInvitation, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.domain.Nino
 
@@ -49,8 +49,8 @@ trait AgentInvitationValidation extends Results {
   }
 
   private val supportedService: (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    if(SUPPORTED_SERVICE == invite.service) Future successful None
-    else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}", the only currently supported service is "$SUPPORTED_SERVICE""""))
+    if (Service.valueOfId(invite.service).isDefined) Future successful None
+    else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}""""))
   }
 
   private val supportedClientIdType: (AgentInvitation) => Future[Option[Result]] = (invite) => {

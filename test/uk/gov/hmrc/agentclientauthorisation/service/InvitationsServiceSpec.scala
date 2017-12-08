@@ -239,16 +239,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
-  "create" should {
-    "create an invitation" in {
-      val serviceId: String = "serviceId"
-      val postcode: String = "postcode"
-
-      service.create(Arn(arn), serviceId, mtdItId1, postcode, nino1.value, "ni")
-      verify(invitationsRepository, times(1)).create(Arn(arn), serviceId, mtdItId1, postcode, nino1.value, "ni")
-    }
-  }
-
   def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService = {
     new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, invitationExpiryDuration)
   }
@@ -315,7 +305,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
     InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
-    "mtd-sa",
+    Service.MtdIt,
     mtdItId1.value,
     "A11 1AA",
     nino1.value,
@@ -328,7 +318,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   private def testInvitationWithDate(creationDate: () => DateTime) = Invitation(generate,
     InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
-    "mtd-sa",
+    Service.MtdIt,
     mtdItId1.value,
     "A11 1AA",
     nino1.value,

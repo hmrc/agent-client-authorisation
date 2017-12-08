@@ -65,7 +65,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def noInvitation: Future[None.type] = Future successful None
 
-  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, "MTDITID", mtdItId1.value, "A11 1AA", nino.value, "ni",
+  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, Service("MTDITID"), mtdItId1.value, "A11 1AA", nino.value, "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
@@ -78,7 +78,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
-    when(invitationsService.clientsReceived(eqs("HMRC-MTD-IT"), eqs(mtdItId1), eqs(None))(any()))
+    when(invitationsService.clientsReceived(eqs(Service.MtdIt), eqs(mtdItId1), eqs(None))(any()))
 
   def assertCreateRelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"

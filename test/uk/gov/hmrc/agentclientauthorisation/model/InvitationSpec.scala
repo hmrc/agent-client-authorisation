@@ -31,7 +31,7 @@ class InvitationSpec extends UnitSpec {
         id = BSONObjectID.generate,
         invitationId = InvitationId("ABBBBBBBBBBCC"),
         arn = Arn("myAgency"),
-        service = "service",
+        service = Service("service"),
         clientId = "clientId",
         postcode = "A11 1AA",
         suppliedClientId = "nino1",
