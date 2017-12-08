@@ -25,6 +25,8 @@ import play.api.mvc.Results._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
@@ -100,7 +102,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "successfully grant access to a Client with HMRC-MTD_IT enrolment" in {
       clientAuthStub(clientEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(clientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe OK
     }
@@ -108,7 +110,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return FORBIDDEN when the user has no HMRC-NI enrolment" in {
       clientAuthStub(clientNoEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(clientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -116,7 +118,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return UNAUTHORISED when auth throws an error" in {
       clientAuthStub(failedStubForClient)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(clientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe UNAUTHORIZED
     }

@@ -28,15 +28,15 @@ trait ClientInvitationsHal {
   protected def agencyLink(invitation: Invitation): Option[String]
 
   def toHalResource(invitation: Invitation): HalResource = {
-    var links = HalLinks(Vector(HalLink("self", routes.ClientInvitationsController.getInvitation(
+    var links = HalLinks(Vector(HalLink("self", routes.MtdItClientInvitationsController.getInvitation(
       MtdItId(invitation.clientId), invitation.invitationId).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
-      links = links ++ HalLink("accept", routes.ClientInvitationsController.acceptInvitation(
+      links = links ++ HalLink("accept", routes.MtdItClientInvitationsController.acceptInvitation(
         MtdItId(invitation.clientId), invitation.invitationId).url)
-      links = links ++ HalLink("reject", routes.ClientInvitationsController.rejectInvitation(
+      links = links ++ HalLink("reject", routes.MtdItClientInvitationsController.rejectInvitation(
         MtdItId(invitation.clientId), invitation.invitationId).url)
     }
 
@@ -45,7 +45,7 @@ trait ClientInvitationsHal {
 
   private def invitationLinks(invitations: Seq[Invitation]): Vector[HalLink] = {
     invitations.map { i =>
-      HalLink("invitations", routes.ClientInvitationsController.getInvitation(
+      HalLink("invitations", routes.MtdItClientInvitationsController.getInvitation(
         MtdItId(i.clientId), i.invitationId).toString)
     }.toVector
   }
@@ -53,14 +53,14 @@ trait ClientInvitationsHal {
   def toHalResource(mtdItId: MtdItId, selfLinkHref: String): HalResource = {
     val selfLink = Vector(HalLink("self", selfLinkHref))
     val invitationsSentLink = Vector(HalLink("received",
-      routes.ClientInvitationsController.getInvitations(mtdItId, None).url))
+      routes.MtdItClientInvitationsController.getInvitations(mtdItId, None).url))
     hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
   def toHalResource(invitations: Seq[Invitation], mtdItId: MtdItId, status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = invitations.map(invitation => toHalResource(invitation)).toVector
 
-    val links = Vector(HalLink("self", routes.ClientInvitationsController.getInvitations(
+    val links = Vector(HalLink("self", routes.MtdItClientInvitationsController.getInvitations(
       mtdItId, status).url)) ++ invitationLinks(invitations)
     hal(Json.obj(), links, Vector("invitations" -> requestResources))
   }

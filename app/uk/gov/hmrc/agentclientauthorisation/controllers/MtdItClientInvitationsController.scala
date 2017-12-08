@@ -34,8 +34,8 @@ import scala.concurrent.Future
 import scala.util.Success
 
 @Singleton
-class ClientInvitationsController @Inject()(invitationsService: InvitationsService)
-                                           (implicit metrics: Metrics,
+class MtdItClientInvitationsController @Inject()(invitationsService: InvitationsService)
+                                                (implicit metrics: Metrics,
                                             microserviceAuthConnector: MicroserviceAuthConnector,
                                             auditService: AuditService)
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
@@ -111,4 +111,8 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
     else block
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None
+
+  def onlyForClients(action: Request[AnyContent] => MtdItId => Future[Result]): Action[AnyContent] =
+    super.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(action)(MtdItId.apply)
+
 }

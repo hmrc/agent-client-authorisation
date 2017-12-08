@@ -26,7 +26,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController
+import uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
@@ -50,7 +50,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
 
-  def controller: ClientInvitationsController
+  def controller: MtdItClientInvitationsController
 
   def invitationDbId: String
   def invitationId: InvitationId

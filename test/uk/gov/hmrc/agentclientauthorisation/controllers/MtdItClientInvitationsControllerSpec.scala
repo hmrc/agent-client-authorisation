@@ -37,12 +37,12 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
+class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
-  val controller = new ClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
+  val controller = new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
