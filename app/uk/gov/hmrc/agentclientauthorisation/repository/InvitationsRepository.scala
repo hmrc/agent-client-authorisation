@@ -78,7 +78,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     find(searchOptions: _*)
   }
 
-  def list(service: Service, clientId: MtdItId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "service" -> Some(service.id),
       "clientId" -> Some(clientId.value),

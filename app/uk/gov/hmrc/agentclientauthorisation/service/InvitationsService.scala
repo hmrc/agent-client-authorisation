@@ -110,7 +110,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       }
   }
 
-  def clientsReceived(service: Service, clientId: MtdItId, status: Option[InvitationStatus])
+  def clientsReceived(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 

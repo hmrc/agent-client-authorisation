@@ -22,37 +22,26 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
-import uk.gov.hmrc.domain.TaxIdentifier
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
-import scala.util.Success
 
 @Singleton
 class MtdItClientInvitationsController @Inject()(invitationsService: InvitationsService)
                                                 (implicit metrics: Metrics,
                                             microserviceAuthConnector: MicroserviceAuthConnector,
                                             auditService: AuditService)
-//  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
-  extends BaseClientInvitationsController(invitationsService, metrics, microserviceAuthConnector, auditService)
-  with HalWriter with ClientInvitationsHal {
-
-  //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
-  //    implicit request =>
-  //      Future successful Ok(toHalResource(request.nino.value, request.path))
-  //  }
+  extends BaseClientInvitationsController(invitationsService, metrics, microserviceAuthConnector, auditService) {
 
   def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          Future successful Ok(toHalResource(mtdItId, request.path))
+          getDetailsForClient(mtdItId, request)
         }
   }
 
@@ -60,10 +49,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId.asInstanceOf[TaxIdentifier], invitationId,
-            invitation => invitationsService.acceptInvitation(invitation).andThen {
-            case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, mtdItId)
-          })
+          super.acceptInvitation(mtdItId, invitationId)
         }
   }
 
@@ -71,7 +57,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId.asInstanceOf[TaxIdentifier], invitationId, invitationsService.rejectInvitation)
+          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
         }
   }
 
@@ -79,11 +65,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          invitationsService.findInvitation(invitationId).map {
-            case Some(x) if x.clientId == mtdItId.value => Ok(toHalResource(x))
-            case None => InvitationNotFound
-            case _ => NoPermissionOnClient
-          }
+          getInvitation(mtdItId, invitationId)
         }
   }
 
@@ -91,7 +73,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          invitationsService.clientsReceived(Service.MtdIt, mtdItId, status) map (results => Ok(toHalResource(results, mtdItId, status)))
+          getInvitations(mtdItId, status, Service.MtdIt)
         }
   }
 
