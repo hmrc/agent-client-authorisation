@@ -27,6 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
@@ -38,7 +39,9 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
                                                 (implicit metrics: Metrics,
                                             microserviceAuthConnector: MicroserviceAuthConnector,
                                             auditService: AuditService)
-  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
+//  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
+  extends BaseClientInvitationsController(invitationsService, metrics, microserviceAuthConnector, auditService)
+  with HalWriter with ClientInvitationsHal {
 
   //  def getDetailsForAuthenticatedClient: Action[AnyContent] = onlyForClients.async {
   //    implicit request =>
@@ -57,7 +60,8 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
+          actionInvitation(mtdItId.asInstanceOf[TaxIdentifier], invitationId,
+            invitation => invitationsService.acceptInvitation(invitation).andThen {
             case Success(Right(x)) => auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, mtdItId)
           })
         }
@@ -67,22 +71,8 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     implicit request =>
       implicit authMtdItId =>
         forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
+          actionInvitation(mtdItId.asInstanceOf[TaxIdentifier], invitationId, invitationsService.rejectInvitation)
         }
-  }
-
-  private def actionInvitation(mtdItId: MtdItId, invitationId: InvitationId, action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])
-                              (implicit hc: HeaderCarrier, request: Request[AnyContent]) = {
-    invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation)
-        if invitation.clientId == mtdItId.value =>
-        action(invitation) map {
-          case Right(_) => NoContent
-          case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
-        }
-      case None => Future successful InvitationNotFound
-      case _ => Future successful NoPermissionOnClient
-    }
   }
 
   def getInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {

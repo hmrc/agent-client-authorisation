@@ -23,21 +23,23 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 class NiClientInvitationsController @Inject()(invitationsService: InvitationsService)
                                              (implicit metrics: Metrics,
-                                                 microserviceAuthConnector: MicroserviceAuthConnector,
-                                                 auditService: AuditService)
-  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter with ClientInvitationsHal {
+                                              authConnector: MicroserviceAuthConnector,
+                                              auditService: AuditService)
+  extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService)
+    with HalWriter with ClientInvitationsHal {
 
   def getDetailsForClient(nino: Nino): Action[AnyContent] = ???
 
@@ -45,20 +47,16 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = ???
 
-  private def actionInvitation(nino: Nino, invitationId: InvitationId, action: Invitation => Future[Either[String, Invitation]])
-                              (implicit hc: HeaderCarrier, request: Request[AnyContent]) = ???
-
   def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authNino =>
-//      forThisClient(nino) {
-//        invitationsService.findInvitation(invitationId).map {
-//            case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
-//            case None => InvitationNotFound
-//            case _ => NoPermissionOnClient
-//        }
-//      }
-      ???
+      forThisClient(nino) {
+        invitationsService.findInvitation(invitationId).map {
+            case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
+            case None => InvitationNotFound
+            case _ => NoPermissionOnClient
+        }
+      }
   }
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = ???
