@@ -16,7 +16,6 @@ PUT      /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject  @u
 GET      /clients/MTDITID/:mtdItId/invitations/received                       @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.getInvitations(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 GET      /clients/MTDITID/:mtdItId/invitations/received/:invitationId         @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.getInvitation(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
-# TODO enable endpoints when controller functions ready
 GET      /clients/NI/:nino                                                    @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.getDetailsForClient(nino: uk.gov.hmrc.domain.Nino)
 GET      /clients/NI/:nino/invitations                                        @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.getDetailsForClient(nino: uk.gov.hmrc.domain.Nino)
 PUT      /clients/NI/:nino/invitations/received/:invitationId/accept          @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.acceptInvitation(nino: uk.gov.hmrc.domain.Nino, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)

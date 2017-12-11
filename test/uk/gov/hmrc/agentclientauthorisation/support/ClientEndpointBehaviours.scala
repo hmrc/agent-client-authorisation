@@ -65,7 +65,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def noInvitation: Future[None.type] = Future successful None
 
-  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, Service("MTDITID"), mtdItId1.value, "A11 1AA", nino.value, "ni",
+  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, Service.MtdIt, mtdItId1.value, "A11 1AA", nino.value, "ni",
     List(StatusChangeEvent(now(), Pending)))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =

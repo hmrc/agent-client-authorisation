@@ -49,7 +49,7 @@ trait AgentInvitationValidation extends Results {
   }
 
   private val supportedService: (AgentInvitation) => Future[Option[Result]] = (invite) => {
-    if (Service.valueOfId(invite.service).isDefined) Future successful None
+    if (Service.findById(invite.service).isDefined) Future successful None
     else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}""""))
   }
 

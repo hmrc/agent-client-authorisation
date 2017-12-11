@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import java.security.MessageDigest
 import javax.inject._
 
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
@@ -26,7 +28,8 @@ import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
@@ -45,13 +48,12 @@ class InvitationsRepository @Inject()(mongo: DB)
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: Service, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
       id = BSONObjectID.generate,
-      // TODO update to use different prefix for service
-      invitationId = InvitationId.create(arn, clientId, service.id)('A'),
+      invitationId = OurInvitationIdFunctions.create(arn, clientId, service.id)(service.invitationIdPrefix),
       arn = arn,
       service = service,
       clientId = clientId.value,

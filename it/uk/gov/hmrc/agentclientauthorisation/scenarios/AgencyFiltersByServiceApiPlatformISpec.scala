@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
@@ -46,7 +47,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
       Then("The agent filters by HMRC-MTD-IT")
       agencyFiltersByMtdIt(agency)
 
-      Then("The agent filters by mtd-vat")
+      Then("The agent filters by PERSONAL_INCOME_RECORD")
       agencyFiltersByMtdVat(agency)
     }
   }
@@ -58,7 +59,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
   }
 
   def agencyFiltersByMtdVat(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> "mtd-vat"))
+    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> Service.PersonalIncomeRecord.id))
 
     invitations.numberOfInvitations shouldBe 0
   }

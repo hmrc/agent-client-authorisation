@@ -23,7 +23,7 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.NoPermissionOnClient
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient}
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentclientauthorisation._
@@ -51,9 +51,14 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
   def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authNino =>
-      forThisClient(nino) {
-        ???
-      }
+//      forThisClient(nino) {
+//        invitationsService.findInvitation(invitationId).map {
+//            case Some(x) if x.clientId == nino.value => Ok(toHalResource(x))
+//            case None => InvitationNotFound
+//            case _ => NoPermissionOnClient
+//        }
+//      }
+      ???
   }
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = ???

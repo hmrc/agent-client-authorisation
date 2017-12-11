@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, Relationsh
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
@@ -61,7 +61,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     }
   }
 
-  def create(arn: Arn, service: Service, clientId: MtdItId, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
