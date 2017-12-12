@@ -205,6 +205,20 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
       verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
     }
+
+    "return some invitation with status Expired when invitation is older than expiryDuration - duration has underscore" in {
+      def elevenDaysAgo() = now().minusDays(11)
+      val invitation = testInvitationWithDate(elevenDaysAgo)
+      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired))(any())).thenReturn(testInvitationWithStatus(Expired))
+
+
+      val serviceWithUnderscoreInDuration = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10_days")
+
+      await(serviceWithUnderscoreInDuration.findInvitation(invitation.invitationId)).get.status shouldBe Expired
+
+      verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
+    }
   }
 
   "translateToMtdItId" should {

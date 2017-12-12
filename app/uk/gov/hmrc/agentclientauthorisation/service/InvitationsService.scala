@@ -45,7 +45,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
                                    auditService: AuditService,
                                    @Named("invitation.expiryDuration") invitationExpiryDurationValue: String) {
 
-  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue)
+  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
   private val invitationExpiryUnits = invitationExpiryDuration.unit
 
   def translateToMtdItId(clientId: String, clientIdType: String)
