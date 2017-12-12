@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
+import java.time.LocalDateTime
+
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID

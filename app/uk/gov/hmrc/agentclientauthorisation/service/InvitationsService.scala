@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.DAYS
 import javax.inject._
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
@@ -66,18 +67,20 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+    val acceptedDate = currentTime()
     invitation.status match {
       case Pending => {
-        (invitation.service match {
-          case Service.MtdIt => relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
-          case Service.PersonalIncomeRecord => ??? // TODO implement agent-fi rel connector and call
-        }).flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
+        val future = invitation.service match {
+          case Service.MtdIt => relationshipsConnector.createRelationship(invitation)
+          case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
+        }
+        future.flatMap(_ => changeInvitationStatus(invitation, model.Accepted, acceptedDate))
       }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
-  private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = DateTime.now) = {
+  private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = currentTime) = {
     val createTime = invitation.firstEvent.time
     val fromTime = if (invitationExpiryUnits == DAYS) createTime.millisOfDay().withMinimumValue() else createTime
     val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
@@ -123,10 +126,10 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
       invitationsRepository.list(arn, service, clientId, status)
     else Future successful List.empty
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus)
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())
                                     (implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     invitation.status match {
-      case Pending => invitationsRepository.update(invitation.id, status) map (invitation => Right(invitation))
+      case Pending => invitationsRepository.update(invitation.id, status, timestamp) map (invitation => Right(invitation))
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
   }
@@ -134,4 +137,6 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
   private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) = {
     Left(StatusUpdateFailure(invitation.status, s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus."))
   }
+
+  private def currentTime() = DateTime.now(DateTimeZone.UTC)
 }

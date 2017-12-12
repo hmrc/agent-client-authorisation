@@ -75,7 +75,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     "create a new StatusChangedEvent" in {
 
       val created = addInvitation((Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode"))
-      val updated = update(created.id, Accepted)
+      val updated = update(created.id, Accepted, now)
 
       inside(updated) {
         case Invitation(created.id, _, _, _, _, _,_,_, events) =>
@@ -96,7 +96,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
 
       val requests = addInvitations(
         (Arn(arn), Service.MtdIt, MtdItId(saUtr1), ninoValue, "ni", "postcode-1"), (Arn(arn), Service.PersonalIncomeRecord, MtdItId(vrn2), ninoValue, "ni", "postcode-2"))
-      update(requests.last.id, Accepted)
+      update(requests.last.id, Accepted, now)
 
       val list = listByArn(Arn(arn)).sortBy(_.clientId)
 
@@ -154,7 +154,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val clientId2 = MtdItId("MTD-REG-3B")
 
       val invitations = addInvitations((Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-1"), (Arn(arn), Service.MtdIt, clientId2, nino1.value, "ni", "postcode-2"))
-      update(invitations.head.id, Accepted)
+      update(invitations.head.id, Accepted, DateTime.now())
 
       val list = listByArn(Arn(arn), None, None, Some(Pending))
 
@@ -223,7 +223,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val invitations =
         addInvitations(
           (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode-1"), (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode-1"))
-      update(invitations.head.id, Accepted)
+      update(invitations.head.id, Accepted, DateTime.now())
 
       val list = listByClientId(Service.MtdIt, mtdItId1, Some(Pending))
 
@@ -252,6 +252,6 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
     await(repository.list(service, clientId, status))
 
-  private def update(id: BSONObjectID, status: InvitationStatus) = await(repository.update(id, status))
+  private def update(id: BSONObjectID, status: InvitationStatus, updateDate: DateTime) = await(repository.update(id, status, updateDate))
 
 }

@@ -28,4 +28,10 @@ trait RelationshipStubs[A] {
       .willReturn(aResponse().withStatus(201)))
     this
   }
+
+  def anAfiRelationshipIsCreatedWith(arn: Arn): A = {
+    stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${canonicalClientId.value}"))
+      .willReturn(aResponse().withStatus(201)))
+    this
+  }
 }

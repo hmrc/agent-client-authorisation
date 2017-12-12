@@ -64,15 +64,42 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   "acceptInvitation" should {
-    "create a relationship" when {
+    "create a MTDIT relationship" when {
       "invitation status update succeeds" in {
-        whenRelationshipIsCreated thenReturn (Future successful {})
-        val acceptedTestInvitation = transitionInvitation(testInvitation, Accepted)
+        val invitation = testInvitation
+        whenRelationshipIsCreated(invitation) thenReturn (Future successful {})
+        val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
 
-        val response = await(service.acceptInvitation(testInvitation))
+        val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+      }
+
+    }
+
+    "create a PersonalIncomeRecord relationship" when {
+      "invitation status update succeeds" in {
+        val invitation = Invitation(generate,
+            InvitationId.create(Arn(arn), mtdItId1, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
+            Arn(arn),
+            Service.PersonalIncomeRecord,
+            mtdItId1.value,
+            "A11 1AA",
+            nino1.value,
+            "ni",
+            List(StatusChangeEvent(now(), Pending)))
+
+        whenAfiRelationshipIsCreated(invitation) thenReturn (Future successful {})
+        val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
+        whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
+
+        val response = await(service.acceptInvitation(invitation))
+
+        response shouldBe Right(acceptedTestInvitation)
+
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
       }
 
     }
@@ -101,13 +128,14 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "should not change the invitation status when relationship creation fails" in {
-      whenRelationshipIsCreated thenReturn (Future failed ReactiveMongoException("Mongo error"))
+      val invitation = testInvitation
+      whenRelationshipIsCreated(invitation) thenReturn (Future failed ReactiveMongoException("Mongo error"))
 
       intercept[ReactiveMongoException] {
-        await(service.acceptInvitation(testInvitation))
+        await(service.acceptInvitation(invitation))
       }
 
-      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus])(any())
+      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
     }
   }
 
@@ -199,7 +227,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired))(any())).thenReturn(testInvitationWithStatus(Expired))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any())).thenReturn(testInvitationWithStatus(Expired))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
 
@@ -327,11 +355,15 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   )
 
   private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] = {
-    when(invitationsRepository.update(any[BSONObjectID], eqs(status))(any()))
+    when(invitationsRepository.update(any[BSONObjectID], eqs(status), any[DateTime])(any()))
   }
 
-  private def whenRelationshipIsCreated: OngoingStubbing[Future[Unit]] = {
-    when(relationshipsConnector.createRelationship(Arn(arn), mtdItId1))
+  private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
+    when(relationshipsConnector.createRelationship(invitation))
+  }
+
+  private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
+    when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any()))
   }
 
   private def whenDesBusinessPartnerRecordExistsFor(nino: Nino, mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] = {

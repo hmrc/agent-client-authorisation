@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import java.security.MessageDigest
+import java.time.LocalDateTime
 import javax.inject._
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -98,8 +99,8 @@ class InvitationsRepository @Inject()(mongo: DB)
     find()
 
 
-  def update(id: BSONObjectID, status: InvitationStatus)(implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
-    val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(now, status)))))
+  def update(id: BSONObjectID, status: InvitationStatus, updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation] = {
+    val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(updateDate, status)))))
     update.map(_.map(_.updateType.savedValue).get)
   }
 
