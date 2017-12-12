@@ -35,22 +35,18 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
                                              (implicit metrics: Metrics,
                                               authConnector: MicroserviceAuthConnector,
                                               auditService: AuditService)
-  extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
+  extends BaseClientInvitationsController[Nino](invitationsService, metrics, authConnector, auditService) {
+
+  override val supportedService: Service = Service.PersonalIncomeRecord
 
   def getDetailsForClient(nino: Nino): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit autNino =>
-        forThisClient(nino) {
-          getDetailsForClient(nino, request)
-        }
+      implicit authNino => getDetailsForClient(nino, request)
   }
 
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authNino =>
-        forThisClient(nino) {
-          acceptInvitation(nino, invitationId)
-        }
+      implicit authNino => acceptInvitation(nino, invitationId)
   }
 
   def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
@@ -63,24 +59,13 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authNino =>
-        forThisClient(nino) {
-          getInvitation(nino, invitationId)
-        }
+      implicit authNino => getInvitation(nino, invitationId)
   }
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authNino =>
-        forThisClient(nino) {
-          getInvitations(nino, status, Service.PersonalIncomeRecord)
-        }
+      implicit authNino => getInvitations(nino, status)
   }
-
-  override protected def agencyLink(invitation: Invitation): Option[String] = None
-
-  private def forThisClient(nino: Nino)(block: => Future[Result])(implicit authNino: Nino) =
-    if (authNino.value != nino.value) Future successful NoPermissionOnClient else block
 
   def onlyForClients(action: Request[AnyContent] => Nino => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.PersonalIncomeRecord, CLIENT_ID_TYPE_NINO)(action)(Nino.apply)

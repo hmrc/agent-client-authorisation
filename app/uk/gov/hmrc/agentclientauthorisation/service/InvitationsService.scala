@@ -39,7 +39,7 @@ case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: S
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
+class InvitationsService @Inject()( invitationsRepository: InvitationsRepository,
                                    relationshipsConnector: RelationshipsConnector,
                                    desConnector: DesConnector,
                                    auditService: AuditService,
@@ -68,8 +68,10 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     invitation.status match {
       case Pending => {
-        relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
-          .flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
+        (invitation.service match {
+          case Service.MtdIt => relationshipsConnector.createRelationship(invitation.arn, MtdItId(invitation.clientId))
+          case Service.PersonalIncomeRecord => ??? // TODO implement agent-fi rel connector and call
+        }).flatMap(_ => changeInvitationStatus(invitation, model.Accepted))
       }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
@@ -110,13 +112,14 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       }
   }
 
+  // TODO name of function, maybe change?
   def clientsReceived(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
   def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
+    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO) // TODO check is this correct??
       invitationsRepository.list(arn, service, clientId, status)
     else Future successful List.empty
 

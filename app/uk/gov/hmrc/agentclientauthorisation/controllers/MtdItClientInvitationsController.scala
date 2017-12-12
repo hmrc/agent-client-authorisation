@@ -33,24 +33,20 @@ import scala.concurrent.Future
 @Singleton
 class MtdItClientInvitationsController @Inject()(invitationsService: InvitationsService)
                                                 (implicit metrics: Metrics,
-                                            microserviceAuthConnector: MicroserviceAuthConnector,
-                                            auditService: AuditService)
-  extends BaseClientInvitationsController(invitationsService, metrics, microserviceAuthConnector, auditService) {
+                                                 authConnector: MicroserviceAuthConnector,
+                                                 auditService: AuditService)
+  extends BaseClientInvitationsController[MtdItId](invitationsService, metrics, authConnector, auditService) {
+
+  override val supportedService: Service = Service.MtdIt
 
   def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId =>
-        forThisClient(mtdItId) {
-          getDetailsForClient(mtdItId, request)
-        }
+      implicit authMtdItId => getDetailsForClient(mtdItId, request)
   }
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId =>
-        forThisClient(mtdItId) {
-          super.acceptInvitation(mtdItId, invitationId)
-        }
+      implicit authMtdItId => acceptInvitation(mtdItId, invitationId)
   }
 
   def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
@@ -63,26 +59,13 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
 
   def getInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId =>
-        forThisClient(mtdItId) {
-          getInvitation(mtdItId, invitationId)
-        }
+      implicit authMtdItId => getInvitation(mtdItId, invitationId)
   }
 
   def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId =>
-        forThisClient(mtdItId) {
-          getInvitations(mtdItId, status, Service.MtdIt)
-        }
+      implicit authMtdItId => getInvitations(mtdItId, status)
   }
-
-  private def forThisClient(mtdItId: MtdItId)(block: => Future[Result])(implicit authMtdItId: MtdItId) =
-    if (authMtdItId.value != mtdItId.value)
-      Future successful NoPermissionOnClient
-    else block
-
-  override protected def agencyLink(invitation: Invitation): Option[String] = None
 
   def onlyForClients(action: Request[AnyContent] => MtdItId => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(action)(MtdItId.apply)

@@ -104,8 +104,9 @@ object ClientIdMapping {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
+// TODO consider revisting this type that was commented out earlier so that we can use our own domain model type rather
+// TODO than TaxIdentifier from the domain library which is implemented by many types that we don't support
 //object ClientId {
-//  // TODO maybe add a validator or pattern to each type
 //  sealed abstract class Type
 //  case object MtdItId extends Type
 //  case object Nino extends Type
@@ -124,6 +125,7 @@ case class Invitation(
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
 
+  // TODO investigate why this was set to ni and is it correct, seems strange
   val clientIdType = CLIENT_ID_TYPE_NINO
 
   def firstEvent(): StatusChangeEvent = {
