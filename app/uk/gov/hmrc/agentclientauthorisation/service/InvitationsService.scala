@@ -62,6 +62,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     }
   }
 
+  // TODO postcode should be option
   def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
