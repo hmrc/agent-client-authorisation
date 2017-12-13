@@ -68,7 +68,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         arn,
         Service.MtdIt,
         "clientId",
-        "A11 1AA",
+        Some("A11 1AA"),
         "nino",
         CLIENT_ID_TYPE_NINO,
         List(StatusChangeEvent(now(), Pending))

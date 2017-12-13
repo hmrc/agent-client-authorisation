@@ -44,5 +44,6 @@ object ErrorResults {
   def unsupportedService(message: String)       = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
   def unsupportedClientIdType(message: String)  = NotImplemented(toJson(ErrorBody("UNSUPPORTED_CLIENT_ID_TYPE", message)))
   def postcodeFormatInvalid(message: String)    = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
+  def postcodeRequired(service: String)        = BadRequest(toJson(ErrorBody("POSTCODE_REQUIRED", s"Postcode is required for service $service")))
 
 }

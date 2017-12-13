@@ -83,11 +83,11 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
 
       when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
-      when(invitationsService.create(any[Arn](), any[Service](), any[MtdItId](), any[String](), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
+      when(invitationsService.create(any[Arn](), any[Service](), any[MtdItId](), any(), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
@@ -238,7 +238,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), "clientId", Some("postcode"), "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

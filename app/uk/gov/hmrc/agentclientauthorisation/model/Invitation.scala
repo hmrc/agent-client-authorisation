@@ -122,7 +122,7 @@ case class Invitation(
                        arn: Arn,
                        service: Service,
                        clientId: String,
-                       postcode: String,
+                       postcode: Option[String],
                        suppliedClientId: String,
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
@@ -146,7 +146,7 @@ case class AgentInvitation(
                             service: String,
                             clientIdType: String,
                             clientId: String,
-                            clientPostcode: String)
+                            clientPostcode: Option[String])
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

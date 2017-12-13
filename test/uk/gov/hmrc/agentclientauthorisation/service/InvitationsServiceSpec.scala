@@ -86,7 +86,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
             Arn(arn),
             Service.PersonalIncomeRecord,
             mtdItId1.value,
-            "A11 1AA",
+            Some("A11 1AA"),
             nino1.value,
             "ni",
             List(StatusChangeEvent(now(), Pending)))
@@ -335,7 +335,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     Arn(arn),
     Service.MtdIt,
     mtdItId1.value,
-    "A11 1AA",
+    Some("A11 1AA"),
     nino1.value,
     "ni",
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
@@ -348,7 +348,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     Arn(arn),
     Service.MtdIt,
     mtdItId1.value,
-    "A11 1AA",
+    Some("A11 1AA"),
     nino1.value,
     "ni",
     List(StatusChangeEvent(creationDate(), Pending))

@@ -49,7 +49,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(

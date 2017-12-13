@@ -101,12 +101,12 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val list = listByArn(Arn(arn)).sortBy(_.clientId)
 
       inside(list head) {
-        case Invitation(_, _, Arn(`arn`), Service.MtdIt, `saUtr1`, "postcode-1", `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), Service.MtdIt, `saUtr1`, Some("postcode-1"), `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(list(1)) {
-        case Invitation(_, _, Arn(`arn`), Service.PersonalIncomeRecord, `vrn2`, "postcode-2", `ninoValue`, "ni", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
+        case Invitation(_, _, Arn(`arn`), Service.PersonalIncomeRecord, `vrn2`, Some("postcode-2"), `ninoValue`, "ni", List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
           date1 shouldBe now
           date2 shouldBe now
       }
@@ -120,7 +120,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
         (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode"), (Arn(arn2), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode"))
 
       inside(listByArn(Arn(arn)) loneElement) {
-        case Invitation(_, _, Arn(`arn`), Service.MtdIt, `mtdItId1`.value, "postcode", `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), Service.MtdIt, `mtdItId1`.value, Some("postcode"), `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -184,7 +184,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       addInvitation((Arn(arn), service, mtdItId1, nino1.value, "ni", postcode))
 
       inside(listByClientId(service, mtdItId1) loneElement) {
-        case Invitation(_, _, Arn(`arn`), `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), `service`, mtdItId1.value, Some(`postcode`), `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -208,12 +208,12 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       requests.size shouldBe 2
 
       inside(requests head) {
-        case Invitation(_, _, `firstAgent`, `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, _, `firstAgent`, `service`, mtdItId1.value, Some(`postcode`), `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(_, _, `secondAgent`, `service`, mtdItId1.value, `postcode`, `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_, _, `secondAgent`, `service`, mtdItId1.value, Some(`postcode`), `ninoValue`, "ni", List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -238,7 +238,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   private def addInvitations(invitations: Invitation*) = {
     await(Future sequence invitations.map {
       case (code: Arn, service: Service, clientId: MtdItId, suppliedClientId: String, suppliedClientIdType: String, postcode: String) =>
-        repository.create(code, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
+        repository.create(code, service, clientId, Some(postcode), suppliedClientId, suppliedClientIdType)
     })
   }
 

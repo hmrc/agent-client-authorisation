@@ -62,7 +62,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     }
   }
 
-  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: String, suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 

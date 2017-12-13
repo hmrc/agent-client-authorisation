@@ -205,7 +205,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
       clientAuthStub(clientEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
-          BSONObjectID("abcdefabcdefabcdefabcdef"), invitationId, arn, Service.MtdIt, mtdItId1.value, "postcode", nino1.value, "ni",
+          BSONObjectID("abcdefabcdefabcdefabcdef"), invitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni",
           List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
