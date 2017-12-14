@@ -82,7 +82,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "create a PersonalIncomeRecord relationship" when {
       "invitation status update succeeds" in {
         val invitation = Invitation(generate,
-            InvitationId.create(Arn(arn), mtdItId1, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
+            InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
             Arn(arn),
             Service.PersonalIncomeRecord,
             mtdItId1.value,
@@ -331,7 +331,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
-    InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
+    InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
     mtdItId1.value,
@@ -344,7 +344,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   private def testInvitation = testInvitationWithDate(now)
 
   private def testInvitationWithDate(creationDate: () => DateTime) = Invitation(generate,
-    InvitationId.create(Arn(arn), mtdItId1, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
+    InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
     mtdItId1.value,

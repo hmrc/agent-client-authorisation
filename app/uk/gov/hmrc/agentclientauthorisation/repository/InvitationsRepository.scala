@@ -16,11 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import java.security.MessageDigest
-import java.time.LocalDateTime
 import javax.inject._
 
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
@@ -29,7 +27,7 @@ import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
@@ -54,7 +52,7 @@ class InvitationsRepository @Inject()(mongo: DB)
 
     val request = Invitation(
       id = BSONObjectID.generate,
-      invitationId = OurInvitationIdFunctions.create(arn, clientId, service.id)(service.invitationIdPrefix),
+      invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
       service = service,
       clientId = clientId.value,

@@ -56,7 +56,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId" -> invitation.id.stringify,
         "agentReferenceNumber" -> invitation.arn,
-        "regimeId" -> invitation.clientId, // TODO is this correct??
+        "regimeId" -> invitation.clientId,
         "regime" -> invitation.service.id
       ))
   }
