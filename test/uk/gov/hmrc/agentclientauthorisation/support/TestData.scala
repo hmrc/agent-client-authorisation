@@ -50,12 +50,18 @@ trait TestData {
       delegatedAuthRule = None)
   )
 
-  val clientEnrolment = Set(
+  val clientMtdItEnrolment = Set(
     Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
       state = "", delegatedAuthRule = None)
   )
 
-  val clientEnrolments: Future[Enrolments] = Future successful Enrolments(clientEnrolment)
+  val clientNiEnrolment = Set(
+    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None)
+  )
+
+  val clientMtdItEnrolments: Future[Enrolments] = Future successful Enrolments(clientMtdItEnrolment)
+
+  val clientNiEnrolments: Future[Enrolments] = Future successful Enrolments(clientNiEnrolment)
 
   val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
 

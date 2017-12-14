@@ -142,7 +142,7 @@ object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
-sealed class Service(val id: String, val invitationIdPrefix: Char) {
+sealed class Service(val id: String, val invitationIdPrefix: Char, val enrolmentKey: String) {
 
   override def equals(that: Any): Boolean =
     that match {
@@ -152,8 +152,8 @@ sealed class Service(val id: String, val invitationIdPrefix: Char) {
 }
 
 object Service {
-  case object MtdIt extends Service("HMRC-MTD-IT", 'A')
-  case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B')
+  case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT")
+  case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI")
   val values = Seq(MtdIt, PersonalIncomeRecord)
   def findById(id: String): Option[Service] = values.filter(_.id == id).headOption
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))

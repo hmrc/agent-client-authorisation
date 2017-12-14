@@ -19,11 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.logging.SessionId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val mtdItId: MtdItId = MtdItId("mtdItId"), implicit val port: Int) {
+class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val taxId: TaxIdentifier = MtdItId("mtdItId"), implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(clientId.value)))
 
@@ -38,7 +38,7 @@ class ClientApi(val apiRequests: ApiRequests, val clientId: Nino, val mtdItId: M
   }
 
   def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
-    val response = apiRequests.clientGetReceivedInvitations(mtdItId, filteredBy)(port, hc)
+    val response = apiRequests.clientGetReceivedInvitations(taxId, filteredBy)(port, hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }

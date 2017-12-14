@@ -21,7 +21,6 @@ import javax.inject._
 
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
-import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
@@ -38,6 +37,7 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate)
+    val string = body.toString()
     httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
   }
 

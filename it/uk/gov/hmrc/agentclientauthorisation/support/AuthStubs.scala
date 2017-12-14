@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.SaAgentReference
+import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -38,7 +38,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
 
   def canonicalClientId: MtdItId
 
-  def isLoggedIn: A = {
+  def isLoggedInWithMtdEnrolment: A = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
       s"""
          |{
@@ -49,6 +49,29 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |        {
          |          "key": "MTDITID",
          |          "value": "${canonicalClientId.value}"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
+         |}
+       """.stripMargin
+    )))
+
+    this
+  }
+
+  def isLoggedInWithNiEnrolment(nino: Nino): A = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-NI",
+         |      "identifiers": [
+         |        {
+         |          "key": "NINO",
+         |          "value": "${nino.value}"
          |        }
          |      ],
          |      "state": "Activated"
