@@ -137,7 +137,8 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url: String): Unit = {
     "return a meaningful response for the authenticated clients" in {
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn.aRelationshipIsCreatedWith(arn1)
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedIn
+//        .aRelationshipIsCreatedWith(arn1)
 
       val response = new Resource(url, port).get()
 
