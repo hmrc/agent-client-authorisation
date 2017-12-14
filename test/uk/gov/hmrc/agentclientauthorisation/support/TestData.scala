@@ -35,9 +35,9 @@ trait TestData {
   val mtdSaAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
-  val mtdSaPendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
-  val mtdSaAcceptedInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
-  val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "mtd-other", DateTime.parse("2001-01-03"))('A')
+  val mtdSaPendingInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
+  val mtdSaAcceptedInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
+  val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "mtd-other", DateTime.parse("2001-01-03"))('A')
 
   val allInvitations = List(
     Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
