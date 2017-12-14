@@ -40,9 +40,9 @@ trait TestData {
   val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "mtd-other", DateTime.parse("2001-01-03"))('A')
 
   val allInvitations = List(
-    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service.MtdIt, mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
-    Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, Service.MtdIt, mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
-    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, Service.PersonalIncomeRecord, mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
+    Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
+    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, Service.PersonalIncomeRecord, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
   )
 
   val agentEnrolment = Set(

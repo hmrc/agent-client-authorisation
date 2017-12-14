@@ -122,7 +122,7 @@ case class Invitation(
                        arn: Arn,
                        service: Service,
                        clientId: String,
-                       postcode: String,
+                       postcode: Option[String],
                        suppliedClientId: String,
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {

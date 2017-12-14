@@ -20,10 +20,11 @@ import java.net.URL
 import javax.inject._
 
 import org.joda.time.DateTime
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
-import uk.gov.hmrc.http.{HeaderCarrier, HttpPut}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
@@ -33,11 +34,11 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
                                         @Named("afi-relationships-baseUrl") afiBaseUrl: URL, httpPut: HttpPut) {
 
   def createRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
-    httpPut.PUT(relationshipUrl(invitation).toString, "") map (_ => Unit)
+    httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate)
-    httpPut.PUT(afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+    httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
   }
 
   private def relationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
