@@ -40,7 +40,7 @@ trait AgentInvitationValidation extends Results {
         if (invite.service == Service.MtdIt.id) Some(postcodeRequired(invite.service)) else None
       } else {
         postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode.get)).map(_ => None)
-          .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode}", does not match the expected format.""")))
+          .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode.get}", does not match the expected format.""")))
       })
   }
 

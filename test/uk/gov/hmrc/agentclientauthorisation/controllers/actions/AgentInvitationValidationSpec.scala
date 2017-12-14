@@ -37,7 +37,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
-  private val validAfiInvite: AgentInvitation = AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
+  private val validPirInvite: AgentInvitation = AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
   private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {
@@ -47,57 +47,65 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   private def responseFor(invite: AgentInvitation): Result = {
     await(checkForErrors(invite)).get
   }
-  private def postcodeCheck(postcode: String = "AN11PA") =
+  private def mockOutCallToDesWithPostcode(postcode: String = "AN11PA") =
     when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(
       Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", Some(postcode)))), None)))
 
   "checkForErrors" should {
 
     "fail with Forbidden if the postcode doesn't match" in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       responseFor(validMtdItInvite.copy(clientPostcode = Some("BN29AB"))) is Forbidden
     }
 
     "fail with BadRequest if the postcode is not valid" in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       responseFor(validMtdItInvite.copy(clientPostcode = Some("AAAAAA"))) is BadRequest
     }
 
     "fail with NotImplemented if the service is not HMRC-MTD-IT" in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       responseFor(validMtdItInvite.copy(service = "mtd-vat")) is NotImplemented
     }
 
     "fail with BadRequest if the service is HMRC-MTD-IT and no postcode provided" in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       responseFor(validMtdItInvite.copy(clientPostcode = None)) is BadRequest
     }
 
     "only perform NINO format validation after establishing that clientId is a NINO " in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       val result: Result = responseFor(validMtdItInvite.copy(clientIdType = "not nino", clientId = "not a valid NINO"))
       (jsonBodyOf(result) \ "code").as[String] shouldBe "UNSUPPORTED_CLIENT_ID_TYPE"
     }
 
     "pass when the postcode is valid, matches and has HMRC-MTD-IT as the service" in {
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       await(checkForErrors(validMtdItInvite)) shouldBe None
     }
 
     "pass when the postcodes differ by case" in {
-      postcodeCheck("an11pa")
+      mockOutCallToDesWithPostcode("an11pa")
       await(checkForErrors(validMtdItInvite)) shouldBe None
 
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       await(checkForErrors(validMtdItInvite.copy(clientPostcode = Some("an11pa")))) shouldBe None
     }
 
     "pass when the postcodes differ by spacing" in {
-      postcodeCheck("AN1 1PA")
+      mockOutCallToDesWithPostcode("AN1 1PA")
       await(checkForErrors(validMtdItInvite)) shouldBe None
 
-      postcodeCheck()
+      mockOutCallToDesWithPostcode()
       await(checkForErrors(validMtdItInvite.copy(clientPostcode = Some("AN1 1PA")))) shouldBe None
+    }
+
+    "pass when no postcode is present and service is of type PersonalIncomeRecord" in {
+      await(checkForErrors(validPirInvite)) shouldBe None
+    }
+
+    "pass when no postcode is present and service is of type " in {
+      responseFor(validPirInvite.copy(service = "HMRC-MTD-IT")) is BadRequest
     }
   }
 }
