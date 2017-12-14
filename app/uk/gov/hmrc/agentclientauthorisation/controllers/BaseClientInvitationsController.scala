@@ -31,6 +31,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
+// TODO we've modelled clientId using TaxIdentifier, consider using our own type which wont have the large number
+// TODO of sub types that we don't support
 abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsService: InvitationsService,
                                       metrics: Metrics,
                                       authConnector: MicroserviceAuthConnector,
@@ -53,7 +55,6 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
       })
     }
 
-  // TODO should this take service param to ensure we get invitation applicable for the desired service??
   protected def getInvitation(taxId: T, invitationId: InvitationId)
                    (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: T) = {
 

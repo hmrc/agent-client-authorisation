@@ -115,14 +115,13 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
       }
   }
 
-  // TODO name of function, maybe change?
   def clientsReceived(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
   def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO) // TODO check is this correct??
+    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
       invitationsRepository.list(arn, service, clientId, status)
     else Future successful List.empty
 
