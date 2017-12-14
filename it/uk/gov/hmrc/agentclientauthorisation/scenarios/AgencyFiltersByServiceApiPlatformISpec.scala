@@ -55,7 +55,8 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
+      given().client(clientId = nino)
+        .hasABusinessPartnerRecordWithMtdItId() // TODO should not need this stubbing
       val client = new ClientApi(this, nino, nino, port)
 
       When("An agent sends several invitations")
