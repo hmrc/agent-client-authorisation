@@ -56,7 +56,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
   "getDetailsForClient" should {
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val response = await(controller.getDetailsForClient(MtdItId("invalid"))(FakeRequest()))
 
@@ -66,7 +66,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
   "Accepting an invitation" should {
     "Return no content" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -78,7 +78,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "Return not found when the invitation doesn't exist" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -88,7 +88,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "the invitation cannot be actioned" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted,"failure message")))
@@ -99,7 +99,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
@@ -123,7 +123,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
   "Rejecting an invitation" should {
     "Return no content" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -135,7 +135,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "Return not found when the invitation doesn't exist" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -145,7 +145,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "the invitation cannot be actioned" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsRejected thenReturn (Future successful Left(StatusUpdateFailure(Rejected, "failure message")))
@@ -156,7 +156,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
@@ -174,7 +174,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
   "getInvitation" should {
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val response = await(controller.getInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
@@ -184,7 +184,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
   "getInvitations" should {
     "return 200 and an empty list when there are no invitations for the client" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
@@ -194,7 +194,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
 
       val response = await(controller.getInvitations(MtdItId("invalid"), None)(FakeRequest()))
 
@@ -202,7 +202,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
-      clientAuthStub(clientEnrolments)
+      clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
         Invitation(
           BSONObjectID("abcdefabcdefabcdefabcdef"), invitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni",

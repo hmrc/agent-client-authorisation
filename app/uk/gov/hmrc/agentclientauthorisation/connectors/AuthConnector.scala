@@ -24,6 +24,7 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
+import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -86,12 +87,18 @@ class AuthConnector @Inject()(metrics: Metrics,
     implicit request =>
       authorised(AuthProvider).retrieve(allEnrolments) {
         allEnrols =>
-          val clientId = extractEnrolmentData(allEnrols.enrolments, service.id, clientIdType)
+          val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, enrolmentId(clientIdType))
           if (clientId.isDefined) action(request)(taxId(clientId.get))
           else Future successful ClientNinoNotFound
       } recover {
         case _ => GenericUnauthorized
       }
+  }
+
+  // TODO remove this nasty translation when we create a ClientId type
+  def enrolmentId(clientIdType: String): String = clientIdType match {
+    case CLIENT_ID_TYPE_NINO  => "NINO"
+    case CLIENT_ID_TYPE_MTDITID => CLIENT_ID_TYPE_MTDITID
   }
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
