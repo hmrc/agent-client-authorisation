@@ -238,7 +238,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired))(any())).thenReturn(testInvitationWithStatus(Expired))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any())).thenReturn(testInvitationWithStatus(Expired))
 
 
       val serviceWithUnderscoreInDuration = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10_days")
