@@ -55,6 +55,7 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
+    bindBaseUrl("afi-relationships")
     bindBaseUrl("des")
     bindProperty("des.environment", "des.environment")
     bindProperty("des.authorizationToken", "des.authorization-token")

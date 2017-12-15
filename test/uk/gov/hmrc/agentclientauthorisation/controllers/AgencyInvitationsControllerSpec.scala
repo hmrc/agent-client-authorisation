@@ -64,7 +64,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       Future successful allInvitations
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations.filter(_.service == "HMRC-MTD-IT")
     )
 
@@ -72,7 +72,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       Future successful allInvitations.filter(_.status == Accepted)
     )
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some("HMRC-MTD-IT")), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted)
     )
   }
@@ -83,11 +83,11 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
 
       when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
-      when(invitationsService.create(any[Arn](), any[String](), any[MtdItId](), any[String](), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
+      when(invitationsService.create(any[Arn](), any[Service](), any[MtdItId](), any(), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
@@ -120,33 +120,6 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
       invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
       invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
-    }
-
-    "filter by service when a service is specified" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.getSentInvitations(arn, Some("HMRC-MTD-IT"), None, None, None)(FakeRequest()))
-      status(response) shouldBe 200
-      val jsonBody = jsonBodyOf(response)
-
-      invitationsSize(jsonBody) shouldBe 2
-
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
-      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
-    }
-
-    "filter by status when a status is specified" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.getSentInvitations(arn, None, None, None, Some(Accepted))(FakeRequest()))
-      status(response) shouldBe 200
-      val jsonBody = jsonBodyOf(response)
-
-      invitationsSize(jsonBody) shouldBe 1
-
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
@@ -265,7 +238,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     )
 
   private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", "clientId", "postcode", "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), "clientId", Some("postcode"), "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

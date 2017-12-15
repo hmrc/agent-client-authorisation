@@ -20,8 +20,9 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -39,14 +40,14 @@ object AgentClientInvitationEvent extends Enumeration {
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, mtdItId: MtdItId)
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, taxId: TaxIdentifier, service: Service)
                                  (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
     auditEvent(AgentClientInvitationEvent.AgentClientRelationshipCreated, "agent-client-relationship-created",
       Seq(
         "invitationId" -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "regimeId" -> mtdItId.value,
-        "regime" -> "HMRC-MTD-IT"
+        "regimeId" -> taxId.value,
+        "regime" -> service.id
       ))
   }
 
@@ -54,9 +55,9 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     auditEvent(AgentClientInvitationEvent.AgentClientInvitationResponse, "Client responded to agent invitation",
       Seq(
         "invitationId" -> invitation.id.stringify,
-        "agentReferenceNumber" -> invitation.arn
-//        "regimeId" -> "TODO", populate with values once a regime/service has been modelled into core
-//        "regime" -> "HMRC-MTD-IT"
+        "agentReferenceNumber" -> invitation.arn.value,
+        "regimeId" -> invitation.clientId,
+        "regime" -> invitation.service.id
       ))
   }
 

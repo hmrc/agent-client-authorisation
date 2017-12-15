@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import java.io
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
@@ -25,9 +26,11 @@ import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
@@ -61,13 +64,18 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
       case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
-  private def makeInvitation(arn: Arn, authRequest: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
-    invitationsService.translateToMtdItId(authRequest.clientId, authRequest.clientIdType).flatMap {
+  private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
+    val service = Service.forId(agentInvitation.service)
+    val taxId = service match {
+      case Service.MtdIt => invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
+      case Service.PersonalIncomeRecord => Future successful Some(Nino(agentInvitation.clientId))
+    }
+    taxId.flatMap {
       case None => Future successful
-        BadRequest(s"invalid combination of client id ${authRequest.clientId} anf client id type ${authRequest.clientIdType}")
+        BadRequest(s"invalid combination of client id ${agentInvitation.clientId} and client id type ${agentInvitation.clientIdType}")
       case Some(clientId) =>
         invitationsService.create(
-          arn, authRequest.service, clientId, authRequest.clientPostcode, authRequest.clientId, authRequest.clientIdType).map(
+          arn, service, clientId, agentInvitation.clientPostcode, agentInvitation.clientId, agentInvitation.clientIdType).map(
           invitation => Created.withHeaders(location(invitation)))
     }
   }
@@ -96,7 +104,7 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     implicit request =>
       implicit arn =>
         forThisAgency(givenArn) {
-          invitationsService.agencySent(arn, service, clientIdType, clientId, status).map { invitations =>
+          invitationsService.agencySent(arn, service.map(Service(_)), clientIdType, clientId, status).map { invitations =>
             Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
           }
         }

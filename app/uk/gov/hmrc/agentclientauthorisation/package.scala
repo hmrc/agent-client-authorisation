@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc
 
-/**
-  * Created by paulhodgson on 18/08/2017.
-  */
 package object agentclientauthorisation {
   val SUPPORTED_SERVICE = "HMRC-MTD-IT"
   val CLIENT_ID_TYPE_NINO = "ni"

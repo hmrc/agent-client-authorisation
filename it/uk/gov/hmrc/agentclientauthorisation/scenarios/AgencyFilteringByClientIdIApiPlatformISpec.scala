@@ -20,7 +20,7 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
 
 class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -36,12 +36,13 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
     scenario("on the status of clients invitations") {
       val agency = new AgencyApi(this, arn, port)
       val client1 = new ClientApi(this, nino, mtdItId, port)
-      val client2 = new ClientApi(this, nino2, MtdItId("0023456789"), port)
+      val mtdItId2 = MtdItId("0023456789")
+      val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(client1.mtdItId)
-      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(client2.mtdItId)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId)
+      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)(
@@ -51,16 +52,16 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
 
       When(s"the Agency filters by client ID")
       Then(s"only the client matching that id is returned")
-      agencyFiltersById(agency, client1.mtdItId)
-      agencyFiltersById(agency, client2.mtdItId)
+      agencyFiltersById(agency, client1.taxId)
+      agencyFiltersById(agency, client2.taxId)
     }
   }
 
-  private def agencyFiltersById(agency: AgencyApi, clientId: MtdItId): Unit = {
+  private def agencyFiltersById(agency: AgencyApi, clientId: TaxIdentifier): Unit = {
     val invitation = agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
     invitation.numberOfInvitations shouldBe 1
     invitation.firstInvitation.status shouldBe "Pending"
     invitation.firstInvitation.arn shouldBe agency.arn
-    invitation.firstInvitation.clientId shouldBe clientId
+    invitation.firstInvitation.clientId shouldBe clientId.value
   }
 }

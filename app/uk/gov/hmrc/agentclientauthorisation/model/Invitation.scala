@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
+import java.time.LocalDateTime
+
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -107,13 +110,14 @@ case class Invitation(
                        id: BSONObjectID,
                        invitationId: InvitationId,
                        arn: Arn,
-                       service: String,
+                       service: Service,
                        clientId: String,
-                       postcode: String,
+                       postcode: Option[String],
                        suppliedClientId: String,
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
 
+  // TODO consider removing this, confusing as it is really the supplied type which already has a property of its own.
   val clientIdType = CLIENT_ID_TYPE_NINO
 
   def firstEvent(): StatusChangeEvent = {
@@ -132,19 +136,44 @@ case class AgentInvitation(
                             service: String,
                             clientIdType: String,
                             clientId: String,
-                            clientPostcode: String)
+                            clientPostcode: Option[String])
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
+sealed class Service(val id: String, val invitationIdPrefix: Char, val enrolmentKey: String) {
+
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: Service => this.id.equals(that.id)
+      case _ => false
+  }
+}
+
+object Service {
+  case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT")
+  case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI")
+  val values = Seq(MtdIt, PersonalIncomeRecord)
+  def findById(id: String): Option[Service] = values.filter(_.id == id).headOption
+  def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
+
+  def apply(id: String) = forId(id)
+  def unapply(service: Service): Option[String] = Some(service.id)
+
+  val reads = new SimpleObjectReads[Service]("id", Service.apply)
+  val writes = new SimpleObjectWrites[Service](_.id)
+  val format = Format(reads, writes)
+}
+
 object Invitation {
+
   implicit val dateWrites = RestFormats.dateTimeWrite
   implicit val dateReads = RestFormats.dateTimeRead
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "service" -> invitation.service,
+      "service" -> invitation.service.id,
       "clientIdType" -> invitation.clientIdType,
       "clientId" -> invitation.clientId,
       "postcode" -> invitation.postcode,
@@ -154,10 +183,11 @@ object Invitation {
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
       "status" -> invitation.status
-
     )
 
   }
+
+  implicit val serviceFormat = Service.format
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
 }
 

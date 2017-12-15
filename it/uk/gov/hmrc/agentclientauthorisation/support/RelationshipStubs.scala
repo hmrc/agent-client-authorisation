@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.Nino
 
 trait RelationshipStubs[A] {
   me: A with WiremockAware =>
@@ -25,6 +26,12 @@ trait RelationshipStubs[A] {
 
   def aRelationshipIsCreatedWith(arn: Arn): A = {
     stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
+      .willReturn(aResponse().withStatus(201)))
+    this
+  }
+
+  def anAfiRelationshipIsCreatedWith(arn: Arn, nino: Nino): A = {
+    stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${nino.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }

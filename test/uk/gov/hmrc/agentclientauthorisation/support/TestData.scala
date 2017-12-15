@@ -35,14 +35,14 @@ trait TestData {
   val mtdSaAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
-  val mtdSaPendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
-  val mtdSaAcceptedInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
-  val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn, mtdItId1, "mtd-other", DateTime.parse("2001-01-03"))('A')
+  val mtdSaPendingInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
+  val mtdSaAcceptedInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
+  val otherRegimePendingInvitationId: InvitationId = InvitationId.create(arn.value, mtdItId1.value, "mtd-other", DateTime.parse("2001-01-03"))('A')
 
   val allInvitations = List(
-    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
-    Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, "HMRC-MTD-IT", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
-    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, "mtd-other", mtdItId1.value, "postcode", nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending))),
+    Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Accepted))),
+    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, Service.PersonalIncomeRecord, mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
   )
 
   val agentEnrolment = Set(
@@ -50,12 +50,18 @@ trait TestData {
       delegatedAuthRule = None)
   )
 
-  val clientEnrolment = Set(
+  val clientMtdItEnrolment = Set(
     Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
       state = "", delegatedAuthRule = None)
   )
 
-  val clientEnrolments: Future[Enrolments] = Future successful Enrolments(clientEnrolment)
+  val clientNiEnrolment = Set(
+    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None)
+  )
+
+  val clientMtdItEnrolments: Future[Enrolments] = Future successful Enrolments(clientMtdItEnrolment)
+
+  val clientNiEnrolments: Future[Enrolments] = Future successful Enrolments(clientNiEnrolment)
 
   val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
 

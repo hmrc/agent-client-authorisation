@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import views.html.helper._
 
@@ -94,10 +95,15 @@ trait ApiRequests {
   TODO:  split these into seperate traits?
    */
   def clientsUrl = s"$baseUrl/clients"
-  def clientUrl(mtdItId: MtdItId) = s"$baseUrl/clients/MTDITID/${mtdItId.value}"
 
-  def clientReceivedInvitationsUrl(mtdItId: MtdItId): String = s"$baseUrl/clients/MTDITID/${urlEncode(mtdItId.value)}/invitations/received"
-  def clientReceivedInvitationUrl(mtdItId: MtdItId, invitationId:String): String = s"$baseUrl/clients/MTDITID/${urlEncode(mtdItId.value)}/invitations/received/$invitationId"
+  def clientUrl(clientId: TaxIdentifier) = clientId match {
+    case MtdItId(value) => s"$baseUrl/clients/MTDITID/$value"
+    case Nino(value) => s"$baseUrl/clients/NI/$value"
+  }
+
+  def clientReceivedInvitationsUrl(clientId: TaxIdentifier) = s"${clientUrl(clientId)}/invitations/received"
+
+  def clientReceivedInvitationUrl(clientId: TaxIdentifier, invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
@@ -106,9 +112,9 @@ trait ApiRequests {
   def clientResource(mtdItId: MtdItId)(implicit port: Int) = {
     new Resource(clientUrl(mtdItId), port).get
   }
-  def clientGetReceivedInvitations(mtdItId: MtdItId, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(clientId: TaxIdentifier, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
-    new Resource(clientReceivedInvitationsUrl(mtdItId) + params, port).get()(hc)
+    new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
   }
 
   def clientGetReceivedInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {

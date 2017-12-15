@@ -25,14 +25,17 @@ import play.api.mvc.Results._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.model.Service
+import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TestData {
 
@@ -41,10 +44,12 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   val mockAuthConnector: AuthConnector = new AuthConnector(mockMetrics, mockPlayAuthConnector)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
-  private type ClientAuthAction = Request[AnyContent] => MtdItId => Future[Result]
+  private type MtdItClientAuthAction = Request[AnyContent] => MtdItId => Future[Result]
+  private type NiClientAuthAction = Request[AnyContent] => Nino => Future[Result]
 
   val agentAction: AgentAuthAction = { implicit request => implicit arn => Future successful Ok }
-  val clientAction: ClientAuthAction = { implicit request => implicit mtdItId => Future successful Ok }
+  val mtdItClientAction: MtdItClientAuthAction = { implicit request => implicit mtdItId => Future successful Ok }
+  val niClientAction: NiClientAuthAction = { implicit request => implicit nino => Future successful Ok }
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any())).thenReturn(returnValue)
@@ -97,18 +102,50 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   }
 
   "onlyForClients" should {
-    "successfully grant access to a Client with HMRC-MTD_IT enrolment" in {
-      clientAuthStub(clientEnrolments)
+    "successfully grant access to a Client with HMRC-MTD-IT enrolment and Service is MTD-IT" in {
+      clientAuthStub(clientMtdItEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(mtdItClientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe OK
     }
 
-    "return FORBIDDEN when the user has no HMRC-NI enrolment" in {
+    "successfully grant access to a Client with HMRC-NI enrolment and Service is PersonalIncomeRecord" in {
+      clientAuthStub(clientNiEnrolments)
+
+      val response = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, CLIENT_ID_TYPE_NINO)(niClientAction)(Nino.apply).apply(FakeRequest()))
+
+      status(response) shouldBe OK
+    }
+
+    "return FORBIDDEN when the user has no HMRC-NI enrolment and Service is PersonalIncomeRecord" in {
       clientAuthStub(clientNoEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, CLIENT_ID_TYPE_MTDITID)(niClientAction)(Nino.apply).apply(FakeRequest()))
+
+      status(response) shouldBe FORBIDDEN
+    }
+
+    "return FORBIDDEN when the user has no HMRC-MTD-IT enrolment and Service is MTD-IT" in {
+      clientAuthStub(clientNoEnrolments)
+
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(mtdItClientAction)(MtdItId.apply).apply(FakeRequest()))
+
+      status(response) shouldBe FORBIDDEN
+    }
+
+    "return FORBIDDEN when the user has HMRC-MTD-IT enrolment and Service is PersonalIncomeRecord" in {
+      clientAuthStub(clientMtdItEnrolments)
+
+      val response: Result = await(mockAuthConnector.onlyForClients(PersonalIncomeRecord, CLIENT_ID_TYPE_MTDITID)(niClientAction)(Nino.apply).apply(FakeRequest()))
+
+      status(response) shouldBe FORBIDDEN
+    }
+
+    "return FORBIDDEN when the user has HMRC-NI enrolment and Service is MTD-IT" in {
+      clientAuthStub(clientNiEnrolments)
+
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(mtdItClientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -116,7 +153,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return UNAUTHORISED when auth throws an error" in {
       clientAuthStub(failedStubForClient)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(clientAction).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(mtdItClientAction)(MtdItId.apply).apply(FakeRequest()))
 
       status(response) shouldBe UNAUTHORIZED
     }

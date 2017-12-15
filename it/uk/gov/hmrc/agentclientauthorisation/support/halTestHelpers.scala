@@ -37,7 +37,7 @@ object HalTestHelpers {
 object EmbeddedSection {
 
   case class EmbeddedInvitationLinks(selfLink: String, cancelLink: Option[String], acceptLink: Option[String], rejectLink: Option[String])
-  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, service: String, clientIdType: String, clientId: MtdItId, status: String, created: DateTime, lastUpdated: DateTime)
+  case class EmbeddedInvitation(underlying:JsValue, links: EmbeddedInvitationLinks, arn: Arn, service: String, clientIdType: String, clientId: String, status: String, created: DateTime, lastUpdated: DateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {
@@ -72,7 +72,7 @@ class EmbeddedSection(embedded: JsValue) {
       arn = Arn(getString(invitation \ "arn")),
       service = getString(invitation \ "service"),
       clientIdType = getString(invitation \ "clientIdType"),
-      clientId = MtdItId(getString(invitation \ "clientId")),
+      clientId = getString(invitation \ "clientId"),
       status = getString(invitation \ "status"),
       created = getDateTime(invitation \ "created"),
       lastUpdated = getDateTime(invitation \ "lastUpdated")

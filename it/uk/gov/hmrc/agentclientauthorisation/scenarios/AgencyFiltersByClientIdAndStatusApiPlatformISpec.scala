@@ -53,7 +53,7 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       agency sendInvitation(nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
-      given().client(mtdItId1, nino).isLoggedIn
+      given().client(mtdItId1, nino).isLoggedInWithMtdEnrolment
       clientAcceptsFirstInvitation(client)
 
       Then("The agent filters by Client 1 and Pending")
