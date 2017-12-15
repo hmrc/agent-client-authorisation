@@ -49,6 +49,28 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     refetchedInvitations.firstInvitation.status shouldBe "Accepted"
   }
 
-  // TODO add scenarios for reject....
+  scenario("reject a PersonalIncomeRecord invitation") {
+    val agency = new AgencyApi(this, arn, port)
+    val client = new ClientApi(this, nino, nino, port)
+
+    Given("An agent is logged in")
+    given().client(clientId = nino)
+      .hasABusinessPartnerRecordWithMtdItId()
+      .anAfiRelationshipIsCreatedWith(arn, nino)
+    given().agentAdmin(arn).isLoggedInAndIsSubscribed
+
+    When("An agent sends invitations to Client")
+    agency sendInvitation(nino, PersonalIncomeRecordService)
+
+    And("Client rejects the first invitation")
+
+    given().client(clientId = nino).isLoggedInWithNiEnrolment(nino)
+    val invitations = client.getInvitations()
+    client.rejectInvitation(invitations.firstInvitation)
+    val refetchedInvitations = client.getInvitations()
+    refetchedInvitations.firstInvitation.status shouldBe "Rejected"
+  }
+
+  // TODO add scenarios getInvitation - modify existing test
 
 }

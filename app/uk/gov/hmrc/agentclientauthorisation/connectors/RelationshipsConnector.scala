@@ -32,12 +32,13 @@ import scala.concurrent.Future
 class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL,
                                         @Named("afi-relationships-baseUrl") afiBaseUrl: URL, httpPut: HttpPut) {
 
+  private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+
   def createRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
     httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
-    val body = Json.obj("startDate" -> acceptedDate)
-    val string = body.toString()
+    val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
   }
 
