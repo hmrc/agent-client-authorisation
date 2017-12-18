@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
@@ -30,7 +31,7 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
 
   feature("Clients can filter")  {
 
-    scenario("on the status of invitations") {
+    scenario(s"on the status of invitations - ${Service.MtdIt.id}") {
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, mtdItId1, port)
 
@@ -59,6 +60,42 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       clientRejectsSecondInvitation(client)
 
       And("the Client filters their invitations by rejected")  
+      clientFiltersByRejected(client)
+
+      And("the Client filters by multiple status")
+      clientFiltersByMultipleStatuses(client)
+    }
+
+
+    scenario(s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
+      val agency = new AgencyApi(this, arn, port)
+      val client = new ClientApi(this, nino1, nino1, port)
+
+      Given("An agent and a client are logged in")
+      given().client(clientId = nino1, canonicalClientId = mtdItId1)
+        .hasABusinessPartnerRecord().anAfiRelationshipIsCreatedWith(arn, nino1)
+      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+
+      When("An agent sends several invitations")
+      agencySendsSeveralInvitations(agency)(
+        (client, PersonalIncomeRecordService),
+        (client, PersonalIncomeRecordService)
+      )
+
+      Then(s"the Client should see 2 pending invitations from the Agency $arn")
+      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)
+      clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
+
+      When(s"the Client accepts the first Agency invitation")
+      clientAcceptsFirstInvitation(client)
+
+      Then(s"the Client filters their invitations by accepted")
+      clientFiltersByAccepted(client)
+
+      When("the Client rejects the second invitation")
+      clientRejectsSecondInvitation(client)
+
+      And("the Client filters their invitations by rejected")
       clientFiltersByRejected(client)
 
       And("the Client filters by multiple status")

@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.ClientId
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
@@ -42,7 +43,7 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
       given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
 
       And("the Agency has sent 1 invitation to 2 different clients")

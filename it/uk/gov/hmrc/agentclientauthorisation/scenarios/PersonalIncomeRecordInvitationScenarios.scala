@@ -71,6 +71,4 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     refetchedInvitations.firstInvitation.status shouldBe "Rejected"
   }
 
-  // TODO add scenarios getInvitation - modify existing test
-
 }

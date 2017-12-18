@@ -18,11 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 trait RelationshipStubs[A] {
   me: A with WiremockAware =>
-  def canonicalClientId: MtdItId
+  def canonicalClientId: TaxIdentifier
 
   def aRelationshipIsCreatedWith(arn: Arn): A = {
     stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))

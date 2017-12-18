@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{Nino, SaAgentReference}
+import uk.gov.hmrc.domain.{Nino, SaAgentReference, TaxIdentifier}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -36,7 +36,7 @@ trait BasicUserAuthStubs[A] {
 trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
-  def canonicalClientId: MtdItId
+  def canonicalClientId: TaxIdentifier
 
   def isLoggedInWithMtdEnrolment: A = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
