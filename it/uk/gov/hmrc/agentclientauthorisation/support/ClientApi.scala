@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
@@ -24,7 +24,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.SessionId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class ClientApi(val apiRequests: ApiRequests, val suppliedClientId: Nino, val clientId: ClientId[_] = MtdItId("mtdItId"), implicit val port: Int) {
+class ClientApi(val apiRequests: ApiRequests, val suppliedClientId: Nino, val clientId: ClientId = MtdItId("mtdItId"), implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(suppliedClientId.value)))
 

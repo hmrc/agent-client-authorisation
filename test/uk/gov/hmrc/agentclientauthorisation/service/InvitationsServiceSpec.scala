@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import org.joda.time.DateTime
+import com.sun.jndi.ldap.ClientId
+import org.joda.time.{DateTime, LocalDate}
 import org.joda.time.DateTime.now
 import org.mockito.ArgumentMatchers.{any, eq => eqs, _}
 import play.api.mvc.Request
@@ -26,7 +27,6 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
 import play.api.libs.json.JsObject
-import play.api.libs.json.Json.JsValueWrapper
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.generate
 import reactivemongo.core.errors.ReactiveMongoException
@@ -85,10 +85,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
             InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
             Arn(arn),
             Service.PersonalIncomeRecord,
-            nino1.value,
+            ClientIdentifier(nino1),
+            ClientIdentifier(nino1),
             Some("A11 1AA"),
-            nino1.value,
-            "ni",
+            now().toLocalDate.plusDays(10),
             List(StatusChangeEvent(now(), Pending)))
 
         whenAfiRelationshipIsCreated(invitation) thenReturn (Future successful {})
@@ -348,10 +348,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
-    mtdItId1.value,
+    mtdItId1,
+    ClientIdentifier(nino1),
     Some("A11 1AA"),
-    nino1.value,
-    "ni",
+    LocalDate.now().plusDays(10),
     List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
   )
 
@@ -361,10 +361,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
-    mtdItId1.value,
+    ClientIdentifier(mtdItId1),
+    ClientIdentifier(nino1),
     Some("A11 1AA"),
-    nino1.value,
-    "ni",
+    LocalDate.now().plusDays(10),
     List(StatusChangeEvent(creationDate(), Pending))
   )
 

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.DateTime.now
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -30,8 +29,8 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData, TransitionInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.Generator
@@ -83,11 +82,15 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val inviteCreated = Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), mtdItId1.value, Some("postcode"), nino1.value, "ni", events = List(StatusChangeEvent(now(), Pending)))
+      val inviteCreated = TestConstants.defaultInvitation.copy(
+        id = mtdSaPendingInvitationDbId,
+        invitationId = mtdSaPendingInvitationId,
+        arn = arn,
+        clientId = mtdItId1)
 
       when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
-      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
+      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any())).thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
@@ -237,8 +240,12 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       invitationId.value
     )
 
-  private def anInvitation(arn: Arn = arn) =
-    Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service("HMRC-MTD-IT"), "clientId", Some("postcode"), "nino1", "ni", events = List(StatusChangeEvent(now(), Pending)))
+  private def anInvitation(arn: Arn = arn) = {
+    TestConstants.defaultInvitation.copy(
+      id = mtdSaPendingInvitationDbId,
+      invitationId = mtdSaPendingInvitationId,
+      arn = arn)
+  }
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))

@@ -18,16 +18,16 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.{Json, Writes}
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.BSONFormats
-import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
@@ -36,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InvitationsRepository @Inject()(mongo: DB)
-  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", () => mongo, mongoFormats, ReactiveMongoFormats.objectIdFormats)
+  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", () => mongo, InvitationMongoFormat.mongoFormats, ReactiveMongoFormats.objectIdFormats)
     with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
@@ -46,22 +46,12 @@ class InvitationsRepository @Inject()(mongo: DB)
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: Service, clientId: ClientId[_], postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
-            (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
+  def create(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId,
+             postcode: Option[String], startDate: DateTime, expiryDate: LocalDate)
+            (implicit ec: ExecutionContext): Future[Invitation] = {
 
-    val request = Invitation(
-      id = BSONObjectID.generate,
-      invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
-      arn = arn,
-      service = service,
-      clientId = clientId.value,
-      postcode = postcode,
-      suppliedClientId = suppliedClientId,
-      suppliedClientIdType = suppliedClientIdType,
-      events = List(StatusChangeEvent(now, Pending))
-    )
-
-    insert(request).map(_ => request)
+    val invitation = Invitation.createNew(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+    insert(invitation).map(_ => invitation)
   }
 
   def list(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
@@ -76,7 +66,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     find(searchOptions: _*)
   }
 
-  def list(service: Service, clientId: ClientId[_], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "service" -> Some(service.id),
       "clientId" -> Some(clientId.value),

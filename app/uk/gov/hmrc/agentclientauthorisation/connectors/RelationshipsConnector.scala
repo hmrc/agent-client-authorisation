@@ -43,12 +43,12 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
   }
 
   private def relationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
-    s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId)}")
+    s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
 
   private def afiRelationshipUrl(invitation: Invitation): URL = {
     val arn = encodePathSegment(invitation.arn.value)
     val service = encodePathSegment(invitation.service.id)
-    val clientId = encodePathSegment(invitation.clientId)
+    val clientId = encodePathSegment(invitation.clientId.value)
     new URL(afiBaseUrl, s"/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId")
   }
 }

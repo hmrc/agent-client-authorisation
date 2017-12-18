@@ -72,9 +72,10 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
       case None => Future successful
         BadRequest(s"invalid combination of client id ${agentInvitation.clientId} and client id type ${agentInvitation.clientIdType}")
       case Some(taxId) =>
-        invitationsService.create(
-          arn, service, ClientId(taxId), agentInvitation.clientPostcode, agentInvitation.clientId, agentInvitation.clientIdType).map(
-          invitation => Created.withHeaders(location(invitation)))
+        val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
+        invitationsService.create(arn, service, ClientIdentifier(taxId), agentInvitation.clientPostcode, suppliedClientId).map(
+          invitation => Created.withHeaders(location(invitation))
+        )
     }
   }
 

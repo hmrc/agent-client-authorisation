@@ -26,7 +26,8 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, MtdItIdType, NinoType, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.{MtdItIdType, NinoType, Service}
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -44,7 +45,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   val mockAuthConnector: AuthConnector = new AuthConnector(mockMetrics, mockPlayAuthConnector)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
-  private type ClientAuthAction = Request[AnyContent] => ClientId[_] => Future[Result]
+  private type ClientAuthAction = Request[AnyContent] => ClientId => Future[Result]
 
   val agentAction: AgentAuthAction = { implicit request => implicit arn => Future successful Ok }
   val clientAction: ClientAuthAction = { implicit request => implicit clientId => Future successful Ok }

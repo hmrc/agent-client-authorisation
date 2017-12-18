@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.DateTime.parse
 import play.api.libs.json.Json.toJson
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -27,15 +28,12 @@ class InvitationSpec extends UnitSpec {
     "be in ISO8601 format" in {
       val created = "2010-01-01T01:00:23.456Z"
       val lastUpdated = "2010-01-02T04:00:23.456Z"
-      val invitation = Invitation(
-        id = BSONObjectID.generate,
+
+      val invitation = TestConstants.defaultInvitation.copy(
         invitationId = InvitationId("ABBBBBBBBBBCC"),
         arn = Arn("myAgency"),
         service = Service.MtdIt,
-        clientId = "clientId",
         postcode = Some("A11 1AA"),
-        suppliedClientId = "nino1",
-        suppliedClientIdType = "ni",
         events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
       )
 

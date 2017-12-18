@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -95,14 +96,14 @@ trait ApiRequests {
    */
   def clientsUrl = s"$baseUrl/clients"
 
-  def clientUrl(clientId: ClientId[_]) = clientId match {
-    case ClientId(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
-    case ClientId(Nino(value)) => s"$baseUrl/clients/NI/$value"
+  def clientUrl(clientId: ClientId) = clientId match {
+    case ClientIdentifier(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
+    case ClientIdentifier(Nino(value)) => s"$baseUrl/clients/NI/$value"
   }
 
-  def clientReceivedInvitationsUrl(clientId: ClientId[_]) = s"${clientUrl(clientId)}/invitations/received"
+  def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"
 
-  def clientReceivedInvitationUrl(clientId: ClientId[_], invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
+  def clientReceivedInvitationUrl(clientId: ClientId, invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
@@ -111,7 +112,7 @@ trait ApiRequests {
   def clientResource(mtdItId: MtdItId)(implicit port: Int) = {
     new Resource(clientUrl(mtdItId), port).get
   }
-  def clientGetReceivedInvitations(clientId: ClientId[_], filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(clientId: ClientId, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
   }
