@@ -85,7 +85,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
             InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
             Arn(arn),
             Service.PersonalIncomeRecord,
-            mtdItId1.value,
+            nino1.value,
             Some("A11 1AA"),
             nino1.value,
             "ni",
