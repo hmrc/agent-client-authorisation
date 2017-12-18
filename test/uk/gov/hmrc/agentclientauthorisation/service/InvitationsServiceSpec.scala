@@ -251,7 +251,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "translateToMtdItId" should {
     "return the mtfItId if supplied" in {
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId1.value, "MTDITID"))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId1.value, MtdItIdType.id))
       shouldBeMtdItId.head.value shouldBe mtdItId1.value
     }
 
@@ -263,7 +263,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "return an mtdItId if a nino is supplied for which there is no persisted match and there is a matching DES business partner record with an mtdItId" in {
       whenDesBusinessPartnerRecordExistsFor(Nino(nino1.value), mtdItId1.value)
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, NinoType.id))
       shouldBeMtdItId.head shouldBe mtdItId1
     }
 

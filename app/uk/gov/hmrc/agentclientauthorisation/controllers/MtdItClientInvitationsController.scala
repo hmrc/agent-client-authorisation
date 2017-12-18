@@ -22,7 +22,7 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, InvitationStatus, MtdItIdType, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -40,33 +40,33 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
 
   def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId => getDetailsForClient(mtdItId, request)
+      implicit authMtdItId => getDetailsForClient(ClientId(mtdItId), request)
   }
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId => acceptInvitation(mtdItId, invitationId)
+      implicit authMtdItId => acceptInvitation(ClientId(mtdItId), invitationId)
   }
 
   def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
       implicit authMtdItId =>
-        forThisClient(mtdItId) {
-          actionInvitation(mtdItId, invitationId, invitationsService.rejectInvitation)
+        forThisClient(ClientId(mtdItId)) {
+          actionInvitation(ClientId(mtdItId), invitationId, invitationsService.rejectInvitation)
         }
   }
 
   def getInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId => getInvitation(mtdItId, invitationId)
+      implicit authMtdItId => getInvitation(ClientId(mtdItId), invitationId)
   }
 
   def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request =>
-      implicit authMtdItId => getInvitations(mtdItId, status)
+      implicit authMtdItId => getInvitations(ClientId(mtdItId), status)
   }
 
-  def onlyForClients(action: Request[AnyContent] => MtdItId => Future[Result]): Action[AnyContent] =
-    super.onlyForClients(Service.MtdIt, CLIENT_ID_TYPE_MTDITID)(action)(MtdItId.apply)
+  def onlyForClients(action: Request[AnyContent] => ClientId[MtdItId] => Future[Result]): Action[AnyContent] =
+    super.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(action)(MtdItId.apply)
 
 }

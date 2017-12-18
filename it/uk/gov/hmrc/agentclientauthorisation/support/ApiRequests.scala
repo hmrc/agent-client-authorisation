@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import uk.gov.hmrc.agentclientauthorisation.model.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import views.html.helper._
-
 
 trait ApiRequests {
 
@@ -96,14 +95,14 @@ trait ApiRequests {
    */
   def clientsUrl = s"$baseUrl/clients"
 
-  def clientUrl(clientId: TaxIdentifier) = clientId match {
-    case MtdItId(value) => s"$baseUrl/clients/MTDITID/$value"
-    case Nino(value) => s"$baseUrl/clients/NI/$value"
+  def clientUrl(clientId: ClientId[_]) = clientId match {
+    case ClientId(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
+    case ClientId(Nino(value)) => s"$baseUrl/clients/NI/$value"
   }
 
-  def clientReceivedInvitationsUrl(clientId: TaxIdentifier) = s"${clientUrl(clientId)}/invitations/received"
+  def clientReceivedInvitationsUrl(clientId: ClientId[_]) = s"${clientUrl(clientId)}/invitations/received"
 
-  def clientReceivedInvitationUrl(clientId: TaxIdentifier, invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
+  def clientReceivedInvitationUrl(clientId: ClientId[_], invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
@@ -112,7 +111,7 @@ trait ApiRequests {
   def clientResource(mtdItId: MtdItId)(implicit port: Int) = {
     new Resource(clientUrl(mtdItId), port).get
   }
-  def clientGetReceivedInvitations(clientId: TaxIdentifier, filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(clientId: ClientId[_], filteredBy: Seq[(String, String)] = Nil)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
   }

@@ -18,9 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.model.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -52,12 +53,12 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
 
       When(s"the Agency filters by client ID")
       Then(s"only the client matching that id is returned")
-      agencyFiltersById(agency, client1.taxId)
-      agencyFiltersById(agency, client2.taxId)
+      agencyFiltersById(agency, client1.clientId)
+      agencyFiltersById(agency, client2.clientId)
     }
   }
 
-  private def agencyFiltersById(agency: AgencyApi, clientId: TaxIdentifier): Unit = {
+  private def agencyFiltersById(agency: AgencyApi, clientId: ClientId[_]): Unit = {
     val invitation = agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
     invitation.numberOfInvitations shouldBe 1
     invitation.firstInvitation.status shouldBe "Pending"

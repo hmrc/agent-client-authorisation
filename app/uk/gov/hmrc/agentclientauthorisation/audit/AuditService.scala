@@ -20,9 +20,8 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, Invitation, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -40,13 +39,13 @@ object AgentClientInvitationEvent extends Enumeration {
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, taxId: TaxIdentifier, service: Service)
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId[_], service: Service)
                                  (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
     auditEvent(AgentClientInvitationEvent.AgentClientRelationshipCreated, "agent-client-relationship-created",
       Seq(
         "invitationId" -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "regimeId" -> taxId.value,
+        "regimeId" -> clientId.value,
         "regime" -> service.id
       ))
   }

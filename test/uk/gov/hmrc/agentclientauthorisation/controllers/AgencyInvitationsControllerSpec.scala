@@ -87,7 +87,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(mtdItId1))
-      when(invitationsService.create(any[Arn](), any[Service](), any[MtdItId](), any(), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
+      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any[String](), any[String]())(any())).thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
