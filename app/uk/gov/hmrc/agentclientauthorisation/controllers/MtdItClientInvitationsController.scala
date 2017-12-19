@@ -67,6 +67,6 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[MtdItId] => Future[Result]): Action[AnyContent] =
-    super.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(action)(MtdItId.apply)
+    super.onlyForClients(Service.MtdIt, MtdItIdType)(action)
 
 }

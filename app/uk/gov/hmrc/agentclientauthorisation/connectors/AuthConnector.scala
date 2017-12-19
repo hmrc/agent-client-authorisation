@@ -26,7 +26,7 @@ import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
@@ -81,14 +81,13 @@ class AuthConnector @Inject()(metrics: Metrics,
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
-  def onlyForClients[T<:TaxIdentifier](service: Service, enrolmentId: String)
-                    (action: Request[AnyContent] => ClientIdentifier[T] => Future[Result])
-                    (taxId: (String) => T): Action[AnyContent] = Action.async {
+  def onlyForClients[T<:TaxIdentifier](service: Service, clientIdType: ClientIdType[T])
+                    (action: Request[AnyContent] => ClientIdentifier[T] => Future[Result]): Action[AnyContent] = Action.async {
     implicit request =>
       authorised(AuthProvider).retrieve(allEnrolments) {
         allEnrols =>
-          val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, enrolmentId)
-          if (clientId.isDefined) action(request)(ClientIdentifier(taxId(clientId.get)))
+          val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
+          if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
           else Future successful ClientNinoNotFound
       } recover {
         case _ => GenericUnauthorized

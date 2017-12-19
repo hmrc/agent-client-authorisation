@@ -104,7 +104,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "successfully grant access to a Client with HMRC-MTD-IT enrolment and Service is MTD-IT" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(clientAction)(MtdItId.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe OK
     }
@@ -112,7 +112,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "successfully grant access to a Client with HMRC-NI enrolment and Service is PersonalIncomeRecord" in {
       clientAuthStub(clientNiEnrolments)
 
-      val response = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, NinoType.enrolmentId)(clientAction)(Nino.apply).apply(FakeRequest()))
+      val response = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, NinoType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe OK
     }
@@ -120,7 +120,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return FORBIDDEN when the user has no HMRC-NI enrolment and Service is PersonalIncomeRecord" in {
       clientAuthStub(clientNoEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, MtdItIdType.enrolmentId)(clientAction)(Nino.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.PersonalIncomeRecord, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -128,7 +128,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return FORBIDDEN when the user has no HMRC-MTD-IT enrolment and Service is MTD-IT" in {
       clientAuthStub(clientNoEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(clientAction)(MtdItId.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -136,7 +136,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return FORBIDDEN when the user has HMRC-MTD-IT enrolment and Service is PersonalIncomeRecord" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(PersonalIncomeRecord, MtdItIdType.enrolmentId)(clientAction)(Nino.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(PersonalIncomeRecord, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -144,7 +144,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return FORBIDDEN when the user has HMRC-NI enrolment and Service is MTD-IT" in {
       clientAuthStub(clientNiEnrolments)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(clientAction)(MtdItId.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }
@@ -152,7 +152,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
     "return UNAUTHORISED when auth throws an error" in {
       clientAuthStub(failedStubForClient)
 
-      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType.enrolmentId)(clientAction)(MtdItId.apply).apply(FakeRequest()))
+      val response: Result = await(mockAuthConnector.onlyForClients(Service.MtdIt, MtdItIdType)(clientAction).apply(FakeRequest()))
 
       status(response) shouldBe UNAUTHORIZED
     }

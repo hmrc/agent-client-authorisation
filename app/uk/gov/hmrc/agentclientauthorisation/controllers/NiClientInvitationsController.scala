@@ -67,6 +67,6 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =
-    super.onlyForClients(Service.PersonalIncomeRecord, NinoType.enrolmentId)(action)(Nino.apply)
+    super.onlyForClients(Service.PersonalIncomeRecord, NinoType)(action)
 
 }
