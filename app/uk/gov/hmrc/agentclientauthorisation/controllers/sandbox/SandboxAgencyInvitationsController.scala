@@ -23,7 +23,6 @@ import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.{CLIENT_ID_TYPE_NINO, SUPPORTED_SERVICE}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -70,7 +69,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
         "clientId",
         Some("A11 1AA"),
         "nino",
-        CLIENT_ID_TYPE_NINO,
+        NinoType.id,
         List(StatusChangeEvent(now(), Pending))
       )
 

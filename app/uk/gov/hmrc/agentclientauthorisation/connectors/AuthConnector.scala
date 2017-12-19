@@ -26,14 +26,14 @@ import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.Service
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, Service}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -81,24 +81,18 @@ class AuthConnector @Inject()(metrics: Metrics,
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
-  def onlyForClients[T<:TaxIdentifier](service: Service, clientIdType: String)
-                    (action: Request[AnyContent] => T => Future[Result])
+  def onlyForClients[T<:TaxIdentifier](service: Service, enrolmentId: String)
+                    (action: Request[AnyContent] => ClientId[T] => Future[Result])
                     (taxId: (String) => T): Action[AnyContent] = Action.async {
     implicit request =>
       authorised(AuthProvider).retrieve(allEnrolments) {
         allEnrols =>
-          val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, enrolmentId(clientIdType))
-          if (clientId.isDefined) action(request)(taxId(clientId.get))
+          val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, enrolmentId)
+          if (clientId.isDefined) action(request)(ClientId(taxId(clientId.get)))
           else Future successful ClientNinoNotFound
       } recover {
         case _ => GenericUnauthorized
       }
-  }
-
-  // TODO remove this nasty translation when we create a ClientId type
-  def enrolmentId(clientIdType: String): String = clientIdType match {
-    case CLIENT_ID_TYPE_NINO  => "NINO"
-    case CLIENT_ID_TYPE_MTDITID => CLIENT_ID_TYPE_MTDITID
   }
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =

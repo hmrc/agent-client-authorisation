@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.io
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
@@ -26,16 +25,15 @@ import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
-import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class AgencyInvitationsController @Inject()(override val postcodeService: PostcodeService,
@@ -73,9 +71,9 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     taxId.flatMap {
       case None => Future successful
         BadRequest(s"invalid combination of client id ${agentInvitation.clientId} and client id type ${agentInvitation.clientIdType}")
-      case Some(clientId) =>
+      case Some(taxId) =>
         invitationsService.create(
-          arn, service, clientId, agentInvitation.clientPostcode, agentInvitation.clientId, agentInvitation.clientIdType).map(
+          arn, service, ClientId(taxId), agentInvitation.clientPostcode, agentInvitation.clientId, agentInvitation.clientIdType).map(
           invitation => Created.withHeaders(location(invitation)))
     }
   }

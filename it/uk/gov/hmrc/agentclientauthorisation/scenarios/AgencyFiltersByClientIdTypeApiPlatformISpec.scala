@@ -37,7 +37,7 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with Scena
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = client.clientId).hasABusinessPartnerRecordWithMtdItId(mtdItId)
+      given().client(clientId = client.suppliedClientId).hasABusinessPartnerRecordWithMtdItId(mtdItId)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

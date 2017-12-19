@@ -84,7 +84,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(nino)
 
       val client = new ClientApi(this, nino1, MtdItId("0123456789"), port)
-      given().client(clientId = client.clientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
+      given().client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
@@ -94,7 +94,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(nino)
 
       val client = new ClientApi(this, nino1, MtdItId("0123456789"), port)
-      given().client(clientId = client.clientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
+      given().client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
@@ -130,7 +130,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     agency.sendInvitation(clientId)
 
     val client = new ClientApi(this, clientId, mtdItId1, port)
-    given().client(clientId = client.clientId, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+    given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
     val invitations = client.getInvitations()
     invitations.firstInvitation
   }

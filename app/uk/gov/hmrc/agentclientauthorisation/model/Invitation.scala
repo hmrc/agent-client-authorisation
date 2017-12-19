@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import java.time.LocalDateTime
-
 import org.joda.time.DateTime
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.CLIENT_ID_TYPE_NINO
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -117,8 +114,7 @@ case class Invitation(
                        suppliedClientIdType: String,
                        events: List[StatusChangeEvent]) {
 
-  // TODO consider removing this, confusing as it is really the supplied type which already has a property of its own.
-  val clientIdType = CLIENT_ID_TYPE_NINO
+  val clientIdType = NinoType.id // only supported type as of now
 
   def firstEvent(): StatusChangeEvent = {
     events.head
@@ -142,7 +138,32 @@ object StatusChangeEvent {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
-sealed class Service(val id: String, val invitationIdPrefix: Char, val enrolmentKey: String) {
+
+sealed abstract class ClientIdType[T<:TaxIdentifier](val clazz: Class[T], val id: String, val enrolmentId: String)
+case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO")
+case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDITID")
+private object ClientIdType {
+  val supportedTypes = Seq(NinoType, MtdItIdType)
+  def forId(id: String) = supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
+  
+}
+
+case class ClientId[T<:TaxIdentifier](underlying: T) {
+
+  private val clientIdType = ClientIdType.supportedTypes.find(_.clazz == underlying.getClass)
+    .getOrElse(throw new Exception("Invalid type for clientId " + underlying.getClass.getCanonicalName))
+
+  val value: String = underlying.value
+  val `type`: Class[_<:TaxIdentifier] = clientIdType.clazz
+  val id: String = clientIdType.id
+  val enrolmentId: String = clientIdType.enrolmentId
+}
+
+object ClientId {
+  implicit def taxIdAsClientId[T<:TaxIdentifier](taxId: T): ClientId[T] = ClientId(taxId)
+}
+
+sealed abstract class Service(val id: String, val invitationIdPrefix: Char, val enrolmentKey: String) {
 
   override def equals(that: Any): Boolean =
     that match {
@@ -154,8 +175,9 @@ sealed class Service(val id: String, val invitationIdPrefix: Char, val enrolment
 object Service {
   case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT")
   case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI")
+
   val values = Seq(MtdIt, PersonalIncomeRecord)
-  def findById(id: String): Option[Service] = values.filter(_.id == id).headOption
+  def findById(id: String): Option[Service] = values.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
 
   def apply(id: String) = forId(id)

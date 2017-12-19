@@ -17,12 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, Invitation, InvitationStatus, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.domain.TaxIdentifier
@@ -31,8 +31,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-// TODO we've modelled clientId using TaxIdentifier, consider using our own type which wont have the large number
-// TODO of sub types that we don't support
 abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsService: InvitationsService,
                                       metrics: Metrics,
                                       authConnector: MicroserviceAuthConnector,
@@ -41,37 +39,37 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
 
   val supportedService: Service
 
-  protected def getDetailsForClient(taxId: T, request: Request[AnyContent])
-                                   (implicit ec: ExecutionContext, authTaxId: T) = forThisClient(taxId) {
-      Future successful Ok(toHalResource(taxId, request.path))
+  protected def getDetailsForClient(clientId: ClientId[T], request: Request[AnyContent])
+                                   (implicit ec: ExecutionContext, authTaxId: ClientId[T]) = forThisClient(clientId) {
+      Future successful Ok(toHalResource(clientId, request.path))
   }
 
-  protected def acceptInvitation(taxId: T, invitationId: InvitationId)
-                                (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: T) =
-    forThisClient(taxId) {
-      actionInvitation(taxId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
+  protected def acceptInvitation(clientId: ClientId[T], invitationId: InvitationId)
+                                (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: ClientId[T]) =
+    forThisClient(clientId) {
+      actionInvitation(clientId, invitationId, invitation => invitationsService.acceptInvitation(invitation).andThen {
         case Success(Right(x)) =>
-          auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, taxId, invitation.service)
+          auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, clientId, invitation.service)
       })
     }
 
-  protected def getInvitation(taxId: T, invitationId: InvitationId)
-                   (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: T) = {
+  protected def getInvitation(clientId: ClientId[T], invitationId: InvitationId)
+                   (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: ClientId[T]) = {
 
-    forThisClient(taxId) {
+    forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == taxId.value => Ok(toHalResource(x))
+        case Some(x) if x.clientId == clientId.value => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
     }
   }
-  protected def getInvitations(taxId: T, status: Option[InvitationStatus])
-                    (implicit ec: ExecutionContext, authTaxId: T) = forThisClient(taxId) {
+  protected def getInvitations(taxId: ClientId[T], status: Option[InvitationStatus])
+                    (implicit ec: ExecutionContext, authTaxId: ClientId[T]) = forThisClient(taxId) {
     invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
   }
 
-  protected def actionInvitation(taxId: T, invitationId: InvitationId,
+  protected def actionInvitation(taxId: ClientId[T], invitationId: InvitationId,
                                  action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])
                                 (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any]) = {
     invitationsService.findInvitation(invitationId) flatMap {
@@ -88,7 +86,8 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 
-  protected def forThisClient(taxId: T)(block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: T) =
+  protected def forThisClient(taxId: ClientId[T])(block: => Future[Result])
+                             (implicit ec: ExecutionContext, authTaxId: ClientId[T]) =
     if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient else block
 
 

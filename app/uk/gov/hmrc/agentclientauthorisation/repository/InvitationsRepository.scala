@@ -28,7 +28,6 @@ import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.mongoFormats
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
@@ -47,7 +46,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     Index(Seq("service" -> IndexType.Ascending))
   )
 
-  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: ClientId[_], postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] = withCurrentTime { now =>
 
     val request = Invitation(
@@ -77,7 +76,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     find(searchOptions: _*)
   }
 
-  def list(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  def list(service: Service, clientId: ClientId[_], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val searchOptions = Seq(
       "service" -> Some(service.id),
       "clientId" -> Some(clientId.value),

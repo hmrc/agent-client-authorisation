@@ -33,7 +33,7 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
 
     Given("An agent is logged in")
     given().client(clientId = nino)
-      .hasABusinessPartnerRecordWithMtdItId() // TODO should not need this stubbing
+      .hasABusinessPartnerRecord()
       .anAfiRelationshipIsCreatedWith(arn, nino)
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
@@ -55,7 +55,7 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
 
     Given("An agent is logged in")
     given().client(clientId = nino)
-      .hasABusinessPartnerRecordWithMtdItId()
+      .hasABusinessPartnerRecord()
       .anAfiRelationshipIsCreatedWith(arn, nino)
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
@@ -70,7 +70,5 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     val refetchedInvitations = client.getInvitations()
     refetchedInvitations.firstInvitation.status shouldBe "Rejected"
   }
-
-  // TODO add scenarios getInvitation - modify existing test
 
 }

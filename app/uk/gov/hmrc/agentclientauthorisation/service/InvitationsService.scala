@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.DAYS
 import javax.inject._
 
@@ -28,11 +27,11 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, Relationsh
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
-import uk.gov.hmrc.http.HeaderCarrier
 
 
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
@@ -52,8 +51,8 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
   def translateToMtdItId(clientId: String, clientIdType: String)
                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     clientIdType match {
-      case CLIENT_ID_TYPE_MTDITID => Future successful Some(MtdItId(clientId))
-      case CLIENT_ID_TYPE_NINO =>
+      case MtdItIdType.id => Future successful Some(MtdItId(clientId))
+      case NinoType.id =>
         desConnector.getBusinessDetails(Nino(clientId)).map{
           case Some(record) => record.mtdbsa
           case None => None
@@ -62,7 +61,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     }
   }
 
-  def create(arn: Arn, service: Service, clientId: TaxIdentifier, postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
+  def create(arn: Arn, service: Service, clientId: ClientId[_], postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
             (implicit ec: ExecutionContext): Future[Invitation] =
     invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
 
@@ -115,13 +114,13 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
       }
   }
 
-  def clientsReceived(service: Service, clientId: TaxIdentifier, status: Option[InvitationStatus])
+  def clientsReceived(service: Service, clientId: ClientId[_], status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 
   def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse(CLIENT_ID_TYPE_NINO) == CLIENT_ID_TYPE_NINO)
+    if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
       invitationsRepository.list(arn, service, clientId, status)
     else Future successful List.empty
 
