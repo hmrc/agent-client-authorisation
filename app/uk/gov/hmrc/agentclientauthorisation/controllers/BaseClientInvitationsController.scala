@@ -58,7 +58,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
 
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == clientId.value => Ok(toHalResource(x))
+        case Some(x) if x.clientId == clientId => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
