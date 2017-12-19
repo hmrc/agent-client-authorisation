@@ -19,10 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
@@ -80,11 +82,33 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       response should matchErrorResult(InvitationNotFound)
     }
 
-    "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations" in {
+    "return 200 when trying to get their own invitation" in {
+      val myNino = nino
+      val invite = sendInvitationToClient(myNino)
+
+      val client = new ClientApi(this, myNino, mtdItId1, port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+
+      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
+      response.status shouldBe 200
+    }
+
+    "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations for MTD" in {
       val invite = sendInvitationToClient(nino)
 
-      val client = new ClientApi(this, nino1, MtdItId("0123456789"), port)
-      given().client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
+      val client = new ClientApi(this, nino, mtdItId1, port)
+      given().client(clientId = client.suppliedClientId).isLoggedInWithMtdEnrolment
+
+      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
+      response should matchErrorResult(NoPermissionOnClient)
+    }
+
+    "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations for PIR" in {
+      val invite = sendInvitationToClient(nino, service = PersonalIncomeRecord)
+
+      val clientNino = nino1
+      val client = new ClientApi(this, clientNino, clientNino, port)
+      given().client(clientId = client.suppliedClientId).isLoggedInWithNiEnrolment(clientNino)
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
@@ -122,16 +146,27 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   //    behave like anEndpointAccessibleForSaClientsOnly(nino)(rootResource())
   //  }
 
-  protected def sendInvitationToClient(clientId: Nino): EmbeddedInvitation = {
+  protected def sendInvitationToClient(clientId: Nino, service: Service = MtdIt): EmbeddedInvitation = {
+    val canonicalClientId: TaxIdentifier = service match {
+      case MtdIt => mtdItId1
+      case PersonalIncomeRecord => clientId
+    }
+
     val agency = new AgencyApi(this, arn1, port)
     given().agentAdmin(arn1).isLoggedInAndIsSubscribed
-    given().client(clientId = clientId, canonicalClientId = mtdItId1).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
+    given().client(clientId = clientId, canonicalClientId = canonicalClientId).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
-    agency.sendInvitation(clientId)
+    agency.sendInvitation(clientId, service = service.id)
 
-    val client = new ClientApi(this, clientId, mtdItId1, port)
-    given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
-    val invitations = client.getInvitations()
+    val clientApi = new ClientApi(this, clientId, canonicalClientId, port)
+    val client = given().client(clientId = clientApi.suppliedClientId, canonicalClientId = canonicalClientId)
+
+    service match {
+      case MtdIt => client.isLoggedInWithMtdEnrolment
+      case PersonalIncomeRecord => client.isLoggedInWithNiEnrolment(clientId)
+    }
+
+    val invitations = clientApi.getInvitations()
     invitations.firstInvitation
   }
 

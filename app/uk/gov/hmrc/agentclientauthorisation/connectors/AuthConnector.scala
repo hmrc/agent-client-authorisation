@@ -90,7 +90,10 @@ class AuthConnector @Inject()(metrics: Metrics,
           if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
           else Future successful ClientNinoNotFound
       } recover {
-        case _ => GenericUnauthorized
+        case e @ _ => {
+          Logger.error("Failed to auth", e)
+          GenericUnauthorized
+        }
       }
   }
 
