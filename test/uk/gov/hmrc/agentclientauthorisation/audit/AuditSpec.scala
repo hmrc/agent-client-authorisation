@@ -22,7 +22,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,7 +52,7 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
       await(service.sendAgentClientRelationshipCreated(
         invitationId,
         arn,
-        ClientId(mtdItId1), Service.MtdIt)(
+        ClientIdentifier(mtdItId1), Service.MtdIt)(
         hc,
         FakeRequest("GET", "/path")))
 

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentclientauthorisation.model.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain._

@@ -18,10 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientId, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
@@ -48,9 +49,9 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     checkInvite(response.firstInvitation)(firstClient._1.clientId, firstClient._2)
     checkInvite(response.secondInvitation)(secondClient._1.clientId, secondClient._2)
 
-    def checkInvite(invitation: EmbeddedInvitation)(expectedClientId:ClientId[_], expectedService: String): Unit = {
+    def checkInvite(invitation: EmbeddedInvitation)(expectedClientId:ClientId, expectedService: String): Unit = {
       invitation.arn shouldBe arn
-      invitation.clientIdType shouldBe "ni"
+      invitation.clientIdType shouldBe expectedClientId.typeId
       invitation.clientId shouldBe expectedClientId.value
       invitation.service shouldBe expectedService
       invitation.status shouldBe "Pending"

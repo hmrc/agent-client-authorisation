@@ -24,6 +24,7 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -61,9 +62,14 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     }
   }
 
-  def create(arn: Arn, service: Service, clientId: ClientId[_], postcode: Option[String], suppliedClientId: String, suppliedClientIdType: String)
-            (implicit ec: ExecutionContext): Future[Invitation] =
-    invitationsRepository.create(arn, service, clientId, postcode, suppliedClientId, suppliedClientIdType)
+  def create(arn: Arn, service: Service, clientId: ClientId, postcode: Option[String], suppliedClientId: ClientId)
+            (implicit ec: ExecutionContext): Future[Invitation] = {
+    val startDate = currentTime()
+    val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
+
+    invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+  }
+
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     val acceptedDate = currentTime()
@@ -114,7 +120,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
       }
   }
 
-  def clientsReceived(service: Service, clientId: ClientId[_], status: Option[InvitationStatus])
+  def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     invitationsRepository.list(service, clientId, status)
 

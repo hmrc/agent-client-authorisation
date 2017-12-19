@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
-import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
@@ -204,9 +204,9 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
       clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
-        Invitation(
-          BSONObjectID("abcdefabcdefabcdefabcdef"), invitationId, arn, Service.MtdIt, mtdItId1.value, Some("postcode"), nino1.value, "ni",
-          List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+        TestConstants.defaultInvitation.copy(invitationId = invitationId, arn = arn, clientId = mtdItId1, suppliedClientId = nino1,
+          events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))
+        ))
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200

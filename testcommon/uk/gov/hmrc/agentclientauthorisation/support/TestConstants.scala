@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import org.joda.time.{DateTime, LocalDate}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
 object TestConstants {
@@ -30,4 +32,14 @@ object TestConstants {
   val agentCode = "12345"
 
   val MtdItService = "HMRC-MTD-IT"
+
+  val defaultInvitation = Invitation(
+    invitationId = InvitationId("ABBBBBBBBBBCC"),
+    arn = Arn("98765"),
+    service = Service.MtdIt,
+    clientId = ClientIdentifier(Nino("AA123456A")),
+    suppliedClientId = ClientIdentifier(Nino("AA123456A")),
+    postcode = Some("A11 1AA"),
+    expiryDate = LocalDate.now().plusDays(10),
+    events = List(StatusChangeEvent(DateTime.now(), Pending)))
 }

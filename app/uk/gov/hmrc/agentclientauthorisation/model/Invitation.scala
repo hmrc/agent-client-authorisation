@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 import uk.gov.hmrc.http.controllers.RestFormats
@@ -90,10 +91,10 @@ object ClientIdMapping {
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
-      "canonicalClientId" -> invitation.clientIdType,
-      "canonicalClientIdType" -> invitation.clientId,
-      "suppliedClientId" -> invitation.suppliedClientId,
-      "suppliedClientIdType" -> invitation.suppliedClientIdType,
+      "canonicalClientId" -> invitation.clientId.value,
+      "canonicalClientIdType" -> invitation.clientId.typeId,
+      "suppliedClientId" -> invitation.suppliedClientId.value,
+      "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time
     )
@@ -103,18 +104,18 @@ object ClientIdMapping {
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
+
 case class Invitation(
-                       id: BSONObjectID,
+                       id: BSONObjectID = BSONObjectID.generate(),
                        invitationId: InvitationId,
                        arn: Arn,
                        service: Service,
-                       clientId: String,
+                       clientId: ClientId,
+                       suppliedClientId: ClientId,
                        postcode: Option[String],
-                       suppliedClientId: String,
-                       suppliedClientIdType: String,
-                       events: List[StatusChangeEvent]) {
-
-  val clientIdType = NinoType.id // only supported type as of now
+                       expiryDate: LocalDate,
+                       events: List[StatusChangeEvent]
+                       ) {
 
   def firstEvent(): StatusChangeEvent = {
     events.head
@@ -125,6 +126,93 @@ case class Invitation(
   }
 
   def status = mostRecentEvent().status
+}
+
+object Invitation {
+
+  def createNew(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId, postcode: Option[String],
+                startDate: DateTime, expiryDate: LocalDate): Invitation = {
+    Invitation(
+      invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
+      arn = arn,
+      service = service,
+      clientId = clientId,
+      suppliedClientId = suppliedClientId,
+      postcode = postcode,
+      expiryDate = expiryDate,
+      events = List(StatusChangeEvent(startDate, Pending))
+    )
+  }
+
+  implicit val dateWrites = RestFormats.dateTimeWrite
+  implicit val dateReads = RestFormats.dateTimeRead
+  implicit val jsonWrites = new Writes[Invitation] {
+    def writes(invitation: Invitation) = Json.obj(
+      "service" -> invitation.service.id,
+      "clientIdType" -> invitation.clientId.typeId,
+      "clientId" -> invitation.clientId.value,
+      "postcode" -> invitation.postcode,
+      "arn" -> invitation.arn.value,
+      "suppliedClientId" -> invitation.suppliedClientId.value,
+      "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
+      "created" -> invitation.firstEvent().time,
+      "lastUpdated" -> invitation.mostRecentEvent().time,
+      "expiryDate" -> invitation.expiryDate,
+      "status" -> invitation.status
+    )
+  }
+
+}
+
+object InvitationMongoFormat {
+
+  import play.api.libs.json.{ JsPath, Reads }
+  import play.api.libs.functional.syntax._
+
+
+  implicit val serviceFormat = Service.format
+  implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
+  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
+
+  def read(id: BSONObjectID, invitationId: InvitationId, arn: Arn, service: Service, clientId: String, clientIdType: String,
+            suppliedClientId: String, suppliedClientIdType: String, postcode: Option[String], expiryDateOp: Option[LocalDate],
+            events: List[StatusChangeEvent]): Invitation = {
+    val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
+
+    Invitation(id, invitationId, arn, service, ClientIdentifier(clientId, clientIdType),
+      ClientIdentifier(suppliedClientId, suppliedClientIdType), postcode, expiryDate, events)
+  }
+
+  val reads: Reads[Invitation] = (
+      (JsPath \ "id").read[BSONObjectID] and
+      (JsPath \ "invitationId").read[InvitationId] and
+      (JsPath \ "arn").read[Arn] and
+      (JsPath \ "service").read[Service] and
+      (JsPath \ "clientId").read[String] and
+      (JsPath \ "clientIdType").read[String] and
+      (JsPath \ "suppliedClientId").read[String] and
+      (JsPath \ "suppliedClientIdType").read[String] and
+      (JsPath \ "postcode").readNullable[String] and
+      (JsPath \ "expiryDate").readNullable[LocalDate] and
+      (JsPath \ "events").read[List[StatusChangeEvent]]) (read _)
+
+  val writes  = new Writes[Invitation] {
+    def writes(invitation: Invitation) = Json.obj(
+      "id" -> invitation.id,
+      "invitationId" -> invitation.invitationId,
+      "arn" -> invitation.arn.value,
+      "service" -> invitation.service.id,
+      "clientId" -> invitation.clientId.value,
+      "clientIdType" -> invitation.clientId.typeId,
+      "postcode" -> invitation.postcode,
+      "suppliedClientId" -> invitation.suppliedClientId.value,
+      "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
+      "events" -> invitation.events,
+      "expiryDate" -> invitation.expiryDate
+    )
+  }
+
+  val mongoFormats = ReactiveMongoFormats.mongoEntity(Format(reads, writes))
 }
 
 /** Information provided by the agent to offer representation to HMRC */
@@ -139,28 +227,38 @@ object StatusChangeEvent {
 }
 
 
-sealed abstract class ClientIdType[T<:TaxIdentifier](val clazz: Class[T], val id: String, val enrolmentId: String)
-case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO")
-case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDITID")
+sealed abstract class ClientIdType[T<:TaxIdentifier](val clazz: Class[T], val id: String, val enrolmentId: String,
+                                                     val createUnderlying: (String) => T)
+case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply)
+case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDITID", MtdItId.apply)
 private object ClientIdType {
   val supportedTypes = Seq(NinoType, MtdItIdType)
   def forId(id: String) = supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
-  
+
 }
 
-case class ClientId[T<:TaxIdentifier](underlying: T) {
+case class ClientIdentifier[T<:TaxIdentifier](underlying: T) {
 
   private val clientIdType = ClientIdType.supportedTypes.find(_.clazz == underlying.getClass)
     .getOrElse(throw new Exception("Invalid type for clientId " + underlying.getClass.getCanonicalName))
 
   val value: String = underlying.value
-  val `type`: Class[_<:TaxIdentifier] = clientIdType.clazz
-  val id: String = clientIdType.id
+  val typeId: String = clientIdType.id
   val enrolmentId: String = clientIdType.enrolmentId
+
+  override def toString: String = value
 }
 
-object ClientId {
-  implicit def taxIdAsClientId[T<:TaxIdentifier](taxId: T): ClientId[T] = ClientId(taxId)
+object ClientIdentifier {
+  type ClientId = ClientIdentifier[_<:TaxIdentifier]
+
+  def apply(value: String, typeId: String): ClientId = {
+    ClientIdType.supportedTypes.find(_.id == typeId)
+      .getOrElse(throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
+      .createUnderlying(value)
+  }
+
+  implicit def wrap[T<:TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
 }
 
 sealed abstract class Service(val id: String, val invitationIdPrefix: Char, val enrolmentKey: String) {
@@ -188,30 +286,6 @@ object Service {
   val format = Format(reads, writes)
 }
 
-object Invitation {
-
-  implicit val dateWrites = RestFormats.dateTimeWrite
-  implicit val dateReads = RestFormats.dateTimeRead
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
-  implicit val jsonWrites = new Writes[Invitation] {
-    def writes(invitation: Invitation) = Json.obj(
-      "service" -> invitation.service.id,
-      "clientIdType" -> invitation.clientIdType,
-      "clientId" -> invitation.clientId,
-      "postcode" -> invitation.postcode,
-      "arn" -> invitation.arn.value,
-      "suppliedClientId" -> invitation.suppliedClientId,
-      "suppliedClientIdType" -> invitation.suppliedClientIdType,
-      "created" -> invitation.firstEvent().time,
-      "lastUpdated" -> invitation.mostRecentEvent().time,
-      "status" -> invitation.status
-    )
-
-  }
-
-  implicit val serviceFormat = Service.format
-  val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[Invitation])
-}
 
 object AgentInvitation {
   implicit val format = Json.format[AgentInvitation]

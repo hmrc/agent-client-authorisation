@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -65,8 +66,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def noInvitation: Future[None.type] = Future successful None
 
-  def anInvitation(nino: Nino) = Invitation(BSONObjectID(invitationDbId), invitationId, arn, Service.MtdIt, mtdItId1.value, Some("A11 1AA"), nino.value, "ni",
-    List(StatusChangeEvent(now(), Pending)))
+  def anInvitation(nino: Nino) = TestConstants.defaultInvitation.copy(
+    id = BSONObjectID(invitationDbId), invitationId = invitationId, arn = arn,
+    clientId = ClientIdentifier(mtdItId1), suppliedClientId = ClientIdentifier(nino)
+  )
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation(nino1))

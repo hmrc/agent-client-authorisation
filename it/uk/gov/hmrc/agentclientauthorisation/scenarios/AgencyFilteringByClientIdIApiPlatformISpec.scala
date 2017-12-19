@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import uk.gov.hmrc.agentclientauthorisation.model.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
@@ -59,7 +59,7 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
     }
   }
 
-  private def agencyFiltersById(agency: AgencyApi, clientId: ClientId[_]): Unit = {
+  private def agencyFiltersById(agency: AgencyApi, clientId: ClientId): Unit = {
     val invitation = agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
     invitation.numberOfInvitations shouldBe 1
     invitation.firstInvitation.status shouldBe "Pending"
