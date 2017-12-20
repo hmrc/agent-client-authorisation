@@ -28,6 +28,7 @@ import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
@@ -106,10 +107,15 @@ object DomainFormat {
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
 
-  def read(id: BSONObjectID, invitationId: InvitationId, arn: Arn, service: Service, clientId: String, clientIdType: String,
+  def read(id: BSONObjectID, invitationId: InvitationId, arn: Arn, service: Service, clientId: String, clientIdTypeOp: Option[String],
            suppliedClientId: String, suppliedClientIdType: String, postcode: Option[String], expiryDateOp: Option[LocalDate],
            events: List[StatusChangeEvent]): Invitation = {
+
     val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
+
+    val clientIdType = clientIdTypeOp.getOrElse {
+      if (Nino.isValid(clientId)) NinoType.id else MtdItIdType.id
+    }
 
     Invitation(id, invitationId, arn, service, ClientIdentifier(clientId, clientIdType),
       ClientIdentifier(suppliedClientId, suppliedClientIdType), postcode, expiryDate, events)
@@ -121,7 +127,7 @@ object DomainFormat {
       (JsPath \ "arn").read[Arn] and
       (JsPath \ "service").read[Service] and
       (JsPath \ "clientId").read[String] and
-      (JsPath \ "clientIdType").read[String] and
+      (JsPath \ "clientIdType").readNullable[String] and
       (JsPath \ "suppliedClientId").read[String] and
       (JsPath \ "suppliedClientIdType").read[String] and
       (JsPath \ "postcode").readNullable[String] and
