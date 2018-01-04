@@ -45,15 +45,21 @@
 
     <logger name="uk.gov" level="INFO"/>
 
+    <logger name="uk.gov.hmrc.audit" level="WARN"/>
+
     <logger name="com.google.inject" level="INFO"/>
 
-    <logger name="application" level="DEBUG"/>
+    <logger name="application" level="WARN"/>
+
+    <logger name="reactivemongo" level="WARN"/>
+
+    <logger name="org.eclipse.jetty.util" level="ERROR"/>
 
     <logger name="connector" level="INFO">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
     </root>

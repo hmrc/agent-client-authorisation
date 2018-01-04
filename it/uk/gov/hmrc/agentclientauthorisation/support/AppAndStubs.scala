@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.scalatest.{BeforeAndAfterEach, Suite}
+import org.scalatest.{BeforeAndAfterEach, Matchers, Suite}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
 import uk.gov.hmrc.domain.Generator
@@ -26,8 +26,8 @@ import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext
 
-trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite {
-  me: Suite =>
+trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport {
+  me: Suite with Matchers =>
 
   implicit val hc = HeaderCarrier()
   implicit val portNum = port
@@ -49,8 +49,16 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
       "microservice.services.afi-relationships.host" -> wiremockHost,
       "microservice.services.afi-relationships.port" -> wiremockPort,
       "microservice.services.des.host" -> wiremockHost,
-      "microservice.services.des.port" -> wiremockPort
+      "microservice.services.des.port" -> wiremockPort,
+      "auditing.enabled" -> true,
+      "auditing.consumer.baseUri.host" -> wiremockHost,
+      "auditing.consumer.baseUri.port" -> wiremockPort
     )
+  }
+
+  override def commonStubs(): Unit = {
+    givenAuditConnector()
+    givenCleanMetricRegistry()
   }
 
   private val generator = new Generator()
@@ -58,7 +66,7 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
 }
 
 trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest {
-  me: Suite =>
+  me: Suite with Matchers =>
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

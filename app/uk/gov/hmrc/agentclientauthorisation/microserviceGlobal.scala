@@ -18,11 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.net.URL
 import java.util.Base64
+import java.util.regex.{Matcher, Pattern}
 import javax.inject._
 
+import app.Routes
+import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
 import com.google.inject.name.Names
-import com.kenshoo.play.metrics.MetricsFilter
+import com.kenshoo.play.metrics.{Metrics, MetricsFilter}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.MDC
@@ -31,9 +34,11 @@ import play.api.http.HttpFilters
 import play.api.mvc._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
+import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.api.config._
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.HeaderCarrierConverter.fromHeadersAndSession
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
 import uk.gov.hmrc.play.graphite.GraphiteConfig
@@ -42,6 +47,8 @@ import uk.gov.hmrc.play.microservice.bootstrap.Routing.RemovingOfTrailingSlashes
 import uk.gov.hmrc.play.microservice.config.ErrorAuditingSettings
 import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class GuiceModule() extends AbstractModule with ServicesConfig {
   def configure() = {
@@ -124,7 +131,8 @@ class Filters @Inject()(
                          whitelistFilter: WhitelistFilter,
                          metricsFilter: MetricsFilter,
                          auditFilter: MicroserviceAuditFilter,
-                         loggingFilter: MicroserviceLoggingFilter
+                         loggingFilter: MicroserviceLoggingFilter,
+                         monitoringFilter: MicroserviceMonitoringFilter
                        ) extends HttpFilters {
 
   private lazy val whitelistFilterSeq = if (whitelistFilter.enabled()) {
@@ -135,10 +143,12 @@ class Filters @Inject()(
     Seq.empty
   }
 
-  override def filters = whitelistFilterSeq ++ Seq(
+  override val filters = whitelistFilterSeq ++ Seq(
     metricsFilter,
     auditFilter,
-    loggingFilter)
+    loggingFilter,
+    monitoringFilter
+  )
 }
 
 object MicroserviceGlobal

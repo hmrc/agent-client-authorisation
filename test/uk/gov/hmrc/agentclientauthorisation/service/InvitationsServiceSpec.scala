@@ -373,7 +373,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
-    when(relationshipsConnector.createRelationship(invitation))
+    when(relationshipsConnector.createMtdItRelationship(invitation))
   }
 
   private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {

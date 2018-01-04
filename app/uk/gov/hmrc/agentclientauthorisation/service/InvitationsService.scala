@@ -76,7 +76,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     invitation.status match {
       case Pending => {
         val future = invitation.service match {
-          case Service.MtdIt => relationshipsConnector.createRelationship(invitation)
+          case Service.MtdIt => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
         }
         future.flatMap(_ => changeInvitationStatus(invitation, model.Accepted, acceptedDate))

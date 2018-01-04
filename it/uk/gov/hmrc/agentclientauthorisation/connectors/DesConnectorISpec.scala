@@ -35,6 +35,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
       response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
       response.mtdbsa shouldBe None
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
     "return None if the client is not registered" in {
@@ -59,6 +60,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
       response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
       response.mtdbsa shouldBe Some(mtdItId1)
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
     "return mtdItId if the business data is empty" in {
