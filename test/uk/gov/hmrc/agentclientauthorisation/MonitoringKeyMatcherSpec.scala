@@ -67,11 +67,11 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
           "E-{clientId}-{service}" -> """/test/:service/:clientId"""
         )
       }
-      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar") shouldBe Some("C-me")
-      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar/some") shouldBe Some("B-me")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar") shouldBe Some("C-ME")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar/some") shouldBe Some("B-ME")
       tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME") shouldBe None
-      tested.findMatchingKey("/some/test/ME/12616276") shouldBe Some("A-me")
-      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/TOO") shouldBe Some("E-too-me")
+      tested.findMatchingKey("/some/test/ME/12616276") shouldBe Some("A-ME")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/TOO") shouldBe Some("E-TOO-ME")
       tested.findMatchingKey("/test/ME/TOO/") shouldBe None
     }
 
@@ -84,10 +84,10 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
           "client-relationships-{service}" -> "/relationships/service/:service/clientId/:clientId"
         )
       }
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some("relationships-personal-income-record")
+      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some("relationships-PERSONAL-INCOME-RECORD")
       tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("check-PIR")
       tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/afi/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("check-AFI")
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-relationships-personal-income-record")
+      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-relationships-PERSONAL-INCOME-RECORD")
     }
 
   }
