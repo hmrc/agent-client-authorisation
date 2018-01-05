@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import uk.gov.hmrc.play.it.Port
 trait StartAndStopWireMock extends BeforeAndAfterEach with BeforeAndAfterAll {
   self: Suite =>
 
+  def commonStubs(): Unit
+
   protected val wiremockPort = Port.randomAvailable
   protected val wiremockHost = "localhost"
   protected val wiremockBaseUrl: String = s"http://$wiremockHost:$wiremockPort"
@@ -37,7 +39,9 @@ trait StartAndStopWireMock extends BeforeAndAfterEach with BeforeAndAfterAll {
   }
 
   override def beforeEach() = {
+    Thread.sleep(100)
     WireMock.reset()
+    commonStubs()
   }
 
   override protected def afterAll(): Unit = {

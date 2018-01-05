@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,17 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 import javax.inject.{Inject, Named, Singleton}
 
+import com.codahale.metrics.MetricRegistry
+import com.kenshoo.play.metrics.Metrics
 import play.api.libs.json.Json.reads
 import play.api.libs.json.Reads
+import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpReads }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
 import uk.gov.hmrc.http.logging.Authorization
 
 case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
@@ -45,16 +48,21 @@ object BusinessDetails {
 class DesConnector @Inject()(@Named("des-baseUrl") baseUrl: URL,
                              @Named("des.authorizationToken") authorizationToken: String,
                              @Named("des.environment") environment: String,
-                             httpGet: HttpGet) {
+                             httpGet: HttpGet,
+                             metrics: Metrics
+                            ) extends HttpAPIMonitor {
+  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
-    getWithDesHeaders(new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
+    getWithDesHeaders("getRegistrationBusinessDetailsByNino", new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
 
 
-  private def getWithDesHeaders(url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
+  private def getWithDesHeaders(apiName: String, url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
-    httpGet.GET[Option[BusinessDetails]](url)(implicitly[HttpReads[Option[BusinessDetails]]], desHeaderCarrier, ec)
+    monitor(s"ConsumedAPI-DES-$apiName-GET") {
+      httpGet.GET[Option[BusinessDetails]](url)(implicitly[HttpReads[Option[BusinessDetails]]], desHeaderCarrier, ec)
+    }
   }
 }

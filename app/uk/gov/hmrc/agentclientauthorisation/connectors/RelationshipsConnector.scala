@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 import javax.inject._
 
+import com.codahale.metrics.MetricRegistry
+import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
+import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
@@ -30,19 +33,27 @@ import scala.concurrent.Future
 
 @Singleton
 class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL,
-                                        @Named("afi-relationships-baseUrl") afiBaseUrl: URL, httpPut: HttpPut) {
+                                        @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
+                                        httpPut: HttpPut,
+                                        metrics: Metrics
+                                       ) extends HttpAPIMonitor {
+  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
 
-  def createRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
-    httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
+  def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
+      httpPut.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
+    }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
-    httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+    monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
+      httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+    }
   }
 
-  private def relationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
+  private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
     s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
 
   private def afiRelationshipUrl(invitation: Invitation): URL = {
@@ -52,4 +63,3 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     new URL(afiBaseUrl, s"/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId")
   }
 }
-

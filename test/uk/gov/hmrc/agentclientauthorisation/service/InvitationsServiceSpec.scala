@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -373,7 +373,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
-    when(relationshipsConnector.createRelationship(invitation))
+    when(relationshipsConnector.createMtdItRelationship(invitation))
   }
 
   private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
