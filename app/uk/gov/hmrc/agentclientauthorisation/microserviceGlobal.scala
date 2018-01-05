@@ -18,14 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.net.URL
 import java.util.Base64
-import java.util.regex.{Matcher, Pattern}
 import javax.inject._
 
-import app.Routes
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
 import com.google.inject.name.Names
-import com.kenshoo.play.metrics.{Metrics, MetricsFilter}
+import com.kenshoo.play.metrics.MetricsFilter
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.MDC
@@ -34,11 +31,9 @@ import play.api.http.HttpFilters
 import play.api.mvc._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.api.config._
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.HeaderCarrierConverter.fromHeadersAndSession
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
 import uk.gov.hmrc.play.graphite.GraphiteConfig
@@ -48,8 +43,6 @@ import uk.gov.hmrc.play.microservice.config.ErrorAuditingSettings
 import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
-import scala.concurrent.{ExecutionContext, Future}
-
 class GuiceModule() extends AbstractModule with ServicesConfig {
   def configure() = {
     bind(classOf[HttpGet]).toInstance(WSHttp)
@@ -58,7 +51,6 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
     bind(classOf[ControllerConfig]).to(classOf[ControllerConfiguration])
     bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
-    bind(classOf[ServicesConfig]).toInstance(MicroserviceGlobal)
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
@@ -143,7 +135,7 @@ class Filters @Inject()(
     Seq.empty
   }
 
-  override val filters = whitelistFilterSeq ++ Seq(
+  override def filters = whitelistFilterSeq ++ Seq(
     metricsFilter,
     auditFilter,
     loggingFilter,
@@ -170,7 +162,7 @@ object MicroserviceGlobal
     super.onStart(app)
   }
 
-  override val auditConnector = new MicroserviceAuditConnector
+  override lazy val auditConnector = new MicroserviceAuditConnector
   override lazy val slConnector = ServiceLocatorConnector(WSHttp)
   override implicit val hc: HeaderCarrier = HeaderCarrier()
 

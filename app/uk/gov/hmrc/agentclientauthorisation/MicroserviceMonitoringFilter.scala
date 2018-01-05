@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import app.Routes
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import play.api.Logger
+import play.api.{Logger, Play}
 import play.api.mvc.{Filter, RequestHeader, Result}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,9 +32,15 @@ import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MicroserviceMonitoringFilter @Inject()(metrics: Metrics, routes: Routes)
+class MicroserviceMonitoringFilter @Inject()(metrics: Metrics)
                                             (implicit ec: ExecutionContext)
-  extends MonitoringFilter(RoutesConverter.keyToPatternMapping(routes, Set()), metrics.defaultRegistry) with MicroserviceFilterSupport
+  extends MonitoringFilter(metrics.defaultRegistry) with MicroserviceFilterSupport {
+  override def keyToPatternMapping: Seq[(String, String)] = {
+    Logger.info("Initializing MicroserviceMonitoringFilter ..")
+    val routes = Play.current.injector.instanceOf[Routes]
+    RoutesConverter.keyToPatternMapping(routes, Set())
+  }
+}
 
 object RoutesConverter {
   def keyToPatternMapping(routes: Routes, variables: Set[String] = Set.empty): Seq[(String, String)] = {
@@ -47,7 +53,7 @@ object RoutesConverter {
             if (variables.contains(name)) s"{$name}" else ""
           } else p).mkString("-")
         val pattern = r.replace("$", ":")
-        Logger.info(s"$key-$method -> $pattern")
+        Logger.info(s"Adding API monitoring rule: $key-$method -> $pattern")
         (key, pattern)
       }
     }
@@ -59,7 +65,7 @@ object RoutesConverter {
   }
 }
 
-abstract class MonitoringFilter(val keyToPatternMapping: Seq[(String, String)], override val kenshooRegistry: MetricRegistry)
+abstract class MonitoringFilter(override val kenshooRegistry: MetricRegistry)
                                (implicit ec: ExecutionContext)
   extends Filter with HttpAPIMonitor with MonitoringKeyMatcher {
 
