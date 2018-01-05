@@ -37,14 +37,13 @@ class MicroserviceMonitoringFilter @Inject()(metrics: Metrics)
   extends MonitoringFilter(metrics.defaultRegistry) with MicroserviceFilterSupport {
   override def keyToPatternMapping: Seq[(String, String)] = {
     Logger.info("Initializing MicroserviceMonitoringFilter ..")
-    val routes = Play.current.injector.instanceOf[Routes]
-    RoutesConverter.keyToPatternMapping(routes, Set())
+    KeyToPatternMappingFromRoutes(Set())
   }
 }
 
-object RoutesConverter {
-  def keyToPatternMapping(routes: Routes, variables: Set[String] = Set.empty): Seq[(String, String)] = {
-    routes.documentation.map {
+object KeyToPatternMappingFromRoutes {
+  def apply(variables: Set[String] = Set.empty): Seq[(String, String)] = {
+    Play.current.injector.instanceOf[Routes].documentation.map {
       case (method, route, _) => {
         val r = route.replace("<[^/]+>", "")
         val key = stripInitialAndTrailingSlash(r).split("/").map(
