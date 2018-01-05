@@ -129,7 +129,7 @@ trait MonitoringKeyMatcher {
   private def replaceVariables(key: String, variables: Seq[String], values: Seq[String]): String = {
     if (values.isEmpty) key
     else values.zip(variables).foldLeft(key) {
-      case (k, (value, variable)) => k.replace(variable, value.toLowerCase)
+      case (k, (value, variable)) => k.replace(variable, value)
     }
   }
 

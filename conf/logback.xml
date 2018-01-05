@@ -49,7 +49,7 @@
 
     <logger name="com.google.inject" level="INFO"/>
 
-    <logger name="application" level="WARN"/>
+    <logger name="application" level="INFO"/>
 
     <logger name="reactivemongo" level="WARN"/>
 
