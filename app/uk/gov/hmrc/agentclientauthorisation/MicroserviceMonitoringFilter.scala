@@ -35,32 +35,24 @@ import scala.concurrent.{ExecutionContext, Future}
 class MicroserviceMonitoringFilter @Inject()(metrics: Metrics)
                                             (implicit ec: ExecutionContext)
   extends MonitoringFilter(metrics.defaultRegistry) with MicroserviceFilterSupport {
-  override def keyToPatternMapping: Seq[(String, String)] = {
-    Logger.info("Initializing MicroserviceMonitoringFilter ..")
-    KeyToPatternMappingFromRoutes(Set())
-  }
+  override def keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
 }
 
 object KeyToPatternMappingFromRoutes {
-  def apply(variables: Set[String] = Set.empty): Seq[(String, String)] = {
+  def apply(placeholders: Set[String]): Seq[(String, String)] = {
     Play.current.injector.instanceOf[Routes].documentation.map {
       case (method, route, _) => {
         val r = route.replace("<[^/]+>", "")
-        val key = stripInitialAndTrailingSlash(r).split("/").map(
+        val key = r.split("/").map(
           p => if (p.startsWith("$")) {
             val name = p.substring(1)
-            if (variables.contains(name)) s"{$name}" else ""
-          } else p).mkString("-")
+            if (placeholders.contains(name)) s"{$name}" else ":"
+          } else p).mkString("|")
         val pattern = r.replace("$", ":")
-        Logger.info(s"Adding API monitoring rule: $key-$method -> $pattern")
+        Logger.info(s"$key-$method -> $pattern")
         (key, pattern)
       }
     }
-  }
-
-  private def stripInitialAndTrailingSlash(key: String): String = {
-    val k = if (key.startsWith("/")) key.substring(1) else key
-    if (k.endsWith("/")) k.substring(0, k.length - 1) else k
   }
 }
 
