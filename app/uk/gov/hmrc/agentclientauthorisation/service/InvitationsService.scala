@@ -19,6 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import java.util.concurrent.TimeUnit.DAYS
 import javax.inject._
 
+import com.codahale.metrics.MetricRegistry
+import com.kenshoo.play.metrics.Metrics
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
@@ -26,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -40,11 +42,15 @@ case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: S
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class InvitationsService @Inject()( invitationsRepository: InvitationsRepository,
+class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
                                    relationshipsConnector: RelationshipsConnector,
                                    desConnector: DesConnector,
                                    auditService: AuditService,
-                                   @Named("invitation.expiryDuration") invitationExpiryDurationValue: String) {
+                                   @Named("invitation.expiryDuration") invitationExpiryDurationValue: String,
+                                   metrics: Metrics)
+  extends Monitor {
+
+  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
   private val invitationExpiryUnits = invitationExpiryDuration.unit
@@ -54,7 +60,7 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     clientIdType match {
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
       case NinoType.id =>
-        desConnector.getBusinessDetails(Nino(clientId)).map{
+        desConnector.getBusinessDetails(Nino(clientId)).map {
           case Some(record) => record.mtdbsa
           case None => None
         }
@@ -66,8 +72,9 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
             (implicit ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
-
-    invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+    monitor(s"Repository-Create-Invitation-${service.id}") {
+      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+    }
   }
 
 
@@ -108,8 +115,10 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
     changeInvitationStatus(invitation, model.Rejected)
 
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier,
-                                           request: Request[Any]): Future[Option[Invitation]] = {
-    invitationsRepository.find("invitationId" -> invitationId)
+                                                 request: Request[Any]): Future[Option[Invitation]] = {
+    monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
+      invitationsRepository.find("invitationId" -> invitationId)
+    }
       .map(_.headOption)
       .flatMap { invitationResult =>
         if (invitationResult.isEmpty) Future successful None else {
@@ -122,18 +131,25 @@ class InvitationsService @Inject()( invitationsRepository: InvitationsRepository
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])
                      (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
-    invitationsRepository.list(service, clientId, status)
+    monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
+      invitationsRepository.list(service, clientId, status)
+    }
 
   def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
                 (implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
-      invitationsRepository.list(arn, service, clientId, status)
+      monitor(s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
+        invitationsRepository.list(arn, service, clientId, status)
+      }
     else Future successful List.empty
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())
                                     (implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     invitation.status match {
-      case Pending => invitationsRepository.update(invitation.id, status, timestamp) map (invitation => Right(invitation))
+      case Pending =>
+        monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
+          invitationsRepository.update(invitation.id, status, timestamp) map (invitation => Right(invitation))
+        }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
   }

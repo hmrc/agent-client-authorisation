@@ -32,6 +32,9 @@ package uk.gov.hmrc.agentclientauthorisation
  * limitations under the License.
  */
 
+import play.api.Play
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.FakeApplication
 import uk.gov.hmrc.play.test.UnitSpec
 
 class MonitoringKeyMatcherSpec extends UnitSpec {
@@ -78,16 +81,26 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
     "match URI to known pattern and produce key with placeholders replaced" in {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq(
-          "relationships-{service}" -> "/relationships/agent/:arn/service/:service/client/:clientId",
-          "check-PIR" -> "/relationships/PERSONAL-INCOME-RECORD/agent/:arn/client/:clientId",
-          "check-AFI" -> "/relationships/afi/agent/:arn/client/:clientId",
-          "client-relationships-{service}" -> "/relationships/service/:service/clientId/:clientId"
+          "foo-{service}" -> "/foo/agent/:arn/service/:service/client/:clientId",
+          "foo-PIR" -> "/foo/PERSONAL-INCOME-RECORD/agent/:arn/client/:clientId",
+          "foo-AFI" -> "/foo/afi/agent/:arn/client/:clientId",
+          "client-foo-{service}" -> "/foo/service/:service/clientId/:clientId"
         )
       }
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some("relationships-PERSONAL-INCOME-RECORD")
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("check-PIR")
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/afi/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("check-AFI")
-      tested.findMatchingKey("http://agent-fi-relationships.protected.mdtp/relationships/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-relationships-PERSONAL-INCOME-RECORD")
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some("foo-PERSONAL-INCOME-RECORD")
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("foo-PIR")
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/afi/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("foo-AFI")
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-foo-PERSONAL-INCOME-RECORD")
+    }
+
+    "parse Routes and produce key-pattern mappings" in {
+      val app = GuiceApplicationBuilder().build()
+      Play.start(app)
+      val tested = new MonitoringKeyMatcher {
+        override val keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
+      }
+      tested.findMatchingKey("http://agent-client-authorisation.protected.mdtp/agent-client-authorisation//clients/NI/ABC123456/invitations/received/A634764HHJJH/accept") shouldBe Some("|clients|NI|:|invitations|received|:|accept")
+      await(app.stop())
     }
 
   }
