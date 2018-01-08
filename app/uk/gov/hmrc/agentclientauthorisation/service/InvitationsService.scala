@@ -35,6 +35,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
+import scala.util.Success
 
 
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
@@ -86,14 +87,17 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
           case Service.MtdIt => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
         }
-        future.flatMap(_ => changeInvitationStatus(invitation, model.Accepted, acceptedDate))
+        future.flatMap(_ => changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+          .andThen {
+            case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+          })
       }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
   private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = currentTime) = {
-    val createTime = invitation.firstEvent.time
+    val createTime = invitation.firstEvent().time
     val fromTime = if (invitationExpiryUnits == DAYS) createTime.millisOfDay().withMinimumValue() else createTime
     val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
     elapsedTime gt invitationExpiryDuration
@@ -105,14 +109,22 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       if (a.isLeft) throw new Exception("Failed to transition invitation state to Expired")
       auditService.sendInvitationExpired(invitation)
       a.right.get
+    } andThen {
+      case Success(_) => reportHistogramValue("Duration-Invitation-Expired", durationOf(invitation))
     }
   }
 
   def cancelInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
+      .andThen {
+        case Success(_) => reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
+      }
 
   def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Rejected)
+      .andThen {
+        case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
+      }
 
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier,
                                                  request: Request[Any]): Future[Option[Invitation]] = {
@@ -159,4 +171,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   }
 
   private def currentTime() = DateTime.now(DateTimeZone.UTC)
+
+  private def durationOf(invitation: Invitation): Long = if(invitation.events.isEmpty) 0 else
+    System.currentTimeMillis()-invitation.firstEvent().time.getMillis
 }
