@@ -41,7 +41,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     with AtomicUpdate[Invitation] {
 
   override def indexes: Seq[Index] = Seq(
-    Index(key = Seq("invitationId" -> IndexType.Ascending), name = Some("invitationIdIndex"), unique = true),
+    Index(key = Seq("invitationId" -> IndexType.Ascending), name = Some("invitationIdIndex"), unique = true, sparse = true),
     Index(Seq("arn" -> IndexType.Ascending)),
     Index(Seq("clientId" -> IndexType.Ascending)),
     Index(Seq("service" -> IndexType.Ascending))
