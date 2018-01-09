@@ -22,6 +22,7 @@ import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
@@ -74,7 +75,10 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate).map{ invitation =>
+        Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
+        invitation
+      }
     }
   }
 
@@ -160,7 +164,10 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     invitation.status match {
       case Pending =>
         monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
-          invitationsRepository.update(invitation.id, status, timestamp) map (invitation => Right(invitation))
+          invitationsRepository.update(invitation.id, status, timestamp) map { invitation =>
+            Logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
+            Right(invitation)
+          }
         }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
