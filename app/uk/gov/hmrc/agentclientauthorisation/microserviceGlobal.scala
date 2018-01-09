@@ -31,6 +31,7 @@ import play.api.http.HttpFilters
 import play.api.mvc._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.api.config._
 import uk.gov.hmrc.api.connector.ServiceLocatorConnector
 import uk.gov.hmrc.http._
@@ -51,6 +52,7 @@ class GuiceModule() extends AbstractModule with ServicesConfig {
     bind(classOf[DB]).toProvider(classOf[MongoDbProvider])
     bind(classOf[ControllerConfig]).to(classOf[ControllerConfiguration])
     bind(classOf[AuditFilter]).to(classOf[MicroserviceAuditFilter])
+    bind(classOf[InvitationsRepository]).asEagerSingleton()
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
