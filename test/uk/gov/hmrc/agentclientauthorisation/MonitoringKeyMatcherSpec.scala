@@ -93,15 +93,15 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
       tested.findMatchingKey("http://foo.protected.mdtp/foo/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-foo-PERSONAL-INCOME-RECORD")
     }
 
-    "parse Routes and produce key-pattern mappings" in {
-      val app = GuiceApplicationBuilder().build()
-      Play.start(app)
-      val tested = new MonitoringKeyMatcher {
-        override val keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
-      }
-      tested.findMatchingKey("http://agent-client-authorisation.protected.mdtp/agent-client-authorisation//clients/NI/ABC123456/invitations/received/A634764HHJJH/accept") shouldBe Some("|clients|NI|:|invitations|received|:|accept")
-      await(app.stop())
-    }
+//    "parse Routes and produce key-pattern mappings" in {
+//      val app = GuiceApplicationBuilder().build()
+//      Play.start(app)
+//      val tested = new MonitoringKeyMatcher {
+//        override val keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
+//      }
+//      tested.findMatchingKey("http://agent-client-authorisation.protected.mdtp/agent-client-authorisation//clients/NI/ABC123456/invitations/received/A634764HHJJH/accept") shouldBe Some("|clients|NI|:|invitations|received|:|accept")
+//      await(app.stop())
+//    }
 
   }
 }
