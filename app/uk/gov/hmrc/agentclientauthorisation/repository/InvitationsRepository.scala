@@ -50,20 +50,21 @@ class InvitationsRepository @Inject()(mongo: DB)
   )
 
   private def ensureIndex(index: Index)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val indexInfo = s"""name=${index.eventualName}, key=${index.key.map{case (k,_) => k}.mkString("+")}, unique=${index.unique}, background=${index.background}, sparse=${index.sparse}"""
     collection.indexesManager.create(index).map(wr => {
       if(wr.ok) {
-        logger.info(s"Successfully Created Index: ${index.eventualName}")
-        wr.ok
+        logger.info(s"Successfully Created Index $indexInfo")
+        true
       } else {
         val msg = wr.writeErrors.mkString(", ")
-        val maybeMsg = if (msg.contains("E11000")) {
+        if (msg.contains("E11000")) {
           // this is for backwards compatibility to mongodb 2.6.x
-          throw new GenericDatabaseException(msg, wr.code)
-        } else msg
-        logger.error(s"$message : '${maybeMsg.map(_.toString)}' for ${index.eventualName}")
-        false
+          throw GenericDatabaseException(msg, wr.code)
+        } else {
+          logger.error(s"Failed to ensure index $indexInfo, error=$msg")
+          false
+        }
       }
-
     }).recover {
       case t =>
         logger.error(message, t)
