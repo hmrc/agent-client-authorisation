@@ -34,6 +34,8 @@ sealed trait InvitationStatus {
 
   def leftMap[X](f: String => X) =
     toEither.left.map(f)
+
+  override def toString = InvitationStatus.unapply(this).getOrElse("Unknown")
 }
 
 case object Pending extends InvitationStatus
