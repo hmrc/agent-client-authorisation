@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
 
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino1.value, "AA1 1AA")
+  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino1.value, Some("AA1 1AA"))
 
   override val sandboxMode = true
 

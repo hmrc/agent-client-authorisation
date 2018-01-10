@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,7 +31,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasABusinessPartnerRecord()
 
-      val response = await(connector.getBusinessDetails(client.clientId)).get
+      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
       response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
@@ -43,7 +44,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasNoBusinessPartnerRecord
 
-      val response = await(connector.getBusinessDetails(client.clientId))
+      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino]))
 
       response shouldBe None
     }
@@ -55,7 +56,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
-      val response = await(connector.getBusinessDetails(client.clientId)).get
+      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
       response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
@@ -68,7 +69,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasBusinessPartnerRecordWithEmptyBusinessData(mtdItId1)
 
-      val response = await(connector.getBusinessDetails(client.clientId)).get
+      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.size shouldBe 0
       response.mtdbsa shouldBe Some(mtdItId1)

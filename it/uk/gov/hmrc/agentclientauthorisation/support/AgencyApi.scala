@@ -17,18 +17,18 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import play.mvc.Http.HeaderNames._
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.logging.SessionId
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(arn.value)))
 
-  def sendInvitation(clientId: Nino, service: String = "HMRC-MTD-IT", clientIdType: String = "ni", clientPostcode: String = "AA1 1AA"): String = {
+  def sendInvitation(clientId: ClientId, service: String = "HMRC-MTD-IT", clientIdType: String = "ni", clientPostcode: Option[String] = Some("AA1 1AA")): String = {
 
     val response = apiRequests.agencySendInvitation(arn, apiRequests.AgencyInvitationRequest(service, clientIdType, clientId.value, clientPostcode))
     require(response.status == 201, s"Creating an invitation should return 201, was [${response.status}]")
