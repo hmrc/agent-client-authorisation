@@ -25,11 +25,13 @@ import com.kenshoo.play.metrics.Metrics
 import play.api.{Logger, Play}
 import play.api.mvc.{Filter, RequestHeader, Result}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.HeaderCarrierConverter.fromHeadersAndSession
 import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 
+import scala.concurrent.duration.NANOSECONDS
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class MicroserviceMonitoringFilter @Inject()(metrics: Metrics)
@@ -56,9 +58,8 @@ object KeyToPatternMappingFromRoutes {
   }
 }
 
-abstract class MonitoringFilter(override val kenshooRegistry: MetricRegistry)
-                               (implicit ec: ExecutionContext)
-  extends Filter with HttpAPIMonitor with MonitoringKeyMatcher {
+abstract class MonitoringFilter(kenshooRegistry: MetricRegistry)(implicit ec: ExecutionContext)
+  extends Filter with MonitoringKeyMatcher {
 
   override def apply(nextFilter: (RequestHeader) => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
 
@@ -73,6 +74,36 @@ abstract class MonitoringFilter(override val kenshooRegistry: MetricRegistry)
         Logger.debug(s"API-Not-Monitored: ${requestHeader.method}-${requestHeader.uri}")
         nextFilter(requestHeader)
     }
+  }
+
+  private def monitor(serviceName: String)(function: => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
+    timer(serviceName) {
+      function
+    }
+  }
+
+  private def timer(serviceName: String)(function: => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = {
+    val start = System.nanoTime()
+    function.andThen {
+      case Success(result) =>
+        val status = result.header.status
+        val timerName = s"Timer-$serviceName"
+        val counterName = timerName + "." + status
+        kenshooRegistry.getTimers.getOrDefault(timerName, kenshooRegistry.timer(timerName)).update(System.nanoTime() - start, NANOSECONDS)
+        kenshooRegistry.getCounters.getOrDefault(counterName, kenshooRegistry.counter(counterName)).inc()
+
+      case Failure(exception: Upstream5xxResponse) => recordFailure(serviceName, exception.upstreamResponseCode, start)
+      case Failure(exception: Upstream4xxResponse) => recordFailure(serviceName, exception.upstreamResponseCode, start)
+      case Failure(exception: HttpException) => recordFailure(serviceName, exception.responseCode, start)
+      case Failure(_: Throwable) => recordFailure(serviceName, 500, start)
+    }
+  }
+
+  private def recordFailure(serviceName: String, upstreamResponseCode: Int, startTime: Long): Unit = {
+    val timerName = s"Timer-$serviceName"
+    val counterName = if (upstreamResponseCode >= 500) s"Http5xxErrorCount-$serviceName" else s"Http4xxErrorCount-$serviceName"
+    kenshooRegistry.getTimers.getOrDefault(timerName, kenshooRegistry.timer(timerName)).update(System.nanoTime() - startTime, NANOSECONDS)
+    kenshooRegistry.getCounters.getOrDefault(counterName, kenshooRegistry.counter(counterName)).inc()
   }
 }
 
