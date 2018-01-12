@@ -28,7 +28,6 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
@@ -63,17 +62,15 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
-    val service = Service.forId(agentInvitation.service)
-    val taxId = service match {
+    val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
+    (agentInvitation.getService match {
       case Service.MtdIt => invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
-      case Service.PersonalIncomeRecord => Future successful Some(Nino(agentInvitation.clientId))
-    }
-    taxId.flatMap {
+      case _ => Future successful Some(suppliedClientId)
+    }) flatMap {
       case None => Future successful
         BadRequest(s"invalid combination of client id ${agentInvitation.clientId} and client id type ${agentInvitation.clientIdType}")
       case Some(taxId) =>
-        val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
-        invitationsService.create(arn, service, ClientIdentifier(taxId), agentInvitation.clientPostcode, suppliedClientId).map(
+        invitationsService.create(arn, agentInvitation.getService, taxId, agentInvitation.clientPostcode, suppliedClientId).map(
           invitation => Created.withHeaders(location(invitation))
         )
     }

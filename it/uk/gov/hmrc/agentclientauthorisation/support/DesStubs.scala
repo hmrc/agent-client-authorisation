@@ -18,14 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 trait DesStubs[A] {
   me: A with WiremockAware =>
 
-  def clientId: Nino
+  def clientId: ClientId
 
   def hasABusinessPartnerRecord(postcode: String = "AA11AA", countryCode: String = "GB"): A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))

@@ -58,12 +58,12 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   private val invitationExpiryUnits = invitationExpiryDuration.unit
 
   def translateToMtdItId(clientId: String, clientIdType: String)
-                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
+                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[ClientIdentifier[MtdItId]]] = {
     clientIdType match {
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
       case NinoType.id =>
         desConnector.getBusinessDetails(Nino(clientId)).map {
-          case Some(record) => record.mtdbsa
+          case Some(record) => record.mtdbsa.map(ClientIdentifier(_))
           case None => None
         }
       case _ => Future successful None

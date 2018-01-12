@@ -257,32 +257,32 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "translateToMtdItId" should {
     "return the mtfItId if supplied" in {
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(mtdItId1.value, MtdItIdType.id))
+      val shouldBeMtdItId  = await(service.translateToMtdItId(mtdItId1.value, MtdItIdType.id))
       shouldBeMtdItId.head.value shouldBe mtdItId1.value
     }
 
     "return None if an invalid client id type is supplied" in {
-      val shouldBeNone: Option[MtdItId] = await(service.translateToMtdItId("id", "noSuchType"))
+      val shouldBeNone = await(service.translateToMtdItId("id", "noSuchType"))
       shouldBeNone.isEmpty shouldBe true
     }
 
     "return an mtdItId if a nino is supplied for which there is no persisted match and there is a matching DES business partner record with an mtdItId" in {
       whenDesBusinessPartnerRecordExistsFor(Nino(nino1.value), mtdItId1.value)
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, NinoType.id))
-      shouldBeMtdItId.head shouldBe mtdItId1
+      val shouldBeMtdItId = await(service.translateToMtdItId(nino1.value, NinoType.id))
+      shouldBeMtdItId.head.underlying shouldBe mtdItId1
     }
 
     "return None if a nino is supplied for which there is a matching DES business partner record without a mtdItId" in {
       whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(Nino(nino1.value))
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      val shouldBeMtdItId = await(service.translateToMtdItId(nino1.value, "ni"))
       shouldBeMtdItId shouldBe None
     }
 
     "return None if a nino is supplied for which there is no matching DES business partner record" in {
       whenDesBusinessPartnerRecordDoesNotExist
 
-      val shouldBeMtdItId: Option[MtdItId] = await(service.translateToMtdItId(nino1.value, "ni"))
+      val shouldBeMtdItId = await(service.translateToMtdItId(nino1.value, "ni"))
       shouldBeMtdItId shouldBe None
     }
   }

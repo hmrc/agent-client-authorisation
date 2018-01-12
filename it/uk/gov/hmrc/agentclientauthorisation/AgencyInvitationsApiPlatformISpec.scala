@@ -91,13 +91,13 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should not create invitation if postcodes do not match" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BA1 1AA")) should matchErrorResult(PostcodeDoesNotMatch)
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("BA1 1AA"))) should matchErrorResult(PostcodeDoesNotMatch)
     }
 
     "should not create invitation if postcode is not in a valid format" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "BAn 1AA")) should matchErrorResult(postcodeFormatInvalid(
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("BAn 1AA"))) should matchErrorResult(postcodeFormatInvalid(
         """The submitted postcode, "BAn 1AA", does not match the expected format."""))
     }
 
@@ -115,7 +115,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn1, validInvitation.copy(clientIdType = "MTDITID"))
       withClue(response.body) {
-        response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", the only currently supported type is \"ni\""))
+        response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
       }
     }
 
@@ -128,21 +128,21 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should not create invitation for invalid NINO" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidNino)
+      agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidClientId)
     }
 
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
-      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "AA11AA")).status shouldBe 201
+      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("AA11AA"))).status shouldBe 201
     }
 
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
-      val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = "A A1 1A A"))
+      val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("A A1 1A A")))
       withClue(response.body) {
         response.status shouldBe 201
       }
@@ -164,7 +164,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   protected implicit val agentCode1 = AgentCode(agentCode)
 
   protected val nino: Nino = nextNino
-  protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, "AA1 1AA")
+  protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
 
 //  "GET root resource" should {
 //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)

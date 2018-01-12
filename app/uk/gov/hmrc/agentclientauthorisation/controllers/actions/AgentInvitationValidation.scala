@@ -18,12 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentInvitation, Invitation, NinoType, Service}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
 
 trait AgentInvitationValidation extends Results {
 
@@ -33,14 +32,13 @@ trait AgentInvitationValidation extends Results {
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
-  val hasValidPostcode: Validation = (invite) => {
-    Future successful (
-      if (invite.clientPostcode.isEmpty) {
-        if (invite.service == Service.MtdIt.id) Some(postcodeRequired(invite.service)) else None
-      } else {
-        postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode.get)).map(_ => None)
-          .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode.get}", does not match the expected format.""")))
-      })
+  val hasValidPostcode: Validation = (invite) => Future successful {
+    if (invite.clientPostcode.isEmpty) {
+      if (invite.getService.requiresKnownFactsCheck) Some(postcodeRequired(invite.service)) else None
+    } else {
+      postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode.get)).map(_ => None)
+        .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode.get}", does not match the expected format.""")))
+    }
   }
 
   private def postCodeMatches(implicit hc: HeaderCarrier, ec: ExecutionContext): Validation = (invite) => {
@@ -48,26 +46,26 @@ trait AgentInvitationValidation extends Results {
     else postcodeService.clientPostcodeMatches(invite.clientId, invite.clientPostcode.get)
   }
 
-  private val hasValidNino: Validation = (invitation) => {
-    if (Nino.isValid(invitation.clientId)) Future successful None
-    else Future successful Some(InvalidNino)
+  private val hasValidClientId: Validation = (invitation) => Future successful {
+    val valid = invitation.getService.supportedSuppliedClientIdType.isValid(invitation.clientId)
+    if (valid) None else Some(InvalidClientId)
   }
 
-  private val supportedService: Validation  = (invite) => {
+  private val supportedService: Validation = (invite) => {
     if (Service.findById(invite.service).isDefined) Future successful None
     else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}""""))
   }
 
   private val supportedClientIdType: Validation = (invite) => {
-    if(NinoType.id == invite.clientIdType) Future successful None
-    else Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", the only currently supported type is "${NinoType.id}""""))
+    if (invite.getService.supportedSuppliedClientIdType.id == invite.clientIdType) Future successful None
+    else Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", for service type "${invite.service}""""))
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
-    Seq(hasValidPostcode, supportedService, supportedClientIdType, hasValidNino, postCodeMatches)
+    Seq(supportedService, hasValidPostcode, supportedClientIdType, hasValidClientId, postCodeMatches)
       .foldLeft(Future.successful[Option[Result]](None))((acc, validation) => acc.flatMap {
-      case None => validation(agentInvitation)
-      case r => Future.successful(r)
-    })
+        case None => validation(agentInvitation)
+        case r => Future.successful(r)
+      })
   }
 }

@@ -37,11 +37,20 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
+  private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", "vrn", "GB123456789", None)
   private val validPirInvite: AgentInvitation = AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
   private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {
-    def is(r1: Result) = status(r1) shouldBe status(r)
+    def is(r1: Result) = {
+      status(r1) shouldBe status(r)
+      r
+    }
+
+    def withCode(code: String) = {
+      (jsonBodyOf(r) \ "code").as[String] shouldBe code
+      r
+    }
   }
 
   private def responseFor(invite: AgentInvitation): Result = {
@@ -65,7 +74,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
 
     "fail with NotImplemented if the service is not HMRC-MTD-IT" in {
       mockOutCallToDesWithPostcode()
-      responseFor(validMtdItInvite.copy(service = "mtd-vat")) is NotImplemented
+      responseFor(validMtdItInvite.copy(service = "some-other-service")) is NotImplemented
     }
 
     "fail with BadRequest if the service is HMRC-MTD-IT and no postcode provided" in {
@@ -73,10 +82,10 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       responseFor(validMtdItInvite.copy(clientPostcode = None)) is BadRequest
     }
 
-    "only perform NINO format validation after establishing that clientId is a NINO " in {
+    "only perform NINO format validation after establishing that clientId is a NINO" in {
       mockOutCallToDesWithPostcode()
-      val result: Result = responseFor(validMtdItInvite.copy(clientIdType = "not nino", clientId = "not a valid NINO"))
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "UNSUPPORTED_CLIENT_ID_TYPE"
+      val result = responseFor(validMtdItInvite.copy(clientIdType = "not nino", clientId = "not a valid NINO"))
+      result is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"
     }
 
     "pass when the postcode is valid, matches and has HMRC-MTD-IT as the service" in {
@@ -104,8 +113,21 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validPirInvite)) shouldBe None
     }
 
-    "pass when no postcode is present and service is of type " in {
-      responseFor(validPirInvite.copy(service = "HMRC-MTD-IT")) is BadRequest
+    "fail when no postcode is present and service is of type HMRC-MTD-IT" in {
+      responseFor(validPirInvite.copy(service = "HMRC-MTD-IT")) is BadRequest withCode "POSTCODE_REQUIRED"
+    }
+
+    "pass when no postcode is present and service is of type HMRC-MTD-VAT" in {
+      await(checkForErrors(validMtdVatInvite)) shouldBe None
+    }
+
+//    TODO use validation rule once APB-1905 is complete
+//    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
+//      responseFor(validMtdVatInvite.copy(clientId = "GB1")) is BadRequest withCode "INVALID_CLIENT_ID"
+//    }
+
+    "fail when ni is supplied as client id type for service HMRC-MTD-VAT" in {
+      responseFor(validMtdVatInvite.copy(clientIdType = "ni")) is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"
     }
   }
 }

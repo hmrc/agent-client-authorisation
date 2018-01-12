@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import play.api.libs.json.{JsObject, JsString, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -76,8 +77,12 @@ trait ApiRequests {
     new Resource(agencyGetInvitationUrl(arn, invitationId), port).get()(hc)
   }
 
-  case class AgencyInvitationRequest(service: String, clientIdType: String, clientId: String, clientPostcode: String) {
-    val json: String = s"""{"service": "$service", "clientIdType": "$clientIdType", "clientId": "$clientId", "clientPostcode": "$clientPostcode"}"""
+  case class AgencyInvitationRequest(service: String, clientIdType: String, clientId: String, clientPostcode: Option[String]) {
+    val jsObj: JsObject = {
+      val obj = Json.obj("service" -> service, "clientIdType" -> clientIdType, "clientId" -> clientId)
+      if (clientPostcode.isDefined) obj + ("clientPostcode" -> JsString(clientPostcode.get)) else obj
+    }
+    val json: String = Json.stringify(jsObj)
   }
 
   def agencySendInvitation(arn: Arn, invitation: AgencyInvitationRequest)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
