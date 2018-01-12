@@ -31,8 +31,8 @@ trait RelationshipStubs[A] {
     this
   }
 
-  def anAfiRelationshipIsCreatedWith(arn: Arn, nino: ClientId): A = {
-    stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${nino.value}"))
+  def anAfiRelationshipIsCreatedWith(arn: Arn, clientId: ClientId): A = {
+    stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
