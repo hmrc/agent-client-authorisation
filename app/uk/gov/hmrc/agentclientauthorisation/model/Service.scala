@@ -77,19 +77,9 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
 
 case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "MTDVATID", Vrn.apply) {
 
-  val Standard = "GB[0-9]{9}"
-  val Branch = "GB[0-9]{12}"
-  val Government = "GBGD[0-4][0-9]{2}"
-  val Health = "GBHA[5-9][0-9]{2}"
+  // TODO use validation rule once APB-1905 is complete
+  def isValid(value: String) = true
 
-  // Rule copied from gforms-frontend ValidationService
-  def isValid(value: String) = {
-    val str = value.replace(" ", "")
-    List(Standard, Branch, Government, Health)
-      .map(str.matches)
-      .find(_ == true)
-      .getOrElse(false)
-  }
 }
 
 

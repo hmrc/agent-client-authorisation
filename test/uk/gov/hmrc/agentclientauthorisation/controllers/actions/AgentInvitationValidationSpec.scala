@@ -121,9 +121,10 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validMtdVatInvite)) shouldBe None
     }
 
-    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
-      responseFor(validMtdVatInvite.copy(clientId = "GB1")) is BadRequest withCode "INVALID_CLIENT_ID"
-    }
+//    TODO use validation rule once APB-1905 is complete
+//    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
+//      responseFor(validMtdVatInvite.copy(clientId = "GB1")) is BadRequest withCode "INVALID_CLIENT_ID"
+//    }
 
     "fail when ni is supplied as client id type for service HMRC-MTD-VAT" in {
       responseFor(validMtdVatInvite.copy(clientIdType = "ni")) is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"
