@@ -37,7 +37,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   override val postcodeService: PostcodeService = new PostcodeService(desConnector)
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
-  private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", "vrn", "GB123456789", None)
+  private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", "vrn", "101747641", None)
   private val validPirInvite: AgentInvitation = AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
   private implicit val hc = HeaderCarrier()
 
@@ -121,10 +121,10 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validMtdVatInvite)) shouldBe None
     }
 
-//    TODO use validation rule once APB-1905 is complete
-//    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
-//      responseFor(validMtdVatInvite.copy(clientId = "GB1")) is BadRequest withCode "INVALID_CLIENT_ID"
-//    }
+    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
+      responseFor(validMtdVatInvite.copy(clientId = "101747642")) is BadRequest withCode "INVALID_CLIENT_ID"
+      responseFor(validMtdVatInvite.copy(clientId = "GB01747641")) is BadRequest withCode "INVALID_CLIENT_ID"
+    }
 
     "fail when ni is supplied as client id type for service HMRC-MTD-VAT" in {
       responseFor(validMtdVatInvite.copy(clientIdType = "ni")) is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"

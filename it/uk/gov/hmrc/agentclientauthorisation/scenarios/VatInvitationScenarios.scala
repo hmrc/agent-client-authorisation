@@ -26,7 +26,7 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
   with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
-  val vrn: Vrn = Vrn("GB123456789")
+  val vrn: Vrn = Vrn("101747641")
 
   scenario("accept a VAT invitation") {
     val agency = new AgencyApi(this, arn, port)
