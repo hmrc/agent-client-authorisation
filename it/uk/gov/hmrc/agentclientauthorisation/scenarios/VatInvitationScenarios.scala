@@ -19,8 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.Vrn
-
+import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 
 class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with GivenWhenThen
   with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
