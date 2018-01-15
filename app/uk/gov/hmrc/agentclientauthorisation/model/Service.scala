@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, VrnValidation}
-import uk.gov.hmrc.domain._
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.domain.{TaxIdentifier, Nino, SimpleObjectReads, SimpleObjectWrites}
 
 sealed abstract class Service(val id: String,
                               val invitationIdPrefix: Char,
@@ -76,7 +76,7 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
 }
 
 case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "MTDVATID", Vrn.apply) {
-  override def isValid(value: String) = VrnValidation.isValid(value)
+  override def isValid(value: String) = Vrn.isValid(value)
 }
 
 
