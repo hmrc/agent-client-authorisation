@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, VrnValidation}
 import uk.gov.hmrc.domain._
 
 sealed abstract class Service(val id: String,
@@ -76,10 +76,7 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
 }
 
 case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "MTDVATID", Vrn.apply) {
-
-  // TODO use validation rule once APB-1905 is complete
-  def isValid(value: String) = true
-
+  override def isValid(value: String) = VrnValidation.isValid(value)
 }
 
 

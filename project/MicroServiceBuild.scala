@@ -29,7 +29,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-whitelist-filter" % "2.0.0",
     "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "2.4.0",
     "uk.gov.hmrc" %% "domain" % "5.0.0",
-    "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.8.0"
+    "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.9.0"
   )
 
   trait TestDependencies {
