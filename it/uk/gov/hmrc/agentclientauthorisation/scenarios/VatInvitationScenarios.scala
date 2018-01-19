@@ -32,7 +32,6 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
 
     Given("An agent is logged in")
     given().client(clientId = vrn)
-      .hasABusinessPartnerRecord()
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
