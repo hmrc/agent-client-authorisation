@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import play.api.libs.json.{JsObject, JsString, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
@@ -104,6 +104,7 @@ trait ApiRequests {
   def clientUrl(clientId: ClientId) = clientId match {
     case ClientIdentifier(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
     case ClientIdentifier(Nino(value)) => s"$baseUrl/clients/NI/$value"
+    case ClientIdentifier(Vrn(value)) => s"$baseUrl/clients/VAT/$value"
   }
 
   def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"

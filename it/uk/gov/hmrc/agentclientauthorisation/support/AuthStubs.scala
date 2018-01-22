@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.{Nino, SaAgentReference, TaxIdentifier}
 
 trait WiremockAware {
@@ -72,6 +72,29 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |        {
          |          "key": "NINO",
          |          "value": "${nino.value}"
+         |        }
+         |      ],
+         |      "state": "Activated"
+         |    }
+         |  ]
+         |}
+       """.stripMargin
+    )))
+
+    this
+  }
+
+  def isLoggedInWithVATEnrolment(vrn: Vrn): A = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(
+      s"""
+         |{
+         |  "allEnrolments": [
+         |    {
+         |      "key": "HMRC-MTD-VAT",
+         |      "identifiers": [
+         |        {
+         |          "key": "MTDVATID",
+         |          "value": "${vrn.value}"
          |        }
          |      ],
          |      "state": "Activated"
