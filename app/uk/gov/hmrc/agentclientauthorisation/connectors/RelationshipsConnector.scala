@@ -53,13 +53,6 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     }
   }
 
-  def createVatRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
-    val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
-    monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
-    }
-  }
-
   private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
     s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
 
