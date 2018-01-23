@@ -90,6 +90,9 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
         val future = invitation.service match {
           case Service.MtdIt => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
+          case Service.Vat =>
+            //TODO: Out of Scope of APB-1884. TBC: Future ticket to create relationship for VAT has to be done in agent-client-relationships.
+            Future.successful()
         }
         future.flatMap(_ => changeInvitationStatus(invitation, model.Accepted, acceptedDate)
           .andThen {

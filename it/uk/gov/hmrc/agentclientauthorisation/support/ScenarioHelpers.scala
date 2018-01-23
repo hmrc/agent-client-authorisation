@@ -33,6 +33,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
   def arn: Arn
   val MtdItService = Service.MtdIt.id
   val PersonalIncomeRecordService = Service.PersonalIncomeRecord.id
+  val VATService = Service.Vat.id
 
   def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(ClientApi, String), secondClient:(ClientApi, String)): Unit = {
 

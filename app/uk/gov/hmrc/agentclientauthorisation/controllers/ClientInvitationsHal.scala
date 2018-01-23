@@ -22,7 +22,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -32,7 +32,8 @@ trait ClientInvitationsHal {
   def toHalResource(invitation: Invitation): HalResource = {
     val link = invitation.service match {
       case Service.MtdIt => routes.MtdItClientInvitationsController.getInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
-      case Service.PersonalIncomeRecord  => routes.NiClientInvitationsController.getInvitation(Nino(invitation.clientId.value), invitation.invitationId)
+      case Service.PersonalIncomeRecord => routes.NiClientInvitationsController.getInvitation(Nino(invitation.clientId.value), invitation.invitationId)
+      case Service.Vat => routes.VatClientInvitationsController.getInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
     }
     var links = HalLinks(Vector(HalLink("self", link.url)))
 
@@ -41,10 +42,13 @@ trait ClientInvitationsHal {
     val acceptLink = invitation.service match {
         case Service.MtdIt => routes.MtdItClientInvitationsController.acceptInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
         case Service.PersonalIncomeRecord => routes.NiClientInvitationsController.acceptInvitation(Nino(invitation.clientId.value), invitation.invitationId)
+        case Service.Vat => routes.VatClientInvitationsController.acceptInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
     }
     val rejectLink = invitation.service match {
       case Service.MtdIt => routes.MtdItClientInvitationsController.rejectInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
       case Service.PersonalIncomeRecord => routes.NiClientInvitationsController.rejectInvitation(Nino(invitation.clientId.value), invitation.invitationId)
+      case Service.Vat => routes.VatClientInvitationsController.rejectInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
+
     }
 
     if (invitation.status == Pending) {
@@ -60,6 +64,8 @@ trait ClientInvitationsHal {
       val link = i.service match {
         case Service.MtdIt => routes.MtdItClientInvitationsController.getInvitation(MtdItId(i.clientId.value), i.invitationId)
         case Service.PersonalIncomeRecord => routes.NiClientInvitationsController.getInvitation(Nino(i.clientId.value), i.invitationId)
+        case Service.Vat => routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
+
       }
       HalLink("invitations", link.toString)
     }.toVector
@@ -70,6 +76,7 @@ trait ClientInvitationsHal {
     val link = clientId match {
       case clientId @ ClientIdentifier(MtdItId(_)) => routes.MtdItClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[MtdItId], None)
       case clientId @ ClientIdentifier(Nino(_)) => routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
+      case clientId @ ClientIdentifier(Vrn(_)) => routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
     }
     hal(Json.obj(), selfLink ++ Vector(HalLink("received", link.url)), Vector())
   }
@@ -80,6 +87,7 @@ trait ClientInvitationsHal {
     val link = clientId match {
       case clientId @ ClientIdentifier(MtdItId(_)) => routes.MtdItClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[MtdItId], None)
       case clientId @ ClientIdentifier(Nino(_)) => routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
+      case clientId @ ClientIdentifier(Vrn(_)) => routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
     }
 
     val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)

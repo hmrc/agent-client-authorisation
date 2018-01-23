@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.binders
 
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 object PathBinders {
@@ -26,6 +26,7 @@ object PathBinders {
   implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.value)
   implicit object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
+  implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
 
   private def toError(err:String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
