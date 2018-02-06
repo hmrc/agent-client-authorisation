@@ -37,7 +37,7 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
 
       Given("An agent and a client are logged in")
       given().client(clientId = nino, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1).anMtdItRelationshipIsCreatedWith(arn)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends several invitations")

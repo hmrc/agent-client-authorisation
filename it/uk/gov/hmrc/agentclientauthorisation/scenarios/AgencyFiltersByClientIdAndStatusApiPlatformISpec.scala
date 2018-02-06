@@ -39,7 +39,7 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
-      given().client(mtdItId1, nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+      given().client(mtdItId1, nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1).anMtdItRelationshipIsCreatedWith(arn)
       given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 

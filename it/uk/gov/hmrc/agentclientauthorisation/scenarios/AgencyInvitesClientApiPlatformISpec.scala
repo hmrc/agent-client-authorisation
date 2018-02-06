@@ -35,7 +35,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       given().client(clientId = nino, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId1).aRelationshipIsCreatedWith(arn)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1).anMtdItRelationshipIsCreatedWith(arn)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends 2 invitations to the Client")
@@ -60,7 +60,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino, mtdItId1, port)
       Given("An agent and a client are logged in")
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId().aRelationshipIsCreatedWith(arn)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId().anMtdItRelationshipIsCreatedWith(arn)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends several invitations to the Client")

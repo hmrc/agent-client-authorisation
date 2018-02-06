@@ -21,14 +21,14 @@ private object AppDependencies {
   val compile = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo" % "6.1.0",
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % "6.12.0",
-    "uk.gov.hmrc" %% "auth-client" % "2.3.0",
+    "uk.gov.hmrc" %% "microservice-bootstrap" % "6.15.0",
+    "uk.gov.hmrc" %% "auth-client" % "2.5.0",
     "uk.gov.hmrc" %% "play-config" % "4.2.0",
     "uk.gov.hmrc" %% "play-hal" % "1.2.0",
     "uk.gov.hmrc" %% "play-hmrc-api" % "2.1.0",
     "uk.gov.hmrc" %% "play-whitelist-filter" % "2.0.0",
     "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "2.4.0",
-    "uk.gov.hmrc" %% "domain" % "5.0.0",
+    "uk.gov.hmrc" %% "domain" % "5.1.0",
     "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.10.0"
   )
 
@@ -61,7 +61,7 @@ private object AppDependencies {
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
-        "com.github.tomakehurst" % "wiremock" % "2.11.0" % scope,
+        "com.github.tomakehurst" % "wiremock" % "2.14.0" % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope
