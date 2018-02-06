@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
@@ -25,7 +26,7 @@ trait RelationshipStubs[A] {
   me: A with WiremockAware =>
   def canonicalClientId: TaxIdentifier
 
-  def aRelationshipIsCreatedWith(arn: Arn): A = {
+  def anMtdItRelationshipIsCreatedWith(arn: Arn): A = {
     stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
@@ -35,5 +36,23 @@ trait RelationshipStubs[A] {
     stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
+  }
+
+  def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier): A = {
+    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/MTDVATID/${clientId.value}"))
+      .willReturn(aResponse().withStatus(201)))
+    this
+  }
+
+  def verifyCallToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) = {
+    verify(1,
+      putRequestedFor(
+        urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/MTDVATID/${clientId.value}")))
+  }
+
+  def verifyNoCallsToCreateMtdVatRelationship = {
+    verify(0,
+      putRequestedFor(
+        urlPathEqualTo(s"/agent-client-relationships/agent/[^/]+/service/[^/]+/client/[^/]+/[^/]+")))
   }
 }

@@ -39,11 +39,14 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
     agency sendInvitation(clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client accepts the first invitation")
-    given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn)
+    val stubs: Client = given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn).anMtdVatRelationshipIsCreatedWith(arn, vrn)
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
+
     val refetchedInvitations = client.getInvitations()
     refetchedInvitations.firstInvitation.status shouldBe "Accepted"
+
+    stubs.verifyCallToCreateMtdVatRelationship(arn, vrn)
   }
 
   scenario("reject a VAT invitation") {
@@ -59,11 +62,13 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
 
     And("Client rejects the first invitation")
 
-    given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn)
+    val stubs = given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn)
     val invitations = client.getInvitations()
     client.rejectInvitation(invitations.firstInvitation)
     val refetchedInvitations = client.getInvitations()
     refetchedInvitations.firstInvitation.status shouldBe "Rejected"
+
+    stubs.verifyNoCallsToCreateMtdVatRelationship
   }
 
 }

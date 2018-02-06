@@ -26,6 +26,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
@@ -43,8 +44,14 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      httpPut.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
     }
+
+  def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] = {
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
+      httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
+    }
+  }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
@@ -53,8 +60,13 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     }
   }
 
-  private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
-    s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
+  private def relationshipUrl(invitation: Invitation): URL = {
+    val arn = encodePathSegment(invitation.arn.value)
+    val service = encodePathSegment(invitation.service.enrolmentKey)
+    val clientIdKey = encodePathSegment(invitation.clientId.enrolmentId)
+    val clientIdValue = encodePathSegment(invitation.clientId.value)
+    new URL(baseUrl, s"/agent-client-relationships/agent/$arn/service/$service/client/$clientIdKey/$clientIdValue")
+  }
 
   private def afiRelationshipUrl(invitation: Invitation): URL = {
     val arn = encodePathSegment(invitation.arn.value)
