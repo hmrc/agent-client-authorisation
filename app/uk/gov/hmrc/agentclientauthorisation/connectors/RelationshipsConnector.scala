@@ -44,12 +44,12 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
+      httpPut.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] = {
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      httpPut.PUT[String, HttpResponse](relationshipUrl(invitation).toString, "") map (_ => Unit)
+      httpPut.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => Unit)
     }
   }
 
@@ -60,13 +60,11 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     }
   }
 
-  private def relationshipUrl(invitation: Invitation): URL = {
-    val arn = encodePathSegment(invitation.arn.value)
-    val service = encodePathSegment(invitation.service.enrolmentKey)
-    val clientIdKey = encodePathSegment(invitation.clientId.enrolmentId)
-    val clientIdValue = encodePathSegment(invitation.clientId.value)
-    new URL(baseUrl, s"/agent-client-relationships/agent/$arn/service/$service/client/$clientIdKey/$clientIdValue")
-  }
+  private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
+    s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
+
+  private def mtdVatRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
+    s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(invitation.clientId.value)}")
 
   private def afiRelationshipUrl(invitation: Invitation): URL = {
     val arn = encodePathSegment(invitation.arn.value)
