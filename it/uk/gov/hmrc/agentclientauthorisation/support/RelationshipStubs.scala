@@ -39,7 +39,7 @@ trait RelationshipStubs[A] {
   }
 
   def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/MTDVATID/${clientId.value}"))
+    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
@@ -47,7 +47,7 @@ trait RelationshipStubs[A] {
   def verifyCallToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) = {
     verify(1,
       putRequestedFor(
-        urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/MTDVATID/${clientId.value}")))
+        urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
   }
 
   def verifyNoCallsToCreateMtdVatRelationship = {
