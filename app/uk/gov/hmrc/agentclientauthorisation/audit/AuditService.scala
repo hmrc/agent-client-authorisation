@@ -67,7 +67,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
 
   private def clientIdentifierType(clientId: String): String = clientId match {
     case maybeVrn if Vrn.isValid(maybeVrn) => "vrn"
-    case maybeNino if Nino.isValid(maybeNino) || MtdItId.isValid(maybeNino) => "ni"
+    case maybeNinoOrMtdItd if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(maybeNinoOrMtdItd) => "ni"
     case _ => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
