@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.DateTime.now
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -28,7 +27,6 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -90,8 +88,9 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     details should contain allOf(
       "invitationId" -> invitationId.value,
       "agentReferenceNumber" -> arn.value,
-      "regimeId" -> mtdItId1.value,
-      "regime" -> "HMRC-MTD-IT")
+      "clientIdType" -> "ni",
+      "clientId" -> mtdItId1.value,
+      "service" -> "HMRC-MTD-IT")
   }
 
   def verifyAgentClientRelationshipCreatedAuditEvent() = {

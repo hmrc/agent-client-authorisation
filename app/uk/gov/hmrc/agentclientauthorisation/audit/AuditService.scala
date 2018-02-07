@@ -22,7 +22,8 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -46,8 +47,9 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId" -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "regimeId" -> clientId.value,
-        "regime" -> service.id
+        "clientIdType" -> clientIdentifierType(clientId.value),
+        "clientId" -> clientId.value,
+        "service" -> service.id
       ))
   }
 
@@ -56,10 +58,17 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId" -> invitation.id.stringify,
         "agentReferenceNumber" -> invitation.arn.value,
-        "regimeId" -> invitation.clientId,
-        "regime" -> invitation.service.id,
+        "clientIdType" -> clientIdentifierType(invitation.clientId.value),
+        "clientId" -> invitation.clientId,
+        "service" -> invitation.service.id,
         "clientResponse" -> "Expired"
       ))
+  }
+
+  private def clientIdentifierType(clientId: String): String = clientId match {
+    case maybeVrn if Vrn.isValid(maybeVrn) => "vrn"
+    case maybeNino if Nino.isValid(maybeNino) || MtdItId.isValid(maybeNino) => "ni"
+    case _ => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
   private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(implicit hc: HeaderCarrier, request: Request[Any]): Future[Unit] = {
