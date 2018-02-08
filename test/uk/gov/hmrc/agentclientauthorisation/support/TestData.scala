@@ -78,8 +78,8 @@ trait TestData {
     Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment))
 
   val failedStubForAgent: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future failed new NullPointerException
+    Future failed InsufficientEnrolments()
 
-  val failedStubForClient: Future[Enrolments] = Future failed new NullPointerException
+  val failedStubForClient: Future[Enrolments] = Future failed MissingBearerToken()
 
 }
