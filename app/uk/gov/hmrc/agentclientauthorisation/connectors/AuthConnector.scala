@@ -72,7 +72,7 @@ class AuthConnector @Inject()(metrics: Metrics,
           }
         case _ => Future successful GenericUnauthorized
       } recover {
-        case e @ _ => {
+        case e: AuthorisationException => {
           Logger.error("Failed to auth", e)
           GenericUnauthorized
         }
@@ -90,7 +90,7 @@ class AuthConnector @Inject()(metrics: Metrics,
           if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
           else Future successful ClientNinoNotFound
       } recover {
-        case e @ _ => {
+        case e: AuthorisationException => {
           Logger.error("Failed to auth", e)
           GenericUnauthorized
         }
