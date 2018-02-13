@@ -34,7 +34,7 @@ trait AgentInvitationValidation extends Results {
 
   val hasValidPostcode: Validation = (invite) => Future successful {
     if (invite.clientPostcode.isEmpty) {
-      if (invite.getService.requiresKnownFactsCheck) Some(postcodeRequired(invite.service)) else None
+      None
     } else {
       postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode.get)).map(_ => None)
         .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode.get}", does not match the expected format.""")))
