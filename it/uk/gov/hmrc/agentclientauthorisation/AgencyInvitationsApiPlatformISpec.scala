@@ -164,7 +164,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   protected implicit val agentCode1 = AgentCode(agentCode)
 
   protected val nino: Nino = nextNino
-  protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
+  protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, None)
 
 //  "GET root resource" should {
 //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)

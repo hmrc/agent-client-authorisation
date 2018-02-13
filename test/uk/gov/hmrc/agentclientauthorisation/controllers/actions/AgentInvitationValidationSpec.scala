@@ -54,8 +54,13 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
   }
 
   private def responseFor(invite: AgentInvitation): Result = {
-    await(checkForErrors(invite)).get
+    responseOptFor(invite).get
   }
+
+  private def responseOptFor(invite: AgentInvitation): Option[Result] = {
+    await(checkForErrors(invite))
+  }
+
   private def mockOutCallToDesWithPostcode(postcode: String = "AN11PA") =
     when(desConnector.getBusinessDetails(any[Nino])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(
       Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", Some(postcode)))), None)))
@@ -77,9 +82,9 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       responseFor(validMtdItInvite.copy(service = "some-other-service")) is NotImplemented
     }
 
-    "fail with BadRequest if the service is HMRC-MTD-IT and no postcode provided" in {
+    "do not fail with BadRequest if the service is HMRC-MTD-IT and no postcode provided" in {
       mockOutCallToDesWithPostcode()
-      responseFor(validMtdItInvite.copy(clientPostcode = None)) is BadRequest
+      responseOptFor(validMtdItInvite.copy(clientPostcode = None)) shouldBe None
     }
 
     "only perform NINO format validation after establishing that clientId is a NINO" in {
@@ -113,8 +118,8 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
       await(checkForErrors(validPirInvite)) shouldBe None
     }
 
-    "fail when no postcode is present and service is of type HMRC-MTD-IT" in {
-      responseFor(validPirInvite.copy(service = "HMRC-MTD-IT")) is BadRequest withCode "POSTCODE_REQUIRED"
+    "do not fail when no postcode is present and service is of type HMRC-MTD-IT" in {
+      responseOptFor(validPirInvite.copy(service = "HMRC-MTD-IT")) shouldBe None
     }
 
     "pass when no postcode is present and service is of type HMRC-MTD-VAT" in {
