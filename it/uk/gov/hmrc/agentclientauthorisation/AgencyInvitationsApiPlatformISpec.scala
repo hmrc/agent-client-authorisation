@@ -122,7 +122,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should not create invitation for non-UK address" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
-      agencySendInvitation(arn1, validInvitation) should matchErrorResult(nonUkAddress("AU"))
+      agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(nonUkAddress("AU"))
     }
 
     "should not create invitation for invalid NINO" in {
@@ -151,7 +151,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should not create invitation if DES does not return any Business Partner Record" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasNoBusinessPartnerRecord
-      agencySendInvitation(arn1, validInvitation.copy()) should matchErrorResult(ClientRegistrationNotFound)
+      agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(ClientRegistrationNotFound)
     }
   }
 }
@@ -165,6 +165,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   protected val nino: Nino = nextNino
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, None)
+  protected val validInvitationWithPostcode: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
 
 //  "GET root resource" should {
 //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
