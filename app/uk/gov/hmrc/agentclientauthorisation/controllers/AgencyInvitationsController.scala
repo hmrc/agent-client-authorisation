@@ -23,7 +23,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus, ClientRegistrationNotFound}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
@@ -67,8 +67,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
       case Service.MtdIt => invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
       case _ => Future successful Some(suppliedClientId)
     }) flatMap {
-      case None => Future successful
-        BadRequest(s"invalid combination of client id ${agentInvitation.clientId} and client id type ${agentInvitation.clientIdType}")
+      case None =>
+        Future successful ClientRegistrationNotFound
       case Some(taxId) =>
         invitationsService.create(arn, agentInvitation.getService, taxId, agentInvitation.clientPostcode, suppliedClientId).map(
           invitation => Created.withHeaders(location(invitation))
