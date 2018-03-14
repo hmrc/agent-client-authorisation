@@ -24,18 +24,18 @@ import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{ mtdItId1, nino1 }
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ InvitationId, MtdItId }
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
-import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.auth.core.{ Enrolments, PlayAuthConnector }
+import uk.gov.hmrc.domain.{ Generator, Nino }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
@@ -91,7 +91,7 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
       clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-      whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted,"failure message")))
+      whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted, "failure message")))
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("failure message")
@@ -205,14 +205,13 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
       clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful List(
         TestConstants.defaultInvitation.copy(invitationId = invitationId, arn = arn, clientId = mtdItId1, suppliedClientId = nino1,
-          events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))
-        ))
+          events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200
 
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations") (0) \ "id").asOpt[String] shouldBe None
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations") (0) \ "invitationId").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
     }
   }
 }

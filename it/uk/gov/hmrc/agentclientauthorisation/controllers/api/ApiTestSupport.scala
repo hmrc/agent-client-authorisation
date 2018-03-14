@@ -23,14 +23,14 @@ import uk.gov.hmrc.agentclientauthorisation.support.Resource
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.util.Try
-import scala.xml.{Elem, XML}
+import scala.xml.{ Elem, XML }
 
 object ApiTestSupport {
 
-  case class Endpoint(uriPattern: String,
-                      endPointName: String,
-                      version: String
-                     )
+  case class Endpoint(
+    uriPattern: String,
+    endPointName: String,
+    version: String)
 
 }
 
@@ -53,7 +53,7 @@ trait ApiTestSupport {
     (response.status, Try(XML.loadString(response.body)))
   }
 
-  def ramlByVersion(api: JsValue) : (String, String) = {
+  def ramlByVersion(api: JsValue): (String, String) = {
     val (apiVersion: String, response: HttpResponse) = ramlResponseByVersion(api)
     require(response.status == 200)
     apiVersion -> response.body

@@ -35,6 +35,7 @@ package uk.gov.hmrc.agentclientauthorisation
 import play.api.Play
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeApplication
+import uk.gov.hmrc.agentclientauthorisation.wiring.MonitoringKeyMatcher
 import uk.gov.hmrc.play.test.UnitSpec
 
 class MonitoringKeyMatcherSpec extends UnitSpec {
@@ -45,10 +46,10 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq()
       }
-      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)$",Seq("{service}", "{clientId}", "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$",Seq("{service}", "{clientId}", "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/::clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$",Seq("{service}", "{:clientId}", "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/clientId/([^/]+)/$",Seq("{service}", "{test1}"))
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)$", Seq("{service}", "{clientId}", "{test1}"))
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq("{service}", "{clientId}", "{test1}"))
+      tested.preparePatternAndVariables("""/some/test/:service/::clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq("{service}", "{:clientId}", "{test1}"))
+      tested.preparePatternAndVariables("""/some/test/:service/clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/clientId/([^/]+)/$", Seq("{service}", "{test1}"))
     }
 
     "throw exception if duplicate variable name in pattern" in {
@@ -67,8 +68,7 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
           "B-{service}" -> """/test/:service/bar/some""",
           "C-{service}" -> """/test/:service/bar""",
           "D-{service}" -> """/test/:service/""",
-          "E-{clientId}-{service}" -> """/test/:service/:clientId"""
-        )
+          "E-{clientId}-{service}" -> """/test/:service/:clientId""")
       }
       tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar") shouldBe Some("C-ME")
       tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar/some") shouldBe Some("B-ME")
@@ -84,8 +84,7 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
           "foo-{service}" -> "/foo/agent/:arn/service/:service/client/:clientId",
           "foo-PIR" -> "/foo/PERSONAL-INCOME-RECORD/agent/:arn/client/:clientId",
           "foo-AFI" -> "/foo/afi/agent/:arn/client/:clientId",
-          "client-foo-{service}" -> "/foo/service/:service/clientId/:clientId"
-        )
+          "client-foo-{service}" -> "/foo/service/:service/clientId/:clientId")
       }
       tested.findMatchingKey("http://foo.protected.mdtp/foo/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some("foo-PERSONAL-INCOME-RECORD")
       tested.findMatchingKey("http://foo.protected.mdtp/foo/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some("foo-PIR")
@@ -93,15 +92,15 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
       tested.findMatchingKey("http://foo.protected.mdtp/foo/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some("client-foo-PERSONAL-INCOME-RECORD")
     }
 
-//    "parse Routes and produce key-pattern mappings" in {
-//      val app = GuiceApplicationBuilder().build()
-//      Play.start(app)
-//      val tested = new MonitoringKeyMatcher {
-//        override val keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
-//      }
-//      tested.findMatchingKey("http://agent-client-authorisation.protected.mdtp/agent-client-authorisation//clients/NI/ABC123456/invitations/received/A634764HHJJH/accept") shouldBe Some("|clients|NI|:|invitations|received|:|accept")
-//      await(app.stop())
-//    }
+    //    "parse Routes and produce key-pattern mappings" in {
+    //      val app = GuiceApplicationBuilder().build()
+    //      Play.start(app)
+    //      val tested = new MonitoringKeyMatcher {
+    //        override val keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(Set())
+    //      }
+    //      tested.findMatchingKey("http://agent-client-authorisation.protected.mdtp/agent-client-authorisation//clients/NI/ABC123456/invitations/received/A634764HHJJH/accept") shouldBe Some("|clients|NI|:|invitations|received|:|accept")
+    //      await(app.stop())
+    //    }
 
   }
 }

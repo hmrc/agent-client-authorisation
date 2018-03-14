@@ -31,9 +31,9 @@ trait DesStubs[A] {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
-        .willReturn(aResponse()
-          .withStatus(200)
-            .withBody(s"""
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
                          |  {
                          |  "safeId": "XV0000100093327",
                          |  "nino": "ZR987654C",
@@ -72,9 +72,9 @@ trait DesStubs[A] {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
-        .willReturn(aResponse()
-          .withStatus(200)
-            .withBody(s"""
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
                          |  {
                          |  "safeId": "XV0000100093327",
                          |  "nino": "ZR987654C",
@@ -114,9 +114,9 @@ trait DesStubs[A] {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
       .withHeader("authorization", equalTo("Bearer secret"))
       .withHeader("environment", equalTo("test"))
-        .willReturn(aResponse()
-          .withStatus(200)
-            .withBody(s"""
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
                          |  {
                          |  "safeId": "XV0000100093327",
                          |  "nino": "ZR987654C",
@@ -130,8 +130,8 @@ trait DesStubs[A] {
 
   def hasNoBusinessPartnerRecord: A = {
     stubFor(get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
-    .withHeader("authorization", equalTo("Bearer secret"))
-    .withHeader("environment", equalTo("test"))
+      .withHeader("authorization", equalTo("Bearer secret"))
+      .withHeader("environment", equalTo("test"))
       .willReturn(aResponse()
         .withStatus(404)))
 

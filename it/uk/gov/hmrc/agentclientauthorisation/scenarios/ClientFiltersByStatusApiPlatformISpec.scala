@@ -21,7 +21,7 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 
 class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -29,7 +29,7 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
   private implicit val agentCode = AgentCode("LMNOP123456")
   val nino: Nino = nextNino
 
-  feature("Clients can filter")  {
+  feature("Clients can filter") {
 
     scenario(s"on the status of invitations - ${Service.MtdIt.id}") {
       val agency = new AgencyApi(this, arn, port)
@@ -43,8 +43,7 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
@@ -59,13 +58,12 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       When("the Client rejects the second invitation")
       clientRejectsSecondInvitation(client)
 
-      And("the Client filters their invitations by rejected")  
+      And("the Client filters their invitations by rejected")
       clientFiltersByRejected(client)
 
       And("the Client filters by multiple status")
       clientFiltersByMultipleStatuses(client)
     }
-
 
     scenario(s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
       val agency = new AgencyApi(this, arn, port)
@@ -79,8 +77,7 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
         (client, PersonalIncomeRecordService),
-        (client, PersonalIncomeRecordService)
-      )
+        (client, PersonalIncomeRecordService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)

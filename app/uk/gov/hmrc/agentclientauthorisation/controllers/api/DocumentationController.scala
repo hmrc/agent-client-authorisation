@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import uk.gov.hmrc.agentclientauthorisation.views.txt
 import play.api.http.HttpErrorHandler

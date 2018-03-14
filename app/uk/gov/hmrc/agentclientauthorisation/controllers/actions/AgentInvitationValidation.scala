@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
-import play.api.mvc.{Result, Results}
+import play.api.mvc.{ Result, Results }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait AgentInvitationValidation extends Results {
 

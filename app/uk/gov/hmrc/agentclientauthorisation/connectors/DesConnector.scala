@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{ Inject, Named, Singleton }
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
@@ -28,8 +28,8 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
+import scala.concurrent.{ ExecutionContext, Future }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpReads }
 import uk.gov.hmrc.http.logging.Authorization
 
 case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
@@ -45,17 +45,16 @@ object BusinessDetails {
 }
 
 @Singleton
-class DesConnector @Inject()(@Named("des-baseUrl") baseUrl: URL,
-                             @Named("des.authorizationToken") authorizationToken: String,
-                             @Named("des.environment") environment: String,
-                             httpGet: HttpGet,
-                             metrics: Metrics
-                            ) extends HttpAPIMonitor {
+class DesConnector @Inject() (
+  @Named("des-baseUrl") baseUrl: URL,
+  @Named("des.authorizationToken") authorizationToken: String,
+  @Named("des.environment") environment: String,
+  httpGet: HttpGet,
+  metrics: Metrics) extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
     getWithDesHeaders("getRegistrationBusinessDetailsByNino", new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
-
 
   private def getWithDesHeaders(apiName: String, url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val desHeaderCarrier = hc.copy(

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime.now
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.model.{ Invitation, InvitationStatus, StatusChangeEvent }
 
 trait TransitionInvitation {
   def transitionInvitation(invitation: Invitation, newStatus: InvitationStatus): Invitation =

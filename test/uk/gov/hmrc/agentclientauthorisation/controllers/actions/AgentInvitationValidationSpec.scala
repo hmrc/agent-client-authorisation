@@ -20,15 +20,15 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessAddressDetails, BusinessData, BusinessDetails, DesConnector}
+import play.api.mvc.{ Result, Results }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ BusinessAddressDetails, BusinessData, BusinessDetails, DesConnector }
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.http.HeaderCarrier
 
 class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {

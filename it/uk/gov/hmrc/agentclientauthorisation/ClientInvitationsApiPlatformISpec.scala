@@ -19,12 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
+import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Service }
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{ MtdIt, PersonalIncomeRecord }
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
+import uk.gov.hmrc.domain.{ AgentCode, Nino, TaxIdentifier }
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
@@ -57,11 +57,11 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   "GET /clients/MTDITID/:mtdItId/invitations/received" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitations(mtdItId1))
 
-        "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
+    "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
-          given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
-          clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionOnClient)
-        }
+      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionOnClient)
+    }
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received/:invitation" should {
@@ -126,7 +126,6 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 }
 
-
 class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
@@ -173,7 +172,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url: String): Unit = {
     "return a meaningful response for the authenticated clients" in {
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
-//        .aRelationshipIsCreatedWith(arn1)
+      //        .aRelationshipIsCreatedWith(arn1)
 
       val response = new Resource(url, port).get()
 

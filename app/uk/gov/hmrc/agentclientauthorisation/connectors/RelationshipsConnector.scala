@@ -22,22 +22,22 @@ import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpPut, HttpResponse }
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 @Singleton
-class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl: URL,
-                                        @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
-                                        httpPut: HttpPut,
-                                        metrics: Metrics
-                                       ) extends HttpAPIMonitor {
+class RelationshipsConnector @Inject() (
+  @Named("relationships-baseUrl") baseUrl: URL,
+  @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
+  httpPut: HttpPut,
+  metrics: Metrics) extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -60,10 +60,12 @@ class RelationshipsConnector @Inject() (@Named("relationships-baseUrl") baseUrl:
     }
   }
 
-  private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
+  private def mtdItRelationshipUrl(invitation: Invitation): URL = new URL(
+    baseUrl,
     s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}")
 
-  private def mtdVatRelationshipUrl(invitation: Invitation): URL = new URL(baseUrl,
+  private def mtdVatRelationshipUrl(invitation: Invitation): URL = new URL(
+    baseUrl,
     s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(invitation.clientId.value)}")
 
   private def afiRelationshipUrl(invitation: Invitation): URL = {

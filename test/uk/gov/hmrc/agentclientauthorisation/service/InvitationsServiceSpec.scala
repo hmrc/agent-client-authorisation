@@ -19,9 +19,9 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import com.sun.jndi.ldap.ClientId
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{ DateTime, LocalDate }
 import org.joda.time.DateTime.now
-import org.mockito.ArgumentMatchers.{any, eq => eqs, _}
+import org.mockito.ArgumentMatchers.{ any, eq => eqs, _ }
 import play.api.mvc.Request
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -38,7 +38,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -56,13 +56,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     override def toJson: String = ""
   }
 
-  val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10 days",metrics)
+  val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10 days", metrics)
 
   val ninoAsString: String = nino1.value
 
   implicit val hc = HeaderCarrier()
   implicit val request: Request[Any] = FakeRequest()
-
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -87,15 +86,16 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
     "create a PersonalIncomeRecord relationship" when {
       "invitation status update succeeds" in {
-        val invitation = Invitation(generate,
-            InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
-            Arn(arn),
-            Service.PersonalIncomeRecord,
-            ClientIdentifier(nino1),
-            ClientIdentifier(nino1),
-            Some("A11 1AA"),
-            now().toLocalDate.plusDays(10),
-            List(StatusChangeEvent(now(), Pending)))
+        val invitation = Invitation(
+          generate,
+          InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
+          Arn(arn),
+          Service.PersonalIncomeRecord,
+          ClientIdentifier(nino1),
+          ClientIdentifier(nino1),
+          Some("A11 1AA"),
+          now().toLocalDate.plusDays(10),
+          List(StatusChangeEvent(now(), Pending)))
 
         whenAfiRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
@@ -144,7 +144,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
     }
   }
-
 
   "rejectInvitation" should {
     "update the invitation status" in {
@@ -246,8 +245,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
       when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any())).thenReturn(testInvitationWithStatus(Expired))
 
-
-      val serviceWithUnderscoreInDuration = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10_days",metrics)
+      val serviceWithUnderscoreInDuration = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10_days", metrics)
 
       await(serviceWithUnderscoreInDuration.findInvitation(invitation.invitationId)).get.status shouldBe Expired
 
@@ -257,7 +255,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "translateToMtdItId" should {
     "return the mtfItId if supplied" in {
-      val shouldBeMtdItId  = await(service.translateToMtdItId(mtdItId1.value, MtdItIdType.id))
+      val shouldBeMtdItId = await(service.translateToMtdItId(mtdItId1.value, MtdItIdType.id))
       shouldBeMtdItId.head.value shouldBe mtdItId1.value
     }
 
@@ -288,12 +286,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   }
 
   def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService = {
-    new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, invitationExpiryDuration,metrics)
+    new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, invitationExpiryDuration, metrics)
   }
 
   "isInvitationExpired" should {
     "return expired when duration is one day and invitation created yesterday an hour before midnight" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
 
       def yesterdayAnHourBeforeMidnight() = now().minusDays(1).millisOfDay().withMaximumValue().minusHours(1)
       val invitation = testInvitationWithDate(yesterdayAnHourBeforeMidnight)
@@ -302,7 +300,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one day and invitation created yesterday a millisecond before midnight" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
 
       def yesterdayAMilliBeforeMidnight() = now().minusDays(1).millisOfDay().withMaximumValue()
       val invitation = testInvitationWithDate(yesterdayAMilliBeforeMidnight)
@@ -311,7 +309,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one day and invitation created today" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
 
       def todayAtMidnight() = now().minusDays(1).millisOfDay().withMaximumValue().plusMillis(1)
       val invitation = testInvitationWithDate(todayAtMidnight)
@@ -320,7 +318,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return not expired when duration is one hour and 59 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAt10FiftyNine() = now().withTime(10, 59, 0, 0)
@@ -330,7 +328,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return not expired when duration is one hour and 60 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtEleven() = now().withTime(11, 0, 0, 0)
@@ -340,7 +338,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one hour and 60 and one millisecond minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour",metrics)
+      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtElevenAndOneMilli() = now().withTime(11, 0, 0, 1)
@@ -350,7 +348,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
-  private def testInvitationWithStatus(status: InvitationStatus) = Invitation(generate,
+  private def testInvitationWithStatus(status: InvitationStatus) = Invitation(
+    generate,
     InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
@@ -358,12 +357,12 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     ClientIdentifier(nino1),
     Some("A11 1AA"),
     LocalDate.now().plusDays(10),
-    List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
-  )
+    List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status)))
 
   private def testInvitation = testInvitationWithDate(now)
 
-  private def testInvitationWithDate(creationDate: () => DateTime) = Invitation(generate,
+  private def testInvitationWithDate(creationDate: () => DateTime) = Invitation(
+    generate,
     InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
     Arn(arn),
     Service.MtdIt,
@@ -371,8 +370,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     ClientIdentifier(nino1),
     Some("A11 1AA"),
     LocalDate.now().plusDays(10),
-    List(StatusChangeEvent(creationDate(), Pending))
-  )
+    List(StatusChangeEvent(creationDate(), Pending)))
 
   private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] = {
     when(invitationsRepository.update(any[BSONObjectID], eqs(status), any[DateTime])(any()))

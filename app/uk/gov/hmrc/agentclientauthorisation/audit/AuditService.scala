@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.audit
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.model.{ Invitation, Service }
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId, Vrn }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
@@ -39,18 +39,16 @@ object AgentClientInvitationEvent extends Enumeration {
 }
 
 @Singleton
-class AuditService @Inject()(val auditConnector: AuditConnector) {
+class AuditService @Inject() (val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)
-                                 (implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
     auditEvent(AgentClientInvitationEvent.AgentClientRelationshipCreated, "agent-client-relationship-created",
       Seq(
         "invitationId" -> invitationId,
         "agentReferenceNumber" -> arn.value,
         "clientIdType" -> clientIdentifierType(clientId.value),
         "clientId" -> clientId.value,
-        "service" -> service.id
-      ))
+        "service" -> service.id))
   }
 
   def sendInvitationExpired(invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any]): Unit = {
@@ -61,8 +59,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "clientIdType" -> clientIdentifierType(invitation.clientId.value),
         "clientId" -> invitation.clientId,
         "service" -> invitation.service.id,
-        "clientResponse" -> "Expired"
-      ))
+        "clientResponse" -> "Expired"))
   }
 
   private def clientIdentifierType(clientId: String): String = clientId match {

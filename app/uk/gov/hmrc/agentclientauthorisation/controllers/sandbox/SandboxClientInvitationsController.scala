@@ -21,46 +21,46 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{ routes => prodroutes, _ }
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
 class SandboxClientInvitationsController extends BaseController with HalWriter with ClientInvitationsHal {
 
-//  def getDetailsForAuthenticatedClient() = Action { implicit request =>
-//    Ok(toHalResource(HardCodedSandboxIds.clientId.value, prodroutes.ClientInvitationsController.getDetailsForAuthenticatedClient().url))
-//  }
-//
-//  def getDetailsForClient(clientId: String) = Action { implicit request =>
-//    Ok(toHalResource(clientId, prodroutes.ClientInvitationsController.getDetailsForClient(clientId).url))
-//  }
-//
-//  def acceptInvitation(clientId: String, invitationId: String) = Action { implicit request =>
-//    NoContent
-//  }
-//
-//  def rejectInvitation(clientId: String, invitationId: String) = Action { implicit request =>
-//    NoContent
-//  }
-//
-//  def getInvitation(clientId: String, invitationId: String) = Action { implicit request =>
-//    Ok(toHalResource(invitation(clientId)))
-//  }
-//
-//  def getInvitations(clientId: String, status: Option[InvitationStatus]) = Action { implicit request =>
-//    Ok(toHalResource(Seq(invitation(clientId), invitation(clientId)), MtdItId(clientId), status))
-//  }
-//
-//  private def invitation(clientId: String) = Invitation(
-//        BSONObjectID.generate,
-//        Arn("agencyReference"),
-//        SUPPORTED_SERVICE,
-//        MtdItId(clientId),
-//        "A11 1AA",
-//        List(StatusChangeEvent(now(), Pending))
-//      )
-//
+  //  def getDetailsForAuthenticatedClient() = Action { implicit request =>
+  //    Ok(toHalResource(HardCodedSandboxIds.clientId.value, prodroutes.ClientInvitationsController.getDetailsForAuthenticatedClient().url))
+  //  }
+  //
+  //  def getDetailsForClient(clientId: String) = Action { implicit request =>
+  //    Ok(toHalResource(clientId, prodroutes.ClientInvitationsController.getDetailsForClient(clientId).url))
+  //  }
+  //
+  //  def acceptInvitation(clientId: String, invitationId: String) = Action { implicit request =>
+  //    NoContent
+  //  }
+  //
+  //  def rejectInvitation(clientId: String, invitationId: String) = Action { implicit request =>
+  //    NoContent
+  //  }
+  //
+  //  def getInvitation(clientId: String, invitationId: String) = Action { implicit request =>
+  //    Ok(toHalResource(invitation(clientId)))
+  //  }
+  //
+  //  def getInvitations(clientId: String, status: Option[InvitationStatus]) = Action { implicit request =>
+  //    Ok(toHalResource(Seq(invitation(clientId), invitation(clientId)), MtdItId(clientId), status))
+  //  }
+  //
+  //  private def invitation(clientId: String) = Invitation(
+  //        BSONObjectID.generate,
+  //        Arn("agencyReference"),
+  //        SUPPORTED_SERVICE,
+  //        MtdItId(clientId),
+  //        "A11 1AA",
+  //        List(StatusChangeEvent(now(), Pending))
+  //      )
+  //
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

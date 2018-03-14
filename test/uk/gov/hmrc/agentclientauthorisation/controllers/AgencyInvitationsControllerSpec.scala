@@ -17,25 +17,24 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.mockito.ArgumentMatchers.{eq => eqs, _}
+import org.mockito.ArgumentMatchers.{ eq => eqs, _ }
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PostcodeService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, PostcodeService, StatusUpdateFailure }
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
+import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
+import uk.gov.hmrc.auth.core.{ AffinityGroup, Enrolments, PlayAuthConnector }
 import uk.gov.hmrc.domain.Generator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation with TestData {
 
@@ -60,22 +59,17 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
     super.beforeEach()
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
-      Future successful allInvitations
-    )
+      Future successful allInvitations)
 
     when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
-      Future successful allInvitations.filter(_.service == "HMRC-MTD-IT")
-    )
+      Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
 
     when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)))(any())).thenReturn(
-      Future successful allInvitations.filter(_.status == Accepted)
-    )
+      Future successful allInvitations.filter(_.status == Accepted))
 
     when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
-      Future successful allInvitations.filter(_.status == Accepted)
-    )
+      Future successful allInvitations.filter(_.status == Accepted))
   }
-
 
   "createInvitations" should {
     "create an invitation when given correct Arn" in {
@@ -180,7 +174,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(StatusUpdateFailure(Cancelled,"message")))
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(StatusUpdateFailure(Cancelled, "message")))
       whenFindingAnInvitation() thenReturn aFutureOptionInvitation()
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -237,8 +231,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       arn.value,
       "invitations",
       "sent",
-      invitationId.value
-    )
+      invitationId.value)
 
   private def anInvitation(arn: Arn = arn) = {
     TestConstants.defaultInvitation.copy(

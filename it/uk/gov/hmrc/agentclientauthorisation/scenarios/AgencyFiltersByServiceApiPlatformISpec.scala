@@ -21,7 +21,7 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 
 class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -29,7 +29,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
   private implicit val agentCode = AgentCode("LMNOP123456")
   val nino: Nino = nextNino
 
-  feature("Agencies can filter")  {
+  feature("Agencies can filter") {
 
     scenario("on the service of MtdIt invitations") {
       val agency = new AgencyApi(this, arn, port)
@@ -41,8 +41,7 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       Then("The agent filters by HMRC-MTD-IT")
       agencyFiltersByServiceAndExpectsResultCount(agency, 2, Service.MtdIt)
@@ -56,14 +55,13 @@ class AgencyFiltersByServiceApiPlatformISpec extends FeatureSpec with ScenarioHe
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
       given().client(clientId = nino)
-       .hasABusinessPartnerRecord()
+        .hasABusinessPartnerRecord()
       val client = new ClientApi(this, nino, nino, port)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
         (client, PersonalIncomeRecordService),
-        (client, PersonalIncomeRecordService)
-      )
+        (client, PersonalIncomeRecordService))
 
       Then("The agent filters by HMRC-MTD-IT")
       agencyFiltersByServiceAndExpectsResultCount(agency, 0, Service.MtdIt)

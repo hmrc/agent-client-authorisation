@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import play.api.libs.json.{JsObject, JsString, Json}
+import play.api.libs.json.{ JsObject, JsString, Json }
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId, Vrn }
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 
 trait ApiRequests {
 
@@ -43,7 +43,6 @@ trait ApiRequests {
       if (apiPlatform) "/agent-client-authorisation" + serviceRouteUrl
       else serviceRouteUrl
     }
-
 
   private def stripPrefix(s: String, prefix: String): String = {
     if (!s.startsWith(prefix)) throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
@@ -109,7 +108,7 @@ trait ApiRequests {
 
   def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"
 
-  def clientReceivedInvitationUrl(clientId: ClientId, invitationId:String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
+  def clientReceivedInvitationUrl(clientId: ClientId, invitationId: String): String = s"${clientUrl(clientId)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) = {
     new Resource(clientsUrl, port).get
@@ -131,11 +130,11 @@ trait ApiRequests {
     new Resource(link, port).get()(hc)
   }
 
-  def clientAcceptInvitation(mtdItId: MtdItId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) = {
+  def clientAcceptInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier) = {
     updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/accept")
   }
 
-  def clientRejectInvitation(mtdItId: MtdItId, invitationId:String)(implicit port: Int, hc: HeaderCarrier) =
+  def clientRejectInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier) =
     updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/reject")
 
   def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {

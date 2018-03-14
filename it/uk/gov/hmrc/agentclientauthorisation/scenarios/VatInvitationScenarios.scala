@@ -36,7 +36,7 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation(clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
+    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client accepts the first invitation")
     val stubs: Client = given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn).anMtdVatRelationshipIsCreatedWith(arn, vrn)
@@ -58,7 +58,7 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation(clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
+    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client rejects the first invitation")
 

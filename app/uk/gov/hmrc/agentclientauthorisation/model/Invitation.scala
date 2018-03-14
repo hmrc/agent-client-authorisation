@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
-import uk.gov.hmrc.domain.{TaxIdentifier, _}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId }
+import uk.gov.hmrc.domain.{ TaxIdentifier, _ }
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -81,11 +81,12 @@ object InvitationStatus {
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
-case class ClientIdMapping(id: BSONObjectID,
-                           canonicalClientId: String,
-                           canonicalClientIdType: String,
-                           suppliedClientId: String,
-                           suppliedClientIdType: String)
+case class ClientIdMapping(
+  id: BSONObjectID,
+  canonicalClientId: String,
+  canonicalClientIdType: String,
+  suppliedClientId: String,
+  suppliedClientIdType: String)
 
 object ClientIdMapping {
   implicit val dateWrites = RestFormats.dateTimeWrite
@@ -98,26 +99,23 @@ object ClientIdMapping {
       "suppliedClientId" -> invitation.suppliedClientId.value,
       "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
       "created" -> invitation.firstEvent().time,
-      "lastUpdated" -> invitation.mostRecentEvent().time
-    )
+      "lastUpdated" -> invitation.mostRecentEvent().time)
 
   }
 
   val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
-
 case class Invitation(
-                       id: BSONObjectID = BSONObjectID.generate(),
-                       invitationId: InvitationId,
-                       arn: Arn,
-                       service: Service,
-                       clientId: ClientId,
-                       suppliedClientId: ClientId,
-                       postcode: Option[String],
-                       expiryDate: LocalDate,
-                       events: List[StatusChangeEvent]
-                       ) {
+  id: BSONObjectID = BSONObjectID.generate(),
+  invitationId: InvitationId,
+  arn: Arn,
+  service: Service,
+  clientId: ClientId,
+  suppliedClientId: ClientId,
+  postcode: Option[String],
+  expiryDate: LocalDate,
+  events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent = {
     events.head
@@ -133,7 +131,7 @@ case class Invitation(
 object Invitation {
 
   def createNew(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId, postcode: Option[String],
-                startDate: DateTime, expiryDate: LocalDate): Invitation = {
+    startDate: DateTime, expiryDate: LocalDate): Invitation = {
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
@@ -142,8 +140,7 @@ object Invitation {
       suppliedClientId = suppliedClientId,
       postcode = postcode,
       expiryDate = expiryDate,
-      events = List(StatusChangeEvent(startDate, Pending))
-    )
+      events = List(StatusChangeEvent(startDate, Pending)))
   }
 
   implicit val dateWrites = RestFormats.dateTimeWrite
@@ -160,18 +157,17 @@ object Invitation {
       "created" -> invitation.firstEvent().time,
       "lastUpdated" -> invitation.mostRecentEvent().time,
       "expiryDate" -> invitation.expiryDate,
-      "status" -> invitation.status
-    )
+      "status" -> invitation.status)
   }
 
 }
 
 /** Information provided by the agent to offer representation to HMRC */
 case class AgentInvitation(
-                            service: String,
-                            clientIdType: String,
-                            clientId: String,
-                            clientPostcode: Option[String]) {
+  service: String,
+  clientIdType: String,
+  clientId: String,
+  clientPostcode: Option[String]) {
 
   lazy val getService = Service.forId(service)
 }

@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.codahale.metrics.MetricRegistry
 
-import scala.concurrent.duration.{Duration, NANOSECONDS}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{ Duration, NANOSECONDS }
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait Monitor {
 

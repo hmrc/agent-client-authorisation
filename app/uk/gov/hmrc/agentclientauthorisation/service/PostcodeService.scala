@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import play.api.mvc.Result
-import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessDetails, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ BusinessDetails, DesConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
 import uk.gov.hmrc.domain.Nino
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
@@ -39,8 +39,8 @@ class PostcodeService @Inject() (desConnector: DesConnector) {
 
     desConnector.getBusinessDetails(Nino(clientIdentifier)).map {
       case Some(details) if details.businessData.length != 1 => Some(PostcodeDoesNotMatch)
-      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details)  => None
-      case Some(details) if postcodeMatches(details, postcode)=> Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
+      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => None
+      case Some(details) if postcodeMatches(details, postcode) => Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
       case Some(_) => Some(PostcodeDoesNotMatch)
       case None => Some(ClientRegistrationNotFound)
     }

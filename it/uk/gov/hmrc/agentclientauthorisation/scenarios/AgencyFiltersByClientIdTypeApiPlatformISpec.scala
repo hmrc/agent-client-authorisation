@@ -20,7 +20,7 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 
 class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -28,7 +28,7 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with Scena
   private implicit val agentCode = AgentCode("LMNOP123456")
   val nino: Nino = nextNino
 
-  feature("Agencies can filter")  {
+  feature("Agencies can filter") {
 
     scenario("on the clientIdType of invitations") {
       val agency = new AgencyApi(this, arn, port)
@@ -42,8 +42,7 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec extends FeatureSpec with Scena
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       Then("The agent filters by clientIdType=ni")
       agencyFiltersByNi(agency)

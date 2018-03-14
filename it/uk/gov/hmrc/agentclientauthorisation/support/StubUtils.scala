@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
 import uk.gov.hmrc.domain._
 
 trait StubUtils {
@@ -31,14 +31,14 @@ trait StubUtils {
     }
 
     def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
-       AgentAdmin(arn)
+      AgentAdmin(arn)
     }
 
     def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
       agentAdmin(arn.value, agentCode.value)
     }
 
-    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"), clientId: ClientId = nino1 ): Client = {
+    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"), clientId: ClientId = nino1): Client = {
       Client(clientId, canonicalClientId)
     }
   }
@@ -55,6 +55,6 @@ trait StubUtils {
     extends BaseUser with AgentAuthStubs[AgentAdmin] {
   }
 
-  case class Client(override val clientId: ClientId, override val canonicalClientId: TaxIdentifier )
+  case class Client(override val clientId: ClientId, override val canonicalClientId: TaxIdentifier)
     extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

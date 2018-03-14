@@ -26,13 +26,13 @@ import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdType, ClientIdentifier, Service }
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
+import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.{ affinityGroup, allEnrolments }
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -40,14 +40,16 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-case class Authority(mtdItId: Option[MtdItId],
-                     enrolmentsUrl: URL)
+case class Authority(
+  mtdItId: Option[MtdItId],
+  enrolmentsUrl: URL)
 
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
 @Singleton
-class AuthConnector @Inject()(metrics: Metrics,
-                              microserviceAuthConnector: PlayAuthConnector)
+class AuthConnector @Inject() (
+  metrics: Metrics,
+  microserviceAuthConnector: PlayAuthConnector)
   extends HttpAPIMonitor with AuthorisedFunctions with BaseController {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -81,8 +83,7 @@ class AuthConnector @Inject()(metrics: Metrics,
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
-  def onlyForClients[T<:TaxIdentifier](service: Service, clientIdType: ClientIdType[T])
-                    (action: Request[AnyContent] => ClientIdentifier[T] => Future[Result]): Action[AnyContent] = Action.async {
+  def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(action: Request[AnyContent] => ClientIdentifier[T] => Future[Result]): Action[AnyContent] = Action.async {
     implicit request =>
       authorised(AuthProvider).retrieve(allEnrolments) {
         allEnrols =>
