@@ -25,12 +25,11 @@ import org.scalatest.time.{ Millis, Seconds, Span }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, StatusUpdateFailure }
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{ mtdItId1, nino1 }
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1, nino}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
@@ -47,8 +46,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   val authConnector: AuthConnector = resettingMock[AuthConnector]
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
-
-  def controller: MtdItClientInvitationsController
 
   def invitationDbId: String
   def invitationId: InvitationId
@@ -79,7 +76,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
     when(invitationsService.clientsReceived(any[Service], any(), eqs(None))(any()))
 
-  def assertCreateRelationshipEvent(event: DataEvent) = {
+  def assertCreateITSARelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
     val details = event.detail.toSeq
@@ -91,12 +88,28 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
       "service" -> "HMRC-MTD-IT")
   }
 
+  def assertCreateIRVRelationshipEvent(event: DataEvent) = {
+    event.auditSource shouldBe "agent-client-authorisation"
+    event.auditType shouldBe "AgentClientRelationshipCreated"
+    val details = event.detail.toSeq
+    details should contain allOf(
+      "invitationId" -> invitationId.value,
+      "agentReferenceNumber" -> arn.value,
+      "clientIdType" -> "ni",
+      "clientId" -> nino.value,
+      "service" -> "PERSONAL-INCOME-RECORD")
+  }
+
+
   def verifyAgentClientRelationshipCreatedAuditEvent() = {
     eventually {
       val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
       verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
       val event: DataEvent = argumentCaptor.getValue
-      assertCreateRelationshipEvent(event)
+      if(event.detail.toSeq.contains("service" -> "HMRC-MTD-IT"))
+      assertCreateITSARelationshipEvent(event)
+      else assertCreateIRVRelationshipEvent(event)
+      //Add more if need be
     }
   }
 

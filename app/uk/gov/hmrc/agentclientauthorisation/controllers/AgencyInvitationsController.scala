@@ -40,16 +40,21 @@ class AgencyInvitationsController @Inject() (
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector)
   extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter
-  with AgentInvitationValidation with AgencyInvitationsHal {
+    with AgentInvitationValidation with AgencyInvitationsHal {
 
-  def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    forThisAgency(givenArn) {
-      val invitationJson: Option[JsValue] = request.body.asJson
-      localWithJsonBody({ agentInvitation =>
-        checkForErrors(agentInvitation).flatMap(
-          _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
-      }, invitationJson.get)
-    }
+  def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents {
+    implicit request =>
+      implicit arn =>
+        forThisAgency(givenArn) {
+          val invitationJson: Option[JsValue] = request.body.asJson
+          localWithJsonBody({
+            agentInvitation => {
+              val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
+              checkForErrors(agentInvitation.copy(clientId = normalizedClientId)).flatMap(
+                _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+            }
+          }, invitationJson.get)
+        }
   }
 
   private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =

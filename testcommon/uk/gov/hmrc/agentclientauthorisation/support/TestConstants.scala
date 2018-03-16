@@ -27,6 +27,9 @@ object TestConstants {
   val nino1: Nino = new Generator().nextNino
   val nino2: Nino = new Generator().nextNino
 
+  val nino: Nino = Nino("AA000003D")
+  val ninoSpace = Nino("AA 00 00 03 D")
+
   val arn = "ABCDEF123456"
 
   val agentCode = "12345"
