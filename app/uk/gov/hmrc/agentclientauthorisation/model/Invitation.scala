@@ -173,8 +173,6 @@ case class AgentInvitation(
                             clientId: String,
                             clientPostcode: Option[String]) {
 
-  val reformatClientId: String = clientId.replaceAll("\\s", "")
-
   lazy val getService = Service.forId(service)
 }
 
@@ -184,4 +182,6 @@ object StatusChangeEvent {
 
 object AgentInvitation {
   implicit val format = Json.format[AgentInvitation]
+
+  def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
 }

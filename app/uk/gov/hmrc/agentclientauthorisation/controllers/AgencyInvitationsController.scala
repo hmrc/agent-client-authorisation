@@ -49,8 +49,8 @@ class AgencyInvitationsController @Inject()(override val postcodeService: Postco
           val invitationJson: Option[JsValue] = request.body.asJson
           localWithJsonBody({
             agentInvitation => {
-              val reformatClientId = agentInvitation.reformatClientId
-              checkForErrors(agentInvitation.copy(clientId = reformatClientId)).flatMap(
+              val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
+              checkForErrors(agentInvitation.copy(clientId = normalizedClientId)).flatMap(
                 _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
             }
           }, invitationJson.get)
