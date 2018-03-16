@@ -59,7 +59,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
 
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if checkClientIds(x.clientId, clientId) => Ok(toHalResource(x))
+        case Some(x) if matchClientIdentifiers(x.clientId, clientId) => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
@@ -74,7 +74,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
                                  action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])
                                 (implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any]) = {
     invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation) if checkClientIds(invitation.clientId, clientId) =>
+      case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation) map {
           case Right(_) => NoContent
           case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
@@ -90,7 +90,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](invitationsSe
                              (implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) =
     if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient else block
 
-  private def checkClientIds(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean = {
+  private def matchClientIdentifiers(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean = {
     if (invitationClientId == usersClientId) true
     else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
   }

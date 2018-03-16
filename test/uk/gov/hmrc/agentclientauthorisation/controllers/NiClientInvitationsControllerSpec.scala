@@ -23,9 +23,8 @@ import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.ninoSpace
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -48,24 +47,11 @@ class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resett
   val invitationDbId: String = BSONObjectID.generate.stringify
   val invitationId: InvitationId = InvitationId("BT6NLAYD6FSYU")
   val generator = new Generator()
-  val nino: Nino = nino1
-  val ninoSpace = Nino("AA 00 00 03 D")
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext])).thenReturn(returnValue)
 
   "getInvitation" should {
-    "Return NoPermissionOnClient when given nino does not match authNino" in {
-      clientAuthStub(clientNiEnrolments)
-      val invitation = anInvitation(nino)
-        .copy(service = Service.PersonalIncomeRecord, clientId = nino, postcode = None)
-      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-
-      val response = await(controller.getInvitation(Nino("AB123456A"), invitationId)(FakeRequest()))
-
-      response shouldBe NoPermissionOnClient
-    }
-
     "Return OK when given nino has spaces in between" in {
       clientAuthStub(clientNiEnrolments)
       val invitation = anInvitation(ninoSpace)
@@ -76,6 +62,33 @@ class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resett
         .getInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       status(response) shouldBe status(Ok)
+    }
+
+    "Return NO_CONTENT when accepting an invitation that has nino with spaces in between" in {
+      clientAuthStub(clientNiEnrolments)
+      val invitation = anInvitation(ninoSpace)
+        .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
+      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+      whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
+
+      val response = await(controller
+        .acceptInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
+
+      response.header.status shouldBe 204
+      verifyAgentClientRelationshipCreatedAuditEvent()
+    }
+
+    "Return NO_CONTENT when rejecting an invitation that has nino with spaces in between" in {
+      clientAuthStub(clientNiEnrolments)
+      val invitation = anInvitation(ninoSpace)
+        .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
+      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+      whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
+
+      val response = await(controller
+        .rejectInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
+
+      response.header.status shouldBe 204
     }
   }
 
