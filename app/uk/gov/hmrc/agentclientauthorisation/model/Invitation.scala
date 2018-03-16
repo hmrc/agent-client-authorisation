@@ -182,4 +182,6 @@ object StatusChangeEvent {
 
 object AgentInvitation {
   implicit val format = Json.format[AgentInvitation]
+
+  def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
 }

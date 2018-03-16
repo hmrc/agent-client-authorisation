@@ -98,7 +98,7 @@ object ClientIdentifier {
   def apply(value: String, typeId: String): ClientId = {
     ClientIdType.supportedTypes.find(_.id == typeId)
       .getOrElse(throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
-      .createUnderlying(value)
+      .createUnderlying(value.replaceAll("\\s", ""))
   }
 
   implicit def wrap[T<:TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
