@@ -18,23 +18,22 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
 
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
-import play.api.libs.json.{Format, Json, Writes}
+import play.api.libs.json.{ Format, Json, Writes }
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.DB
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.api.indexes.{ Index, IndexType }
+import reactivemongo.bson.{ BSONDocument, BSONObjectID }
 import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
+import uk.gov.hmrc.mongo.{ AtomicUpdate, ReactiveRepository }
 
 import scala.collection.Seq
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class InvitationsRepository @Inject() (mongo: ReactiveMongoComponent)
@@ -100,7 +99,7 @@ class InvitationsRepository @Inject() (mongo: ReactiveMongoComponent)
 object DomainFormat {
 
   import play.api.libs.functional.syntax._
-  import play.api.libs.json.{JsPath, Reads}
+  import play.api.libs.json.{ JsPath, Reads }
 
   implicit val serviceFormat = Service.format
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]

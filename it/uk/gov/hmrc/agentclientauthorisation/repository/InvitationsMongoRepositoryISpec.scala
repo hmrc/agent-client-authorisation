@@ -20,25 +20,38 @@ import org.joda.time.{ DateTime, LocalDate }
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
+import org.scalatest.mockito.MockitoSugar
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
+import uk.gov.hmrc.agentclientauthorisation.support.{ MongoApp, ResetMongoBeforeTest }
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import play.modules.reactivemongo.ReactiveMongoComponent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside {
+class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside with MockitoSugar with MongoApp {
 
   private val now = DateTime.now()
 
-  private def repository = new InvitationsRepository(mongo()) {
+  implicit lazy val app: Application = appBuilder
+    .build()
+
+  protected def appBuilder: GuiceApplicationBuilder =
+    new GuiceApplicationBuilder()
+      .configure(mongoConfiguration)
+
+  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+
+  private def repository = new InvitationsRepository(mockReactiveMongoComponent) {
     override def withCurrentTime[A](f: (DateTime) => A): A = f(now)
   }
 

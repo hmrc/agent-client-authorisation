@@ -15,14 +15,12 @@
  */
 
 import java.net.URL
-import javax.inject.{Inject, Provider, Singleton}
+import javax.inject.{ Inject, Provider, Singleton }
 
 import com.google.inject.AbstractModule
-import com.google.inject.name.{Named, Names}
+import com.google.inject.name.{ Named, Names }
 import org.slf4j.MDC
-import play.api.{Configuration, Environment, Logger}
-import reactivemongo.api.DB
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import play.api.{ Configuration, Environment, Logger }
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -51,9 +49,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBaseUrl("relationships")
     bindBaseUrl("afi-relationships")
     bindBaseUrl("des")
-    bindProperty("des.environment")
-    bindProperty("des.authorizationToken")
-    bindProperty("invitation.expiryDuration")
+    bindProperty2param("des.environment", "des.environment")
+    bindProperty2param("des.authorizationToken", "des.authorization-token")
+    bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")
   }
 
   private def bindBaseUrl(serviceName: String) =
@@ -61,6 +59,13 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class BaseUrlProvider(serviceName: String) extends Provider[URL] {
     override lazy val get = new URL(baseUrl(serviceName))
+  }
+
+  private def bindProperty2param(objectName: String, propertyName: String) =
+    bind(classOf[String]).annotatedWith(Names.named(objectName)).toProvider(new PropertyProvider2param(propertyName))
+
+  private class PropertyProvider2param(confKey: String) extends Provider[String] {
+    override lazy val get = getConfString(confKey, throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 
   private def bindProperty(propertyName: String) =

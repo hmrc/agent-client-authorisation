@@ -67,6 +67,8 @@ lazy val root = (project in file("."))
     Keys.fork in IntegrationTest := false,
     Defaults.itSettings,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
+    unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,
+    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value,
     parallelExecution in IntegrationTest := false,
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value)
   )

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
+import org.scalatest.{ BeforeAndAfterEach, Matchers, Suite, TestSuite }
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -24,7 +24,7 @@ import play.api.test.FakeApplication
 import reactivemongo.api.DB
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
+import uk.gov.hmrc.mongo.{ MongoSpecSupport, Awaiting => MongoAwaiting }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
@@ -40,7 +40,7 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
 
   override lazy val port: Int = Port.randomAvailable
 
-   implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
+  implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
 
   protected def additionalConfiguration: Map[String, Any] = {
