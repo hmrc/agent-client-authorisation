@@ -91,7 +91,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |      "key": "HMRC-MTD-VAT",
          |      "identifiers": [
          |        {
-         |          "key": "MTDVATID",
+         |          "key": "VRN",
          |          "value": "${vrn.value}"
          |        }
          |      ],

@@ -76,7 +76,7 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
   override def isValid(value: String): Boolean = MtdItId.isValid(value)
 }
 
-case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "MTDVATID", Vrn.apply) {
+case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
   override def isValid(value: String) = Vrn.isValid(value)
 }
 
