@@ -26,10 +26,10 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, StatusUpdateFailure }
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{ mtdItId1, nino1, nino }
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1, nino}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent

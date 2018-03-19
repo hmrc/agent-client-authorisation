@@ -22,8 +22,8 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Invitation, InvitationStatus, Service }
-import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, StatusUpdateFailure }
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, InvitationStatus, Service}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
@@ -40,8 +40,8 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
   val supportedService: Service
 
-  protected def getDetailsForClient(clientId: ClientIdentifier[T], request: Request[AnyContent])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) = forThisClient(clientId) {
-
+  protected def getDetailsForClient(clientId: ClientIdentifier[T], request: Request[AnyContent])
+                                   (implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) = forThisClient(clientId) {
     Future successful Ok(toHalResource(clientId, request.path))
   }
 
@@ -89,5 +89,8 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
     if (invitationClientId == usersClientId) true
     else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 908684fa8ca93495f4be036482f37c92de2c102e
 }
