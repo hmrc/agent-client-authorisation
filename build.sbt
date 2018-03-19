@@ -60,7 +60,8 @@ lazy val root = (project in file("."))
     publishingSettings,
     scoverageSettings,
     unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
-    routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._")
+    routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._"),
+    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value
   )
   .configs(IntegrationTest)
   .settings(
@@ -68,7 +69,6 @@ lazy val root = (project in file("."))
     Defaults.itSettings,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,
-    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value,
     parallelExecution in IntegrationTest := false,
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value)
   )
