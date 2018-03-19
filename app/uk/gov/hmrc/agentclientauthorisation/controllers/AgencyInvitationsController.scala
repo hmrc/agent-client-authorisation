@@ -45,9 +45,13 @@ class AgencyInvitationsController @Inject() (
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       val invitationJson: Option[JsValue] = request.body.asJson
-      localWithJsonBody({ agentInvitation =>
-        checkForErrors(agentInvitation).flatMap(
-          _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+      localWithJsonBody({
+        agentInvitation =>
+          {
+            val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
+            checkForErrors(agentInvitation.copy(clientId = normalizedClientId)).flatMap(
+              _.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+          }
       }, invitationJson.get)
     }
   }

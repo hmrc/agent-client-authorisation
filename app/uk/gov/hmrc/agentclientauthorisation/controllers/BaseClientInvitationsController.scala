@@ -21,6 +21,7 @@ import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Invitation, InvitationStatus, Service }
 import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, StatusUpdateFailure }
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
@@ -40,6 +41,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
   val supportedService: Service
 
   protected def getDetailsForClient(clientId: ClientIdentifier[T], request: Request[AnyContent])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) = forThisClient(clientId) {
+
     Future successful Ok(toHalResource(clientId, request.path))
   }
 
@@ -55,7 +57,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if x.clientId == clientId => Ok(toHalResource(x))
+        case Some(x) if matchClientIdentifiers(x.clientId, clientId) => Ok(toHalResource(x))
         case None => InvitationNotFound
         case _ => NoPermissionOnClient
       }
@@ -68,7 +70,7 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
   protected def actionInvitation(clientId: ClientIdentifier[T], invitationId: InvitationId,
     action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any]) = {
     invitationsService.findInvitation(invitationId) flatMap {
-      case Some(invitation) if invitation.clientId == clientId =>
+      case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation) map {
           case Right(_) => NoContent
           case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
@@ -82,5 +84,10 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
   protected def forThisClient(taxId: ClientIdentifier[T])(block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) =
     if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient else block
+
+  private def matchClientIdentifiers(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean = {
+    if (invitationClientId == usersClientId) true
+    else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
+  }
 
 }
