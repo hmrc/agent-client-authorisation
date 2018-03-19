@@ -42,7 +42,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
   val mockPlayAuthConnector: PlayAuthConnector = mock[PlayAuthConnector]
   val mockMetrics: Metrics = mock[Metrics]
-  val mockAuthConnector: AuthConnector = new AuthConnector(mockMetrics, mockPlayAuthConnector)
+  val mockAuthConnector: AuthActions = new AuthActions(mockMetrics, mockPlayAuthConnector)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
   private type ClientAuthAction = Request[AnyContent] => ClientId => Future[Result]

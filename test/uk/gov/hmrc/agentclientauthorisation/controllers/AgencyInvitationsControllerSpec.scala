@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, PostcodeService, StatusUpdateFailure }
@@ -41,7 +41,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val generator = new Generator()
-  val authConnector: AuthConnector = resettingMock[AuthConnector]
+  val authConnector: AuthActions = resettingMock[AuthActions]
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]

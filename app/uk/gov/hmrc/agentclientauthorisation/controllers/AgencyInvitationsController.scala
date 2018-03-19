@@ -21,7 +21,7 @@ import javax.inject._
 import com.kenshoo.play.metrics.Metrics
 import play.api.libs.json.{ JsError, JsSuccess, JsValue }
 import play.api.mvc.{ Action, AnyContent, Result }
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ ClientRegistrationNotFound, InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus }
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -39,7 +39,7 @@ class AgencyInvitationsController @Inject() (
   invitationsService: InvitationsService)(implicit
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector)
-  extends AuthConnector(metrics, microserviceAuthConnector) with HalWriter
+  extends AuthActions(metrics, microserviceAuthConnector) with HalWriter
   with AgentInvitationValidation with AgencyInvitationsHal {
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>

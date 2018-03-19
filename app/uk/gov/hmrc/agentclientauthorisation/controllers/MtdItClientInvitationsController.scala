@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, InvitationStatus, MtdItIdType, Service }
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.{ InvitationId, MtdItId }
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
@@ -32,7 +33,7 @@ import scala.concurrent.Future
 @Singleton
 class MtdItClientInvitationsController @Inject() (invitationsService: InvitationsService)(implicit
   metrics: Metrics,
-  authConnector: MicroserviceAuthConnector,
+  authConnector: AuthConnector,
   auditService: AuditService)
   extends BaseClientInvitationsController[MtdItId](invitationsService, metrics, authConnector, auditService) {
 

@@ -47,13 +47,11 @@ case class Authority(
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
 @Singleton
-class AuthConnector @Inject() (
+class AuthActions @Inject() (
   metrics: Metrics,
-  microserviceAuthConnector: PlayAuthConnector)
+  val authConnector: AuthConnector)
   extends HttpAPIMonitor with AuthorisedFunctions with BaseController {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-
-  override def authConnector: core.AuthConnector = microserviceAuthConnector
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
 

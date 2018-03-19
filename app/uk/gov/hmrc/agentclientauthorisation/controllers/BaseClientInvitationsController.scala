@@ -19,12 +19,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthConnector, MicroserviceAuthConnector }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Invitation, InvitationStatus, Service }
 import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, StatusUpdateFailure }
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -34,8 +35,8 @@ import scala.util.Success
 abstract class BaseClientInvitationsController[T <: TaxIdentifier](
   invitationsService: InvitationsService,
   metrics: Metrics,
-  authConnector: MicroserviceAuthConnector,
-  auditService: AuditService) extends AuthConnector(metrics, authConnector)
+  authConnector: AuthConnector,
+  auditService: AuditService) extends AuthActions(metrics, authConnector)
   with HalWriter with ClientInvitationsHal {
 
   val supportedService: Service

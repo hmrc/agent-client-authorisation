@@ -25,13 +25,14 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.{ InvitationId, Vrn }
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 class VatClientInvitationsController @Inject() (invitationsService: InvitationsService)(implicit
   metrics: Metrics,
-  authConnector: MicroserviceAuthConnector,
+  authConnector: AuthConnector,
   auditService: AuditService)
   extends BaseClientInvitationsController[Vrn](invitationsService, metrics, authConnector, auditService) {
 
