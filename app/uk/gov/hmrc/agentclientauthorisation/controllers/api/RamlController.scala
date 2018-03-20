@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import controllers.AssetsBuilder
 import play.api.http.HttpErrorHandler
-
 
 @Singleton
 class RamlController @Inject() (errorHandler: HttpErrorHandler) extends AssetsBuilder(errorHandler) {

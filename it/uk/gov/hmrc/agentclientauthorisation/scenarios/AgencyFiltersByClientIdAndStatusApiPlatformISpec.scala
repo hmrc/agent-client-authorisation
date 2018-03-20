@@ -21,7 +21,7 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 
 class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
@@ -30,7 +30,7 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
   val nino: Nino = nextNino
   val nino2: Nino = nextNino
 
-  feature("Agencies can filter")  {
+  feature("Agencies can filter") {
 
     scenario("on the client id and status of invitations") {
       val agency = new AgencyApi(this, arn, port)
@@ -46,11 +46,10 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       And("Sends an invitations to Client 2")
-      agency sendInvitation(nino2, MtdItService)
+      agency sendInvitation (nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
       given().client(mtdItId1, nino).isLoggedInWithMtdEnrolment

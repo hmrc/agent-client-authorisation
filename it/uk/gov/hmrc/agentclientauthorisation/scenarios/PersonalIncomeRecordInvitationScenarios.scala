@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino
 
 class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioHelpers with GivenWhenThen
-                                    with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+  with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino
@@ -38,7 +38,7 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation(nino, PersonalIncomeRecordService)
+    agency sendInvitation (nino, PersonalIncomeRecordService)
 
     And("Client accepts the first invitation")
 
@@ -60,7 +60,7 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation(nino, PersonalIncomeRecordService)
+    agency sendInvitation (nino, PersonalIncomeRecordService)
 
     And("Client rejects the first invitation")
 

@@ -17,13 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
-  this: UnitSpec with AppAndStubs   =>
-
+  this: UnitSpec with AppAndStubs =>
 
   def anEndpointAccessibleForMtdAgentsOnly(makeRequest: => HttpResponse): Unit = {
     "return 401 when the requester is an Agent but not authenticated" in {

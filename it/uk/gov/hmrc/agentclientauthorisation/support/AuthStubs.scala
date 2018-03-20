@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
-import uk.gov.hmrc.domain.{Nino, SaAgentReference, TaxIdentifier}
+import uk.gov.hmrc.domain.{ Nino, SaAgentReference, TaxIdentifier }
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -55,8 +55,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    }
          |  ]
          |}
-       """.stripMargin
-    )))
+       """.stripMargin)))
 
     this
   }
@@ -78,8 +77,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    }
          |  ]
          |}
-       """.stripMargin
-    )))
+       """.stripMargin)))
 
     this
   }
@@ -93,7 +91,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |      "key": "HMRC-MTD-VAT",
          |      "identifiers": [
          |        {
-         |          "key": "MTDVATID",
+         |          "key": "VRN",
          |          "value": "${vrn.value}"
          |        }
          |      ],
@@ -101,8 +99,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    }
          |  ]
          |}
-       """.stripMargin
-    )))
+       """.stripMargin)))
 
     this
   }
@@ -157,8 +154,7 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    }
          |  ]
          |}
-       """.stripMargin
-    )))
+       """.stripMargin)))
     this
   }
 
@@ -190,8 +186,7 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
          |    }
          |  ]
          |}
-       """.stripMargin
-    )))
+       """.stripMargin)))
     this
   }
 

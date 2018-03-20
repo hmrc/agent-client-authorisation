@@ -21,7 +21,7 @@ import org.joda.time.DateTime._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.~
 
@@ -42,22 +42,18 @@ trait TestData {
   val allInvitations = List(
     Invitation(mtdSaPendingInvitationDbId, mtdSaPendingInvitationId, arn, Service.MtdIt, mtdItId1, ClientIdentifier(nino1.value, "ni"), Some("postcode"), now().toLocalDate.plusDays(100), events = List(StatusChangeEvent(now(), Pending))),
     Invitation(mtdSaAcceptedInvitationDbId, mtdSaAcceptedInvitationId, arn, Service.MtdIt, mtdItId1, ClientIdentifier(nino1.value, "ni"), Some("postcode"), now().toLocalDate.plusDays(100), events = List(StatusChangeEvent(now(), Accepted))),
-    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, Service.PersonalIncomeRecord, mtdItId1, ClientIdentifier(nino1.value, "ni"), Some("postcode"), now().toLocalDate.plusDays(100), events = List(StatusChangeEvent(now(), Pending)))
-  )
+    Invitation(otherRegimePendingInvitationDbId, otherRegimePendingInvitationId, arn, Service.PersonalIncomeRecord, mtdItId1, ClientIdentifier(nino1.value, "ni"), Some("postcode"), now().toLocalDate.plusDays(100), events = List(StatusChangeEvent(now(), Pending))))
 
   val agentEnrolment = Set(
     Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), state = "",
-      delegatedAuthRule = None)
-  )
+      delegatedAuthRule = None))
 
   val clientMtdItEnrolment = Set(
     Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
-      state = "", delegatedAuthRule = None)
-  )
+      state = "", delegatedAuthRule = None))
 
   val clientNiEnrolment = Set(
-    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None)
-  )
+    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None))
 
   val clientMtdItEnrolments: Future[Enrolments] = Future successful Enrolments(clientMtdItEnrolment)
 

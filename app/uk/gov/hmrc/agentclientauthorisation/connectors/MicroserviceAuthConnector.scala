@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.support
+package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import org.mockito.Mockito
-import org.scalatest.mock.MockitoSugar
-import org.scalatest.{ BeforeAndAfterEach, Suite }
+import java.net.URL
+import javax.inject.{ Inject, Named, Singleton }
 
-import scala.reflect.Manifest
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.http.HttpPost
+import uk.gov.hmrc.play.http.ws.WSPost
 
-trait ResettingMockitoSugar extends MockitoSugar with BeforeAndAfterEach {
-  this: Suite =>
+@Singleton
+class MicroserviceAuthConnector @Inject() (@Named("auth-baseUrl") baseUrl: URL)
+  extends PlayAuthConnector {
 
-  var mocksToReset = Seq.empty[Any]
+  override val serviceUrl = baseUrl.toString
 
-  def resettingMock[T <: AnyRef](implicit manifest: Manifest[T]): T = {
-    val m = mock[T](manifest)
-    mocksToReset = mocksToReset :+ m
-    m
-  }
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    Mockito.reset(mocksToReset: _*)
+  override def http = new HttpPost with WSPost {
+    override val hooks = NoneRequired
   }
 }

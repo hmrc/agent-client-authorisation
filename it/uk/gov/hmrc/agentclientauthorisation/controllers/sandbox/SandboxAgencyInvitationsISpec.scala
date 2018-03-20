@@ -20,8 +20,8 @@ import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import play.api.libs.json.{ JsArray, JsValue }
+import uk.gov.hmrc.agentclientauthorisation.support.{ ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours }
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -33,9 +33,9 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
 
   override val sandboxMode = true
 
-//  "GET /sandbox" should {
-//    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
-//  }
+  //  "GET /sandbox" should {
+  //    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
+  //  }
 
   "GET /sandbox/agencies" should {
     behave like anEndpointWithAgencySentInvitationsLink(agenciesUrl)
@@ -116,7 +116,7 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (obj \ "_links" \ "self" \ "href").as[String]
   }
 
-  def anEndpointWithAgencySentInvitationsLink(url:String): Unit = {
+  def anEndpointWithAgencySentInvitationsLink(url: String): Unit = {
     "return a HAL response including an agency sent invitations link" in {
       val response = new Resource(url, port).get()
 

@@ -22,16 +22,16 @@ import org.mockito.Mockito._
 import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.ninoSpace
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
-import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.auth.core.{ Enrolments, PlayAuthConnector }
+import uk.gov.hmrc.domain.{ Generator, Nino }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
 

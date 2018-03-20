@@ -21,15 +21,15 @@ import javax.inject._
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ DesConnector, RelationshipsConnector }
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{ InvitationsRepository, Monitor }
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -38,18 +38,18 @@ import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.util.Success
 
-
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
-                                   relationshipsConnector: RelationshipsConnector,
-                                   desConnector: DesConnector,
-                                   auditService: AuditService,
-                                   @Named("invitation.expiryDuration") invitationExpiryDurationValue: String,
-                                   metrics: Metrics)
+class InvitationsService @Inject() (
+  invitationsRepository: InvitationsRepository,
+  relationshipsConnector: RelationshipsConnector,
+  desConnector: DesConnector,
+  auditService: AuditService,
+  @Named("invitation.expiryDuration") invitationExpiryDurationValue: String,
+  metrics: Metrics)
   extends Monitor {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
@@ -57,8 +57,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
   private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
   private val invitationExpiryUnits = invitationExpiryDuration.unit
 
-  def translateToMtdItId(clientId: String, clientIdType: String)
-                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[ClientIdentifier[MtdItId]]] = {
+  def translateToMtdItId(clientId: String, clientIdType: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[ClientIdentifier[MtdItId]]] = {
     clientIdType match {
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
       case NinoType.id =>
@@ -70,18 +69,16 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     }
   }
 
-  def create(arn: Arn, service: Service, clientId: ClientId, postcode: Option[String], suppliedClientId: ClientId)
-            (implicit ec: ExecutionContext): Future[Invitation] = {
+  def create(arn: Arn, service: Service, clientId: ClientId, postcode: Option[String], suppliedClientId: ClientId)(implicit ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate).map{ invitation =>
+      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate).map { invitation =>
         Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
         invitation
       }
     }
   }
-
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     val acceptedDate = currentTime()
@@ -108,8 +105,9 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
     elapsedTime gt invitationExpiryDuration
   }
 
-  private def updateStatusToExpired(invitation: Invitation)(implicit ec: ExecutionContext,
-                                                            hc: HeaderCarrier, request: Request[Any]): Future[Invitation] = {
+  private def updateStatusToExpired(invitation: Invitation)(implicit
+    ec: ExecutionContext,
+    hc: HeaderCarrier, request: Request[Any]): Future[Invitation] = {
     changeInvitationStatus(invitation, Expired).map { a =>
       if (a.isLeft) throw new Exception("Failed to transition invitation state to Expired")
       auditService.sendInvitationExpired(invitation)
@@ -132,7 +130,7 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       }
 
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier,
-                                                 request: Request[Any]): Future[Option[Invitation]] = {
+    request: Request[Any]): Future[Option[Invitation]] = {
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
       invitationsRepository.find("invitationId" -> invitationId)
     }
@@ -146,22 +144,19 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
       }
   }
 
-  def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])
-                     (implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+  def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
       invitationsRepository.list(service, clientId, status)
     }
 
-  def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])
-                (implicit ec: ExecutionContext): Future[List[Invitation]] =
+  def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
       monitor(s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
         invitationsRepository.list(arn, service, clientId, status)
       }
     else Future successful List.empty
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())
-                                    (implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     invitation.status match {
       case Pending =>
         monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
@@ -180,6 +175,6 @@ class InvitationsService @Inject()(invitationsRepository: InvitationsRepository,
 
   private def currentTime() = DateTime.now(DateTimeZone.UTC)
 
-  private def durationOf(invitation: Invitation): Long = if(invitation.events.isEmpty) 0 else
-    System.currentTimeMillis()-invitation.firstEvent().time.getMillis
+  private def durationOf(invitation: Invitation): Long = if (invitation.events.isEmpty) 0 else
+    System.currentTimeMillis() - invitation.firstEvent().time.getMillis
 }

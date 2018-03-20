@@ -21,9 +21,9 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import org.joda.time.LocalDate
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{ routes => prodroutes, _ }
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -70,8 +70,7 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),
     postcode = Some("A11 1AA"),
     expiryDate = LocalDate.now().plusDays(10),
-    events = List(StatusChangeEvent(now(), Pending))
-  )
+    events = List(StatusChangeEvent(now(), Pending)))
 
   override protected def agencyLink(invitation: Invitation) = None
 }

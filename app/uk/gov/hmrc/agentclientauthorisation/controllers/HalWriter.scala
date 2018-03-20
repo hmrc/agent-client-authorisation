@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{HalResource, halLinkWrites}
+import play.api.hal.{ HalResource, halLinkWrites }
 import play.api.http.Writeable
-import play.api.libs.json.{JsObject, JsValue, Json, Writes}
+import play.api.libs.json.{ JsObject, JsValue, Json, Writes }
 import play.api.mvc.Codec
 
 trait HalWriter {

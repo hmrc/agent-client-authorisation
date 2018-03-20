@@ -17,15 +17,16 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
-import uk.gov.hmrc.domain.{TaxIdentifier, Nino, SimpleObjectReads, SimpleObjectWrites}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ MtdItId, Vrn }
+import uk.gov.hmrc.domain.{ TaxIdentifier, Nino, SimpleObjectReads, SimpleObjectWrites }
 
-sealed abstract class Service(val id: String,
-                              val invitationIdPrefix: Char,
-                              val enrolmentKey: String,
-                              val supportedSuppliedClientIdType: ClientIdType[_<:TaxIdentifier],
-                              val supportedClientIdType: ClientIdType[_<:TaxIdentifier],
-                              val requiresKnownFactsCheck: Boolean) {
+sealed abstract class Service(
+  val id: String,
+  val invitationIdPrefix: Char,
+  val enrolmentKey: String,
+  val supportedSuppliedClientIdType: ClientIdType[_ <: TaxIdentifier],
+  val supportedClientIdType: ClientIdType[_ <: TaxIdentifier],
+  val requiresKnownFactsCheck: Boolean) {
 
   override def equals(that: Any): Boolean =
     that match {
@@ -54,11 +55,11 @@ object Service {
   val format = Format(reads, writes)
 }
 
-
-sealed abstract class ClientIdType[T<:TaxIdentifier](val clazz: Class[T],
-                                                     val id: String,
-                                                     val enrolmentId: String,
-                                                     val createUnderlying: (String) => T) {
+sealed abstract class ClientIdType[T <: TaxIdentifier](
+  val clazz: Class[T],
+  val id: String,
+  val enrolmentId: String,
+  val createUnderlying: (String) => T) {
   def isValid(value: String): Boolean
 }
 
@@ -67,7 +68,7 @@ object ClientIdType {
   def forId(id: String) = supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
 
-case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply){
+case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply) {
   override def isValid(value: String): Boolean = Nino.isValid(value)
 }
 
@@ -75,12 +76,11 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
   override def isValid(value: String): Boolean = MtdItId.isValid(value)
 }
 
-case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "MTDVATID", Vrn.apply) {
+case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
   override def isValid(value: String) = Vrn.isValid(value)
 }
 
-
-case class ClientIdentifier[T<:TaxIdentifier](underlying: T) {
+case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
 
   private val clientIdType = ClientIdType.supportedTypes.find(_.clazz == underlying.getClass)
     .getOrElse(throw new Exception("Invalid type for clientId " + underlying.getClass.getCanonicalName))
@@ -93,7 +93,7 @@ case class ClientIdentifier[T<:TaxIdentifier](underlying: T) {
 }
 
 object ClientIdentifier {
-  type ClientId = ClientIdentifier[_<:TaxIdentifier]
+  type ClientId = ClientIdentifier[_ <: TaxIdentifier]
 
   def apply(value: String, typeId: String): ClientId = {
     ClientIdType.supportedTypes.find(_.id == typeId)
@@ -101,6 +101,6 @@ object ClientIdentifier {
       .createUnderlying(value.replaceAll("\\s", ""))
   }
 
-  implicit def wrap[T<:TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
+  implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
 }
 

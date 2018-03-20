@@ -18,21 +18,21 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.kenshoo.play.metrics.Metrics
 import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito.{reset, when}
+import org.mockito.Mockito.{ reset, when }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.Results._
-import play.api.mvc.{AnyContent, Request, Result}
+import play.api.mvc.{ AnyContent, Request, Result }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.{MtdItIdType, NinoType, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ MtdItIdType, NinoType, Service }
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
+import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
+import uk.gov.hmrc.auth.core.{ AffinityGroup, Enrolments, PlayAuthConnector }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -42,7 +42,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
   val mockPlayAuthConnector: PlayAuthConnector = mock[PlayAuthConnector]
   val mockMetrics: Metrics = mock[Metrics]
-  val mockAuthConnector: AuthConnector = new AuthConnector(mockMetrics, mockPlayAuthConnector)
+  val mockAuthConnector: AuthActions = new AuthActions(mockMetrics, mockPlayAuthConnector)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
   private type ClientAuthAction = Request[AnyContent] => ClientId => Future[Result]

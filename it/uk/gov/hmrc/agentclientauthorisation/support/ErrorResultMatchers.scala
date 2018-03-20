@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import akka.stream.ActorMaterializer
 import com.fasterxml.jackson.databind.JsonMappingException
-import org.scalatest.matchers.{MatchResult, Matcher}
+import org.scalatest.matchers.{ MatchResult, Matcher }
 import play.api.mvc.Result
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
@@ -38,8 +38,7 @@ trait ErrorResultMatchers { this: UnitSpec =>
         MatchResult(
           false,
           s"""Response had status ${left.status} not expected status ${expectedResult.header.status}""",
-          rawNegatedFailureMessage
-        )
+          rawNegatedFailureMessage)
       } else {
         Try(left.json)
           .map(json =>

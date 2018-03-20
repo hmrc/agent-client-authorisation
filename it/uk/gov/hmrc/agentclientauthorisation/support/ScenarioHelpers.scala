@@ -27,7 +27,7 @@ import uk.gov.hmrc.domain.TaxIdentifier
 
 trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
 
-  self : FeatureSpec =>
+  self: FeatureSpec =>
 
   def mtdItId: TaxIdentifier = mtdItId1
   def arn: Arn
@@ -35,9 +35,9 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
   val PersonalIncomeRecordService = Service.PersonalIncomeRecord.id
   val VATService = Service.Vat.id
 
-  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient:(ClientApi, String), secondClient:(ClientApi, String)): Unit = {
+  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient: (ClientApi, String), secondClient: (ClientApi, String)): Unit = {
 
-    val locations = Seq(firstClient, secondClient).map (i => agency sendInvitation(i._1.suppliedClientId, service = i._2))
+    val locations = Seq(firstClient, secondClient).map(i => agency sendInvitation (i._1.suppliedClientId, service = i._2))
 
     val location1 = locations.head
     val location2 = locations(1)
@@ -50,7 +50,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     checkInvite(response.firstInvitation)(firstClient._1.clientId, firstClient._2)
     checkInvite(response.secondInvitation)(secondClient._1.clientId, secondClient._2)
 
-    def checkInvite(invitation: EmbeddedInvitation)(expectedClientId:ClientId, expectedService: String): Unit = {
+    def checkInvite(invitation: EmbeddedInvitation)(expectedClientId: ClientId, expectedService: String): Unit = {
       invitation.arn shouldBe arn
       invitation.clientIdType shouldBe expectedClientId.typeId
       invitation.clientId shouldBe expectedClientId.value
@@ -66,7 +66,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
   }
 
   def clientsViewOfPendingInvitations(client: ClientApi, service: String = MtdItService,
-                                      taxIdType: String = "MTDITID", taxId: TaxIdentifier = mtdItId): Unit = {
+    taxIdType: String = "MTDITID", taxId: TaxIdentifier = mtdItId): Unit = {
     val clientResponse = client.getInvitations()
 
     val i1 = clientResponse.firstInvitation

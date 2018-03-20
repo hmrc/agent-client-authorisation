@@ -16,32 +16,44 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{ DateTime, LocalDate }
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
+import org.scalatest.mockito.MockitoSugar
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.ResetMongoBeforeTest
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.support.{ MongoApp, ResetMongoBeforeTest }
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import play.modules.reactivemongo.ReactiveMongoComponent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside {
+class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside with MockitoSugar with MongoApp {
 
   private val now = DateTime.now()
 
-  private def repository = new InvitationsRepository(mongo()) {
+  implicit lazy val app: Application = appBuilder
+    .build()
+
+  protected def appBuilder: GuiceApplicationBuilder =
+    new GuiceApplicationBuilder()
+      .configure(mongoConfiguration)
+
+  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+
+  private def repository = new InvitationsRepository(mockReactiveMongoComponent) {
     override def withCurrentTime[A](f: (DateTime) => A): A = f(now)
   }
-
 
   val ninoValue = nino1.value
 
@@ -79,11 +91,10 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val updated = update(created.id, Accepted, now)
 
       inside(updated) {
-        case Invitation(created.id, _, _, _, _, _,_,_, events) =>
+        case Invitation(created.id, _, _, _, _, _, _, _, events) =>
           events shouldBe List(
             StatusChangeEvent(now, Pending),
-            StatusChangeEvent(now, Accepted)
-          )
+            StatusChangeEvent(now, Accepted))
       }
     }
   }
@@ -165,7 +176,6 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-
   "listing by clientId" should {
 
     "return an empty list when there is no such service-clientId pair" in {
@@ -198,12 +208,10 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
       val service = Service.MtdIt
       val postcode = "postcode"
 
-
       addInvitations(
         (firstAgent, service, mtdItId1, nino1.value, "ni", postcode),
         (secondAgent, service, mtdItId1, nino1.value, "ni", postcode),
-        (Arn("should-not-show-up"), Service.MtdIt,  MtdItId("another-client"), nino1.value, "ni", postcode)
-      )
+        (Arn("should-not-show-up"), Service.MtdIt, MtdItId("another-client"), nino1.value, "ni", postcode))
 
       val requests = listByClientId(service, mtdItId1).sortBy(_.arn.value)
 
@@ -234,7 +242,6 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
     }
   }
 
-
   private type Invitation = (Arn, Service, MtdItId, String, String, String)
 
   private def addInvitations(invitations: Invitation*) = {
@@ -252,7 +259,7 @@ class InvitationsMongoRepositoryISpec extends UnitSpec with MongoSpecSupport wit
   private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None))
 
   private def listByArn(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus]) =
-                            await(repository.list(arn, service, clientId, status))
+    await(repository.list(arn, service, clientId, status))
 
   private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
     await(repository.list(service, clientId, status))

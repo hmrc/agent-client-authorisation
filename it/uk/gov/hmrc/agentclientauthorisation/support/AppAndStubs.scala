@@ -16,27 +16,32 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.scalatest.{BeforeAndAfterEach, Matchers, Suite}
+import org.scalatest.{ BeforeAndAfterEach, Matchers, Suite, TestSuite }
 import org.scalatestplus.play.OneServerPerSuite
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeApplication
+import reactivemongo.api.DB
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
+import uk.gov.hmrc.mongo.{ MongoSpecSupport, Awaiting => MongoAwaiting }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext
 
-trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport {
-  me: Suite with Matchers =>
+trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport with Matchers {
+  me: Suite with TestSuite =>
 
   implicit val hc = HeaderCarrier()
-  implicit val portNum = port
+  implicit val portNum: Int = port
+
+  override implicit lazy val app: Application = appBuilder.build()
 
   override lazy val port: Int = Port.randomAvailable
 
-  override implicit lazy val app: FakeApplication = FakeApplication(
-    additionalConfiguration = additionalConfiguration
-  )
+  implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
+    .configure(additionalConfiguration)
 
   protected def additionalConfiguration: Map[String, Any] = {
     Map(
@@ -52,8 +57,7 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
       "microservice.services.des.port" -> wiremockPort,
       "auditing.enabled" -> true,
       "auditing.consumer.baseUri.host" -> wiremockHost,
-      "auditing.consumer.baseUri.port" -> wiremockPort
-    )
+      "auditing.consumer.baseUri.port" -> wiremockPort)
   }
 
   override def commonStubs(): Unit = {
@@ -65,8 +69,10 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
   def nextNino = generator.nextNino
 }
 
-trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest {
-  me: Suite with Matchers =>
+trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
+  me: Suite with TestSuite =>
+
+  implicit val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

@@ -17,12 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation
 
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Inside, Inspectors}
+import org.scalatest.{ Inside, Inspectors }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 import uk.gov.hmrc.play.test.UnitSpec
 
 //class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
@@ -58,7 +58,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   }
 
   "POST /agencies/:arn/invitations/sent" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly{
+    behave like anEndpointAccessibleForMtdAgentsOnly {
       agencySendInvitation(arn1, validInvitation)
     }
   }
@@ -167,12 +167,12 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, None)
   protected val validInvitationWithPostcode: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
 
-//  "GET root resource" should {
-//    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
-//    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
-//  }
+  //  "GET root resource" should {
+  //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
+  //    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
+  //  }
 
-  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url:String): Unit = {
+  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url: String): Unit = {
     "return a meaningful response for the authenticated agent" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
 
@@ -184,7 +184,7 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
     }
   }
 
-  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url:String): Unit = {
+  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url: String): Unit = {
     "return 403 for someone else's invitations" in {
       given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedInAndIsSubscribed
       new Resource(url, port).get() should matchErrorResult(NoPermissionOnAgency)

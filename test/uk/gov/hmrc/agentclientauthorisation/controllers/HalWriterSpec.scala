@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{HalLink, HalLinks, HalResource}
-import play.api.libs.json.{JsObject, Json}
+import play.api.hal.{ HalLink, HalLinks, HalResource }
+import play.api.libs.json.{ JsObject, Json }
 import uk.gov.hmrc.play.test.UnitSpec
 
 class HalWriterSpec extends UnitSpec {
@@ -146,8 +146,7 @@ class HalWriterSpec extends UnitSpec {
 
     "add _links even if there are embedded resources as well" in {
       val res = HalResource(HalLinks(Vector(HalLink("self", "/toys/bear"))), teddyBear, Vector(
-        "has" -> Vector(toHalResourceWithLink(ball, "ball"), toHalResourceWithLink(duplo, "duplo"))
-      ))
+        "has" -> Vector(toHalResourceWithLink(ball, "ball"), toHalResourceWithLink(duplo, "duplo"))))
 
       val json = Json.toJson(res)(HalWriter.halWrites)
 

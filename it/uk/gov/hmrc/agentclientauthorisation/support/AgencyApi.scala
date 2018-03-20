@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvi
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.logging.SessionId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 
 class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) {
 
@@ -35,14 +35,14 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
     response.header(LOCATION).get
   }
 
-  def sentInvitations(filteredBy:Seq[(String, String)] = Nil): HalResourceHelper = {
+  def sentInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
 
     val response = apiRequests.agencyGetSentInvitations(arn, filteredBy)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }
 
-  def sentInvitation(invitationId:String): HalResourceHelper = {
+  def sentInvitation(invitationId: String): HalResourceHelper = {
 
     val response = apiRequests.agencyGetSentInvitation(arn, invitationId)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
@@ -55,6 +55,6 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
       val response: HttpResponse = new Resource(cancelLink, port).putEmpty()(hc)
       require(response.status == 204, s"response for canceling invitation should be 204, was [${response.status}]")
       response
-    } .getOrElse (throw new IllegalStateException("Can't cancel this invitation the cancel link is not defined"))
+    }.getOrElse(throw new IllegalStateException("Can't cancel this invitation the cancel link is not defined"))
   }
 }

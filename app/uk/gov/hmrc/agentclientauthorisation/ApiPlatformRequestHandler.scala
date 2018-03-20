@@ -18,8 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import javax.inject.Inject
 
-import play.api.http.{DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters}
-import play.api.mvc.{Handler, RequestHeader}
+import play.api.http.{ DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters }
+import play.api.mvc.{ Handler, RequestHeader }
 import play.api.routing.Router
 
 /**
@@ -51,8 +51,8 @@ class ApiPlatformRequestHandler @Inject() (router: Router, errorHandler: HttpErr
 
   private def isApiPlatformRequest(request: RequestHeader): Boolean =
     request.path.startsWith("/sandbox") ||
-    request.path.startsWith("/agencies") ||
-    request.path.startsWith("/clients") ||
-    request.path == "/"
+      request.path.startsWith("/agencies") ||
+      request.path.startsWith("/clients") ||
+      request.path == "/"
 
 }

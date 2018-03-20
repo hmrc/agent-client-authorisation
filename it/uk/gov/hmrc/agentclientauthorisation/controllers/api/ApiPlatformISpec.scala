@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{ MongoAppAndStubs, Resource }
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.language.postfixOps
 
 class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
-
 
   "/public/api/definition" should {
     "return the definition JSON" in {
@@ -41,27 +40,27 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
     }
   }
 
-
   "provide RAML documentation exists for all API versions" in new ApiTestSupport {
 
     lazy override val runningPort: Int = port
 
-    forAllApiVersions(ramlByVersion) { case (version, raml) =>
+    forAllApiVersions(ramlByVersion) {
+      case (version, raml) =>
 
-      info(s"Checking API RAML documentation for version[$version] of the API")
+        info(s"Checking API RAML documentation for version[$version] of the API")
 
-      withClue("RAML does not contain a valid RAML 1.0 version header") {
-        raml should include("#%RAML 1.0")
-      }
+        withClue("RAML does not contain a valid RAML 1.0 version header") {
+          raml should include("#%RAML 1.0")
+        }
 
-      withClue("RAML does not contain the title 'Agent Client Authorisation API'") {
-        raml should include("title: Agent Client Authorisation")
+        withClue("RAML does not contain the title 'Agent Client Authorisation API'") {
+          raml should include("title: Agent Client Authorisation")
 
-      }
+        }
 
-      withClue(s"RAML does not contain a matching version declaration of [$version]") {
-        raml should include(s"version: $version")
-      }
+        withClue(s"RAML does not contain a matching version declaration of [$version]") {
+          raml should include(s"version: $version")
+        }
     }
   }
 }

@@ -18,74 +18,45 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
 
-import org.joda.time.{DateTime, LocalDate}
-import play.api.Logger
+import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
-import play.api.libs.json.{Format, Json, Writes}
-import reactivemongo.api.DB
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.core.errors.GenericDatabaseException
+import play.api.libs.json.{ Format, Json, Writes }
+import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.indexes.{ Index, IndexType }
+import reactivemongo.bson.{ BSONDocument, BSONObjectID }
 import reactivemongo.play.json.BSONFormats
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
+import uk.gov.hmrc.mongo.{ AtomicUpdate, ReactiveRepository }
 
 import scala.collection.Seq
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class InvitationsRepository @Inject()(mongo: DB)
-  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", () => mongo, DomainFormat.mongoFormat, ReactiveMongoFormats.objectIdFormats)
-    with AtomicUpdate[Invitation] {
+class InvitationsRepository @Inject() (mongo: ReactiveMongoComponent)
+  extends ReactiveRepository[Invitation, BSONObjectID]("invitations", mongo.mongoConnector.db, DomainFormat.mongoFormat, ReactiveMongoFormats.objectIdFormats)
+  with AtomicUpdate[Invitation]
+  with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
   override def indexes: Seq[Index] = Seq(
     Index(key = Seq("invitationId" -> IndexType.Ascending), name = Some("invitationIdIndex"), unique = true, sparse = true),
     Index(Seq("arn" -> IndexType.Ascending)),
     Index(Seq("clientId" -> IndexType.Ascending)),
-    Index(Seq("service" -> IndexType.Ascending))
-  )
-
-  private def ensureIndex(index: Index)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val indexInfo = s"""name=${index.eventualName}, key=${index.key.map{case (k,_) => k}.mkString("+")}, unique=${index.unique}, background=${index.background}, sparse=${index.sparse}"""
-    collection.indexesManager.create(index).map(wr => {
-      if(wr.ok) {
-        logger.info(s"Successfully Created Index $indexInfo")
-        true
-      } else {
-        val msg = wr.writeErrors.mkString(", ")
-        if (msg.contains("E11000")) {
-          // this is for backwards compatibility to mongodb 2.6.x
-          throw GenericDatabaseException(msg, wr.code)
-        } else {
-          logger.error(s"Failed to ensure index $indexInfo, error=$msg")
-          false
-        }
-      }
-    }).recover {
-      case t =>
-        logger.error(message, t)
-        false
-    }
-  }
-
-  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
-    Future.sequence(indexes.map(ensureIndex))
-  }
+    Index(Seq("service" -> IndexType.Ascending)))
 
   def create(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId,
-             postcode: Option[String], startDate: DateTime, expiryDate: LocalDate)
-            (implicit ec: ExecutionContext): Future[Invitation] = {
+    postcode: Option[String], startDate: DateTime, expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] = {
 
     val invitation = Invitation.createNew(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
     insert(invitation).map(_ => invitation)
   }
 
   def list(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val searchOptions = Seq("arn" -> Some(arn.value),
+    val searchOptions = Seq(
+      "arn" -> Some(arn.value),
       "clientId" -> clientId,
       "service" -> service.map(_.id),
       "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
@@ -100,8 +71,7 @@ class InvitationsRepository @Inject()(mongo: DB)
     val searchOptions = Seq(
       "service" -> Some(service.id),
       "clientId" -> Some(clientId.value),
-      statusSearchOption(status)
-    )
+      statusSearchOption(status))
       .filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
@@ -114,7 +84,6 @@ class InvitationsRepository @Inject()(mongo: DB)
 
   def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
     find()
-
 
   def update(id: BSONObjectID, status: InvitationStatus, updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation] = {
     val update = atomicUpdate(BSONDocument("_id" -> id), BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(updateDate, status)))))
@@ -129,16 +98,16 @@ class InvitationsRepository @Inject()(mongo: DB)
 
 object DomainFormat {
 
-  import play.api.libs.json.{ JsPath, Reads }
   import play.api.libs.functional.syntax._
+  import play.api.libs.json.{ JsPath, Reads }
 
   implicit val serviceFormat = Service.format
   implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
 
   def read(id: BSONObjectID, invitationId: InvitationId, arn: Arn, service: Service, clientId: String, clientIdTypeOp: Option[String],
-           suppliedClientId: String, suppliedClientIdType: String, postcode: Option[String], expiryDateOp: Option[LocalDate],
-           events: List[StatusChangeEvent]): Invitation = {
+    suppliedClientId: String, suppliedClientIdType: String, postcode: Option[String], expiryDateOp: Option[LocalDate],
+    events: List[StatusChangeEvent]): Invitation = {
 
     val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
 
@@ -152,18 +121,18 @@ object DomainFormat {
 
   val reads: Reads[Invitation] = (
     (JsPath \ "id").read[BSONObjectID] and
-      (JsPath \ "invitationId").read[InvitationId] and
-      (JsPath \ "arn").read[Arn] and
-      (JsPath \ "service").read[Service] and
-      (JsPath \ "clientId").read[String] and
-      (JsPath \ "clientIdType").readNullable[String] and
-      (JsPath \ "suppliedClientId").read[String] and
-      (JsPath \ "suppliedClientIdType").read[String] and
-      (JsPath \ "postcode").readNullable[String] and
-      (JsPath \ "expiryDate").readNullable[LocalDate] and
-      (JsPath \ "events").read[List[StatusChangeEvent]]) (read _)
+    (JsPath \ "invitationId").read[InvitationId] and
+    (JsPath \ "arn").read[Arn] and
+    (JsPath \ "service").read[Service] and
+    (JsPath \ "clientId").read[String] and
+    (JsPath \ "clientIdType").readNullable[String] and
+    (JsPath \ "suppliedClientId").read[String] and
+    (JsPath \ "suppliedClientIdType").read[String] and
+    (JsPath \ "postcode").readNullable[String] and
+    (JsPath \ "expiryDate").readNullable[LocalDate] and
+    (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
-  val writes  = new Writes[Invitation] {
+  val writes = new Writes[Invitation] {
     def writes(invitation: Invitation) = Json.obj(
       "id" -> invitation.id,
       "invitationId" -> invitation.invitationId,
@@ -175,8 +144,7 @@ object DomainFormat {
       "suppliedClientId" -> invitation.suppliedClientId.value,
       "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
       "events" -> invitation.events,
-      "expiryDate" -> invitation.expiryDate
-    )
+      "expiryDate" -> invitation.expiryDate)
   }
 
   val mongoFormat = ReactiveMongoFormats.mongoEntity(Format(reads, writes))

@@ -20,13 +20,13 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Service }
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.logging.{Authorization, RequestId, SessionId}
+import uk.gov.hmrc.http.logging.{ Authorization, RequestId, SessionId }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.test.UnitSpec
@@ -53,8 +53,8 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
         invitationId,
         arn,
         ClientIdentifier(mtdItId1), Service.MtdIt)(
-        hc,
-        FakeRequest("GET", "/path")))
+          hc,
+          FakeRequest("GET", "/path")))
 
       eventually {
         val captor = ArgumentCaptor.forClass(classOf[DataEvent])

@@ -20,7 +20,7 @@ import org.joda.time.DateTime.parse
 import play.api.libs.json.Json.toJson
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
 import uk.gov.hmrc.play.test.UnitSpec
 
 class InvitationSpec extends UnitSpec {
@@ -34,8 +34,7 @@ class InvitationSpec extends UnitSpec {
         arn = Arn("myAgency"),
         service = Service.MtdIt,
         postcode = Some("A11 1AA"),
-        events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
-      )
+        events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted)))
 
       val json = toJson(invitation)
 

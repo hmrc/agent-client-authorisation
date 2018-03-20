@@ -20,15 +20,14 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{AgentCode, Nino}
+import uk.gov.hmrc.domain.{ AgentCode, Nino }
 
-class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with
-  Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino
 
-  feature("Agencies can filter")  {
+  feature("Agencies can filter") {
 
     scenario("on the status of clients invitations") {
       val agency = new AgencyApi(this, arn, port)
@@ -41,8 +40,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
@@ -66,8 +64,7 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
       When("the Agency sends several invitations to the Client")
       agencySendsSeveralInvitations(agency)(
         (client, MtdItService),
-        (client, MtdItService)
-      )
+        (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
@@ -89,7 +86,6 @@ class AgencyInvitesClientApiPlatformISpec extends FeatureSpec with ScenarioHelpe
     refetchedInvitations.firstInvitation.status shouldBe "Cancelled"
     refetchedInvitations.secondInvitation.status shouldBe "Pending"
   }
-
 
   private def agencyFiltersByStatus(agency: AgencyApi, status: String): Unit = {
     val pendingFiltered = agency.sentInvitations(filteredBy = Seq("status" -> "pending"))
