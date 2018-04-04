@@ -8,6 +8,8 @@ GET      /agencies/:arn/invitations/sent                        @uk.gov.hmrc.age
 GET      /agencies/:arn/invitations/sent/:invitationId          @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 PUT      /agencies/:arn/invitations/sent/:invitationId/cancel   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
+GET      /agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
+
 # Client routes
 GET      /clients/MTDITID/:mtdItId                                            @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.getDetailsForClient(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId)
 GET      /clients/MTDITID/:mtdItId/invitations                                @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.getDetailsForClient(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId)

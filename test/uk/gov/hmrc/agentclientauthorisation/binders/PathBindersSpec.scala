@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
+import java.time.LocalDate
+
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.binders.PathBinders.InvitationStatusBinder
+import uk.gov.hmrc.agentclientauthorisation.binders.PathBinders.{ InvitationStatusBinder, LocalDateBinder }
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 
 class PathBindersSpec extends UnitSpec {
@@ -33,6 +35,18 @@ class PathBindersSpec extends UnitSpec {
 
     "reject zero status arguments" in {
       InvitationStatusBinder.bind("status", Map("status" -> Seq())) shouldBe None
+    }
+  }
+
+  "LocalDateBinder" should {
+    "accept bind of valid dates" in {
+      LocalDateBinder.bind("date", "2001-01-02") shouldBe Right(LocalDate.parse("2001-01-02"))
+    }
+    "reject bind of invalid dates" in {
+      LocalDateBinder.bind("date", "01-01-02").isLeft shouldBe true
+    }
+    "unbind" in {
+      LocalDateBinder.unbind("date", LocalDate.parse("2001-01-02")) shouldBe "2001-01-02"
     }
   }
 }
