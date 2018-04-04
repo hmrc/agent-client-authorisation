@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
+import java.time.LocalDate
+
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId, Vrn }
@@ -28,6 +30,7 @@ object PathBinders {
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
+  implicit object LocalDateBinder extends SimpleObjectBinder[LocalDate](LocalDate.parse, _.toString)
 
   private def toError(err: String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
 
@@ -40,4 +43,5 @@ object PathBinders {
 
     override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
   }
+
 }

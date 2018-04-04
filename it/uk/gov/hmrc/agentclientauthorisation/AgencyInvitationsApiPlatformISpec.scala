@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation
 
+import java.time.LocalDate
+
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{ Inside, Inspectors }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, Vrn }
 import uk.gov.hmrc.domain.{ AgentCode, Nino }
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -152,6 +154,49 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasNoBusinessPartnerRecord
       agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(ClientRegistrationNotFound)
+    }
+  }
+
+  "/agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate" should {
+    val clientVrn = Vrn("101747641")
+    val effectiveRegistrationDate = LocalDate.parse("2017-04-01")
+
+    behave like anEndpointAccessibleForMtdAgentsOnly(agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate))
+
+    "return 204 when customer VAT information in ETMP has a matching effectiveRegistrationDate" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 204
+    }
+
+    "return 403 when customer VAT information in ETMP but has a non-matching effectiveRegistrationDate" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate.plusDays(1)).status shouldBe 403
+    }
+
+    "return 403 when customer VAT information in ETMP but effectiveRegistrationDate is not present" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).hasVatCustomerDetails(isEffectiveRegistrationDatePresent = false)
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 403
+    }
+
+    "return 403 when ETMP returns json without any 'approvedInformation' present" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).hasVatCustomerDetailsWithNoApprovedInformation
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 403
+    }
+
+    "return 404 when no customer VAT information is in ETMP" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).hasNoVatCustomerDetails
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 404
+    }
+
+    "return 502 when DES/ETMP is unavailble" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientVrn).failsVatCustomerDetails(503)
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 502
     }
   }
 }

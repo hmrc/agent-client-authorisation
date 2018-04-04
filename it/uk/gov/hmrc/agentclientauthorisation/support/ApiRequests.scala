@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import java.time.LocalDate
+
 import play.api.libs.json.{ JsObject, JsString, Json }
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
@@ -54,6 +56,7 @@ trait ApiRequests {
   def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
   def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
   def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
+  def agencyGetCheckKnownFactVat(vrn: Vrn, suppliedDate: LocalDate): String = s"$baseUrl/agencies/check-vat-known-fact/${vrn.value}/registration-date/${suppliedDate.toString}"
 
   def rootResource()(implicit port: Int) = {
     new Resource(baseUrl, port).get()
@@ -92,6 +95,10 @@ trait ApiRequests {
   def agencyCancelInvitation(arn: Arn, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val url: String = agencyGetInvitationUrl(arn, invitationId) + "/cancel"
     new Resource(url, port).putEmpty()
+  }
+
+  def agentGetCheckVatKnownFact(vrn: Vrn, suppliedDate: LocalDate)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+    new Resource(agencyGetCheckKnownFactVat(vrn, suppliedDate), port).get()(hc)
   }
 
   /*

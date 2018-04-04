@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import java.time.LocalDate
+
 import com.kenshoo.play.metrics.Metrics
 import org.mockito.ArgumentMatchers.{ eq => eqs, _ }
 import org.mockito.Mockito._
@@ -26,10 +28,10 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, PostcodeService, StatusUpdateFailure }
+import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure }
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, Vrn }
 import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
 import uk.gov.hmrc.auth.core.{ AffinityGroup, Enrolments, PlayAuthConnector }
 import uk.gov.hmrc.domain.Generator
@@ -40,6 +42,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
+  val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
   val authConnector: AuthActions = resettingMock[AuthActions]
   val metrics: Metrics = resettingMock[Metrics]
@@ -48,7 +51,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
-  val controller = new AgencyInvitationsController(postcodeService, invitationsService)(metrics, microserviceAuthConnector) {
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, kfcService)(metrics, microserviceAuthConnector) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
@@ -212,6 +215,44 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe InvitationNotFound
     }
 
+  }
+
+  "checkKnownFactVat" should {
+    val vrn = Vrn("101747641")
+    val suppliedDate = LocalDate.parse("2001-02-03")
+
+    "return 204 if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+        .thenReturn(Future successful Some(true))
+
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 204
+    }
+
+    "return 403 if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+        .thenReturn(Future successful Some(false))
+
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
+    }
+
+    "return 404 if Vrn is unknown in ETMP" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+        .thenReturn(Future successful None)
+
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 404
+    }
+
+    "return 403 if logged in user is not an agent with HMRC-AS-AGENT" in {
+      agentAuthStub(agentNoEnrolments)
+
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
+    }
   }
 
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
