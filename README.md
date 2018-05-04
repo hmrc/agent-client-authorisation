@@ -1,7 +1,7 @@
 Agent Client Authorisation
 ==========================
 
-This application serves as the backend for (agent-invitations-frontend) 
+This application serves as the backend for [agent-invitations-frontend](https://github.com/hmrc/agent-invitations-frontend) containing the logic for creating and updating invitations.
 
 [![Build Status](https://travis-ci.org/hmrc/agent-client-authorisation.svg?branch=master)](https://travis-ci.org/hmrc/agent-client-authorisation) [ ![Download](https://api.bintray.com/packages/hmrc/releases/agent-client-authorisation/images/download.svg) ](https://bintray.com/hmrc/releases/agent-client-authorisation/_latestVersion)
 
@@ -10,8 +10,7 @@ This application serves as the backend for (agent-invitations-frontend)
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")
 
 ### API docs
-
-[RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.0/application.raml)
+Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.0/application.raml) for further details on each API.
 
 ### Running the tests
 
