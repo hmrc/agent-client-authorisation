@@ -72,22 +72,22 @@ GET   /clients/MTDITID/:mtdItId/invitations
 
 #### Accept Invitation
 ```
-Put   /clients/MTDITID/:mtdItId/invitations/recieved/:invitationId/accept
+Put   /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept
 ```
 
 #### Reject Invitation
 ```
-Put   /clients/MTDITID/:mtdItId/invitations/recieved/:invitationId/reject
+Put   /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject
 ```
 
 #### GET All Invitations
 ```
-GET   /clients/MTDITID/:mtdItId/invitations/recieved
+GET   /clients/MTDITID/:mtdItId/invitations/received
 ```
 
 #### GET Specific Invitation
 ```
-GET   /clients/MTDITID/:mtdItId/invitations/recieved/:invitationId
+GET   /clients/MTDITID/:mtdItId/invitations/received/:invitationId
 ```
 
 ### IRV API 
@@ -107,22 +107,22 @@ GET   /clients/NI/:nino/invitations
 
 #### Accept Invitation
 ```
-Put   /clients/NI/:nino/invitations/recieved/:invitationId/accept
+Put   /clients/NI/:nino/invitations/received/:invitationId/accept
 ```
 
 #### Reject Invitation
 ```
-Put   /clients/NI/:nino/invitations/recieved/:invitationId/reject
+Put   /clients/NI/:nino/invitations/received/:invitationId/reject
 ```
 
 #### GET All Invitations
 ```
-GET   /clients/NI/:nino/invitations/recieved
+GET   /clients/NI/:nino/invitations/received
 ```
 
 #### GET Specific Invitation
 ```
-GET   /clients/NI/:nino/invitations/recieved/:invitationId
+GET   /clients/NI/:nino/invitations/received/:invitationId
 ```
 
 ### VAT API
@@ -141,20 +141,20 @@ GET   /clients/VAT/:vrn/invitations
 
 #### Accept Invitation
 ```
-Put   /clients/VAT/:vrn/invitations/recieved/:invitationId/accept
+Put   /clients/VAT/:vrn/invitations/received/:invitationId/accept
 ```
 
 #### Reject Invitation
 ```
-Put   /clients/VAT/:vrn/invitations/recieved/:invitationId/reject
+Put   /clients/VAT/:vrn/invitations/received/:invitationId/reject
 ```
 
 #### GET All Invitations
 ```
-GET   /clients/VAT/:vrn/invitations/recieved
+GET   /clients/VAT/:vrn/invitations/received
 ```
 
 #### GET Specific Invitation
 ```
-GET   /clients/VAT/:vrn/invitations/recieved/:invitationId
+GET   /clients/VAT/:vrn/invitations/received/:invitationId
 ```
