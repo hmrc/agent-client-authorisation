@@ -7,34 +7,8 @@ This application serves as the backend for [agent-invitations-frontend](https://
 
 ### API docs
 Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.0/application.raml) for further details on each API.
+   
 
-### Running the application locally
-To run application requires the following prerequisites:
-* Service Manager (See: [Installation Guidance](https://github.com/hmrc/service-manager/wiki/Install#install-service-manager))
-* MongoDB 3.2
-
-The command to use is:
-
-    sm --start AGENT_MTD -f
-
-
-Alternatively run from source alone:
-
-    sm --start AGENT_CLIENT_AUTHORISATION
-
-
-or
-
-    sbt run
-
-
-However, it is advised to run AGENT_MTD profile which comes with authentication applications because each api requires authentication for use.
-
-### Running the tests
-
-    sbt test it:test
-    
-    
 ### Supported Regimes / Services
 This supports Agent and Client authorisation processes for the following regimes (aka services):
 |regime|Service|
@@ -42,6 +16,7 @@ This supports Agent and Client authorisation processes for the following regimes
 |Self Assessment|HMRC-MTD-IT|
 |Income-Record-Viewer for Individuals|PERSONAL-INCOME-RECORD|
 |Value-Added-Tax|HMRC-MTD-VAT|
+
 
 ### Invitation Statuses
 Invitations can have one of the following status:
@@ -66,41 +41,6 @@ Any unauthorised access could receive one of the following responses:
 |401|Unauthorised. Not logged In|
 |403|The Agent is not subscribed to Agent Services.|
 |403|The logged in user is not permitted to access invitations for the specified agency.|
-
-#### GET Details for Agent
-These are yet to be defined.
-
-```
-GET   /agencies
-```
-
-Request:
-```
-http://localhost:9432/agent-client-authorisation/agenices
-```
-
-Response 200 with json:
-```json
-{
-   "_links" : {
-      "sent" : {
-         "href" : "/agent-client-authorisation/agencies/TARN0000001/invitations/sent"
-      },
-      "self" : {
-         "href" : "/agent-client-authorisation/agencies"
-      }
-   }
-}
-```
-Alternatively
-
-```
-GET   /agencies/:arn
-```
-
-```
-GET   /agencies/:arn/invitations
-```
 
 #### Create Invitation
 Validates the service, clientIdentifier, type and optionally postcode (only applicable for Self-Assessment) and creates an invitation.
@@ -153,7 +93,7 @@ Example Body of IRV:
 |403|(HMRC-MTD-IT Only) Post Code does not match|
 |501|Unsupported Service|
 
-Note: The link returned from a successful create invitation response is GET Specific Agent's Sent Invitation
+Note: The link returned from a successful create invitation response is "GET a Specific Agent's Sent Invitation"
 
 #### GET All Agent's Sent Invitations
 Retrieves all invitations created by the Agent. 
@@ -265,25 +205,6 @@ Example Response: 200 with Body:
 }
 ```
 
-#### Cancel a Specific Agent's Sent Invitation
-Updates the status of a "Pending" Invitation to "Cancelled"
-```
-PUT   /agencies/:arn/invitations/sent/:invitationId/cancel
-```
-
-Request:
-```
-http://localhost:9432/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CS5AK7O8FPC43/cancel
-```
-
-|Response|Description|
-|--------|---------|
-|204|Invitation is cancelled|
-|403|Invalid Status: Invitation status is not "Pending"|
-|403|The logged in user is not permitted to access invitations for the specified agency.|
-|404|The specified invitation was not found.|
-
-
 #### GET Known Fact for VAT
 Checks a known fact for a given Vat Registration Number.
 
@@ -320,47 +241,6 @@ Any unauthorised access could receive one of the following responses:
 |401|Unauthorised. Not logged In|
 |403|The Client Identifier is not found in the user's login profile|
 
-
-#### GET Details for Client
-Note: These are yet to be defined.
-
-```
-GET   /clients/(service-api)/(associated-clientIdentifier)
-```
-Example Requests:
-```
-http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789
-http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A
-http://localhost:9432/agent-client-authorisation/clients/VAT/101747696
-```
-
-Response Example:
-```json
-{
-   "_links" : {
-      "received" : {
-         "href" : "/agent-client-authorisation/clients/VAT/101747696/invitations/received"
-      },
-      "self" : {
-         "href" : "/agent-client-authorisation/clients/VAT/101747696"
-      }
-   }
-}
-
-```
-
-Alternatively
-
-```
-GET   /clients/(service-api)/(associated-clientIdentifier)/invitations
-```
-
-Example Requests:
-```
-http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789/invitations
-http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations
-http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitations
-```
 
 #### Accept Invitation
 Changes the status of a "Pending" Invitation to "Accepted". As a result of accepting an invitation, a relationship record is established to allow an agent to act on their behalf. See [agent-client-relationships](https://github.com/hmrc/agent-client-relationships) for further details.
@@ -402,6 +282,7 @@ http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitatio
 |403|Invalid Status: Invitation status is not "Pending"|
 |403|Client is not authorised to accept this invitation|
 |404|Cannot find invitation to reject|
+
 
 #### GET All Invitations
 ```
@@ -485,6 +366,7 @@ Example Response, 200 with Body:
 }
 ```
 
+
 #### GET Specific Invitation
 Retrieve a specific invitation by its invitationId 
 
@@ -532,6 +414,34 @@ Example Response, 200 with Body:
    "clientId" : "101747696"
 }
 ```
+
+
+### Running the tests
+
+    sbt test it:test
+
+
+### Running the application locally
+To run application requires the following prerequisites:
+* Service Manager (See: [Installation Guidance](https://github.com/hmrc/service-manager/wiki/Install#install-service-manager))
+* MongoDB 3.2
+
+The command to use is:
+
+    sm --start AGENT_MTD -f
+
+
+Alternatively run from source alone:
+
+    sm --start AGENT_CLIENT_AUTHORISATION
+
+
+or
+
+    sbt run
+
+
+However, it is advised to run AGENT_MTD profile which comes with authentication applications because each api requires authentication for use.
 
 ### License
 
