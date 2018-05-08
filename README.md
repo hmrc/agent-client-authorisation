@@ -43,6 +43,7 @@ Any unauthorised access could receive one of the following responses:
 |403|The Agent is not subscribed to Agent Services.|
 |403|The logged in user is not permitted to access invitations for the specified agency.|
 
+
 #### Create Invitation
 Validates the service, clientIdentifier, type and optionally postcode (only applicable for Self-Assessment) and creates an invitation.
 
@@ -96,77 +97,6 @@ Example Body of IRV:
 
 Note: The link returned from a successful create invitation response is "GET a Specific Agent's Sent Invitation"
 
-#### GET All Agent's Sent Invitations
-Retrieves all invitations created by the Agent. 
-
-```
-GET   /agencies/:arn/invitations/sent
-```
-Request 
-```
-http://localhost:9432/agent-client-authorisation/agenices/:arn/invitations/sent
-```
-
-|Response|Description|
-|--------|---------|
-|200|Returns all stored invitations in json|
-
-Response 200 with Body:
-```json
-{
-	"_links": {
-		"invitations": [{
-				"href": "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CG49BZ8X6B8DC"
-			},
-			{
-				"href": "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/B31ZD93X6RYCF"
-			}
-		],
-		"self": {
-			"href": "/agent-client-authorisation/agencies/TARN0000001/invitations/sent"
-		}
-	},
-	"_embedded": {
-		"invitations": [{
-				"status": "Accepted",
-				"suppliedClientId": "101747696",
-				"service": "HMRC-MTD-VAT",
-				"lastUpdated": "2018-01-31T13:55:02.820Z",
-				"clientIdType": "vrn",
-				"expiryDate": "2018-02-10",
-				"_links": {
-					"self": {
-						"href": "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CG49BZ8X6B8DC"
-					}
-				},
-				"postcode": null,
-				"suppliedClientIdType": "vrn",
-				"arn": "TARN0000001",
-				"clientId": "101747696",
-				"created": "2018-01-31T13:54:09.017Z"
-			},
-			{
-				"status": "Accepted",
-				"suppliedClientId": "AE123456C",
-				"service": "PERSONAL-INCOME-RECORD",
-				"_links": {
-					"self": {
-						"href": "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/B31ZD93X6RYCF"
-					}
-				},
-				"lastUpdated": "2018-02-02T11:33:09.567Z",
-				"clientIdType": "ni",
-				"expiryDate": "2018-02-12",
-				"suppliedClientIdType": "ni",
-				"arn": "TARN0000001",
-				"postcode": null,
-				"clientId": "AE123456C",
-				"created": "2018-02-02T11:32:27.616Z"
-			}
-		]
-	}
-}
-```
 
 #### GET a Specific Agent's Sent Invitation
 Retrieves a specific invitation by its InvitationId
@@ -283,89 +213,6 @@ http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitatio
 |403|Invalid Status: Invitation status is not "Pending"|
 |403|Client is not authorised to accept this invitation|
 |404|Cannot find invitation to reject|
-
-
-#### GET All Invitations
-```
-GET   /clients/(service-api)/(service-api)/invitations/received
-```
-
-Example Requests:
-```
-http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789/invitations/received
-http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations/received
-http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitations/received
-```
-
-|Response|Description|
-|--------|---------|
-|200|Returns All Invitations for given client identifier|
-|403|Client is not authorised to view these invitations|
-|404|Cannot find invitations for given client identifier|
-
-Example Response, 200 with Body:
-```json
-{
-	"_links": {
-		"invitations": [{
-				"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CG49BZ8X6B8DC"
-			},
-			{
-				"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/C7DACRCSCUO9A"
-			}
-		],
-		"self": {
-			"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received"
-		}
-
-	},
-	"_embedded": {
-		"invitations": [{
-				"postcode": null,
-				"status": "Accepted",
-				"_links": {
-					"self": {
-						"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CG49BZ8X6B8DC"
-					}
-				},
-				"created": "2018-01-31T13:54:09.017Z",
-				"suppliedClientIdType": "vrn",
-				"expiryDate": "2018-02-10",
-				"suppliedClientId": "101747696",
-				"clientId": "101747696",
-				"arn": "TARN0000001",
-				"clientIdType": "vrn",
-				"service": "HMRC-MTD-VAT",
-				"lastUpdated": "2018-01-31T13:55:02.820Z"
-			},
-			{
-				"status": "Pending",
-				"postcode": null,
-				"suppliedClientIdType": "vrn",
-				"created": "2018-05-04T11:55:29.954Z",
-				"_links": {
-					"reject": {
-						"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/reject"
-					},
-					"accept": {
-						"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/accept"
-					},
-					"self": {
-						"href": "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446"
-					}
-				},
-				"arn": "TARN0000001",
-				"clientIdType": "vrn",
-				"clientId": "101747696",
-				"expiryDate": "2018-05-14",
-				"suppliedClientId": "101747696",
-				"lastUpdated": "2018-05-04T11:55:29.954Z",
-				"service": "HMRC-MTD-VAT"
-			}
-		]
-	}
-}
-```
 
 
 #### GET Specific Invitation
