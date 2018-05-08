@@ -15,7 +15,7 @@ Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation
 *   [Agent APIs](#agentApis)
     *   [Create Invitation](#createInvitation)
     *   [GET a Specific Agent's Sent Invitation](#agentSpecificInvitation)
-    *   [GET Known Fact for VAT](#specificInvitation)
+    *   [GET Known Fact for VAT](#vatKnownFact)
 *   [Client APIs](#clientApis)
     *   [Client Accepts Invitation](#acceptInvitation)
     *   [Client Rejects Invitation](#rejectInvitation)
@@ -284,7 +284,7 @@ Example Response, 200 with Body:
     sbt test it:test
 
 
-### Running the application locally <a name="runningLocally"></a>
+### Running the application locally <a name="runningLocal"></a>
 To run application requires the following prerequisites:
 * Service Manager (See: [Installation Guidance](https://github.com/hmrc/service-manager/wiki/Install#install-service-manager))
 * MongoDB 3.2
