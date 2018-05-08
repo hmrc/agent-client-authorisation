@@ -11,7 +11,8 @@ Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation
 
 ### Supported Regimes / Services
 This supports Agent and Client authorisation processes for the following regimes (aka services):
-|regime|Service|
+
+|Regime|Service|
 |--------|--------|
 |Self Assessment|HMRC-MTD-IT|
 |Income-Record-Viewer for Individuals|PERSONAL-INCOME-RECORD|
@@ -108,7 +109,7 @@ http://localhost:9432/agent-client-authorisation/agenices/:arn/invitations/sent
 
 |Response|Description|
 |--------|---------|
-|200|Returns an invitation in json|
+|200|Returns all stored invitations in json|
 
 Response 200 with Body:
 ```json
@@ -228,8 +229,8 @@ http://localhost:9432/agent-client-authorisation/agencies/check-vat-known-fact/1
 The following APIs require client authentication. Any requests to access without authentication will be redirected to login page. 
 
 
-|regime|Auth Service|Service|Service-Api|Client-Identifier-Type|
-|--------|--------|---------|---------|
+|Regime|Auth Service|Service|Service-Api|Client-Identifier-Type|
+|--------|--------|---------|---------|---------|
 |Self Assessment|HMRC-MTD-IT|Same|MTDITID|ni|
 |Income-Record-Viewer for Individuals|HMRC-NI|PERSONAL-INCOME-RECORD|NI|ni|
 |Value-Added-Tax|HMRC-MTD-VAT|Same|VAT|vrn|
