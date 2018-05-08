@@ -9,7 +9,21 @@ This application serves as the backend for [agent-invitations-frontend](https://
 Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation/blob/master/resources/public/api/conf/0.0/application.raml) for further details on each API.
    
 
-### Supported Regimes / Services
+## Table of Contents
+*   [Supported Regimes / Services](#supportedRegimes)
+*   [Invitation Status](#invitationStatus)
+*   [Agent APIs](#agentApis)
+    *   [Create Invitation](#createInvitation)
+    *   [GET a Specific Agent's Sent Invitation](#agentSpecificInvitation)
+    *   [GET Known Fact for VAT](#specificInvitation)
+*   [Client APIs](#clientApis)
+    *   [Client Accepts Invitation](#acceptInvitation)
+    *   [Client Rejects Invitation](#rejectInvitation)
+    *   [GET Client Specific Invitation](#clientSpecificInvitation)
+*   [Running the tests](#runningTests)    
+*   [Running the application locally](#runningLocal)  
+
+### Supported Regimes / Services <a name="supportedRegimes"></a>
 This supports Agent and Client authorisation processes for the following regimes (aka services):
 
 |Regime|Service|
@@ -19,7 +33,7 @@ This supports Agent and Client authorisation processes for the following regimes
 |Value-Added-Tax|HMRC-MTD-VAT|
 
 
-### Invitation Statuses
+### Invitation Status <a name="invitationStatus"></a>
 Invitations can have one of the following status:
 
 |Invitation Status|Description|
@@ -31,8 +45,9 @@ Invitations can have one of the following status:
 |Cancelled|Agent cancels the invitation they sent out, preventing a client from responding|
 
 Note: Invitations with "Pending" status is the only editable status.
+  
 
-## Agent APIs
+## Agent APIs <a name="agentApis"></a>
 The following APIs require agent authentication. 
 
 Any unauthorised access could receive one of the following responses:
@@ -44,7 +59,7 @@ Any unauthorised access could receive one of the following responses:
 |403|The logged in user is not permitted to access invitations for the specified agency.|
 
 
-#### Create Invitation
+#### Create Invitation <a name="createInvitation"></a>
 Validates the service, clientIdentifier, type and optionally postcode (only applicable for Self-Assessment) and creates an invitation.
 
 ```
@@ -98,7 +113,7 @@ Example Body of IRV:
 Note: The link returned from a successful create invitation response is "GET a Specific Agent's Sent Invitation"
 
 
-#### GET a Specific Agent's Sent Invitation
+#### GET a Specific Agent's Sent Invitation <a name="agentSpecificInvitation"></a>
 Retrieves a specific invitation by its InvitationId
 ```
 GET   /agencies/:arn/invitations/sent/:invitationId
@@ -136,7 +151,7 @@ Example Response: 200 with Body:
 }
 ```
 
-#### GET Known Fact for VAT
+#### GET Known Fact for VAT <a name="vatKnownFact"></a>
 Checks a known fact for a given Vat Registration Number.
 
 ```
@@ -155,7 +170,7 @@ http://localhost:9432/agent-client-authorisation/agencies/check-vat-known-fact/1
 |404|There is no record found for given vrn|
 
 
-## Client APIs
+## Client APIs <a name="clientApis"></a>
 The following APIs require client authentication. Any requests to access without authentication will be redirected to login page. 
 
 
@@ -173,7 +188,7 @@ Any unauthorised access could receive one of the following responses:
 |403|The Client Identifier is not found in the user's login profile|
 
 
-#### Accept Invitation
+#### Client Accepts Invitation <a name="acceptInvitation"></a>
 Changes the status of a "Pending" Invitation to "Accepted". As a result of accepting an invitation, a relationship record is established to allow an agent to act on their behalf. See [agent-client-relationships](https://github.com/hmrc/agent-client-relationships) for further details.
 ```
 PUT   /clients/(service-api)/(associated-clientIdentifier)/invitations/received/:invitationId/accept
@@ -194,7 +209,7 @@ http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitatio
 |404|Cannot find invitation to accept|
 
 
-#### Reject Invitation
+#### Client Rejects Invitation <a name="rejectInvitation"></a>
 Changes the status a "Pending" Invitation to "Rejected". 
 ```
 PUT   /clients/(service-api)/(service-api)/invitations/received/:invitationId/reject
@@ -215,7 +230,7 @@ http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitatio
 |404|Cannot find invitation to reject|
 
 
-#### GET Specific Invitation
+#### GET Client Specific Invitation <a name="clientSpecificInvitation"></a>
 Retrieve a specific invitation by its invitationId 
 
 ```
@@ -264,12 +279,12 @@ Example Response, 200 with Body:
 ```
 
 
-### Running the tests
+### Running the tests <a name="runningTests"></a>
 
     sbt test it:test
 
 
-### Running the application locally
+### Running the application locally <a name="runningLocally"></a>
 To run application requires the following prerequisites:
 * Service Manager (See: [Installation Guidance](https://github.com/hmrc/service-manager/wiki/Install#install-service-manager))
 * MongoDB 3.2
