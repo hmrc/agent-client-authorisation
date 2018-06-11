@@ -84,6 +84,20 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
     }
 
+    "change invitation status to Accept" when {
+      "relationship already exists" in {
+        val invitation = testInvitation
+        whenRelationshipIsCreated(invitation) thenReturn (Future failed {new Exception("RELATIONSHIP_ALREADY_EXISTS")})
+        val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
+        whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
+
+        val response = await(service.acceptInvitation(invitation))
+
+        response shouldBe Right(acceptedTestInvitation)
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+      }
+    }
+
     "create a PersonalIncomeRecord relationship" when {
       "invitation status update succeeds" in {
         val invitation = Invitation(
