@@ -33,6 +33,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{ InvitationsRepository, 
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.NotFoundException
 
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
@@ -93,6 +94,14 @@ class InvitationsService @Inject() (
           .andThen {
             case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
           })
+          .recoverWith {
+            case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
+              Logger.warn(s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
+              changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+                .andThen {
+                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
+                }
+          }
       }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
