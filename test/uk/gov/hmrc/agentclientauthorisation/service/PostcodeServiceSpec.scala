@@ -46,7 +46,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
         Future successful Some(
           BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", Some("AA11AA")))), Some(MtdItId("mtdItId")))))
-      val maybeResult = await(service.clientPostcodeMatches(nino1.value, "AA11AA"))
+      val maybeResult = await(service.postCodeMatches(nino1.value, "AA11AA"))
       maybeResult shouldBe None
     }
 
@@ -54,7 +54,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
         Future successful Some(
           BusinessDetails(Array(BusinessData(BusinessAddressDetails("US", Some("AA11AA")))), Some(MtdItId("mtdItId")))))
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 501
     }
 
@@ -62,7 +62,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
         Future successful Some(
           BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", Some("ZZ99ZZ")))), Some(MtdItId("mtdItId")))))
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
 
@@ -70,20 +70,20 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
         Future successful Some(
           BusinessDetails(Array(BusinessData(BusinessAddressDetails("GB", None))), Some(MtdItId("mtdItId")))))
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
 
     "return 403 if no business partner record is found" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful None)
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
 
     "return 403 if a business partner record is returned with no business data records" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
         Future successful Some(BusinessDetails(Array(), Some(MtdItId("mtdItId")))))
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
 
@@ -95,7 +95,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
               BusinessData(BusinessAddressDetails("GB", Some("AA11AA"))),
               BusinessData(BusinessAddressDetails("GB", Some("AA11AA")))),
             Some(MtdItId("mtdItId")))))
-      val result = await(service.clientPostcodeMatches(nino1.value, "AA11AA")).head
+      val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
   }

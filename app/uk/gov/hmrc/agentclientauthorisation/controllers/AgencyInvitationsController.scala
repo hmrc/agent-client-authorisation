@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.time.LocalDate
-
 import javax.inject._
+
 import com.kenshoo.play.metrics.Metrics
 import play.api.libs.json.{ JsError, JsSuccess, JsValue }
 import play.api.mvc.{ Action, AnyContent, Result }
@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure }
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, Vrn }
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
@@ -36,7 +37,7 @@ import scala.util.{ Failure, Success, Try }
 
 @Singleton
 class AgencyInvitationsController @Inject() (
-  override val postcodeService: PostcodeService,
+  postcodeService: PostcodeService,
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService)(implicit
   metrics: Metrics,
@@ -127,6 +128,13 @@ class AgencyInvitationsController @Inject() (
         case None => Future successful InvitationNotFound
         case _ => Future successful NoPermissionOnAgency
       }
+    }
+  }
+
+  def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    postcodeService.postCodeMatches(nino.value, postcode).map {
+      case Some(error) => error
+      case None => NoContent
     }
   }
 

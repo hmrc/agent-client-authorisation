@@ -26,25 +26,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 trait AgentInvitationValidation extends Results {
 
-  val postcodeService: PostcodeService
-
   private type Validation = (AgentInvitation) => Future[Option[Result]]
-
-  private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
-
-  val hasValidPostcode: Validation = (invite) => Future successful {
-    if (invite.clientPostcode.isEmpty) {
-      None
-    } else {
-      postcodeWithoutSpacesRegex.findFirstIn(PostcodeService.normalise(invite.clientPostcode.get)).map(_ => None)
-        .getOrElse(Some(postcodeFormatInvalid(s"""The submitted postcode, "${invite.clientPostcode.get}", does not match the expected format.""")))
-    }
-  }
-
-  private def postCodeMatches(implicit hc: HeaderCarrier, ec: ExecutionContext): Validation = (invite) => {
-    if (invite.clientPostcode.isEmpty) Future successful None
-    else postcodeService.clientPostcodeMatches(invite.clientId, invite.clientPostcode.get)
-  }
 
   private val hasValidClientId: Validation = (invitation) => Future successful {
     val valid = invitation.getService.supportedSuppliedClientIdType.isValid(invitation.clientId)
@@ -62,7 +44,7 @@ trait AgentInvitationValidation extends Results {
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
-    Seq(supportedService, hasValidPostcode, supportedClientIdType, hasValidClientId, postCodeMatches)
+    Seq(supportedService, supportedClientIdType, hasValidClientId)
       .foldLeft(Future.successful[Option[Result]](None))((acc, validation) => acc.flatMap {
         case None => validation(agentInvitation)
         case r => Future.successful(r)
