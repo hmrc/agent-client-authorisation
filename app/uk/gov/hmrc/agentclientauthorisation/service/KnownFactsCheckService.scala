@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.time.LocalDate
-
 import javax.inject.{ Inject, Singleton }
+import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ DesConnector, VatCustomerInfo }
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.http.HeaderCarrier

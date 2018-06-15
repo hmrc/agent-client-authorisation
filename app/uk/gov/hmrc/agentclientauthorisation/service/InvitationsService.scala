@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import java.util.concurrent.TimeUnit.DAYS
-import javax.inject._
 
+import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{ DateTime, DateTimeZone }
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
 import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
@@ -33,8 +33,6 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{ InvitationsRepository, 
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.NotFoundException
-
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.util.Success
@@ -158,10 +156,10 @@ class InvitationsService @Inject() (
       invitationsRepository.list(service, clientId, status)
     }
 
-  def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] =
+  def agencySent(arn: Arn, service: Option[Service], clientIdType: Option[String], clientId: Option[String], status: Option[InvitationStatus], createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
       monitor(s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-        invitationsRepository.list(arn, service, clientId, status)
+        invitationsRepository.list(arn, service, clientId, status, createdOnOrAfter)
       }
     else Future successful List.empty
 

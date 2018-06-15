@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
-import java.time.LocalDate
 
 import javax.inject.{ Inject, Named, Singleton }
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import org.joda.time.LocalDate
 import play.api.libs.json.Json.reads
 import play.api.libs.json.{ JsObject, Reads, __ }
 import play.api.libs.json.Reads._

@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.time.LocalDate
-
+import org.joda.time.LocalDate
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.{ MtdItId, Vrn }
+import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.http.{ HeaderCarrier, Upstream5xxResponse }
 import uk.gov.hmrc.play.test.UnitSpec
 

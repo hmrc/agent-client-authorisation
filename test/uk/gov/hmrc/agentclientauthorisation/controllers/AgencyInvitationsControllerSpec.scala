@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.time.LocalDate
-
 import com.kenshoo.play.metrics.Metrics
+import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.{ eq => eqs, _ }
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -61,16 +60,16 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   override protected def beforeEach(): Unit = {
     super.beforeEach()
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations)
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
       Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted))
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)))(any())).thenReturn(
+    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)), eqs(None))(any())).thenReturn(
       Future successful allInvitations.filter(_.status == Accepted))
   }
 
@@ -110,7 +109,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -126,7 +125,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(controller.getSentInvitations(arn, None, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -146,13 +145,13 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val clientIdType = Some("ni")
       val clientId = Some("AA123456A")
       val invitationStatus = Some(Accepted)
-      val response = await(controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
       (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
-        routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus).url
+        routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None).url
     }
 
   }
