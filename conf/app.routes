@@ -1,5 +1,6 @@
 # Agent routes
 # --------------------------------
+GET         /agencies/:arn/invitations/sent                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitations(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus], createdOnOrAfter: Option[LocalDate])
 POST        /agencies/:arn/invitations/sent                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.createInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 GET         /agencies/:arn/invitations/sent/:invitationId                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 GET         /agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
@@ -34,7 +35,6 @@ GET         /forbidden                                                          
 GET         /agencies                                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAuthenticatedAgency()
 GET         /agencies/:arn                                                                    @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAgency(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 GET         /agencies/:arn/invitations                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getDetailsForAgencyInvitations(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
-GET         /agencies/:arn/invitations/sent                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitations(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
 # Client routes

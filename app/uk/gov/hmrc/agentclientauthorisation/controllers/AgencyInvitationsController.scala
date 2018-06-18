@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.time.LocalDate
 import javax.inject._
 
 import com.kenshoo.play.metrics.Metrics
+import org.joda.time.LocalDate
 import play.api.libs.json.{ JsError, JsSuccess, JsValue }
 import play.api.mvc.{ Action, AnyContent, Result }
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
@@ -96,9 +96,9 @@ class AgencyInvitationsController @Inject() (
   def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] = getDetailsForAgency(arn)
 
   def getSentInvitations(givenArn: Arn, service: Option[String], clientIdType: Option[String],
-    clientId: Option[String], status: Option[InvitationStatus]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    clientId: Option[String], status: Option[InvitationStatus], createdOnOrAfter: Option[LocalDate]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
-      invitationsService.agencySent(arn, service.map(Service(_)), clientIdType, clientId, status).map { invitations =>
+      invitationsService.agencySent(arn, service.map(Service(_)), clientIdType, clientId, status, createdOnOrAfter).map { invitations =>
         Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
       }
     }

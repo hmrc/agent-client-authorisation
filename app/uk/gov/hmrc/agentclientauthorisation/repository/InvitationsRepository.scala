@@ -17,14 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
-
+import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, LocalDate }
-import play.api.libs.json.Json.toJsFieldJsValueWrapper
-import play.api.libs.json.{ Format, Json, Writes }
+import play.api.libs.json.Json.{ JsValueWrapper, toJsFieldJsValueWrapper }
+import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.ReadPreference
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.{ BSONDocument, BSONObjectID }
-import reactivemongo.play.json.BSONFormats
+import reactivemongo.play.json.{ BSONFormats, ImplicitBSONHandlers }
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
@@ -54,17 +55,25 @@ class InvitationsRepository @Inject() (mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
-  def list(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val searchOptions = Seq(
-      "arn" -> Some(arn.value),
-      "clientId" -> clientId,
-      "service" -> service.map(_.id),
-      "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'"))
+  def findSorted(sortBy: JsObject, query: (String, JsValueWrapper)*)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    import ImplicitBSONHandlers._
+    implicit val domainFormatImplicit: Format[Invitation] = DomainFormat.mongoFormat
+    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
 
+    collection.find(Json.obj(query: _*)).sort(sortBy).cursor[Invitation](ReadPreference.primaryPreferred).collect[List]()
+  }
+
+  def list(arn: Arn, service: Option[Service], clientId: Option[String], status: Option[InvitationStatus], createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
+      "arn" -> Some(JsString(arn.value)),
+      "clientId" -> clientId.map(JsString.apply),
+      "service" -> service.map(s => JsString(s.id)),
+      "$where" -> status.map(s => JsString(s"this.events[this.events.length - 1].status === '$s'")),
+      "events.0.time" -> createdOnOrAfter.map(date => Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis))))
       .filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
-    find(searchOptions: _*)
+    findSorted(Json.obj("events.0.time" -> JsNumber(-1)), searchOptions: _*)
   }
 
   def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[Invitation]] = {

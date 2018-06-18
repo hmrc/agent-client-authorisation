@@ -53,8 +53,9 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
 
       When(s"the Agency filters by client ID")
       Then(s"only the client matching that id is returned")
-      agencyFiltersById(agency, client1.clientId)
       agencyFiltersById(agency, client2.clientId)
+      agencyFiltersById(agency, client1.clientId)
+
     }
   }
 

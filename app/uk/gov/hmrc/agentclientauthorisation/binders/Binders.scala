@@ -16,21 +16,23 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
-import java.time.LocalDate
-
+import org.joda.time.LocalDate
+import org.joda.time.format.ISODateTimeFormat
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId, Vrn }
 import uk.gov.hmrc.domain.Nino
 
-object PathBinders {
+import scala.util.control.NonFatal
+
+object Binders {
 
   implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.value)
   implicit object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
-  implicit object LocalDateBinder extends SimpleObjectBinder[LocalDate](LocalDate.parse, _.toString)
+  implicit object LocalDateBinder extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
 
   private def toError(err: String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
 
@@ -42,6 +44,21 @@ object PathBinders {
       }
 
     override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
+  }
+
+  implicit object LocalDateQueryStringBinder extends QueryStringBindable[LocalDate] {
+
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, LocalDate]] =
+      params.get(key).flatMap(_.headOption).map { param =>
+        try {
+          assert(param.length == 10)
+          Right(LocalDate.parse(param, ISODateTimeFormat.date()))
+        } catch {
+          case NonFatal(e) => Left(e.getMessage)
+        }
+      }
+
+    override def unbind(key: String, value: LocalDate): String = value.toString
   }
 
 }

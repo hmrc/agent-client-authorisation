@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
-import java.time.LocalDate
-
+import org.joda.time.LocalDate
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.binders.PathBinders.{ InvitationStatusBinder, LocalDateBinder }
+import uk.gov.hmrc.agentclientauthorisation.binders.Binders.{ InvitationStatusBinder, LocalDateBinder, LocalDateQueryStringBinder }
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 
-class PathBindersSpec extends UnitSpec {
+class BindersSpec extends UnitSpec {
 
   "InvitationStatusBinder" should {
     "only consider the first argument" in {
@@ -47,6 +46,21 @@ class PathBindersSpec extends UnitSpec {
     }
     "unbind" in {
       LocalDateBinder.unbind("date", LocalDate.parse("2001-01-02")) shouldBe "2001-01-02"
+    }
+  }
+
+  "LocalDateQueryStringBinder" should {
+    "accept bind of valid dates" in {
+      LocalDateQueryStringBinder.bind("date", Map("date" -> Seq("2001-01-02"))).get shouldBe Right(LocalDate.parse("2001-01-02"))
+    }
+    "reject bind of invalid dates" in {
+      LocalDateQueryStringBinder.bind("date", Map("date" -> Seq("01-01-02"))).get.isLeft shouldBe true
+    }
+    "reject bind of missing date" in {
+      LocalDateQueryStringBinder.bind("date", Map("foo" -> Seq("bar"))).isEmpty shouldBe true
+    }
+    "unbind" in {
+      LocalDateQueryStringBinder.unbind("date", LocalDate.parse("2001-01-02")) shouldBe "2001-01-02"
     }
   }
 }
