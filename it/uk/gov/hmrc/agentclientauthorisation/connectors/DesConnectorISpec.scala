@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
+import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
-import java.time.LocalDate
-
 import uk.gov.hmrc.http.Upstream5xxResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global

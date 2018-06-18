@@ -60,7 +60,7 @@ lazy val root = (project in file("."))
     publishingSettings,
     scoverageSettings,
     unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
-    routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.PathBinders._", "java.time.LocalDate"),
+    routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.Binders._", "org.joda.time.LocalDate"),
     unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value
   )
   .configs(IntegrationTest)
