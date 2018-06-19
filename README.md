@@ -15,6 +15,7 @@ Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation
 *   [Agent APIs](#agentApis)
     *   [Create Invitation](#createInvitation)
     *   [GET a Specific Agent's Sent Invitation](#agentSpecificInvitation)
+    *   [GET all of Agent's Sent Invitation](#agentInvitations)
     *   [GET Known Fact for VAT](#vatKnownFact)
 *   [Client APIs](#clientApis)
     *   [Client Accepts Invitation](#acceptInvitation)
@@ -149,6 +150,57 @@ Example Response: 200 with Body:
    "status" : "Expired",
    "postcode" : null
 }
+```
+
+#### GET all of Agent's Sent Invitation <a name="agentInvitations"></a>
+Retrieves all invitations sent by the Agent. 
+Returned list if sorted by `created` field descending, newest invitations first.
+```
+GET   /agencies/:arn/invitations/sent
+```
+
+Optional query filters:
+
+|query param|format|description|default|
+|--------|---------|---------|---------|
+|service|enum|returns only invitations for the specified service|none|
+|status|enum|returns only invitations having specified status|none|
+|createdOnOrAfter|yyy-MM-dd|returns only invitations created on or after the specified date|none|
+
+Request:
+```
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent?status=Pending
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent?service=HMRC-MTD-VAT
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent?status=Pending&service=HMRC-MTD-VAT
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent?createdOnOrAfter=2018-01-01
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent?createdOnOrAfter=2018-01-01&status=Accepted
+```
+
+|Response|Description|
+|--------|---------|
+|200|Returns all invitations in json array|
+
+Example Response: 200 with Body:
+```json
+[{
+   "arn" : "TARN0000001",
+   "service" : "HMRC-MTD-VAT",
+   "lastUpdated" : "2018-05-04T13:51:35.278Z",
+   "created" : "2018-04-16T15:05:54.029Z",
+   "clientIdType" : "vrn",
+   "clientId" : "101747641",
+   "expiryDate" : "2018-04-26",
+   "suppliedClientIdType" : "vrn",
+   "suppliedClientId" : "101747641",
+   "_links" : {
+      "self" : {
+         "href" : "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CS5AK7O8FPC43"
+      }
+   },
+   "status" : "Expired",
+   "postcode" : null
+}]
 ```
 
 #### GET Known Fact for VAT <a name="vatKnownFact"></a>
