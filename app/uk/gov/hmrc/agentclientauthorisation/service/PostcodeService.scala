@@ -33,7 +33,7 @@ class PostcodeService @Inject() (desConnector: DesConnector) {
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
   def postCodeMatches(clientId: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
-    if (postcode.isEmpty) Future successful None
+    if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
     else {
       postcodeWithoutSpacesRegex.findFirstIn(postcode).map(_ => clientPostcodeMatches(clientId, postcode))
         .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, "$postcode", does not match the expected format.""")))

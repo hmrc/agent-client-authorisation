@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, VatCustomerInfo}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{ DesConnector, VatCustomerInfo }
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class KnownFactsCheckService @Inject() (desConnector: DesConnector) {

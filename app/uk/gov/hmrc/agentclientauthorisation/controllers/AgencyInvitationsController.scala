@@ -132,7 +132,7 @@ class AgencyInvitationsController @Inject() (
   }
 
   def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    postcodeService.postCodeMatches(nino.value, postcode).map {
+    postcodeService.postCodeMatches(nino.value, postcode.replaceAll("\\s", "")).map {
       case Some(error) => error
       case None => NoContent
     }

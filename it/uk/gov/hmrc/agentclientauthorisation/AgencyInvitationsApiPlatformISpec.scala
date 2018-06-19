@@ -90,19 +90,6 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
   "/agencies/:arn/invitations" should {
 
-    "should not create invitation if postcodes do not match" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("BA1 1AA"))) should matchErrorResult(PostcodeDoesNotMatch)
-    }
-
-    "should not create invitation if postcode is not in a valid format" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("BAn 1AA"))) should matchErrorResult(postcodeFormatInvalid(
-        """The submitted postcode, "BAn 1AA", does not match the expected format."""))
-    }
-
     "should not create invitation for an unsupported service" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
@@ -119,12 +106,6 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       withClue(response.body) {
         response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
       }
-    }
-
-    "should not create invitation for non-UK address" in {
-      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecord(countryCode = "AU")
-      agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(nonUkAddress("AU"))
     }
 
     "should not create invitation for invalid NINO" in {
@@ -154,6 +135,37 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasNoBusinessPartnerRecord
       agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(ClientRegistrationNotFound)
+    }
+  }
+
+  "/agencies/check-sa-known-fact/:nino/postcode/:postcode" should {
+    val clientNino = Nino("ZR987654C")
+    val postcode = "AA11AA"
+
+    behave like anEndpointAccessibleForMtdAgentsOnly(agentGetCheckItsaKnownFact(clientNino, postcode))
+
+    "return 204 when ITSA information in ETMP has matching postcode" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
+      agentGetCheckItsaKnownFact(clientNino, postcode).status shouldBe 204
+    }
+
+    "return 400 when given invalid postcode" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
+      agentGetCheckItsaKnownFact(clientNino, "AA1 !AA").status shouldBe 400
+    }
+
+    "return 403 when customer ITSA information in ETMP but has a non-matching postcode" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
+      agentGetCheckItsaKnownFact(clientNino, "DH14EJ").status shouldBe 403
+    }
+
+    "return 403 when customer ITSA information in ETMP but postcode is not present" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      given().client(clientId = clientNino).hasNoBusinessPartnerRecord
+      agentGetCheckItsaKnownFact(clientNino, "DH14EJ").status shouldBe 403
     }
   }
 

@@ -57,6 +57,7 @@ trait ApiRequests {
   def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
   def agencyGetInvitationUrl(arn: Arn, invitationId: String): String = s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
   def agencyGetCheckKnownFactVat(vrn: Vrn, suppliedDate: LocalDate): String = s"$baseUrl/agencies/check-vat-known-fact/${vrn.value}/registration-date/${suppliedDate.toString}"
+  def agencyGetCheckKnownFactItsa(nino: Nino, postcode: String): String = s"$baseUrl/agencies/check-sa-known-fact/${nino.value}/postcode/$postcode"
 
   def rootResource()(implicit port: Int) = {
     new Resource(baseUrl, port).get()
@@ -99,6 +100,10 @@ trait ApiRequests {
 
   def agentGetCheckVatKnownFact(vrn: Vrn, suppliedDate: LocalDate)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     new Resource(agencyGetCheckKnownFactVat(vrn, suppliedDate), port).get()(hc)
+  }
+
+  def agentGetCheckItsaKnownFact(nino: Nino, postcode: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
+    new Resource(agencyGetCheckKnownFactItsa(nino, postcode), port).get()(hc)
   }
 
   /*
