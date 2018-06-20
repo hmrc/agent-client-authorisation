@@ -29,7 +29,18 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class PostcodeService @Inject() (desConnector: DesConnector) {
-  def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+
+  private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
+
+  def postCodeMatches(clientId: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+    if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
+    else {
+      postcodeWithoutSpacesRegex.findFirstIn(postcode).map(_ => clientPostcodeMatches(clientId, postcode))
+        .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
+    }
+  }
+
+  private def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
     // we can use head here due to the guard on the array size in the case statement but these are not a general purpose functions
     def postcodeMatches(details: BusinessDetails, postcode: String) =
       details.businessData.head.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode))

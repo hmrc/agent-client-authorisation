@@ -20,6 +20,7 @@ import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.{ eq => eqs, _ }
 import org.mockito.Mockito._
+import play.api.mvc.Results.{ Accepted => AcceptedResponse, _ }
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.test.FakeRequest
@@ -33,7 +34,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, Vrn }
 import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
 import uk.gov.hmrc.auth.core.{ AffinityGroup, Enrolments, PlayAuthConnector }
-import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.domain.{ Generator, Nino }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -84,7 +85,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
         arn = arn,
         clientId = mtdItId1)
 
-      when(postcodeService.clientPostcodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
+      when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
       when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any())).thenReturn(Future successful inviteCreated)
 
@@ -214,6 +215,39 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       response shouldBe InvitationNotFound
     }
 
+  }
+
+  "checkKnownFactItsa" should {
+    val nino = Nino("AB123456A")
+    val postcode = "AA11AA"
+
+    "return 204 if Nino is known in ETMP and the postcode matched" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful None)
+
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 204
+    }
+
+    "return 400 if given invalid postcode" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(BadRequest))
+
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 400
+    }
+
+    "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(Forbidden))
+
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
+    }
+
+    "return 501 if Nino is known in ETMP but the postcode is non-UK" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(NotImplemented))
+
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 501
+    }
   }
 
   "checkKnownFactVat" should {

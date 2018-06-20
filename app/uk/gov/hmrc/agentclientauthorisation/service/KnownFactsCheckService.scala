@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.{ Inject, Singleton }
+
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors.{ DesConnector, VatCustomerInfo }
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
@@ -26,6 +27,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class KnownFactsCheckService @Inject() (desConnector: DesConnector) {
+
   def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Boolean]] = {
 
     desConnector.getVatCustomerInformation(clientVrn).map {
