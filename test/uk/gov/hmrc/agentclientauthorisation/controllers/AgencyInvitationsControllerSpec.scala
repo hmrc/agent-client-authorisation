@@ -219,7 +219,7 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
   "checkKnownFactItsa" should {
     val nino = Nino("AB123456A")
-    val postcode = "AA1 1AA"
+    val postcode = "AA11AA"
 
     "return 204 if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)

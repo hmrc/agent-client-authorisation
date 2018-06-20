@@ -36,7 +36,7 @@ class PostcodeService @Inject() (desConnector: DesConnector) {
     if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
     else {
       postcodeWithoutSpacesRegex.findFirstIn(postcode).map(_ => clientPostcodeMatches(clientId, postcode))
-        .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, "$postcode", does not match the expected format.""")))
+        .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
     }
   }
 
