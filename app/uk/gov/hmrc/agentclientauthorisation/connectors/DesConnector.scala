@@ -18,20 +18,20 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
 
-import javax.inject.{ Inject, Named, Singleton }
+import javax.inject.{Inject, Named, Singleton}
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
 import play.api.libs.json.Json.reads
-import play.api.libs.json.{ JsObject, Reads, __ }
+import play.api.libs.json.{JsObject, Reads, __}
 import play.api.libs.json.Reads._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentmtdidentifiers.model.{ MtdItId, Vrn }
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
-import scala.concurrent.{ ExecutionContext, Future }
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpReads }
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
 import uk.gov.hmrc.http.logging.Authorization
 
 case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
@@ -51,7 +51,8 @@ object VatCustomerInfo {
   implicit val vatCustomerInfoReads: Reads[VatCustomerInfo] = {
     (__ \ "approvedInformation").readNullable[JsObject].map {
       case Some(approvedInformation) =>
-        val maybeDate = (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate").asOpt[String].map(LocalDate.parse)
+        val maybeDate =
+          (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate").asOpt[String].map(LocalDate.parse)
         VatCustomerInfo(maybeDate)
       case None =>
         VatCustomerInfo(None)
@@ -60,23 +61,30 @@ object VatCustomerInfo {
 }
 
 @Singleton
-class DesConnector @Inject() (
+class DesConnector @Inject()(
   @Named("des-baseUrl") baseUrl: URL,
   @Named("des.authorizationToken") authorizationToken: String,
   @Named("des.environment") environment: String,
   httpGet: HttpGet,
-  metrics: Metrics) extends HttpAPIMonitor {
+  metrics: Metrics)
+    extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
-    getWithDesHeaders[BusinessDetails]("getRegistrationBusinessDetailsByNino", new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
+  def getBusinessDetails(
+    nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
+    getWithDesHeaders[BusinessDetails](
+      "getRegistrationBusinessDetailsByNino",
+      new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
 
-  def getVatCustomerInformation(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]] = {
+  def getVatCustomerInformation(
+    vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]] = {
     val url = new URL(baseUrl, s"/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
     getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
   }
 
-  private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[T]] = {
+  private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Option[T]] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment)

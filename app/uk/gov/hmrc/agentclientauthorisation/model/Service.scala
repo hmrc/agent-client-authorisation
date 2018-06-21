@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{ MtdItId, Vrn }
-import uk.gov.hmrc.domain.{ TaxIdentifier, Nino, SimpleObjectReads, SimpleObjectWrites }
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 
 sealed abstract class Service(
   val id: String,
@@ -31,7 +31,7 @@ sealed abstract class Service(
   override def equals(that: Any): Boolean =
     that match {
       case that: Service => this.id.equals(that.id)
-      case _ => false
+      case _             => false
     }
 }
 
@@ -65,7 +65,8 @@ sealed abstract class ClientIdType[T <: TaxIdentifier](
 
 object ClientIdType {
   val supportedTypes = Seq(NinoType, MtdItIdType, VrnType)
-  def forId(id: String) = supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
+  def forId(id: String) =
+    supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
 
 case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply) {
@@ -82,7 +83,8 @@ case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) 
 
 case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
 
-  private val clientIdType = ClientIdType.supportedTypes.find(_.clazz == underlying.getClass)
+  private val clientIdType = ClientIdType.supportedTypes
+    .find(_.clazz == underlying.getClass)
     .getOrElse(throw new Exception("Invalid type for clientId " + underlying.getClass.getCanonicalName))
 
   val value: String = underlying.value
@@ -95,12 +97,11 @@ case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
 object ClientIdentifier {
   type ClientId = ClientIdentifier[_ <: TaxIdentifier]
 
-  def apply(value: String, typeId: String): ClientId = {
-    ClientIdType.supportedTypes.find(_.id == typeId)
+  def apply(value: String, typeId: String): ClientId =
+    ClientIdType.supportedTypes
+      .find(_.id == typeId)
       .getOrElse(throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
       .createUnderlying(value.replaceAll("\\s", ""))
-  }
 
   implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
 }
-

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.sandbox
 import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{ Ignore, Inside }
+import org.scalatest.{Ignore, Inside}
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
@@ -29,7 +29,8 @@ import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 
 @Ignore
-class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
+class SandboxClientInvitationsISpec
+    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private implicit val arn = HardCodedSandboxIds.arn
 
@@ -98,15 +99,15 @@ class SandboxClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     }
   }
 
-  def anEndpointWithClientReceivedInvitationsLink(url: String): Unit = {
+  def anEndpointWithClientReceivedInvitationsLink(url: String): Unit =
     "return a HAL response including a client received invitations link" in {
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdItId1))
+      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(
+        clientReceivedInvitationsUrl(mtdItId1))
     }
-  }
 
   private def checkInvitation(clientId: MtdItId, invitation: JsValue, testStartTime: Long): Unit = {
 

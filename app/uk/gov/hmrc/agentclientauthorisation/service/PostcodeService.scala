@@ -16,31 +16,37 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import javax.inject.{ Inject, Singleton }
+import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.Result
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ BusinessDetails, DesConnector }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{BusinessDetails, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
 import uk.gov.hmrc.domain.Nino
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
-class PostcodeService @Inject() (desConnector: DesConnector) {
+class PostcodeService @Inject()(desConnector: DesConnector) {
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
-  def postCodeMatches(clientId: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+  def postCodeMatches(clientId: String, postcode: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Option[Result]] =
     if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
     else {
-      postcodeWithoutSpacesRegex.findFirstIn(postcode).map(_ => clientPostcodeMatches(clientId, postcode))
-        .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
+      postcodeWithoutSpacesRegex
+        .findFirstIn(postcode)
+        .map(_ => clientPostcodeMatches(clientId, postcode))
+        .getOrElse(Future successful Some(
+          postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
     }
-  }
 
-  private def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] = {
+  private def clientPostcodeMatches(clientIdentifier: String, postcode: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Option[Result]] = {
     // we can use head here due to the guard on the array size in the case statement but these are not a general purpose functions
     def postcodeMatches(details: BusinessDetails, postcode: String) =
       details.businessData.head.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode))
@@ -49,11 +55,12 @@ class PostcodeService @Inject() (desConnector: DesConnector) {
       details.businessData.head.businessAddressDetails.countryCode.toUpperCase == "GB"
 
     desConnector.getBusinessDetails(Nino(clientIdentifier)).map {
-      case Some(details) if details.businessData.length != 1 => Some(PostcodeDoesNotMatch)
+      case Some(details) if details.businessData.length != 1                           => Some(PostcodeDoesNotMatch)
       case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => None
-      case Some(details) if postcodeMatches(details, postcode) => Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
+      case Some(details) if postcodeMatches(details, postcode) =>
+        Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
       case Some(_) => Some(PostcodeDoesNotMatch)
-      case None => Some(ClientRegistrationNotFound)
+      case None    => Some(ClientRegistrationNotFound)
     }
   }
 }

@@ -1,5 +1,6 @@
 import play.core.PlayVersion
 import sbt.Tests.{Group, SubProcess}
+import sbt.{IntegrationTest, inConfig}
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
@@ -61,7 +62,9 @@ lazy val root = (project in file("."))
     scoverageSettings,
     unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
     routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.Binders._", "org.joda.time.LocalDate"),
-    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value
+    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value,
+    scalafmtOnCompile in Compile := true,
+    scalafmtOnCompile in Test := true
   )
   .configs(IntegrationTest)
   .settings(
@@ -70,10 +73,12 @@ lazy val root = (project in file("."))
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,
     parallelExecution in IntegrationTest := false,
-    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value)
+    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    scalafmtOnCompile in IntegrationTest := true
   )
-  .settings(scalariformItSettings)
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
+
+inConfig(IntegrationTest)(scalafmtCoreSettings)
 
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]) = {
   tests.map { test =>

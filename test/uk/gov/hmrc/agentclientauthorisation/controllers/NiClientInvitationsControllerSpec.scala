@@ -28,28 +28,31 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.ninoSpace
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{ Enrolments, PlayAuthConnector }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.domain.{Generator, Nino}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
-class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
+class NiClientInvitationsControllerSpec
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
 
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockHalResource: ClientInvitationsHal = resettingMock[ClientInvitationsHal]
 
-  val controller = new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
-    override val authConnector: PlayAuthConnector = mockPlayAuthConnector
-  }
+  val controller =
+    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
+      override val authConnector: PlayAuthConnector = mockPlayAuthConnector
+    }
 
   val invitationDbId: String = BSONObjectID.generate.stringify
   val invitationId: InvitationId = InvitationId("BT6NLAYD6FSYU")
   val generator = new Generator()
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext])).thenReturn(returnValue)
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
+      .thenReturn(returnValue)
 
   "getInvitation" should {
     "Return OK when given nino has spaces in between" in {
@@ -58,8 +61,9 @@ class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resett
         .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
 
-      val response = await(controller
-        .getInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
+      val response = await(
+        controller
+          .getInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       status(response) shouldBe status(Ok)
     }
@@ -71,8 +75,9 @@ class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resett
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
       whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
 
-      val response = await(controller
-        .acceptInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
+      val response = await(
+        controller
+          .acceptInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
       verifyAgentClientRelationshipCreatedAuditEvent()
@@ -85,8 +90,9 @@ class NiClientInvitationsControllerSpec extends AkkaMaterializerSpec with Resett
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
       whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
 
-      val response = await(controller
-        .rejectInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
+      val response = await(
+        controller
+          .rejectInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
     }

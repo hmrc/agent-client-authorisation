@@ -21,8 +21,9 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 
-class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with GivenWhenThen
-  with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class VatInvitationScenarios
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val vrn: Vrn = Vrn("101747641")
@@ -39,7 +40,8 @@ class VatInvitationScenarios extends FeatureSpec with ScenarioHelpers with Given
     agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client accepts the first invitation")
-    val stubs: Client = given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn).anMtdVatRelationshipIsCreatedWith(arn, vrn)
+    val stubs: Client =
+      given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn).anMtdVatRelationshipIsCreatedWith(arn, vrn)
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
 

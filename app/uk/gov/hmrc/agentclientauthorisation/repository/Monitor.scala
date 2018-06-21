@@ -18,34 +18,35 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.codahale.metrics.MetricRegistry
 
-import scala.concurrent.duration.{ Duration, NANOSECONDS }
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration.{Duration, NANOSECONDS}
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Monitor {
 
   val kenshooRegistry: MetricRegistry
 
-  def monitor[T](actionName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+  def monitor[T](actionName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] =
     timer(actionName)(function)
-  }
 
   private def timer[T](serviceName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val start = System.nanoTime()
     function.andThen {
       case _ =>
         val duration = Duration(System.nanoTime() - start, NANOSECONDS)
-        kenshooRegistry.getTimers.getOrDefault(timerName(serviceName), kenshooRegistry.timer(timerName(serviceName))).update(duration.length, duration.unit)
+        kenshooRegistry.getTimers
+          .getOrDefault(timerName(serviceName), kenshooRegistry.timer(timerName(serviceName)))
+          .update(duration.length, duration.unit)
     }
   }
 
-  private def timerName[T](serviceName: String): String = {
+  private def timerName[T](serviceName: String): String =
     s"Timer-$serviceName"
-  }
 
   def reportHistogramValue[T](name: String, value: Long)(implicit ec: ExecutionContext): Unit =
-    kenshooRegistry.getHistograms.getOrDefault(histogramName(name), kenshooRegistry.histogram(histogramName(name))).update(value)
+    kenshooRegistry.getHistograms
+      .getOrDefault(histogramName(name), kenshooRegistry.histogram(histogramName(name)))
+      .update(value)
 
-  def histogramName[T](counterName: String): String = {
+  def histogramName[T](counterName: String): String =
     s"Histogram-$counterName"
-  }
 }

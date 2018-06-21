@@ -1,3 +1,5 @@
+import sbt.addSbtPlugin
+
 resolvers ++= Seq(
   Resolver.url("hmrc-sbt-plugin-releases",
     url("https://dl.bintray.com/hmrc/sbt-plugin-releases"))
@@ -17,4 +19,4 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.0")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.15")

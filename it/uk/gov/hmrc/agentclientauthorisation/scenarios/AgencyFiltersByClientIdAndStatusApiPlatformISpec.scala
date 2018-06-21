@@ -21,9 +21,11 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{ AgentCode, Nino }
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyFiltersByClientIdAndStatusApiPlatformISpec
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -39,14 +41,15 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec extends FeatureSpec with 
       val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
-      given().client(mtdItId1, nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1).anMtdItRelationshipIsCreatedWith(arn)
+      given()
+        .client(mtdItId1, nino)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
+        .anMtdItRelationshipIsCreatedWith(arn)
       given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends invitations to Client 1")
-      agencySendsSeveralInvitations(agency)(
-        (client, MtdItService),
-        (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       And("Sends an invitations to Client 2")
       agency sendInvitation (nino2, MtdItService)

@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -28,7 +28,7 @@ sealed trait InvitationStatus {
 
   def toEither: Either[String, InvitationStatus] = this match {
     case Unknown(status) => Left(status)
-    case status => Right(status)
+    case status          => Right(status)
   }
 
   def leftMap[X](f: String => X) =
@@ -51,30 +51,31 @@ case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
   def unapply(status: InvitationStatus): Option[String] = status match {
-    case Pending => Some("Pending")
-    case Rejected => Some("Rejected")
-    case Accepted => Some("Accepted")
+    case Pending   => Some("Pending")
+    case Rejected  => Some("Rejected")
+    case Accepted  => Some("Accepted")
     case Cancelled => Some("Cancelled")
-    case Expired => Some("Expired")
-    case _ => None
+    case Expired   => Some("Expired")
+    case _         => None
   }
 
   def apply(status: String): InvitationStatus = status.toLowerCase match {
-    case "pending" => Pending
-    case "rejected" => Rejected
-    case "accepted" => Accepted
+    case "pending"   => Pending
+    case "rejected"  => Rejected
+    case "accepted"  => Accepted
     case "cancelled" => Cancelled
-    case "expired" => Expired
-    case _ => Unknown(status)
+    case "expired"   => Expired
+    case _           => Unknown(status)
   }
 
   implicit val invitationStatusFormat = new Format[InvitationStatus] {
     override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
       case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
-      case value => JsSuccess(value)
+      case value          => JsSuccess(value)
     }
 
-    override def writes(o: InvitationStatus): JsValue = unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
+    override def writes(o: InvitationStatus): JsValue =
+      unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
   }
 }
 
@@ -92,13 +93,15 @@ object ClientIdMapping {
   implicit val dateReads = RestFormats.dateTimeRead
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
   implicit val jsonWrites = new Writes[Invitation] {
-    def writes(invitation: Invitation) = Json.obj(
-      "canonicalClientId" -> invitation.clientId.value,
-      "canonicalClientIdType" -> invitation.clientId.typeId,
-      "suppliedClientId" -> invitation.suppliedClientId.value,
-      "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-      "created" -> invitation.firstEvent().time,
-      "lastUpdated" -> invitation.mostRecentEvent().time)
+    def writes(invitation: Invitation) =
+      Json.obj(
+        "canonicalClientId"     -> invitation.clientId.value,
+        "canonicalClientIdType" -> invitation.clientId.typeId,
+        "suppliedClientId"      -> invitation.suppliedClientId.value,
+        "suppliedClientIdType"  -> invitation.suppliedClientId.typeId,
+        "created"               -> invitation.firstEvent().time,
+        "lastUpdated"           -> invitation.mostRecentEvent().time
+      )
 
   }
 
@@ -116,21 +119,25 @@ case class Invitation(
   expiryDate: LocalDate,
   events: List[StatusChangeEvent]) {
 
-  def firstEvent(): StatusChangeEvent = {
+  def firstEvent(): StatusChangeEvent =
     events.head
-  }
 
-  def mostRecentEvent(): StatusChangeEvent = {
+  def mostRecentEvent(): StatusChangeEvent =
     events.last
-  }
 
   def status = mostRecentEvent().status
 }
 
 object Invitation {
 
-  def createNew(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId, postcode: Option[String],
-    startDate: DateTime, expiryDate: LocalDate): Invitation = {
+  def createNew(
+    arn: Arn,
+    service: Service,
+    clientId: ClientId,
+    suppliedClientId: ClientId,
+    postcode: Option[String],
+    startDate: DateTime,
+    expiryDate: LocalDate): Invitation =
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
@@ -139,34 +146,32 @@ object Invitation {
       suppliedClientId = suppliedClientId,
       postcode = postcode,
       expiryDate = expiryDate,
-      events = List(StatusChangeEvent(startDate, Pending)))
-  }
+      events = List(StatusChangeEvent(startDate, Pending))
+    )
 
   implicit val dateWrites = RestFormats.dateTimeWrite
   implicit val dateReads = RestFormats.dateTimeRead
   implicit val jsonWrites = new Writes[Invitation] {
-    def writes(invitation: Invitation) = Json.obj(
-      "service" -> invitation.service.id,
-      "clientIdType" -> invitation.clientId.typeId,
-      "clientId" -> invitation.clientId.value,
-      "postcode" -> invitation.postcode,
-      "arn" -> invitation.arn.value,
-      "suppliedClientId" -> invitation.suppliedClientId.value,
-      "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-      "created" -> invitation.firstEvent().time,
-      "lastUpdated" -> invitation.mostRecentEvent().time,
-      "expiryDate" -> invitation.expiryDate,
-      "status" -> invitation.status)
+    def writes(invitation: Invitation) =
+      Json.obj(
+        "service"              -> invitation.service.id,
+        "clientIdType"         -> invitation.clientId.typeId,
+        "clientId"             -> invitation.clientId.value,
+        "postcode"             -> invitation.postcode,
+        "arn"                  -> invitation.arn.value,
+        "suppliedClientId"     -> invitation.suppliedClientId.value,
+        "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
+        "created"              -> invitation.firstEvent().time,
+        "lastUpdated"          -> invitation.mostRecentEvent().time,
+        "expiryDate"           -> invitation.expiryDate,
+        "status"               -> invitation.status
+      )
   }
 
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvitation(
-  service: String,
-  clientIdType: String,
-  clientId: String,
-  clientPostcode: Option[String]) {
+case class AgentInvitation(service: String, clientIdType: String, clientId: String, clientPostcode: Option[String]) {
 
   lazy val getService = Service.forId(service)
 }

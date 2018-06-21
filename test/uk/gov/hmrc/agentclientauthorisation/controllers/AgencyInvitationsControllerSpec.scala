@@ -18,27 +18,29 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
-import org.mockito.ArgumentMatchers.{ eq => eqs, _ }
+import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
-import play.api.mvc.Results.{ Accepted => AcceptedResponse, _ }
+import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{ JsArray, JsValue, Json }
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{ AuthActions, MicroserviceAuthConnector }
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{ InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure }
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, Vrn }
-import uk.gov.hmrc.auth.core.retrieve.{ Retrieval, ~ }
-import uk.gov.hmrc.auth.core.{ AffinityGroup, Enrolments, PlayAuthConnector }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.domain.{Generator, Nino}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
-class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation with TestData {
+class AgencyInvitationsControllerSpec
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation
+    with TestData {
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
@@ -49,29 +51,43 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
-  val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
+  val jsonBody = Json.parse(
+    s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
-  val controller = new AgencyInvitationsController(postcodeService, invitationsService, kfcService)(metrics, microserviceAuthConnector) {
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, kfcService)(
+    metrics,
+    microserviceAuthConnector) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any[ExecutionContext])).thenReturn(returnValue)
+    when(
+      mockPlayAuthConnector
+        .authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any[ExecutionContext]))
+      .thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
-      Future successful allInvitations)
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None), eqs(None))(any()))
+      .thenReturn(Future successful allInvitations)
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None), eqs(None))(any())).thenReturn(
-      Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
+    when(
+      invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None), eqs(None))(
+        any())).thenReturn(Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
 
-    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any())).thenReturn(
-      Future successful allInvitations.filter(_.status == Accepted))
+    when(
+      invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any()))
+      .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
-    when(invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(Some("ni")), any[Option[String]], eqs(Some(Accepted)), eqs(None))(any())).thenReturn(
-      Future successful allInvitations.filter(_.status == Accepted))
+    when(
+      invitationsService.agencySent(
+        eqs(arn),
+        eqs(Some(Service.MtdIt)),
+        eqs(Some("ni")),
+        any[Option[String]],
+        eqs(Some(Accepted)),
+        eqs(None))(any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
   }
 
   "createInvitations" should {
@@ -79,20 +95,21 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val inviteCreated = TestConstants.defaultInvitation.copy(
-        id = mtdSaPendingInvitationDbId,
-        invitationId = mtdSaPendingInvitationId,
-        arn = arn,
-        clientId = mtdItId1)
+      val inviteCreated = TestConstants.defaultInvitation
+        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
-      when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any())).thenReturn(Future successful None)
-      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any())).thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
-      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any())).thenReturn(Future successful inviteCreated)
+      when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any()))
+        .thenReturn(Future successful None)
+      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any()))
+        .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
+      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any()))
+        .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 201
-      response.header.headers.get("Location") shouldBe Some(s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
+      response.header.headers.get("Location") shouldBe Some(
+        s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
     }
 
     "not create an invitation when given arn is incorrect" in {
@@ -146,13 +163,16 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       val clientIdType = Some("ni")
       val clientId = Some("AA123456A")
       val invitationStatus = Some(Accepted)
-      val response = await(controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)(FakeRequest()))
+      val response = await(
+        controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
       (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
-        routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None).url
+        routes.AgencyInvitationsController
+          .getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)
+          .url
     }
 
   }
@@ -223,28 +243,32 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
 
     "return 204 if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful None)
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+        .thenReturn(Future successful None)
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 204
     }
 
     "return 400 if given invalid postcode" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(BadRequest))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+        .thenReturn(Future successful Some(BadRequest))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 400
     }
 
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(Forbidden))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+        .thenReturn(Future successful Some(Forbidden))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
     }
 
     "return 501 if Nino is known in ETMP but the postcode is non-UK" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any())).thenReturn(Future successful Some(NotImplemented))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+        .thenReturn(Future successful Some(NotImplemented))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 501
     }
@@ -305,19 +329,19 @@ class AgencyInvitationsControllerSpec extends AkkaMaterializerSpec with Resettin
       arn.value,
       "invitations",
       "sent",
-      invitationId.value)
+      invitationId.value
+    )
 
-  private def anInvitation(arn: Arn = arn) = {
-    TestConstants.defaultInvitation.copy(
-      id = mtdSaPendingInvitationDbId,
-      invitationId = mtdSaPendingInvitationId,
-      arn = arn)
-  }
+  private def anInvitation(arn: Arn = arn) =
+    TestConstants.defaultInvitation
+      .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn)
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))
 
-  private def whenFindingAnInvitation() = when(invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
+  private def whenFindingAnInvitation() =
+    when(invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
 
-  private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) = when(invitationsService.cancelInvitation(any[Invitation]))
+  private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) =
+    when(invitationsService.cancelInvitation(any[Invitation]))
 }

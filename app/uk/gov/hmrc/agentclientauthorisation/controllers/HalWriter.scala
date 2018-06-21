@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.hal.{ HalResource, halLinkWrites }
+import play.api.hal.{HalResource, halLinkWrites}
 import play.api.http.Writeable
-import play.api.libs.json.{ JsObject, JsValue, Json, Writes }
+import play.api.libs.json.{JsObject, JsValue, Json, Writes}
 import play.api.mvc.Codec
 
 trait HalWriter {
@@ -29,21 +29,22 @@ trait HalWriter {
 
     def writes(hal: HalResource): JsValue = {
       val embedded = toEmbeddedJson(hal)
-      val resource = if (hal.links.links.isEmpty) hal.state
-      else Json.toJson(hal.links).as[JsObject] ++ hal.state
+      val resource =
+        if (hal.links.links.isEmpty) hal.state
+        else Json.toJson(hal.links).as[JsObject] ++ hal.state
       if (embedded.fields.isEmpty) resource
       else resource + ("_embedded" -> embedded)
     }
 
-    def toEmbeddedJson(hal: HalResource): JsObject = {
+    def toEmbeddedJson(hal: HalResource): JsObject =
       hal.embedded match {
         case e if e.isEmpty => JsObject(Nil)
-        case e => JsObject(e.map {
-          case (link, resources) =>
-            link -> Json.toJson(resources.map(r => Json.toJson(r)))
-        })
+        case e =>
+          JsObject(e.map {
+            case (link, resources) =>
+              link -> Json.toJson(resources.map(r => Json.toJson(r)))
+          })
       }
-    }
   }
 
   implicit def halWriter(implicit code: Codec): Writeable[HalResource] =

@@ -19,9 +19,9 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import com.sun.jndi.ldap.ClientId
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.{DateTime, LocalDate}
 import org.joda.time.DateTime.now
-import org.mockito.ArgumentMatchers.{ any, eq => eqs, _ }
+import org.mockito.ArgumentMatchers.{any, eq => eqs, _}
 import play.api.mvc.Request
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -38,7 +38,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -56,7 +56,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     override def toJson: String = ""
   }
 
-  val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10 days", metrics)
+  val service = new InvitationsService(
+    invitationsRepository,
+    relationshipsConnector,
+    desConnector,
+    auditService,
+    "10 days",
+    metrics)
 
   val ninoAsString: String = nino1.value
 
@@ -109,7 +115,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           ClientIdentifier(nino1),
           Some("A11 1AA"),
           now().toLocalDate.plusDays(10),
-          List(StatusChangeEvent(now(), Pending)))
+          List(StatusChangeEvent(now(), Pending))
+        )
 
         whenAfiRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
@@ -128,22 +135,38 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       "invitation has already been accepted" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Accepted)))
 
-        response shouldBe Left(StatusUpdateFailure(Accepted, "The invitation cannot be transitioned to Accepted because its current status is Accepted. Only Pending invitations may be transitioned to Accepted."))
+        response shouldBe Left(
+          StatusUpdateFailure(
+            Accepted,
+            "The invitation cannot be transitioned to Accepted because its current status is Accepted. Only Pending invitations may be transitioned to Accepted."
+          ))
       }
       "invitation has been cancelled" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Cancelled)))
 
-        response shouldBe Left(StatusUpdateFailure(Cancelled, "The invitation cannot be transitioned to Accepted because its current status is Cancelled. Only Pending invitations may be transitioned to Accepted."))
+        response shouldBe Left(
+          StatusUpdateFailure(
+            Cancelled,
+            "The invitation cannot be transitioned to Accepted because its current status is Cancelled. Only Pending invitations may be transitioned to Accepted."
+          ))
       }
       "invitation has been rejected" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Rejected)))
 
-        response shouldBe Left(StatusUpdateFailure(Rejected, "The invitation cannot be transitioned to Accepted because its current status is Rejected. Only Pending invitations may be transitioned to Accepted."))
+        response shouldBe Left(
+          StatusUpdateFailure(
+            Rejected,
+            "The invitation cannot be transitioned to Accepted because its current status is Rejected. Only Pending invitations may be transitioned to Accepted."
+          ))
       }
       "invitation has expired" in {
         val response = await(service.acceptInvitation(testInvitationWithStatus(Expired)))
 
-        response shouldBe Left(StatusUpdateFailure(Expired, "The invitation cannot be transitioned to Accepted because its current status is Expired. Only Pending invitations may be transitioned to Accepted."))
+        response shouldBe Left(
+          StatusUpdateFailure(
+            Expired,
+            "The invitation cannot be transitioned to Accepted because its current status is Expired. Only Pending invitations may be transitioned to Accepted."
+          ))
       }
     }
 
@@ -172,24 +195,40 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "not reject a cancelled invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe Left(StatusUpdateFailure(Cancelled, "The invitation cannot be transitioned to Rejected because its current status is Cancelled. Only Pending invitations may be transitioned to Rejected."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Cancelled,
+          "The invitation cannot be transitioned to Rejected because its current status is Cancelled. Only Pending invitations may be transitioned to Rejected."
+        ))
     }
 
     "not reject an accepted invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe Left(StatusUpdateFailure(Accepted, "The invitation cannot be transitioned to Rejected because its current status is Accepted. Only Pending invitations may be transitioned to Rejected."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Accepted,
+          "The invitation cannot be transitioned to Rejected because its current status is Accepted. Only Pending invitations may be transitioned to Rejected."
+        ))
     }
 
     "not reject an already rejected invitation" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe Left(StatusUpdateFailure(Rejected, "The invitation cannot be transitioned to Rejected because its current status is Rejected. Only Pending invitations may be transitioned to Rejected."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Rejected,
+          "The invitation cannot be transitioned to Rejected because its current status is Rejected. Only Pending invitations may be transitioned to Rejected."
+        ))
     }
     "not reject an invitation that has expired" in {
       val response = await(service.rejectInvitation(testInvitationWithStatus(Expired)))
 
-      response shouldBe Left(StatusUpdateFailure(Expired, "The invitation cannot be transitioned to Rejected because its current status is Expired. Only Pending invitations may be transitioned to Rejected."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Expired,
+          "The invitation cannot be transitioned to Rejected because its current status is Expired. Only Pending invitations may be transitioned to Rejected."
+        ))
     }
   }
 
@@ -206,25 +245,41 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "not cancel a cancelled invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Cancelled)))
 
-      response shouldBe Left(StatusUpdateFailure(Cancelled, "The invitation cannot be transitioned to Cancelled because its current status is Cancelled. Only Pending invitations may be transitioned to Cancelled."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Cancelled,
+          "The invitation cannot be transitioned to Cancelled because its current status is Cancelled. Only Pending invitations may be transitioned to Cancelled."
+        ))
     }
 
     "not cancel an accepted invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Accepted)))
 
-      response shouldBe Left(StatusUpdateFailure(Accepted, "The invitation cannot be transitioned to Cancelled because its current status is Accepted. Only Pending invitations may be transitioned to Cancelled."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Accepted,
+          "The invitation cannot be transitioned to Cancelled because its current status is Accepted. Only Pending invitations may be transitioned to Cancelled."
+        ))
     }
 
     "not cancel an already rejected invitation" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Rejected)))
 
-      response shouldBe Left(StatusUpdateFailure(Rejected, "The invitation cannot be transitioned to Cancelled because its current status is Rejected. Only Pending invitations may be transitioned to Cancelled."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Rejected,
+          "The invitation cannot be transitioned to Cancelled because its current status is Rejected. Only Pending invitations may be transitioned to Cancelled."
+        ))
     }
 
     "not cancel an invitation that has expired" in {
       val response = await(service.cancelInvitation(testInvitationWithStatus(Expired)))
 
-      response shouldBe Left(StatusUpdateFailure(Expired, "The invitation cannot be transitioned to Cancelled because its current status is Expired. Only Pending invitations may be transitioned to Cancelled."))
+      response shouldBe Left(
+        StatusUpdateFailure(
+          Expired,
+          "The invitation cannot be transitioned to Cancelled because its current status is Expired. Only Pending invitations may be transitioned to Cancelled."
+        ))
     }
   }
 
@@ -246,7 +301,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any())).thenReturn(testInvitationWithStatus(Expired))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
+        .thenReturn(testInvitationWithStatus(Expired))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
 
@@ -257,9 +313,16 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any())).thenReturn(testInvitationWithStatus(Expired))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
+        .thenReturn(testInvitationWithStatus(Expired))
 
-      val serviceWithUnderscoreInDuration = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "10_days", metrics)
+      val serviceWithUnderscoreInDuration = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "10_days",
+        metrics)
 
       await(serviceWithUnderscoreInDuration.findInvitation(invitation.invitationId)).get.status shouldBe Expired
 
@@ -299,13 +362,24 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
-  def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService = {
-    new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, invitationExpiryDuration, metrics)
-  }
+  def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService =
+    new InvitationsService(
+      invitationsRepository,
+      relationshipsConnector,
+      desConnector,
+      auditService,
+      invitationExpiryDuration,
+      metrics)
 
   "isInvitationExpired" should {
     "return expired when duration is one day and invitation created yesterday an hour before midnight" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def yesterdayAnHourBeforeMidnight() = now().minusDays(1).millisOfDay().withMaximumValue().minusHours(1)
       val invitation = testInvitationWithDate(yesterdayAnHourBeforeMidnight)
@@ -314,7 +388,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one day and invitation created yesterday a millisecond before midnight" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def yesterdayAMilliBeforeMidnight() = now().minusDays(1).millisOfDay().withMaximumValue()
       val invitation = testInvitationWithDate(yesterdayAMilliBeforeMidnight)
@@ -323,7 +403,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one day and invitation created today" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 days", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def todayAtMidnight() = now().minusDays(1).millisOfDay().withMaximumValue().plusMillis(1)
       val invitation = testInvitationWithDate(todayAtMidnight)
@@ -332,7 +418,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return not expired when duration is one hour and 59 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAt10FiftyNine() = now().withTime(10, 59, 0, 0)
@@ -342,7 +434,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return not expired when duration is one hour and 60 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtEleven() = now().withTime(11, 0, 0, 0)
@@ -352,7 +450,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "return expired when duration is one hour and 60 and one millisecond minutes pass" in {
-      val service = new InvitationsService(invitationsRepository, relationshipsConnector, desConnector, auditService, "1 hour", metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtElevenAndOneMilli() = now().withTime(11, 0, 0, 1)
@@ -362,53 +466,55 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
-  private def testInvitationWithStatus(status: InvitationStatus) = Invitation(
-    generate,
-    InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
-    Arn(arn),
-    Service.MtdIt,
-    mtdItId1,
-    ClientIdentifier(nino1),
-    Some("A11 1AA"),
-    LocalDate.now().plusDays(10),
-    List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status)))
+  private def testInvitationWithStatus(status: InvitationStatus) =
+    Invitation(
+      generate,
+      InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
+      Arn(arn),
+      Service.MtdIt,
+      mtdItId1,
+      ClientIdentifier(nino1),
+      Some("A11 1AA"),
+      LocalDate.now().plusDays(10),
+      List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
+    )
 
   private def testInvitation = testInvitationWithDate(now)
 
-  private def testInvitationWithDate(creationDate: () => DateTime) = Invitation(
-    generate,
-    InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
-    Arn(arn),
-    Service.MtdIt,
-    ClientIdentifier(mtdItId1),
-    ClientIdentifier(nino1),
-    Some("A11 1AA"),
-    LocalDate.now().plusDays(10),
-    List(StatusChangeEvent(creationDate(), Pending)))
+  private def testInvitationWithDate(creationDate: () => DateTime) =
+    Invitation(
+      generate,
+      InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
+      Arn(arn),
+      Service.MtdIt,
+      ClientIdentifier(mtdItId1),
+      ClientIdentifier(nino1),
+      Some("A11 1AA"),
+      LocalDate.now().plusDays(10),
+      List(StatusChangeEvent(creationDate(), Pending))
+    )
 
-  private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] = {
+  private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] =
     when(invitationsRepository.update(any[BSONObjectID], eqs(status), any[DateTime])(any()))
-  }
 
-  private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
+  private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
     when(relationshipsConnector.createMtdItRelationship(invitation))
-  }
 
-  private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] = {
+  private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
     when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any()))
-  }
 
-  private def whenDesBusinessPartnerRecordExistsFor(nino: Nino, mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] = {
+  private def whenDesBusinessPartnerRecordExistsFor(
+    nino: Nino,
+    mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino)).thenReturn(
-      Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), Some(MtdItId(mtdItId)))))
-  }
+      Future successful Some(
+        BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), Some(MtdItId(mtdItId)))))
 
-  private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] = {
+  private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(
+    nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino)).thenReturn(
       Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), None)))
-  }
 
-  private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] = {
+  private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful None)
-  }
 }

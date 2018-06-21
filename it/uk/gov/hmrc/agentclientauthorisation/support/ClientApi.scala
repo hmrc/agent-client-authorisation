@@ -21,21 +21,25 @@ import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvi
 import uk.gov.hmrc.agentclientauthorisation.support.HalTestHelpers.HalResourceHelper
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.http.logging.SessionId
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class ClientApi(val apiRequests: ApiRequests, val suppliedClientId: ClientId, val clientId: ClientId = MtdItId("mtdItId"), implicit val port: Int) {
+class ClientApi(
+  val apiRequests: ApiRequests,
+  val suppliedClientId: ClientId,
+  val clientId: ClientId = MtdItId("mtdItId"),
+  implicit val port: Int) {
 
   implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(suppliedClientId.value)))
 
-  def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.acceptLink.map(apiRequests.updateInvitationResource)
+  def acceptInvitation(invitation: EmbeddedInvitation): HttpResponse =
+    invitation.links.acceptLink
+      .map(apiRequests.updateInvitationResource)
       .getOrElse(throw new IllegalStateException("Can't accept this invitation the accept link is not defined"))
-  }
 
-  def rejectInvitation(invitation: EmbeddedInvitation): HttpResponse = {
-    invitation.links.rejectLink.map(apiRequests.updateInvitationResource)
+  def rejectInvitation(invitation: EmbeddedInvitation): HttpResponse =
+    invitation.links.rejectLink
+      .map(apiRequests.updateInvitationResource)
       .getOrElse(throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
-  }
 
   def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
     val response = apiRequests.clientGetReceivedInvitations(clientId, filteredBy)(port, hc)

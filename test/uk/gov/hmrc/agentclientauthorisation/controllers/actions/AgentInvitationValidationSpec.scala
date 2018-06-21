@@ -18,13 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{ Result, Results }
+import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
+class AgentInvitationValidationSpec
+    extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
   private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", "vrn", "101747641", None)
@@ -43,13 +44,11 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
     }
   }
 
-  private def responseFor(invite: AgentInvitation): Result = {
+  private def responseFor(invite: AgentInvitation): Result =
     responseOptFor(invite).get
-  }
 
-  private def responseOptFor(invite: AgentInvitation): Option[Result] = {
+  private def responseOptFor(invite: AgentInvitation): Option[Result] =
     await(checkForErrors(invite))
-  }
 
   "checkForErrors" should {
 
