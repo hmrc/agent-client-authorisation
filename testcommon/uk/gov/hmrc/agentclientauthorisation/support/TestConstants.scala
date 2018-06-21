@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
+import uk.gov.hmrc.domain.{Generator, Nino}
 
 object TestConstants {
   val mtdItId1: MtdItId = MtdItId("mtdItId")
@@ -44,5 +44,6 @@ object TestConstants {
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),
     postcode = Some("A11 1AA"),
     expiryDate = LocalDate.now().plusDays(10),
-    events = List(StatusChangeEvent(DateTime.now(), Pending)))
+    events = List(StatusChangeEvent(DateTime.now(), Pending))
+  )
 }

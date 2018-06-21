@@ -21,8 +21,9 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino
 
-class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioHelpers with GivenWhenThen
-  with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class PersonalIncomeRecordInvitationScenarios
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino
@@ -32,7 +33,8 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     val client = new ClientApi(this, nino, nino, port)
 
     Given("An agent is logged in")
-    given().client(clientId = nino)
+    given()
+      .client(clientId = nino)
       .hasABusinessPartnerRecord()
       .anAfiRelationshipIsCreatedWith(arn, nino)
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
@@ -54,7 +56,8 @@ class PersonalIncomeRecordInvitationScenarios extends FeatureSpec with ScenarioH
     val client = new ClientApi(this, nino, nino, port)
 
     Given("An agent is logged in")
-    given().client(clientId = nino)
+    given()
+      .client(clientId = nino)
       .hasABusinessPartnerRecord()
       .anAfiRelationshipIsCreatedWith(arn, nino)
     given().agentAdmin(arn).isLoggedInAndIsSubscribed

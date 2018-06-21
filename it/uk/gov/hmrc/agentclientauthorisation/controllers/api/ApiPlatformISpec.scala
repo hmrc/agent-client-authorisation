@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.api
 
-import uk.gov.hmrc.agentclientauthorisation.support.{ MongoAppAndStubs, Resource }
+import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -46,7 +46,6 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
     forAllApiVersions(ramlByVersion) {
       case (version, raml) =>
-
         info(s"Checking API RAML documentation for version[$version] of the API")
 
         withClue("RAML does not contain a valid RAML 1.0 version header") {

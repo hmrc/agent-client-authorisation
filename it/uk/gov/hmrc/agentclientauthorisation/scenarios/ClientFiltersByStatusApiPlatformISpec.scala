@@ -21,9 +21,11 @@ import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{ AgentCode, Nino }
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class ClientFiltersByStatusApiPlatformISpec
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -36,14 +38,14 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       Given("An agent and a client are logged in")
-      given().client(clientId = nino, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId1).anMtdItRelationshipIsCreatedWith(arn)
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
+        .anMtdItRelationshipIsCreatedWith(arn)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency)(
-        (client, MtdItService),
-        (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
@@ -70,8 +72,10 @@ class ClientFiltersByStatusApiPlatformISpec extends FeatureSpec with ScenarioHel
       val client = new ClientApi(this, nino1, nino1, port)
 
       Given("An agent and a client are logged in")
-      given().client(clientId = nino1, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecord().anAfiRelationshipIsCreatedWith(arn, nino1)
+      given()
+        .client(clientId = nino1, canonicalClientId = mtdItId1)
+        .hasABusinessPartnerRecord()
+        .anAfiRelationshipIsCreatedWith(arn, nino1)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends several invitations")

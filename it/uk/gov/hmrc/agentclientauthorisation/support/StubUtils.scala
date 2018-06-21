@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain._
 
 trait StubUtils {
@@ -26,35 +26,28 @@ trait StubUtils {
 
   class PreconditionBuilder {
 
-    def agentAdmin(arn: Arn): AgentAdmin = {
+    def agentAdmin(arn: Arn): AgentAdmin =
       AgentAdmin(arn.value)
-    }
 
-    def agentAdmin(arn: String, agentCode: String): AgentAdmin = {
+    def agentAdmin(arn: String, agentCode: String): AgentAdmin =
       AgentAdmin(arn)
-    }
 
-    def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin = {
+    def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin =
       agentAdmin(arn.value, agentCode.value)
-    }
 
-    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"), clientId: ClientId = nino1): Client = {
+    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"), clientId: ClientId = nino1): Client =
       Client(clientId, canonicalClientId)
-    }
   }
 
-  def given() = {
+  def given() =
     new PreconditionBuilder()
-  }
 
   class BaseUser extends WiremockAware {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  case class AgentAdmin(override val arn: String)
-    extends BaseUser with AgentAuthStubs[AgentAdmin] {
-  }
+  case class AgentAdmin(override val arn: String) extends BaseUser with AgentAuthStubs[AgentAdmin] {}
 
   case class Client(override val clientId: ClientId, override val canonicalClientId: TaxIdentifier)
-    extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
+      extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

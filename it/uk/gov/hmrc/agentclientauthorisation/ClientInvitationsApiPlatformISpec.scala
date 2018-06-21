@@ -19,12 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, Service }
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{ MtdIt, PersonalIncomeRecord }
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, MtdItId }
-import uk.gov.hmrc.domain.{ AgentCode, Nino, TaxIdentifier }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
@@ -118,7 +118,9 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(nino)
 
       val client = new ClientApi(this, nino1, MtdItId("0123456789"), port)
-      given().client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789")).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789"))
+        .isLoggedInWithMtdEnrolment
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
@@ -130,7 +132,9 @@ class ClientInvitationsFrontendISpec extends ClientInvitationsISpec {
   override val apiPlatform: Boolean = false
 }
 
-trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests with ErrorResultMatchers {
+trait ClientInvitationsISpec
+    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests
+    with ErrorResultMatchers {
 
   protected implicit val arn1 = Arn(arn)
   protected implicit val agentCode1 = AgentCode(agentCode)
@@ -147,13 +151,15 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
   protected def sendInvitationToClient(clientId: Nino, service: Service = MtdIt): EmbeddedInvitation = {
     val canonicalClientId: TaxIdentifier = service match {
-      case MtdIt => mtdItId1
+      case MtdIt                => mtdItId1
       case PersonalIncomeRecord => clientId
     }
 
     val agency = new AgencyApi(this, arn1, port)
     given().agentAdmin(arn1).isLoggedInAndIsSubscribed
-    given().client(clientId = clientId, canonicalClientId = canonicalClientId).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
+    given()
+      .client(clientId = clientId, canonicalClientId = canonicalClientId)
+      .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
     agency.sendInvitation(clientId, service = service.id)
 
@@ -161,7 +167,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     val client = given().client(clientId = clientApi.suppliedClientId, canonicalClientId = canonicalClientId)
 
     service match {
-      case MtdIt => client.isLoggedInWithMtdEnrolment
+      case MtdIt                => client.isLoggedInWithMtdEnrolment
       case PersonalIncomeRecord => client.isLoggedInWithNiEnrolment(clientId)
     }
 
@@ -169,7 +175,7 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
     invitations.firstInvitation
   }
 
-  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url: String): Unit = {
+  def anEndpointWithMeaningfulContentForAnAuthorisedClient(url: String): Unit =
     "return a meaningful response for the authenticated clients" in {
       given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
       //        .aRelationshipIsCreatedWith(arn1)
@@ -182,9 +188,8 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
       (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(invitationsReceivedUrl)
     }
-  }
 
-  def anEndpointThatPreventsAccessToAnotherClientsInvitations(url: String): Unit = {
+  def anEndpointThatPreventsAccessToAnotherClientsInvitations(url: String): Unit =
     "return 403 NO_PERMISSION_ON_CLIENT for someone else's invitations" in {
 
       given().client(clientId = nino1).isLoggedInWithMtdEnrolment
@@ -193,5 +198,4 @@ trait ClientInvitationsISpec extends UnitSpec with MongoAppAndStubs with Secured
 
       response should matchErrorResult(NoPermissionOnClient)
     }
-  }
 }

@@ -19,13 +19,13 @@ package uk.gov.hmrc.agentclientauthorisation
 import java.time.LocalDate
 
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{ Inside, Inspectors }
+import org.scalatest.{Inside, Inspectors}
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, Vrn }
-import uk.gov.hmrc.domain.{ AgentCode, Nino }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
 //class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
@@ -78,8 +78,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "Return 403 NO_PERMISSION_ON_AGENCY if accessing someone else's invitation" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      given().client(clientId =
-        nino).hasABusinessPartnerRecordWithMtdItId()
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
       val location = agencySendInvitation(arn1, validInvitation).header("location")
 
@@ -105,7 +104,8 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response = agencySendInvitation(arn1, validInvitation.copy(clientIdType = "MTDITID"))
       withClue(response.body) {
-        response should matchErrorResult(unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
+        response should matchErrorResult(
+          unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
       }
     }
 
@@ -152,11 +152,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "return 400 when given invalid postcode" in {
-      val expectedError = Json.parse(
-        s"""|{
-            |"code":"POSTCODE_FORMAT_INVALID",
-            |"message":"The submitted postcode, AA1!AA, does not match the expected format."
-            |}""".stripMargin)
+      val expectedError = Json.parse(s"""|{
+                                         |"code":"POSTCODE_FORMAT_INVALID",
+                                         |"message":"The submitted postcode, AA1!AA, does not match the expected format."
+                                         |}""".stripMargin)
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
       val result = agentGetCheckItsaKnownFact(clientNino, "AA1 !AA")
@@ -165,11 +164,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "return 403 when customer ITSA information in ETMP but has a non-matching postcode" in {
-      val expectedError = Json.parse(
-        s"""|{
-            |"code":"POSTCODE_DOES_NOT_MATCH",
-            |"message":"The submitted postcode did not match the client's postcode as held by HMRC."
-            |}""".stripMargin)
+      val expectedError = Json.parse(s"""|{
+                                         |"code":"POSTCODE_DOES_NOT_MATCH",
+                                         |"message":"The submitted postcode did not match the client's postcode as held by HMRC."
+                                         |}""".stripMargin)
 
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
@@ -179,11 +177,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "return 400 when postcode is not present when attempting to search" in {
-      val expectedError = Json.parse(
-        s"""|{
-            |"code":"POSTCODE_REQUIRED",
-            |"message":"Postcode is required for service HMRC-MTD-IT"
-            |}""".stripMargin)
+      val expectedError = Json.parse(s"""|{
+                                         |"code":"POSTCODE_REQUIRED",
+                                         |"message":"Postcode is required for service HMRC-MTD-IT"
+                                         |}""".stripMargin)
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientNino).hasABusinessPartnerRecordWithMtdItId()
       val result = agentGetCheckItsaKnownFact(clientNino, "%20")
@@ -192,11 +189,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
 
     "return 501 when postcode is not a UK Address" in {
-      val expectedError = Json.parse(
-        s"""|
-            |{"code":"NON_UK_ADDRESS",
-            |"message":"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was 'PL'."
-            |}""".stripMargin)
+      val expectedError = Json.parse(s"""|
+                                         |{"code":"NON_UK_ADDRESS",
+                                         |"message":"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was 'PL'."
+                                         |}""".stripMargin)
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientNino).hasABusinessPartnerRecord(countryCode = "PL")
       val result = agentGetCheckItsaKnownFact(clientNino, "AA11AA")
@@ -249,7 +245,9 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   }
 }
 
-trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours with ApiRequests with ErrorResultMatchers {
+trait AgencyInvitationsISpec
+    extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours
+    with ApiRequests with ErrorResultMatchers {
 
   protected implicit val arn1 = Arn(arn)
   protected val otherAgencyArn: Arn = Arn("98765")
@@ -258,14 +256,15 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
 
   protected val nino: Nino = nextNino
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, None)
-  protected val validInvitationWithPostcode: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
+  protected val validInvitationWithPostcode: AgencyInvitationRequest =
+    AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
 
   //  "GET root resource" should {
   //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)
   //    behave like anEndpointAccessibleForMtdAgentsOnly(rootResource)
   //  }
 
-  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url: String): Unit = {
+  def anEndpointWithMeaningfulContentForAnAuthorisedAgent(url: String): Unit =
     "return a meaningful response for the authenticated agent" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
 
@@ -275,12 +274,10 @@ trait AgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with Inspect
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
       (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn1))
     }
-  }
 
-  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url: String): Unit = {
+  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url: String): Unit =
     "return 403 for someone else's invitations" in {
       given().agentAdmin(otherAgencyArn, otherAgencyCode).isLoggedInAndIsSubscribed
       new Resource(url, port).get() should matchErrorResult(NoPermissionOnAgency)
     }
-  }
 }

@@ -20,7 +20,7 @@ import org.joda.time.LocalDate
 import org.joda.time.format.ISODateTimeFormat
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId, MtdItId, Vrn }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 import scala.util.control.NonFatal
@@ -32,9 +32,11 @@ object Binders {
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
-  implicit object LocalDateBinder extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
+  implicit object LocalDateBinder
+      extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
 
-  private def toError(err: String) = s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
+  private def toError(err: String) =
+    s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
 
   implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
 

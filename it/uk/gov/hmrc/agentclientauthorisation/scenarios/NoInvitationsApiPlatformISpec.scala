@@ -17,13 +17,14 @@
 package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{ Inside, Inspectors }
+import org.scalatest.{Inside, Inspectors}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.domain.{ AgentCode, Nino }
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class NoInvitationsApiPlatformISpec extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
+class NoInvitationsApiPlatformISpec
+    extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with ApiRequests {
 
   private implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")

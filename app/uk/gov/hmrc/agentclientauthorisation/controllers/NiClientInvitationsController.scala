@@ -19,10 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import javax.inject.Inject
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{ Action, AnyContent, Request, Result }
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
-import uk.gov.hmrc.agentclientauthorisation.model.{ ClientIdentifier, InvitationStatus, NinoType, Service }
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, InvitationStatus, NinoType, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -31,30 +31,39 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
-class NiClientInvitationsController @Inject() (invitationsService: InvitationsService)(implicit
+class NiClientInvitationsController @Inject()(invitationsService: InvitationsService)(
+  implicit
   metrics: Metrics,
   authConnector: AuthConnector,
   auditService: AuditService)
-  extends BaseClientInvitationsController[Nino](invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController[Nino](invitationsService, metrics, authConnector, auditService) {
 
   override val supportedService: Service = Service.PersonalIncomeRecord
 
-  def getDetailsForClient(nino: Nino): Action[AnyContent] = onlyForClients { implicit request => implicit authNino => getDetailsForClient(ClientIdentifier(nino), request)
+  def getDetailsForClient(nino: Nino): Action[AnyContent] = onlyForClients { implicit request => implicit authNino =>
+    getDetailsForClient(ClientIdentifier(nino), request)
   }
 
-  def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients { implicit request => implicit authNino => acceptInvitation(ClientIdentifier(nino), invitationId)
+  def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
+      acceptInvitation(ClientIdentifier(nino), invitationId)
   }
 
-  def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients { implicit request => implicit authNino =>
-    forThisClient(ClientIdentifier(nino)) {
-      actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
-    }
+  def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
+      forThisClient(ClientIdentifier(nino)) {
+        actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
+      }
   }
 
-  def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients { implicit request => implicit authNino => getInvitation(ClientIdentifier(nino), invitationId)
+  def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
+      getInvitation(ClientIdentifier(nino), invitationId)
   }
 
-  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients { implicit request => implicit authNino => getInvitations(ClientIdentifier(nino), status)
+  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
+      getInvitations(ClientIdentifier(nino), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =

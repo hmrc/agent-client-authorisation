@@ -18,25 +18,28 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import javax.inject.Inject
 
-import play.api.http.{ DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters }
-import play.api.mvc.{ Handler, RequestHeader }
+import play.api.http.{DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters}
+import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 
 /**
- * Normalise the request path. The API platform strips the context
- * '/agent-client-authorisation' from the URL before forwarding the request.
- * Re-add it here if necessary.
- */
-class ApiPlatformRequestHandler @Inject() (router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters)
-  extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
+  * Normalise the request path. The API platform strips the context
+  * '/agent-client-authorisation' from the URL before forwarding the request.
+  * Re-add it here if necessary.
+  */
+class ApiPlatformRequestHandler @Inject()(
+  router: Router,
+  errorHandler: HttpErrorHandler,
+  configuration: HttpConfiguration,
+  filters: HttpFilters)
+    extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
 
-  override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) = {
+  override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) =
     if (isApiPlatformRequest(request)) {
       super.handlerForRequest(request.copy(path = addApiPlatformContext(request.path)))
     } else {
       super.handlerForRequest(request)
     }
-  }
 
   private def addApiPlatformContext(path: String) = {
     val context = "/agent-client-authorisation"

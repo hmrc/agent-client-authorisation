@@ -22,9 +22,11 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.mtdItId1
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
-import uk.gov.hmrc.domain.{ AgentCode, Nino }
+import uk.gov.hmrc.domain.{AgentCode, Nino}
 
-class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors with Inside with Eventually {
+class AgencyFilteringByClientIdIApiPlatformISpec
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   override val arn = RandomArn()
 
@@ -47,9 +49,7 @@ class AgencyFilteringByClientIdIApiPlatformISpec extends FeatureSpec with Scenar
       given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
 
       And("the Agency has sent 1 invitation to 2 different clients")
-      agencySendsSeveralInvitations(agency)(
-        (client1, MtdItService),
-        (client2, MtdItService))
+      agencySendsSeveralInvitations(agency)((client1, MtdItService), (client2, MtdItService))
 
       When(s"the Agency filters by client ID")
       Then(s"only the client matching that id is returned")

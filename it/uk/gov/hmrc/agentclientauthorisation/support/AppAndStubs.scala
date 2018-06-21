@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.scalatest.{ BeforeAndAfterEach, Matchers, Suite, TestSuite }
+import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -24,13 +24,15 @@ import play.api.test.FakeApplication
 import reactivemongo.api.DB
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.mongo.{ MongoSpecSupport, Awaiting => MongoAwaiting }
+import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext
 
-trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport with Matchers {
+trait AppAndStubs
+    extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
+    with Matchers {
   me: Suite with TestSuite =>
 
   implicit val hc = HeaderCarrier()
@@ -43,22 +45,22 @@ trait AppAndStubs extends StartAndStopWireMock with StubUtils with OneServerPerS
   implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
 
-  protected def additionalConfiguration: Map[String, Any] = {
+  protected def additionalConfiguration: Map[String, Any] =
     Map(
-      "microservice.services.auth.host" -> wiremockHost,
-      "microservice.services.auth.port" -> wiremockPort,
-      "microservice.services.agencies-fake.host" -> wiremockHost,
-      "microservice.services.agencies-fake.port" -> wiremockPort,
-      "microservice.services.relationships.host" -> wiremockHost,
-      "microservice.services.relationships.port" -> wiremockPort,
+      "microservice.services.auth.host"              -> wiremockHost,
+      "microservice.services.auth.port"              -> wiremockPort,
+      "microservice.services.agencies-fake.host"     -> wiremockHost,
+      "microservice.services.agencies-fake.port"     -> wiremockPort,
+      "microservice.services.relationships.host"     -> wiremockHost,
+      "microservice.services.relationships.port"     -> wiremockPort,
       "microservice.services.afi-relationships.host" -> wiremockHost,
       "microservice.services.afi-relationships.port" -> wiremockPort,
-      "microservice.services.des.host" -> wiremockHost,
-      "microservice.services.des.port" -> wiremockPort,
-      "auditing.enabled" -> true,
-      "auditing.consumer.baseUri.host" -> wiremockHost,
-      "auditing.consumer.baseUri.port" -> wiremockPort)
-  }
+      "microservice.services.des.host"               -> wiremockHost,
+      "microservice.services.des.port"               -> wiremockPort,
+      "auditing.enabled"                             -> true,
+      "auditing.consumer.baseUri.host"               -> wiremockHost,
+      "auditing.consumer.baseUri.port"               -> wiremockPort
+    )
 
   override def commonStubs(): Unit = {
     givenAuditConnector()
@@ -87,9 +89,8 @@ trait ResetMongoBeforeTest extends BeforeAndAfterEach {
     dropMongoDb()
   }
 
-  def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit = {
+  def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit =
     Awaiting.await(mongo().drop())
-  }
 }
 
 object Awaiting extends MongoAwaiting

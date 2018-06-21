@@ -28,23 +28,25 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{ mtdItId1, nino1 }
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ InvitationId, MtdItId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{ Enrolments, PlayAuthConnector }
-import uk.gov.hmrc.domain.{ Generator, Nino }
+import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.domain.{Generator, Nino}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
-class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
+class MtdItClientInvitationsControllerSpec
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
-  val controller = new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
-    override val authConnector: PlayAuthConnector = mockPlayAuthConnector
-  }
+  val controller =
+    new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
+      override val authConnector: PlayAuthConnector = mockPlayAuthConnector
+    }
 
   val invitationDbId: String = BSONObjectID.generate.stringify
   val invitationId: InvitationId = InvitationId("ABBBBBBBBBBCC")
@@ -52,7 +54,8 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
   val nino: Nino = nino1
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext])).thenReturn(returnValue)
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
+      .thenReturn(returnValue)
 
   "getDetailsForClient" should {
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
@@ -203,9 +206,14 @@ class MtdItClientInvitationsControllerSpec extends AkkaMaterializerSpec with Res
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
       clientAuthStub(clientMtdItEnrolments)
-      whenClientReceivedInvitation.thenReturn(Future successful List(
-        TestConstants.defaultInvitation.copy(invitationId = invitationId, arn = arn, clientId = mtdItId1, suppliedClientId = nino1,
-          events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+      whenClientReceivedInvitation.thenReturn(
+        Future successful List(
+          TestConstants.defaultInvitation.copy(
+            invitationId = invitationId,
+            arn = arn,
+            clientId = mtdItId1,
+            suppliedClientId = nino1,
+            events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200

@@ -27,34 +27,36 @@ trait RelationshipStubs[A] {
   def canonicalClientId: TaxIdentifier
 
   def anMtdItRelationshipIsCreatedWith(arn: Arn): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
+    stubFor(put(urlEqualTo(
+      s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
 
   def anAfiRelationshipIsCreatedWith(arn: Arn, clientId: ClientId): A = {
-    stubFor(put(urlEqualTo(s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
+    stubFor(put(urlEqualTo(
+      s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
 
   def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier): A = {
-    stubFor(put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}"))
-      .willReturn(aResponse().withStatus(201)))
+    stubFor(
+      put(
+        urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}"))
+        .willReturn(aResponse().withStatus(201)))
     this
   }
 
-  def verifyCallToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) = {
+  def verifyCallToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) =
     verify(
       1,
       putRequestedFor(
-        urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
-  }
+        urlPathEqualTo(
+          s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
 
-  def verifyNoCallsToCreateMtdVatRelationship = {
+  def verifyNoCallsToCreateMtdVatRelationship =
     verify(
       0,
-      putRequestedFor(
-        urlPathEqualTo(s"/agent-client-relationships/agent/[^/]+/service/[^/]+/client/[^/]+/[^/]+")))
-  }
+      putRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/[^/]+/service/[^/]+/client/[^/]+/[^/]+")))
 }

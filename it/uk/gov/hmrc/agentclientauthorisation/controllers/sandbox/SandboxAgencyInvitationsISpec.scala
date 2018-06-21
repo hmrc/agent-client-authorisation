@@ -20,16 +20,18 @@ import org.joda.time.DateTime
 import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
-import play.api.libs.json.{ JsArray, JsValue }
-import uk.gov.hmrc.agentclientauthorisation.support.{ ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours }
+import play.api.libs.json.{JsArray, JsValue}
+import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
-class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
+class SandboxAgencyInvitationsISpec
+    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
 
-  private val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino1.value, Some("AA1 1AA"))
+  private val validInvitation: AgencyInvitationRequest =
+    AgencyInvitationRequest(MtdItService, "ni", nino1.value, Some("AA1 1AA"))
 
   override val sandboxMode = true
 
@@ -112,11 +114,10 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
     (invitation \ "lastUpdated").as[DateTime].getMillis should beRecent
   }
 
-  def selfLink(obj: JsValue): String = {
+  def selfLink(obj: JsValue): String =
     (obj \ "_links" \ "self" \ "href").as[String]
-  }
 
-  def anEndpointWithAgencySentInvitationsLink(url: String): Unit = {
+  def anEndpointWithAgencySentInvitationsLink(url: String): Unit =
     "return a HAL response including an agency sent invitations link" in {
       val response = new Resource(url, port).get()
 
@@ -124,5 +125,4 @@ class SandboxAgencyInvitationsISpec extends UnitSpec with MongoAppAndStubs with 
       (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
       (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
-  }
 }

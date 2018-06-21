@@ -23,8 +23,7 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.language.postfixOps
 
 @Singleton
-class RootController @Inject()
-  extends BaseController with HalWriter {
+class RootController @Inject() extends BaseController with HalWriter {
   // private val selfLink = Vector(HalLink("self", routes.RootController.getRootResource().url))
   //
   //  def getRootResource() = withAuthority.async { implicit request =>

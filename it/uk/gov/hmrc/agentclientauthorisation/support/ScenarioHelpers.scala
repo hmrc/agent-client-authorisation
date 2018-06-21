@@ -35,9 +35,11 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
   val PersonalIncomeRecordService = Service.PersonalIncomeRecord.id
   val VATService = Service.Vat.id
 
-  def agencySendsSeveralInvitations(agency: AgencyApi)(firstClient: (ClientApi, String), secondClient: (ClientApi, String)): Unit = {
+  def agencySendsSeveralInvitations(
+    agency: AgencyApi)(firstClient: (ClientApi, String), secondClient: (ClientApi, String)): Unit = {
 
-    val locations = Seq(firstClient, secondClient).map(i => agency sendInvitation (i._1.suppliedClientId, service = i._2))
+    val locations =
+      Seq(firstClient, secondClient).map(i => agency sendInvitation (i._1.suppliedClientId, service = i._2))
 
     val location1 = locations.head
     val location2 = locations(1)
@@ -65,8 +67,11 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     links.invitations(1) shouldBe response.secondInvitation.links.selfLink
   }
 
-  def clientsViewOfPendingInvitations(client: ClientApi, service: String = MtdItService,
-    taxIdType: String = "MTDITID", taxId: TaxIdentifier = mtdItId): Unit = {
+  def clientsViewOfPendingInvitations(
+    client: ClientApi,
+    service: String = MtdItService,
+    taxIdType: String = "MTDITID",
+    taxId: TaxIdentifier = mtdItId): Unit = {
     val clientResponse = client.getInvitations()
 
     val i1 = clientResponse.firstInvitation

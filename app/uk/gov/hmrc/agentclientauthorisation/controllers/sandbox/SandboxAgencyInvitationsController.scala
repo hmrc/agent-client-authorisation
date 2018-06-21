@@ -21,9 +21,9 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import org.joda.time.LocalDate
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.controllers.{ routes => prodroutes, _ }
+import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{ Arn, InvitationId }
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -34,16 +34,22 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     Created.withHeaders(location(arn, InvitationId("ABBBBBBBBBBCC")))
   }
 
-  private def location(arn: Arn, invitationId: InvitationId) = {
+  private def location(arn: Arn, invitationId: InvitationId) =
     LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
-  }
 
-  def getSentInvitations(arn: Arn, service: Option[String], clientId: Option[String], status: Option[InvitationStatus]) = Action { implicit request =>
+  def getSentInvitations(
+    arn: Arn,
+    service: Option[String],
+    clientId: Option[String],
+    status: Option[InvitationStatus]) = Action { implicit request =>
     Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, None, clientId, status))
   }
 
   def getDetailsForAuthenticatedAgency = Action { implicit request =>
-    Ok(toHalResource(HardCodedSandboxIds.arn, prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
+    Ok(
+      toHalResource(
+        HardCodedSandboxIds.arn,
+        prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
   }
 
   def getDetailsForAgency(arn: Arn) = Action { implicit request =>
@@ -62,15 +68,17 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     NoContent
   }
 
-  private def invitation(arn: Arn) = Invitation(
-    invitationId = InvitationId("ABBBBBBBBBBCC"),
-    arn = arn,
-    service = Service.MtdIt,
-    clientId = ClientIdentifier(Nino("AA123456A")),
-    suppliedClientId = ClientIdentifier(Nino("AA123456A")),
-    postcode = Some("A11 1AA"),
-    expiryDate = LocalDate.now().plusDays(10),
-    events = List(StatusChangeEvent(now(), Pending)))
+  private def invitation(arn: Arn) =
+    Invitation(
+      invitationId = InvitationId("ABBBBBBBBBBCC"),
+      arn = arn,
+      service = Service.MtdIt,
+      clientId = ClientIdentifier(Nino("AA123456A")),
+      suppliedClientId = ClientIdentifier(Nino("AA123456A")),
+      postcode = Some("A11 1AA"),
+      expiryDate = LocalDate.now().plusDays(10),
+      events = List(StatusChangeEvent(now(), Pending))
+    )
 
   override protected def agencyLink(invitation: Invitation) = None
 }
