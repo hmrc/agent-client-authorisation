@@ -41,10 +41,7 @@ class VatInvitationScenarios
 
     And("Client accepts the first invitation")
     val stubs: Client =
-      given()
-        .client(clientId = vrn)
-        .isLoggedInWithVATEnrolment(vrn)
-        .anMtdVatRelationshipIsCreatedWith(arn, vrn)
+      given().client(clientId = vrn).isLoggedInWithVATEnrolment(vrn).anMtdVatRelationshipIsCreatedWith(arn, vrn)
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
 

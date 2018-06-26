@@ -27,12 +27,9 @@ import uk.gov.hmrc.play.test.UnitSpec
 class AgentInvitationValidationSpec
     extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
-  private val validMtdItInvite: AgentInvitation =
-    AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
-  private val validMtdVatInvite: AgentInvitation =
-    AgentInvitation("HMRC-MTD-VAT", "vrn", "101747641", None)
-  private val validPirInvite: AgentInvitation =
-    AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
+  private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
+  private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", "vrn", "101747641", None)
+  private val validPirInvite: AgentInvitation = AgentInvitation("PERSONAL-INCOME-RECORD", "ni", "AA123456A", None)
   private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {

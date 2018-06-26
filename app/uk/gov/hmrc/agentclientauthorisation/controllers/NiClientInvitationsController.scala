@@ -44,27 +44,27 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
     getDetailsForClient(ClientIdentifier(nino), request)
   }
 
-  def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] =
-    onlyForClients { implicit request => implicit authNino =>
+  def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
       acceptInvitation(ClientIdentifier(nino), invitationId)
-    }
+  }
 
-  def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] =
-    onlyForClients { implicit request => implicit authNino =>
+  def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
       forThisClient(ClientIdentifier(nino)) {
         actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
       }
-    }
+  }
 
-  def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] =
-    onlyForClients { implicit request => implicit authNino =>
+  def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
       getInvitation(ClientIdentifier(nino), invitationId)
-    }
+  }
 
-  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] =
-    onlyForClients { implicit request => implicit authNino =>
+  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
+    implicit request => implicit authNino =>
       getInvitations(ClientIdentifier(nino), status)
-    }
+  }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.PersonalIncomeRecord, NinoType)(action)

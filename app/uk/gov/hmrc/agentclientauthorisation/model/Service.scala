@@ -45,8 +45,7 @@ object Service {
 
   val values = Seq(MtdIt, PersonalIncomeRecord, Vat)
   def findById(id: String): Option[Service] = values.find(_.id == id)
-  def forId(id: String): Service =
-    findById(id).getOrElse(throw new Exception("Not a valid service"))
+  def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
 
   def apply(id: String) = forId(id)
   def unapply(service: Service): Option[String] = Some(service.id)
@@ -67,9 +66,7 @@ sealed abstract class ClientIdType[T <: TaxIdentifier](
 object ClientIdType {
   val supportedTypes = Seq(NinoType, MtdItIdType, VrnType)
   def forId(id: String) =
-    supportedTypes
-      .find(_.id == id)
-      .getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
+    supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
 
 case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply) {
@@ -106,6 +103,5 @@ object ClientIdentifier {
       .getOrElse(throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
       .createUnderlying(value.replaceAll("\\s", ""))
 
-  implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] =
-    ClientIdentifier(taxId)
+  implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
 }

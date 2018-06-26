@@ -51,13 +51,11 @@ class InvitationsMongoRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
 
-  val mockReactiveMongoComponent =
-    app.injector.instanceOf[ReactiveMongoComponent]
+  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
-  private def repository =
-    new InvitationsRepository(mockReactiveMongoComponent) {
-      override def withCurrentTime[A](f: DateTime => A): A = f(now)
-    }
+  private def repository = new InvitationsRepository(mockReactiveMongoComponent) {
+    override def withCurrentTime[A](f: DateTime => A): A = f(now)
+  }
 
   val ninoValue = nino1.value
 
@@ -82,8 +80,7 @@ class InvitationsMongoRepositoryISpec
       val id: BSONObjectID = invitation.id
       val stringifiedId: String = id.stringify
       val reconstructedId: BSONObjectID = parse(stringifiedId).get
-      val foundInvitation: model.Invitation =
-        await(repository.findById(reconstructedId)).head
+      val foundInvitation: model.Invitation = await(repository.findById(reconstructedId)).head
 
       id shouldBe foundInvitation.id
     }
@@ -368,8 +365,7 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
-  private type Invitation =
-    (Arn, Service, MtdItId, String, String, String, DateTime)
+  private type Invitation = (Arn, Service, MtdItId, String, String, String, DateTime)
 
   private def addInvitations(invitations: Invitation*) =
     await(Future sequence invitations.map {
@@ -381,8 +377,7 @@ class InvitationsMongoRepositoryISpec
           suppliedClientIdType: String,
           postcode: String,
           startDate: DateTime) => {
-        val suppliedClientId: ClientId =
-          ClientIdentifier(suppliedClientIdValue, suppliedClientIdType)
+        val suppliedClientId: ClientId = ClientIdentifier(suppliedClientIdValue, suppliedClientIdType)
         repository.create(
           code,
           service,
@@ -394,11 +389,9 @@ class InvitationsMongoRepositoryISpec
       }
     })
 
-  private def addInvitation(invitations: Invitation) =
-    addInvitations(invitations) head
+  private def addInvitation(invitations: Invitation) = addInvitations(invitations) head
 
-  private def listByArn(arn: Arn) =
-    await(repository.list(arn, None, None, None, None))
+  private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None, None))
 
   private def listByArn(
     arn: Arn,

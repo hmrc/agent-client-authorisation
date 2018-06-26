@@ -44,8 +44,7 @@ class WhitelistFilter @Inject()(configuration: Configuration)
     extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
 
   override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
-  override val destination: Call =
-    Call("GET", "/agent-client-authorisation/forbidden")
+  override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")
   override val excludedPaths: Seq[Call] = Seq(
     Call("GET", "/ping/ping"),
     Call("GET", "/admin/details"),

@@ -29,11 +29,7 @@ trait AgencyInvitationsHal {
   def toHalResource(arn: Arn, selfLinkHref: String): HalResource = {
     val selfLink = Vector(HalLink("self", selfLinkHref))
     val invitationsSentLink = Vector(
-      HalLink(
-        "sent",
-        routes.AgencyInvitationsController
-          .getSentInvitations(arn, None, None, None, None, None)
-          .url))
+      HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None, None, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
   }
 
@@ -48,19 +44,13 @@ trait AgencyInvitationsHal {
     val selfLink = Vector(
       HalLink(
         "self",
-        routes.AgencyInvitationsController
-          .getSentInvitations(arn, service, clientIdType, clientId, status, None)
-          .url))
+        routes.AgencyInvitationsController.getSentInvitations(arn, service, clientIdType, clientId, status, None).url))
     Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 
   private def invitationLinks(invitations: List[Invitation]): Vector[HalLink] =
     invitations.map { i =>
-      HalLink(
-        "invitations",
-        routes.AgencyInvitationsController
-          .getSentInvitation(i.arn, i.invitationId)
-          .toString)
+      HalLink("invitations", routes.AgencyInvitationsController.getSentInvitation(i.arn, i.invitationId).toString)
     }.toVector
 
   def toHalResource(invitation: Invitation): HalResource = {
@@ -68,18 +58,14 @@ trait AgencyInvitationsHal {
       Vector(
         HalLink(
           "self",
-          routes.AgencyInvitationsController
-            .getSentInvitation(invitation.arn, invitation.invitationId)
-            .url)))
+          routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url)))
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     if (invitation.status == Pending) {
       links = links ++ HalLink(
         "cancel",
-        routes.AgencyInvitationsController
-          .cancelInvitation(invitation.arn, invitation.invitationId)
-          .url)
+        routes.AgencyInvitationsController.cancelInvitation(invitation.arn, invitation.invitationId).url)
     }
     HalResource(links, toJson(invitation).as[JsObject])
   }

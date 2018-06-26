@@ -88,8 +88,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
 
-        val vatCustomerInfo =
-          await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
       }
 
@@ -98,8 +97,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetails(isEffectiveRegistrationDatePresent = false)
 
-        val vatCustomerInfo =
-          await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
 
@@ -108,8 +106,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetailsWithNoApprovedInformation
 
-        val vatCustomerInfo =
-          await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
     }

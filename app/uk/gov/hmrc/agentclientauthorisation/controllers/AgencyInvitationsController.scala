@@ -52,8 +52,7 @@ class AgencyInvitationsController @Inject()(
       localWithJsonBody(
         { agentInvitation =>
           {
-            val normalizedClientId =
-              AgentInvitation.normalizeClientId(agentInvitation.clientId)
+            val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
             checkForErrors(agentInvitation.copy(clientId = normalizedClientId))
               .flatMap(_.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
           }
@@ -66,15 +65,12 @@ class AgencyInvitationsController @Inject()(
   private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
-      case Success(JsError(errs)) =>
-        Future successful BadRequest(s"Invalid payload: $errs")
-      case Failure(e) =>
-        Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
+      case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
+      case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
-    val suppliedClientId =
-      ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
+    val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
       case Service.MtdIt =>
         invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
@@ -90,9 +86,7 @@ class AgencyInvitationsController @Inject()(
   }
 
   private def location(invitation: Invitation) =
-    LOCATION -> routes.AgencyInvitationsController
-      .getSentInvitation(invitation.arn, invitation.invitationId)
-      .url
+    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
 
   def getDetailsForAuthenticatedAgency: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     Future successful Ok(toHalResource(arn, request.path))
@@ -104,8 +98,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] =
-    getDetailsForAgency(arn)
+  def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] = getDetailsForAgency(arn)
 
   def getSentInvitations(
     givenArn: Arn,
@@ -123,56 +116,51 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] =
-    onlyForAgents { implicit request => implicit arn =>
+  def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
       forThisAgency(givenArn) {
         invitationsService.findInvitation(invitationId).map {
           _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
         }
       }
-    }
+  }
 
   private def forThisAgency(requestedArn: Arn)(block: => Future[Result])(implicit arn: Arn) =
     if (requestedArn != arn)
       Future successful NoPermissionOnAgency
     else block
 
-  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] =
-    onlyForAgents { implicit request => implicit arn =>
+  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
       forThisAgency(givenArn) {
         invitationsService.findInvitation(invitationId) flatMap {
           case Some(i) if i.arn == givenArn =>
             invitationsService.cancelInvitation(i) map {
-              case Right(_) => NoContent
-              case Left(StatusUpdateFailure(_, msg)) =>
-                invalidInvitationStatus(msg)
+              case Right(_)                          => NoContent
+              case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
             }
           case None => Future successful InvitationNotFound
           case _    => Future successful NoPermissionOnAgency
         }
       }
-    }
+  }
 
-  def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] =
-    onlyForAgents { implicit request => implicit arn =>
-      postcodeService
-        .postCodeMatches(nino.value, postcode.replaceAll("\\s", ""))
-        .map {
-          case Some(error) => error
-          case None        => NoContent
-        }
-    }
+  def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+      postcodeService.postCodeMatches(nino.value, postcode.replaceAll("\\s", "")).map {
+        case Some(error) => error
+        case None        => NoContent
+      }
+  }
 
-  def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] =
-    onlyForAgents { implicit request => implicit arn =>
-      knownFactsCheckService
-        .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
-        .map {
-          case Some(true)  => NoContent
-          case Some(false) => Forbidden
-          case None        => NotFound
-        }
-    }
+  def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+      knownFactsCheckService.clientVatRegistrationDateMatches(vrn, vatRegistrationDate).map {
+        case Some(true)  => NoContent
+        case Some(false) => Forbidden
+        case None        => NotFound
+      }
+  }
 
   override protected def agencyLink(invitation: Invitation) = None
 }

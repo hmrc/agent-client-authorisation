@@ -30,14 +30,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 @Singleton
 class PostcodeService @Inject()(desConnector: DesConnector) {
 
-  private val postcodeWithoutSpacesRegex =
-    "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
+  private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
   def postCodeMatches(clientId: String, postcode: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[Result]] =
-    if (postcode.isEmpty)
-      Future successful Some(postcodeRequired("HMRC-MTD-IT"))
+    if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
     else {
       postcodeWithoutSpacesRegex
         .findFirstIn(postcode)
@@ -51,18 +49,14 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
     ec: ExecutionContext): Future[Option[Result]] = {
     // we can use head here due to the guard on the array size in the case statement but these are not a general purpose functions
     def postcodeMatches(details: BusinessDetails, postcode: String) =
-      details.businessData.head.businessAddressDetails.postalCode
-        .map(normalise)
-        .contains(normalise(postcode))
+      details.businessData.head.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode))
 
     def isUkAddress(details: BusinessDetails) =
       details.businessData.head.businessAddressDetails.countryCode.toUpperCase == "GB"
 
     desConnector.getBusinessDetails(Nino(clientIdentifier)).map {
-      case Some(details) if details.businessData.length != 1 =>
-        Some(PostcodeDoesNotMatch)
-      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) =>
-        None
+      case Some(details) if details.businessData.length != 1                           => Some(PostcodeDoesNotMatch)
+      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => None
       case Some(details) if postcodeMatches(details, postcode) =>
         Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
       case Some(_) => Some(PostcodeDoesNotMatch)
@@ -72,6 +66,5 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
 }
 
 object PostcodeService {
-  def normalise(postcode: String): String =
-    postcode.replaceAll("\\s", "").toUpperCase
+  def normalise(postcode: String): String = postcode.replaceAll("\\s", "").toUpperCase
 }

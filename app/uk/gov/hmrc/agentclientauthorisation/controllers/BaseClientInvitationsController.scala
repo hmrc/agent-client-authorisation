@@ -71,10 +71,9 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
     authTaxId: ClientIdentifier[T]) =
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
-        case Some(x) if matchClientIdentifiers(x.clientId, clientId) =>
-          Ok(toHalResource(x))
-        case None => InvitationNotFound
-        case _    => NoPermissionOnClient
+        case Some(x) if matchClientIdentifiers(x.clientId, clientId) => Ok(toHalResource(x))
+        case None                                                    => InvitationNotFound
+        case _                                                       => NoPermissionOnClient
       }
     }
   protected def getInvitations(taxId: ClientIdentifier[T], status: Option[InvitationStatus])(
@@ -101,17 +100,13 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
       case _    => Future successful NoPermissionOnClient
     }
 
-  override protected def agencyLink(invitation: Invitation): Option[String] =
-    None
+  override protected def agencyLink(invitation: Invitation): Option[String] = None
 
   protected def forThisClient(taxId: ClientIdentifier[T])(
     block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) =
-    if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient
-    else block
+    if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient else block
 
   private def matchClientIdentifiers(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean =
     if (invitationClientId == usersClientId) true
-    else
-      invitationClientId.value.replaceAll("\\s", "") == usersClientId.value
-        .replaceAll("\\s", "")
+    else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
 }

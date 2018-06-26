@@ -40,8 +40,7 @@ import scala.concurrent.Future
 trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   this: UnitSpec with ResettingMockitoSugar =>
 
-  override implicit val patienceConfig =
-    PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
+  override implicit val patienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
 
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val authConnector: AuthActions = resettingMock[AuthActions]
@@ -104,8 +103,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def verifyAgentClientRelationshipCreatedAuditEvent() =
     eventually {
-      val argumentCaptor: ArgumentCaptor[DataEvent] =
-        ArgumentCaptor.forClass(classOf[DataEvent])
+      val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
       verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
       val event: DataEvent = argumentCaptor.getValue
       if (event.detail.toSeq.contains("service" -> "HMRC-MTD-IT"))
@@ -116,7 +114,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def verifyNoAuditEventSent() = {
     Thread.sleep(scaled(Span(1000, Millis)).millisPart)
-    verify(auditConnector, never())
-      .sendEvent(any(classOf[DataEvent]))(any(), any())
+    verify(auditConnector, never()).sendEvent(any(classOf[DataEvent]))(any(), any())
   }
 }

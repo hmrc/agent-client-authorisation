@@ -122,7 +122,7 @@ GET   /agencies/:arn/invitations/sent/:invitationId
 
 Request:
 ```
-http://localhost:9432/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CS5AK7O8FPC43
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent/CS5AK7O8FPC43
 ```
 
 |Response|Description|
@@ -250,7 +250,7 @@ Example Requests
 ```
 http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789/invitations/received/ANRJ9OCEGZR1T/accept
 http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations/received/B31ZD93X6RYCF/accept
-http://localhost:9432/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446/accept
+http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/accept
 ```
 
 |Response|Description|
@@ -271,7 +271,7 @@ Example Requests:
 ```
 http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789/invitations/received/ANRJ9OCEGZR1T/reject
 http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations/received/B31ZD93X6RYCF/reject
-http://localhost:9432/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446/reject
+http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/reject
 ```
 
 |Response|Description|
@@ -293,7 +293,7 @@ Example Requests:
 ```
 http://localhost:9432/agent-client-authorisation/clients/MTDITID/ABCDEF123456789/invitations/received/ANRJ9OCEGZR1T
 http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations/received/B31ZD93X6RYCF
-http://localhost:9432/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446
+http://localhost:9432/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446
 ```
 
 |Response|Description|
@@ -311,13 +311,13 @@ Example Response, 200 with Body:
    "suppliedClientId" : "101747696",
    "_links" : {
       "accept" : {
-         "href" : "/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446/accept"
+         "href" : "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/accept"
       },
       "self" : {
-         "href" : "/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446"
+         "href" : "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446"
       },
       "reject" : {
-         "href" : "/agent-client-authorisation/clients/VRN/101747696/invitations/received/CPB6KM1NHT446/reject"
+         "href" : "/agent-client-authorisation/clients/VAT/101747696/invitations/received/CPB6KM1NHT446/reject"
       }
    },
    "created" : "2018-05-04T11:55:29.954Z",
