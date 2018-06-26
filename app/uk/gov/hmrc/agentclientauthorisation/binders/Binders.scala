@@ -28,29 +28,40 @@ import scala.util.control.NonFatal
 object Binders {
 
   implicit object ArnBinder extends SimpleObjectBinder[Arn](Arn.apply, _.value)
-  implicit object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
-  implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
+  implicit object NinoBinder
+      extends SimpleObjectBinder[Nino](Nino.apply, _.value)
+  implicit object MtdItIdBinder
+      extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
-  implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
+  implicit object InvitationIdBinder
+      extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
   implicit object LocalDateBinder
-      extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
+      extends SimpleObjectBinder[LocalDate](s => {
+        assert(s.length == 10); LocalDate.parse(s)
+      }, _.toString)
 
   private def toError(err: String) =
     s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
 
-  implicit object InvitationStatusBinder extends QueryStringBindable[InvitationStatus] {
+  implicit object InvitationStatusBinder
+      extends QueryStringBindable[InvitationStatus] {
 
-    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, InvitationStatus]] =
+    override def bind(key: String, params: Map[String, Seq[String]])
+      : Option[Either[String, InvitationStatus]] =
       params.get(key) flatMap {
         _.headOption map (status => InvitationStatus(status) leftMap toError)
       }
 
-    override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
+    override def unbind(key: String, value: InvitationStatus): String =
+      s"$key=$value"
   }
 
-  implicit object LocalDateQueryStringBinder extends QueryStringBindable[LocalDate] {
+  implicit object LocalDateQueryStringBinder
+      extends QueryStringBindable[LocalDate] {
 
-    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, LocalDate]] =
+    override def bind(
+        key: String,
+        params: Map[String, Seq[String]]): Option[Either[String, LocalDate]] =
       params.get(key).flatMap(_.headOption).map { param =>
         try {
           assert(param.length == 10)

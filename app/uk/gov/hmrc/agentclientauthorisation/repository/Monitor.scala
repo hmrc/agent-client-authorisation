@@ -25,16 +25,19 @@ trait Monitor {
 
   val kenshooRegistry: MetricRegistry
 
-  def monitor[T](actionName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] =
+  def monitor[T](actionName: String)(function: => Future[T])(
+      implicit ec: ExecutionContext): Future[T] =
     timer(actionName)(function)
 
-  private def timer[T](serviceName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+  private def timer[T](serviceName: String)(function: => Future[T])(
+      implicit ec: ExecutionContext): Future[T] = {
     val start = System.nanoTime()
     function.andThen {
       case _ =>
         val duration = Duration(System.nanoTime() - start, NANOSECONDS)
         kenshooRegistry.getTimers
-          .getOrDefault(timerName(serviceName), kenshooRegistry.timer(timerName(serviceName)))
+          .getOrDefault(timerName(serviceName),
+                        kenshooRegistry.timer(timerName(serviceName)))
           .update(duration.length, duration.unit)
     }
   }
@@ -42,9 +45,11 @@ trait Monitor {
   private def timerName[T](serviceName: String): String =
     s"Timer-$serviceName"
 
-  def reportHistogramValue[T](name: String, value: Long)(implicit ec: ExecutionContext): Unit =
+  def reportHistogramValue[T](name: String, value: Long)(
+      implicit ec: ExecutionContext): Unit =
     kenshooRegistry.getHistograms
-      .getOrDefault(histogramName(name), kenshooRegistry.histogram(histogramName(name)))
+      .getOrDefault(histogramName(name),
+                    kenshooRegistry.histogram(histogramName(name)))
       .update(value)
 
   def histogramName[T](counterName: String): String =

@@ -34,30 +34,40 @@ import scala.concurrent.Future
 
 @Singleton
 class RelationshipsConnector @Inject()(
-  @Named("relationships-baseUrl") baseUrl: URL,
-  @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
-  httpPut: HttpPut,
-  metrics: Metrics)
+    @Named("relationships-baseUrl") baseUrl: URL,
+    @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
+    httpPut: HttpPut,
+    metrics: Metrics)
     extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
 
-  def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
+  def createMtdItRelationship(invitation: Invitation)(
+      implicit hc: HeaderCarrier): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      httpPut.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      httpPut.PUT[String, HttpResponse](
+        mtdItRelationshipUrl(invitation).toString,
+        "") map (_ => Unit)
     }
 
-  def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier): Future[Unit] =
+  def createMtdVatRelationship(invitation: Invitation)(
+      implicit hc: HeaderCarrier): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      httpPut.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      httpPut.PUT[String, HttpResponse](
+        mtdVatRelationshipUrl(invitation).toString,
+        "") map (_ => Unit)
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
-    implicit hc: HeaderCarrier): Future[Unit] = {
-    val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
-    monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+      implicit hc: HeaderCarrier): Future[Unit] = {
+    val body =
+      Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
+    monitor(
+      s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
+      httpPut.PUT[JsObject, HttpResponse](
+        afiRelationshipUrl(invitation).toString,
+        body) map (_ => Unit)
     }
   }
 
@@ -79,6 +89,8 @@ class RelationshipsConnector @Inject()(
     val arn = encodePathSegment(invitation.arn.value)
     val service = encodePathSegment(invitation.service.id)
     val clientId = encodePathSegment(invitation.clientId.value)
-    new URL(afiBaseUrl, s"/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId")
+    new URL(
+      afiBaseUrl,
+      s"/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId")
   }
 }

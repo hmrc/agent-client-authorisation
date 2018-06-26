@@ -122,7 +122,7 @@ trait ApiRequests {
   def clientUrl(clientId: ClientId) = clientId match {
     case ClientIdentifier(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
     case ClientIdentifier(Nino(value))    => s"$baseUrl/clients/NI/$value"
-    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VAT/$value"
+    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VRN/$value"
   }
 
   def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"

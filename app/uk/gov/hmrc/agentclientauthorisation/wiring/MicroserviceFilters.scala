@@ -23,28 +23,39 @@ import com.kenshoo.play.metrics.MetricsFilter
 import play.api.{Configuration, Logger}
 import play.api.http.DefaultHttpFilters
 import play.api.mvc.{Call, EssentialFilter}
-import uk.gov.hmrc.play.bootstrap.filters.{AuditFilter, CacheControlFilter, LoggingFilter}
+import uk.gov.hmrc.play.bootstrap.filters.{
+  AuditFilter,
+  CacheControlFilter,
+  LoggingFilter
+}
 import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
 @Singleton
 class MicroserviceFilters @Inject()(
-  metricsFilter: MetricsFilter,
-  auditFilter: AuditFilter,
-  loggingFilter: LoggingFilter,
-  cacheFilter: CacheControlFilter,
-  monitoringFilter: MicroserviceMonitoringFilter,
-  whitelistFilter: WhitelistFilter)
+    metricsFilter: MetricsFilter,
+    auditFilter: AuditFilter,
+    loggingFilter: LoggingFilter,
+    cacheFilter: CacheControlFilter,
+    monitoringFilter: MicroserviceMonitoringFilter,
+    whitelistFilter: WhitelistFilter)
     extends DefaultHttpFilters(
-      Seq(metricsFilter, monitoringFilter, auditFilter, loggingFilter, cacheFilter) ++ MicroserviceFilters
+      Seq(metricsFilter,
+          monitoringFilter,
+          auditFilter,
+          loggingFilter,
+          cacheFilter) ++ MicroserviceFilters
         .whitelistFilterSeq(whitelistFilter): _*)
 
 @Singleton
 class WhitelistFilter @Inject()(configuration: Configuration)
-    extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
+    extends AkamaiWhitelistFilter
+    with MicroserviceFilterSupport {
 
-  override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
-  override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")
+  override val whitelist: Seq[String] = whitelistConfig(
+    "microservice.whitelist.ips")
+  override val destination: Call =
+    Call("GET", "/agent-client-authorisation/forbidden")
   override val excludedPaths: Seq[Call] = Seq(
     Call("GET", "/ping/ping"),
     Call("GET", "/admin/details"),
@@ -55,7 +66,9 @@ class WhitelistFilter @Inject()(configuration: Configuration)
     configuration.getBoolean("microservice.whitelist.enabled").getOrElse(true)
 
   private def whitelistConfig(key: String): Seq[String] =
-    new String(Base64.getDecoder().decode(configuration.getString(key).getOrElse("")), "UTF-8").split(",")
+    new String(
+      Base64.getDecoder().decode(configuration.getString(key).getOrElse("")),
+      "UTF-8").split(",")
 }
 
 object MicroserviceFilters {

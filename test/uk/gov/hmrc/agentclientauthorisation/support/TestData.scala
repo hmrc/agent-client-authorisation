@@ -36,11 +36,20 @@ trait TestData {
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
   val mtdSaPendingInvitationId: InvitationId =
-    InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
+    InvitationId.create(arn.value,
+                        mtdItId1.value,
+                        "HMRC-MTD-IT",
+                        DateTime.parse("2001-01-01"))('A')
   val mtdSaAcceptedInvitationId: InvitationId =
-    InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
+    InvitationId.create(arn.value,
+                        mtdItId1.value,
+                        "HMRC-MTD-IT",
+                        DateTime.parse("2001-01-02"))('A')
   val otherRegimePendingInvitationId: InvitationId =
-    InvitationId.create(arn.value, mtdItId1.value, "mtd-other", DateTime.parse("2001-01-03"))('A')
+    InvitationId.create(arn.value,
+                        mtdItId1.value,
+                        "mtd-other",
+                        DateTime.parse("2001-01-03"))('A')
 
   val allInvitations = List(
     Invitation(
@@ -79,29 +88,42 @@ trait TestData {
   )
 
   val agentEnrolment = Set(
-    Enrolment(
-      "HMRC-AS-AGENT",
-      Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)),
-      state = "",
-      delegatedAuthRule = None))
+    Enrolment("HMRC-AS-AGENT",
+              Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)),
+              state = "",
+              delegatedAuthRule = None))
 
   val clientMtdItEnrolment = Set(
-    Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
+    Enrolment("HMRC-MTD-IT",
+              Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
+              state = "",
+              delegatedAuthRule = None))
 
   val clientNiEnrolment = Set(
-    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None))
+    Enrolment("HMRC-NI",
+              Seq(EnrolmentIdentifier("NINO", "AA000003D")),
+              state = "",
+              delegatedAuthRule = None))
 
-  val clientMtdItEnrolments: Future[Enrolments] = Future successful Enrolments(clientMtdItEnrolment)
+  val clientMtdItEnrolments: Future[Enrolments] = Future successful Enrolments(
+    clientMtdItEnrolment)
 
-  val clientNiEnrolments: Future[Enrolments] = Future successful Enrolments(clientNiEnrolment)
+  val clientNiEnrolments: Future[Enrolments] = Future successful Enrolments(
+    clientNiEnrolment)
 
-  val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
+  val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(
+    Set.empty[Enrolment])
 
   val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment))
+    Future successful new ~[Option[AffinityGroup], Enrolments](
+      Some(AffinityGroup.Agent),
+      Enrolments(agentEnrolment))
 
-  val neitherHaveAffinityOrEnrolment: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future successful new ~[Option[AffinityGroup], Enrolments](None, Enrolments(Set.empty[Enrolment]))
+  val neitherHaveAffinityOrEnrolment
+    : Future[~[Option[AffinityGroup], Enrolments]] =
+    Future successful new ~[Option[AffinityGroup], Enrolments](
+      None,
+      Enrolments(Set.empty[Enrolment]))
 
   val agentNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
     Future successful new ~[Option[AffinityGroup], Enrolments](
@@ -116,6 +138,7 @@ trait TestData {
   val failedStubForAgent: Future[~[Option[AffinityGroup], Enrolments]] =
     Future failed InsufficientEnrolments()
 
-  val failedStubForClient: Future[Enrolments] = Future failed MissingBearerToken()
+  val failedStubForClient
+    : Future[Enrolments] = Future failed MissingBearerToken()
 
 }

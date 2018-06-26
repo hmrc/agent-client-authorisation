@@ -21,51 +21,75 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import org.joda.time.LocalDate
 import play.api.mvc.Action
-import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{
+  routes => prodroutes,
+  _
+}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
-class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {
+class SandboxAgencyInvitationsController
+    extends BaseController
+    with HalWriter
+    with AgencyInvitationsHal {
 
   def createInvitation(arn: Arn) = Action { implicit request =>
     Created.withHeaders(location(arn, InvitationId("ABBBBBBBBBBCC")))
   }
 
   private def location(arn: Arn, invitationId: InvitationId) =
-    LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
+    LOCATION -> prodroutes.AgencyInvitationsController
+      .getSentInvitation(arn, invitationId)
+      .url
 
-  def getSentInvitations(
-    arn: Arn,
-    service: Option[String],
-    clientId: Option[String],
-    status: Option[InvitationStatus]) = Action { implicit request =>
-    Ok(toHalResource(List(invitation(arn), invitation(arn)), arn, service, None, clientId, status))
+  def getSentInvitations(arn: Arn,
+                         service: Option[String],
+                         clientId: Option[String],
+                         status: Option[InvitationStatus]) = Action {
+    implicit request =>
+      Ok(
+        toHalResource(List(invitation(arn), invitation(arn)),
+                      arn,
+                      service,
+                      None,
+                      clientId,
+                      status))
   }
 
   def getDetailsForAuthenticatedAgency = Action { implicit request =>
     Ok(
-      toHalResource(
-        HardCodedSandboxIds.arn,
-        prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
+      toHalResource(HardCodedSandboxIds.arn,
+                    prodroutes.AgencyInvitationsController
+                      .getDetailsForAuthenticatedAgency()
+                      .url))
   }
 
   def getDetailsForAgency(arn: Arn) = Action { implicit request =>
-    Ok(toHalResource(arn, prodroutes.AgencyInvitationsController.getDetailsForAgency(arn).url))
+    Ok(
+      toHalResource(
+        arn,
+        prodroutes.AgencyInvitationsController.getDetailsForAgency(arn).url))
   }
 
   def getDetailsForAgencyInvitations(arn: Arn) = Action { implicit request =>
-    Ok(toHalResource(arn, prodroutes.AgencyInvitationsController.getDetailsForAgencyInvitations(arn).url))
+    Ok(
+      toHalResource(arn,
+                    prodroutes.AgencyInvitationsController
+                      .getDetailsForAgencyInvitations(arn)
+                      .url))
   }
 
-  def getSentInvitation(arn: Arn, invitationId: String) = Action { implicit request =>
-    Ok(toHalResource(invitation(arn)))
+  def getSentInvitation(arn: Arn, invitationId: String) = Action {
+    implicit request =>
+      Ok(toHalResource(invitation(arn)))
   }
 
-  def cancelInvitation(arn: Arn, invitation: String) = Action { implicit request =>
-    NoContent
+  def cancelInvitation(arn: Arn, invitation: String) = Action {
+    implicit request =>
+      NoContent
   }
 
   private def invitation(arn: Arn) =
