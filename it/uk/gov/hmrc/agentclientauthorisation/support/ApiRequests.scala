@@ -31,20 +31,16 @@ trait ApiRequests {
   val apiPlatform: Boolean = true
 
   def baseUrl =
-    if (sandboxMode) {
+    if (sandboxMode)
       "/sandbox"
-    } else {
-      if (apiPlatform) ""
-      else "/agent-client-authorisation"
-    }
+    else if (apiPlatform) ""
+    else "/agent-client-authorisation"
 
   def externalUrl(serviceRouteUrl: String) =
-    if (sandboxMode) {
+    if (sandboxMode)
       "/agent-client-authorisation" + stripPrefix(serviceRouteUrl, "/sandbox")
-    } else {
-      if (apiPlatform) "/agent-client-authorisation" + serviceRouteUrl
-      else serviceRouteUrl
-    }
+    else if (apiPlatform) "/agent-client-authorisation" + serviceRouteUrl
+    else serviceRouteUrl
 
   private def stripPrefix(s: String, prefix: String): String = {
     if (!s.startsWith(prefix)) throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
@@ -122,7 +118,7 @@ trait ApiRequests {
   def clientUrl(clientId: ClientId) = clientId match {
     case ClientIdentifier(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
     case ClientIdentifier(Nino(value))    => s"$baseUrl/clients/NI/$value"
-    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VAT/$value"
+    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VRN/$value"
   }
 
   def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"
