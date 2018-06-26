@@ -59,6 +59,7 @@ trait ErrorResultMatchers { this: UnitSpec =>
     }
   }
 
-  def matchErrorResult(expectedResult: Result) = new ErrorResultMatcher(expectedResult)
+  def matchErrorResult(expectedResult: Result) =
+    new ErrorResultMatcher(expectedResult)
 
 }

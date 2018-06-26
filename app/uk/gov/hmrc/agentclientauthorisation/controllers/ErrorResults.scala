@@ -25,7 +25,8 @@ object ErrorResults {
   case class ErrorBody(code: String, message: String)
 
   implicit val errorBodyWrites = new Writes[ErrorBody] {
-    override def writes(body: ErrorBody): JsValue = Json.obj("code" -> body.code, "message" -> body.message)
+    override def writes(body: ErrorBody): JsValue =
+      Json.obj("code" -> body.code, "message" -> body.message)
   }
 
   val GenericUnauthorized = Unauthorized(
@@ -61,10 +62,14 @@ object ErrorResults {
     NotImplemented(toJson(ErrorBody(
       "NON_UK_ADDRESS",
       s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
-  def invalidInvitationStatus(message: String) = Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
-  def unsupportedService(message: String) = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
-  def unsupportedClientIdType(message: String) = BadRequest(toJson(ErrorBody("UNSUPPORTED_CLIENT_ID_TYPE", message)))
-  def postcodeFormatInvalid(message: String) = BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
+  def invalidInvitationStatus(message: String) =
+    Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
+  def unsupportedService(message: String) =
+    NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))
+  def unsupportedClientIdType(message: String) =
+    BadRequest(toJson(ErrorBody("UNSUPPORTED_CLIENT_ID_TYPE", message)))
+  def postcodeFormatInvalid(message: String) =
+    BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
   def postcodeRequired(service: String) =
     BadRequest(toJson(ErrorBody("POSTCODE_REQUIRED", s"Postcode is required for service $service")))
 

@@ -48,7 +48,9 @@ class ClientFiltersByStatusApiPlatformISpec
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
       clientsViewOfPendingInvitations(client)
 
       When(s"the Client accepts the first Agency invitation")
@@ -84,7 +86,9 @@ class ClientFiltersByStatusApiPlatformISpec
         (client, PersonalIncomeRecordService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)
+      given()
+        .client(clientId = nino1, canonicalClientId = nino1)
+        .isLoggedInWithNiEnrolment(nino1)
       clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
 
       When(s"the Client accepts the first Agency invitation")
@@ -113,20 +117,24 @@ class ClientFiltersByStatusApiPlatformISpec
   }
 
   private def clientFiltersByRejected(client: ClientApi): Unit = {
-    val pendingFiltered = client.getInvitations(filteredBy = Seq("status" -> "pending"))
+    val pendingFiltered =
+      client.getInvitations(filteredBy = Seq("status" -> "pending"))
     pendingFiltered.numberOfInvitations shouldBe 0
 
-    val rejectedFiltered = client.getInvitations(filteredBy = Seq("status" -> "rejected"))
+    val rejectedFiltered =
+      client.getInvitations(filteredBy = Seq("status" -> "rejected"))
     rejectedFiltered.numberOfInvitations shouldBe 1
     rejectedFiltered.firstInvitation.status shouldBe "Rejected"
   }
 
   private def clientFiltersByAccepted(client: ClientApi): Unit = {
-    val pendingFiltered = client.getInvitations(filteredBy = Seq("status" -> "pending"))
+    val pendingFiltered =
+      client.getInvitations(filteredBy = Seq("status" -> "pending"))
     pendingFiltered.numberOfInvitations shouldBe 1
     pendingFiltered.firstInvitation.status shouldBe "Pending"
 
-    val acceptedFiltered = client.getInvitations(filteredBy = Seq("status" -> "accepted"))
+    val acceptedFiltered =
+      client.getInvitations(filteredBy = Seq("status" -> "accepted"))
     acceptedFiltered.numberOfInvitations shouldBe 1
     acceptedFiltered.firstInvitation.status shouldBe "Accepted"
   }

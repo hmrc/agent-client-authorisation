@@ -38,7 +38,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
   def configure(): Unit = {
     val appName = "agent-client-authorisation"
 
-    val loggerDateFormat: Option[String] = configuration.getString("logger.json.dateformat")
+    val loggerDateFormat: Option[String] =
+      configuration.getString("logger.json.dateformat")
     Logger.info(s"Starting microservice : $appName : in mode : ${environment.mode}")
     MDC.put("appName", appName)
     loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
@@ -59,14 +60,18 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
   }
 
   private def bindBaseUrl(serviceName: String) =
-    bind(classOf[URL]).annotatedWith(Names.named(s"$serviceName-baseUrl")).toProvider(new BaseUrlProvider(serviceName))
+    bind(classOf[URL])
+      .annotatedWith(Names.named(s"$serviceName-baseUrl"))
+      .toProvider(new BaseUrlProvider(serviceName))
 
   private class BaseUrlProvider(serviceName: String) extends Provider[URL] {
     override lazy val get = new URL(baseUrl(serviceName))
   }
 
   private def bindProperty2param(objectName: String, propertyName: String) =
-    bind(classOf[String]).annotatedWith(Names.named(objectName)).toProvider(new PropertyProvider2param(propertyName))
+    bind(classOf[String])
+      .annotatedWith(Names.named(objectName))
+      .toProvider(new PropertyProvider2param(propertyName))
 
   private class PropertyProvider2param(confKey: String) extends Provider[String] {
     override lazy val get =
@@ -74,7 +79,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
   }
 
   private def bindProperty(propertyName: String) =
-    bind(classOf[String]).annotatedWith(Names.named(propertyName)).toProvider(new PropertyProvider(propertyName))
+    bind(classOf[String])
+      .annotatedWith(Names.named(propertyName))
+      .toProvider(new PropertyProvider(propertyName))
 
   private class PropertyProvider(confKey: String) extends Provider[String] {
     override lazy val get = configuration
@@ -111,18 +118,19 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
         }
       }
 
-    implicit val intServiceConfigProperty: ServiceConfigPropertyType[Int] = new ServiceConfigPropertyType[Int] {
-      def bindServiceConfigProperty(clazz: Class[Int])(propertyName: String): ScopedBindingBuilder =
-        bind(clazz)
-          .annotatedWith(named(s"$propertyName"))
-          .toProvider(new IntServiceConfigPropertyProvider(propertyName))
+    implicit val intServiceConfigProperty: ServiceConfigPropertyType[Int] =
+      new ServiceConfigPropertyType[Int] {
+        def bindServiceConfigProperty(clazz: Class[Int])(propertyName: String): ScopedBindingBuilder =
+          bind(clazz)
+            .annotatedWith(named(s"$propertyName"))
+            .toProvider(new IntServiceConfigPropertyProvider(propertyName))
 
-      private class IntServiceConfigPropertyProvider(propertyName: String) extends Provider[Int] {
-        override lazy val get = getConfInt(
-          propertyName,
-          throw new RuntimeException(s"No service configuration value found for '$propertyName'"))
+        private class IntServiceConfigPropertyProvider(propertyName: String) extends Provider[Int] {
+          override lazy val get = getConfInt(
+            propertyName,
+            throw new RuntimeException(s"No service configuration value found for '$propertyName'"))
+        }
       }
-    }
 
     implicit val booleanServiceConfigProperty: ServiceConfigPropertyType[Boolean] =
       new ServiceConfigPropertyType[Boolean] {

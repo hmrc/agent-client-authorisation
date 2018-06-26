@@ -42,7 +42,8 @@ class ClientApi(
       .getOrElse(throw new IllegalStateException("Can't reject this invitation the reject link is not defined"))
 
   def getInvitations(filteredBy: Seq[(String, String)] = Nil): HalResourceHelper = {
-    val response = apiRequests.clientGetReceivedInvitations(clientId, filteredBy)(port, hc)
+    val response =
+      apiRequests.clientGetReceivedInvitations(clientId, filteredBy)(port, hc)
     require(response.status == 200, s"Couldn't get invitations, response status [${response.status}]")
     HalTestHelpers(response.json)
   }

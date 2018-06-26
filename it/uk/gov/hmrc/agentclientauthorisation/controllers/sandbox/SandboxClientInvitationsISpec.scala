@@ -55,7 +55,8 @@ class SandboxClientInvitationsISpec
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "self" \ "href")
+        .as[String] shouldBe externalUrl(url)
     }
   }
 
@@ -79,13 +80,15 @@ class SandboxClientInvitationsISpec
 
       val testStartTime = now().getMillis
 
-      val response: HalResourceHelper = HalTestHelpers(clientGetReceivedInvitations(mtdItId1).json)
+      val response: HalResourceHelper =
+        HalTestHelpers(clientGetReceivedInvitations(mtdItId1).json)
 
       response.embedded.invitations.size shouldBe 2
       checkInvitation(mtdItId1, response.firstInvitation.underlying, testStartTime)
       checkInvitation(mtdItId1, response.secondInvitation.underlying, testStartTime)
       response.links.selfLink shouldBe s"/agent-client-authorisation/clients/MTDITID/${mtdItId1.value}/invitations/received"
-      response.embedded.invitations.map(_.links.selfLink) shouldBe response.links.invitations
+      response.embedded.invitations
+        .map(_.links.selfLink) shouldBe response.links.invitations
     }
   }
 
@@ -104,9 +107,10 @@ class SandboxClientInvitationsISpec
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(
-        clientReceivedInvitationsUrl(mtdItId1))
+      (response.json \ "_links" \ "self" \ "href")
+        .as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "received" \ "href")
+        .as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdItId1))
     }
 
   private def checkInvitation(clientId: MtdItId, invitation: JsValue, testStartTime: Long): Unit = {
@@ -116,8 +120,10 @@ class SandboxClientInvitationsISpec
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     selfLink should startWith(s"/agent-client-authorisation/clients/MTDITID/${clientId.value}/invitations/received/")
-    (invitation \ "_links" \ "accept" \ "href").as[String] shouldBe s"$selfLink/accept"
-    (invitation \ "_links" \ "reject" \ "href").as[String] shouldBe s"$selfLink/reject"
+    (invitation \ "_links" \ "accept" \ "href")
+      .as[String] shouldBe s"$selfLink/accept"
+    (invitation \ "_links" \ "reject" \ "href")
+      .as[String] shouldBe s"$selfLink/reject"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe "agencyReference"
     (invitation \ "service").as[String] shouldBe "HMRC-MTD-IT"

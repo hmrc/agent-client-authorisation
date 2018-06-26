@@ -71,9 +71,10 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     )
 
   private def clientIdentifierType(clientId: String): String = clientId match {
-    case maybeVrn if Vrn.isValid(maybeVrn)                                                          => "vrn"
-    case maybeNinoOrMtdItd if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(maybeNinoOrMtdItd) => "ni"
-    case _                                                                                          => throw new IllegalStateException(s"Unsupported ClientIdType")
+    case maybeVrn if Vrn.isValid(maybeVrn) => "vrn"
+    case maybeNinoOrMtdItd if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(maybeNinoOrMtdItd) =>
+      "ni"
+    case _ => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
   private[audit] def auditEvent(
@@ -86,7 +87,8 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     implicit hc: HeaderCarrier,
     request: Request[Any]): DataEvent = {
 
-    val detail = hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
+    val detail =
+      hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
     val tags = hc.toAuditTags(transactionName, request.path)
     DataEvent(auditSource = "agent-client-authorisation", auditType = event.toString, tags = tags, detail = detail)
   }

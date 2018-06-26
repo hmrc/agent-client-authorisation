@@ -54,7 +54,8 @@ class HalWriterSpec extends UnitSpec {
     }
 
     "write embedded resources to an array, even if there is only one resource embedded" in {
-      val res = HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(ball)))
+      val res =
+        HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(ball)))
 
       val json = Json.toJson(res)(HalWriter.halWrites)
 
@@ -75,7 +76,8 @@ class HalWriterSpec extends UnitSpec {
     }
 
     "write multiple heterogeneous elements to several arrays of size 1" in {
-      val res = HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(duplo), "hates" -> Vector(ball)))
+      val res =
+        HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(duplo), "hates" -> Vector(ball)))
 
       val json = Json.toJson(res)(HalWriter.halWrites)
 
@@ -170,9 +172,11 @@ class HalWriterSpec extends UnitSpec {
     }
   }
 
-  implicit def toyToJson(toy: Toy): JsObject = Json.toJson(toy).asInstanceOf[JsObject]
+  implicit def toyToJson(toy: Toy): JsObject =
+    Json.toJson(toy).asInstanceOf[JsObject]
 
-  implicit def toSimpleHalResource(toy: Toy): HalResource = HalResource(HalLinks.empty, toyToJson(toy))
+  implicit def toSimpleHalResource(toy: Toy): HalResource =
+    HalResource(HalLinks.empty, toyToJson(toy))
 
   def toHalResourceWithLink(toy: Toy, id: String): HalResource =
     HalResource(HalLinks(Vector(HalLink("self", s"/toys/$id"))), toyToJson(toy))

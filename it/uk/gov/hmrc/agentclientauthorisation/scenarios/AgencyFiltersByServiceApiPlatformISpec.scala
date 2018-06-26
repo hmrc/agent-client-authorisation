@@ -73,7 +73,8 @@ class AgencyFiltersByServiceApiPlatformISpec
   }
 
   def agencyFiltersByServiceAndExpectsResultCount(agency: AgencyApi, expectedResultCount: Int, service: Service) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> service.id))
+    val invitations =
+      agency.sentInvitations(filteredBy = Seq("service" -> service.id))
 
     invitations.numberOfInvitations shouldBe expectedResultCount
   }

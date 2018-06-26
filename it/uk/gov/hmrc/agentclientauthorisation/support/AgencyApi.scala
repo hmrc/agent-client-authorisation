@@ -58,7 +58,8 @@ class AgencyApi(apiRequests: ApiRequests, val arn: Arn, implicit val port: Int) 
   def cancelInvitation(invitation: EmbeddedInvitation): HttpResponse =
     invitation.links.cancelLink
       .map { cancelLink =>
-        val response: HttpResponse = new Resource(cancelLink, port).putEmpty()(hc)
+        val response: HttpResponse =
+          new Resource(cancelLink, port).putEmpty()(hc)
         require(response.status == 204, s"response for canceling invitation should be 204, was [${response.status}]")
         response
       }

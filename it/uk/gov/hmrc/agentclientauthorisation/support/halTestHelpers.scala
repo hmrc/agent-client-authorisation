@@ -26,7 +26,8 @@ object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)
 
   class HalResourceHelper(json: JsValue) {
-    def embedded: EmbeddedSection = new EmbeddedSection((json \ "_embedded").as[JsValue])
+    def embedded: EmbeddedSection =
+      new EmbeddedSection((json \ "_embedded").as[JsValue])
     def links: LinkSection = new LinkSection((json \ "_links").as[JsValue])
     def numberOfInvitations = embedded.invitations.size
     def firstInvitation: EmbeddedInvitation = embedded.invitations.head
@@ -57,7 +58,8 @@ class EmbeddedSection(embedded: JsValue) {
 
   def isEmpty: Boolean = invitations isEmpty
 
-  lazy val invitations: Seq[EmbeddedInvitation] = getInvitations.value.map(asInvitation)
+  lazy val invitations: Seq[EmbeddedInvitation] =
+    getInvitations.value.map(asInvitation)
 
   private def getInvitations: JsArray =
     (embedded \ "invitations").get match {
@@ -96,5 +98,6 @@ class LinkSection(links: JsValue) {
 
   def selfLink: String = (links \ "self" \ "href").as[String]
 
-  def invitations: Seq[String] = (links \ "invitations" \\ "href").map(_.as[String])
+  def invitations: Seq[String] =
+    (links \ "invitations" \\ "href").map(_.as[String])
 }

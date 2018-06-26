@@ -71,7 +71,8 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
     }
 
     "return 403 if no business partner record is found" in {
-      when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful None)
+      when(desConnector.getBusinessDetails(nino1))
+        .thenReturn(Future successful None)
       val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }

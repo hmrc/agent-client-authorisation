@@ -72,13 +72,15 @@ class InvitationsService @Inject()(
   def create(arn: Arn, service: Service, clientId: ClientId, postcode: Option[String], suppliedClientId: ClientId)(
     implicit ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
-    val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
+    val expiryDate =
+      startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate).map {
-        invitation =>
+      invitationsRepository
+        .create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+        .map { invitation =>
           Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
           invitation
-      }
+        }
     }
   }
 
@@ -89,16 +91,20 @@ class InvitationsService @Inject()(
     invitation.status match {
       case Pending => {
         val future = invitation.service match {
-          case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
-          case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
-          case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
+          case Service.MtdIt =>
+            relationshipsConnector.createMtdItRelationship(invitation)
+          case Service.PersonalIncomeRecord =>
+            relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
+          case Service.Vat =>
+            relationshipsConnector.createMtdVatRelationship(invitation)
         }
         future
           .flatMap(
             _ =>
               changeInvitationStatus(invitation, model.Accepted, acceptedDate)
                 .andThen {
-                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+                  case Success(_) =>
+                    reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
               })
           .recoverWith {
             case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
@@ -106,17 +112,22 @@ class InvitationsService @Inject()(
                 s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
               changeInvitationStatus(invitation, model.Accepted, acceptedDate)
                 .andThen {
-                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
+                  case Success(_) =>
+                    reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
                 }
           }
       }
-      case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
+      case _ =>
+        Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }
 
   private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = currentTime) = {
     val createTime = invitation.firstEvent().time
-    val fromTime = if (invitationExpiryUnits == DAYS) createTime.millisOfDay().withMinimumValue() else createTime
+    val fromTime =
+      if (invitationExpiryUnits == DAYS)
+        createTime.millisOfDay().withMinimumValue()
+      else createTime
     val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
     elapsedTime gt invitationExpiryDuration
   }
@@ -127,25 +138,29 @@ class InvitationsService @Inject()(
     hc: HeaderCarrier,
     request: Request[Any]): Future[Invitation] =
     changeInvitationStatus(invitation, Expired).map { a =>
-      if (a.isLeft) throw new Exception("Failed to transition invitation state to Expired")
+      if (a.isLeft)
+        throw new Exception("Failed to transition invitation state to Expired")
       auditService.sendInvitationExpired(invitation)
       a.right.get
     } andThen {
-      case Success(_) => reportHistogramValue("Duration-Invitation-Expired", durationOf(invitation))
+      case Success(_) =>
+        reportHistogramValue("Duration-Invitation-Expired", durationOf(invitation))
     }
 
   def cancelInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
-        case Success(_) => reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
+        case Success(_) =>
+          reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
       }
 
   def rejectInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Rejected)
       .andThen {
-        case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
+        case Success(_) =>
+          reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
       }
 
   def findInvitation(invitationId: InvitationId)(
@@ -159,7 +174,8 @@ class InvitationsService @Inject()(
         if (invitationResult.isEmpty) Future successful None
         else {
           val invitation = invitationResult.get
-          if (isInvitationExpired(invitation)) updateStatusToExpired(invitation).map(Some(_))
+          if (isInvitationExpired(invitation))
+            updateStatusToExpired(invitation).map(Some(_))
           else Future successful invitationResult
         }
       }
@@ -178,8 +194,9 @@ class InvitationsService @Inject()(
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] =
     if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
-      monitor(
-        s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
+      monitor(s"Repository-List-Invitations-Sent${service
+        .map(s => s"-${s.id}")
+        .getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
         invitationsRepository.list(arn, service, clientId, status, createdOnOrAfter)
       } else Future successful List.empty
 
@@ -196,7 +213,8 @@ class InvitationsService @Inject()(
             Right(invitation)
           }
         }
-      case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
+      case _ =>
+        Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
 
   private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) =

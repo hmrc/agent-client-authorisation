@@ -39,14 +39,18 @@ trait ApiTestSupport {
   private val xmlDocumentationPath = "/api/documentation"
   private val ramlPath = "/api/conf"
 
-  private def definitionsJson = new Resource(definitionPath.toString, runningPort).get().json
+  private def definitionsJson =
+    new Resource(definitionPath.toString, runningPort).get().json
 
   private val DefinitionsFileApiSection = (definitionsJson \ "api").as[JsValue]
-  private val DefinitionsFileApiVersions: List[JsValue] = (DefinitionsFileApiSection \ "versions").as[List[JsValue]]
+  private val DefinitionsFileApiVersions: List[JsValue] =
+    (DefinitionsFileApiSection \ "versions").as[List[JsValue]]
 
   def xmlDocumentationFor(endpoint: Endpoint): (Int, Try[Elem]) = {
-    val endpointPath = s"${endpoint version}/${UriEncoding.encodePathSegment(endpoint.endPointName, "UTF-8")}"
-    val response: HttpResponse = new Resource(s"$xmlDocumentationPath/$endpointPath", runningPort).get()
+    val endpointPath =
+      s"${endpoint version}/${UriEncoding.encodePathSegment(endpoint.endPointName, "UTF-8")}"
+    val response: HttpResponse =
+      new Resource(s"$xmlDocumentationPath/$endpointPath", runningPort).get()
     (response.status, Try(XML.loadString(response.body)))
   }
 
@@ -58,7 +62,8 @@ trait ApiTestSupport {
 
   def ramlResponseByVersion(api: JsValue): (String, HttpResponse) = {
     val apiVersion: String = (api \ "version").as[String]
-    val response: HttpResponse = new Resource(s"$ramlPath/$apiVersion/application.raml", runningPort).get()
+    val response: HttpResponse =
+      new Resource(s"$ramlPath/$apiVersion/application.raml", runningPort).get()
     apiVersion -> response
   }
 

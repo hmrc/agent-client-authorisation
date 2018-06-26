@@ -59,7 +59,9 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 
     "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
       clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionOnClient)
     }
   }
@@ -69,14 +71,18 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitation(mtdItId1, invitationId))
 
     "return 404 when invitation not found" in {
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
 
       val response = clientGetReceivedInvitation(mtdItId1, invitationId)
       response should matchErrorResult(InvitationNotFound)
     }
 
     "return 404 when invitationId is not valid" in {
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
 
       val response = clientGetReceivedInvitation(mtdItId1, "INVALIDINV")
       response should matchErrorResult(InvitationNotFound)
@@ -87,9 +93,12 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(myNino)
 
       val client = new ClientApi(this, myNino, mtdItId1, port)
-      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
 
-      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
+      val response =
+        getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response.status shouldBe 200
     }
 
@@ -97,9 +106,12 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(nino)
 
       val client = new ClientApi(this, nino, mtdItId1, port)
-      given().client(clientId = client.suppliedClientId).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = client.suppliedClientId)
+        .isLoggedInWithMtdEnrolment
 
-      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
+      val response =
+        getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
     }
 
@@ -108,9 +120,12 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 
       val clientNino = nino1
       val client = new ClientApi(this, clientNino, clientNino, port)
-      given().client(clientId = client.suppliedClientId).isLoggedInWithNiEnrolment(clientNino)
+      given()
+        .client(clientId = client.suppliedClientId)
+        .isLoggedInWithNiEnrolment(clientNino)
 
-      val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
+      val response =
+        getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
     }
 
@@ -122,7 +137,8 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
         .client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789"))
         .isLoggedInWithMtdEnrolment
 
-      val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
+      val response =
+        updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
       response should matchErrorResult(NoPermissionOnClient)
     }
   }
@@ -177,7 +193,9 @@ trait ClientInvitationsISpec
 
   def anEndpointWithMeaningfulContentForAnAuthorisedClient(url: String): Unit =
     "return a meaningful response for the authenticated clients" in {
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given()
+        .client(clientId = nino, canonicalClientId = mtdItId1)
+        .isLoggedInWithMtdEnrolment
       //        .aRelationshipIsCreatedWith(arn1)
 
       val response = new Resource(url, port).get()
@@ -185,8 +203,10 @@ trait ClientInvitationsISpec
       withClue(response.body) {
         response.status shouldBe 200
       }
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "received" \ "href").as[String] shouldBe externalUrl(invitationsReceivedUrl)
+      (response.json \ "_links" \ "self" \ "href")
+        .as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "received" \ "href")
+        .as[String] shouldBe externalUrl(invitationsReceivedUrl)
     }
 
   def anEndpointThatPreventsAccessToAnotherClientsInvitations(url: String): Unit =

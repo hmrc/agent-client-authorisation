@@ -33,7 +33,9 @@ object Binders {
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
   implicit object LocalDateBinder
-      extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
+      extends SimpleObjectBinder[LocalDate](s => {
+        assert(s.length == 10); LocalDate.parse(s)
+      }, _.toString)
 
   private def toError(err: String) =
     s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"
@@ -45,7 +47,8 @@ object Binders {
         _.headOption map (status => InvitationStatus(status) leftMap toError)
       }
 
-    override def unbind(key: String, value: InvitationStatus): String = s"$key=$value"
+    override def unbind(key: String, value: InvitationStatus): String =
+      s"$key=$value"
   }
 
   implicit object LocalDateQueryStringBinder extends QueryStringBindable[LocalDate] {

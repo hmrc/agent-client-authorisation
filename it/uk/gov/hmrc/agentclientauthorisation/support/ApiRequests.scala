@@ -47,14 +47,16 @@ trait ApiRequests {
     }
 
   private def stripPrefix(s: String, prefix: String): String = {
-    if (!s.startsWith(prefix)) throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
+    if (!s.startsWith(prefix))
+      throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
     s.substring(prefix.length)
   }
 
   def agenciesUrl = s"$baseUrl/agencies"
   def agencyUrl(arn: Arn) = s"$agenciesUrl/${arn.value}"
   def agencyInvitationsUrl(arn: Arn) = s"${agencyUrl(arn)}/invitations"
-  def agencyGetInvitationsUrl(arn: Arn): String = s"${agencyInvitationsUrl(arn)}/sent"
+  def agencyGetInvitationsUrl(arn: Arn): String =
+    s"${agencyInvitationsUrl(arn)}/sent"
   def agencyGetInvitationUrl(arn: Arn, invitationId: String): String =
     s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
   def agencyGetCheckKnownFactVat(vrn: Vrn, suppliedDate: LocalDate): String =
@@ -88,7 +90,9 @@ trait ApiRequests {
     clientPostcode: Option[String]) {
     val jsObj: JsObject = {
       val obj = Json.obj("service" -> service, "clientIdType" -> clientIdType, "clientId" -> clientId)
-      if (clientPostcode.isDefined) obj + ("clientPostcode" -> JsString(clientPostcode.get)) else obj
+      if (clientPostcode.isDefined)
+        obj + ("clientPostcode" -> JsString(clientPostcode.get))
+      else obj
     }
     val json: String = Json.stringify(jsObj)
   }
@@ -122,10 +126,11 @@ trait ApiRequests {
   def clientUrl(clientId: ClientId) = clientId match {
     case ClientIdentifier(MtdItId(value)) => s"$baseUrl/clients/MTDITID/$value"
     case ClientIdentifier(Nino(value))    => s"$baseUrl/clients/NI/$value"
-    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VAT/$value"
+    case ClientIdentifier(Vrn(value))     => s"$baseUrl/clients/VRN/$value"
   }
 
-  def clientReceivedInvitationsUrl(clientId: ClientId) = s"${clientUrl(clientId)}/invitations/received"
+  def clientReceivedInvitationsUrl(clientId: ClientId) =
+    s"${clientUrl(clientId)}/invitations/received"
 
   def clientReceivedInvitationUrl(clientId: ClientId, invitationId: String): String =
     s"${clientUrl(clientId)}/invitations/received/$invitationId"
@@ -139,7 +144,8 @@ trait ApiRequests {
     implicit port: Int,
     hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
-    new Resource(clientReceivedInvitationsUrl(clientId) + params, port).get()(hc)
+    new Resource(clientReceivedInvitationsUrl(clientId) + params, port)
+      .get()(hc)
   }
 
   def clientGetReceivedInvitation(mtdItId: MtdItId, invitationId: String)(
@@ -161,8 +167,9 @@ trait ApiRequests {
 
   def withFilterParams(filteredBy: Seq[(String, String)]): String =
     filteredBy match {
-      case Nil            => ""
-      case (k, v) :: Nil  => s"?$k=$v"
-      case (k, v) :: tail => s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
+      case Nil           => ""
+      case (k, v) :: Nil => s"?$k=$v"
+      case (k, v) :: tail =>
+        s"?$k=$v" + tail.map(params => s"&${params._1}=${params._2}").mkString
     }
 }

@@ -37,9 +37,12 @@ class NiClientInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
 
   val metrics: Metrics = resettingMock[Metrics]
-  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
-  val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockHalResource: ClientInvitationsHal = resettingMock[ClientInvitationsHal]
+  val microserviceAuthConnector: MicroserviceAuthConnector =
+    resettingMock[MicroserviceAuthConnector]
+  val mockPlayAuthConnector: PlayAuthConnector =
+    resettingMock[PlayAuthConnector]
+  val mockHalResource: ClientInvitationsHal =
+    resettingMock[ClientInvitationsHal]
 
   val controller =
     new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {

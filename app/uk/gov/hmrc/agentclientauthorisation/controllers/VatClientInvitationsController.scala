@@ -43,27 +43,27 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
     getDetailsForClient(ClientIdentifier(vrn), request)
   }
 
-  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
+    onlyForClients { implicit request => implicit authVrn =>
       acceptInvitation(ClientIdentifier(vrn), invitationId)
-  }
+    }
 
-  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
+    onlyForClients { implicit request => implicit authVrn =>
       forThisClient(ClientIdentifier(vrn)) {
         actionInvitation(ClientIdentifier(vrn), invitationId, invitationsService.rejectInvitation)
       }
-  }
+    }
 
-  def getInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def getInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
+    onlyForClients { implicit request => implicit authVrn =>
       getInvitation(ClientIdentifier(vrn), invitationId)
-  }
+    }
 
-  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] =
+    onlyForClients { implicit request => implicit authVrn =>
       getInvitations(ClientIdentifier(vrn), status)
-  }
+    }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.Vat, VrnType)(action)

@@ -48,8 +48,10 @@ class AgencyInvitationsControllerSpec
   val generator = new Generator()
   val authConnector: AuthActions = resettingMock[AuthActions]
   val metrics: Metrics = resettingMock[Metrics]
-  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
-  val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val microserviceAuthConnector: MicroserviceAuthConnector =
+    resettingMock[MicroserviceAuthConnector]
+  val mockPlayAuthConnector: PlayAuthConnector =
+    resettingMock[PlayAuthConnector]
 
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
@@ -87,7 +89,8 @@ class AgencyInvitationsControllerSpec
         eqs(Some("ni")),
         any[Option[String]],
         eqs(Some(Accepted)),
-        eqs(None))(any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
+        eqs(None))(any()))
+      .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
   }
 
   "createInvitations" should {
@@ -100,9 +103,13 @@ class AgencyInvitationsControllerSpec
 
       when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any()))
         .thenReturn(Future successful None)
-      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any()))
+      when(
+        invitationsService
+          .translateToMtdItId(any[String](), any[String]())(any(), any()))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
-      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any()))
+      when(
+        invitationsService
+          .create(any[Arn](), any[Service](), any(), any(), any())(any()))
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
@@ -150,9 +157,11 @@ class AgencyInvitationsControllerSpec
 
       invitationsSize(jsonBody) shouldBe 3
 
-      (embeddedInvitations(jsonBody)(0) \ "status").asOpt[String] should not be None
+      (embeddedInvitations(jsonBody)(0) \ "status")
+        .asOpt[String] should not be None
       (embeddedInvitations(jsonBody)(0) \ "id").asOpt[String] shouldBe None
-      (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe None
+      (embeddedInvitations(jsonBody)(0) \ "invitationId")
+        .asOpt[String] shouldBe None
     }
 
     "include all query parameters in the self link" in {
@@ -210,7 +219,8 @@ class AgencyInvitationsControllerSpec
 
       whenFindingAnInvitation() thenReturn aFutureOptionInvitation(new Arn("1234"))
 
-      val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
+      val response =
+        await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnAgency
     }
@@ -313,7 +323,8 @@ class AgencyInvitationsControllerSpec
   }
 
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
-    (embeddedInvitations(agencyInvitationsSent)(idx) \ "_links" \ "self" \ "href").as[String]
+    (embeddedInvitations(agencyInvitationsSent)(idx) \ "_links" \ "self" \ "href")
+      .as[String]
 
   private def invitationsSize(agencyInvitationsSent: JsValue): Int =
     embeddedInvitations(agencyInvitationsSent).value.size

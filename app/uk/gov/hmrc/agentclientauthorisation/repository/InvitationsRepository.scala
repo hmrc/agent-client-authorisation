@@ -73,8 +73,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def findSorted(sortBy: JsObject, query: (String, JsValueWrapper)*)(
     implicit ec: ExecutionContext): Future[List[Invitation]] = {
     import ImplicitBSONHandlers._
-    implicit val domainFormatImplicit: Format[Invitation] = DomainFormat.mongoFormat
-    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
+    implicit val domainFormatImplicit: Format[Invitation] =
+      DomainFormat.mongoFormat
+    implicit val idFormatImplicit: Format[BSONObjectID] =
+      ReactiveMongoFormats.objectIdFormats
 
     collection
       .find(Json.obj(query: _*))
@@ -126,7 +128,8 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     update.map(_.map(_.updateType.savedValue).get)
   }
 
-  private def bsonJson[T](entity: T)(implicit writes: Writes[T]) = BSONFormats.toBSON(Json.toJson(entity)).get
+  private def bsonJson[T](entity: T)(implicit writes: Writes[T]) =
+    BSONFormats.toBSON(Json.toJson(entity)).get
 
   override def isInsertion(newRecordId: BSONObjectID, oldRecord: Invitation): Boolean =
     newRecordId != oldRecord.id
@@ -154,7 +157,8 @@ object DomainFormat {
     expiryDateOp: Option[LocalDate],
     events: List[StatusChangeEvent]): Invitation = {
 
-    val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
+    val expiryDate =
+      expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
 
     val clientIdType = clientIdTypeOp.getOrElse {
       if (Nino.isValid(clientId)) NinoType.id else MtdItIdType.id

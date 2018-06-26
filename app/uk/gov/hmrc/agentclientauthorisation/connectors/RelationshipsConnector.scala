@@ -55,7 +55,8 @@ class RelationshipsConnector @Inject()(
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
     implicit hc: HeaderCarrier): Future[Unit] = {
-    val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
+    val body =
+      Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
       httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
     }

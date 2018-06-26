@@ -69,10 +69,12 @@ object InvitationStatus {
   }
 
   implicit val invitationStatusFormat = new Format[InvitationStatus] {
-    override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
-      case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
-      case value          => JsSuccess(value)
-    }
+    override def reads(json: JsValue): JsResult[InvitationStatus] =
+      apply(json.as[String]) match {
+        case Unknown(value) =>
+          JsError(s"Status of [$value] is not a valid InvitationStatus")
+        case value => JsSuccess(value)
+      }
 
     override def writes(o: InvitationStatus): JsValue =
       unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
@@ -105,7 +107,8 @@ object ClientIdMapping {
 
   }
 
-  val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
+  val mongoFormats =
+    ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
 case class Invitation(

@@ -45,8 +45,12 @@ class AgencyFilteringByClientIdIApiPlatformISpec
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given()
+        .client(clientId = nino)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
+      given()
+        .client(clientId = nino2)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId2)
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)((client1, MtdItService), (client2, MtdItService))
@@ -60,7 +64,8 @@ class AgencyFilteringByClientIdIApiPlatformISpec
   }
 
   private def agencyFiltersById(agency: AgencyApi, clientId: ClientId): Unit = {
-    val invitation = agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
+    val invitation =
+      agency.sentInvitations(filteredBy = Seq("clientId" -> clientId.value))
     invitation.numberOfInvitations shouldBe 1
     invitation.firstInvitation.status shouldBe "Pending"
     invitation.firstInvitation.arn shouldBe agency.arn

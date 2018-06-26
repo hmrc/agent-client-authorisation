@@ -35,7 +35,9 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   }
 
   private def location(arn: Arn, invitationId: InvitationId) =
-    LOCATION -> prodroutes.AgencyInvitationsController.getSentInvitation(arn, invitationId).url
+    LOCATION -> prodroutes.AgencyInvitationsController
+      .getSentInvitation(arn, invitationId)
+      .url
 
   def getSentInvitations(
     arn: Arn,
@@ -49,7 +51,9 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
     Ok(
       toHalResource(
         HardCodedSandboxIds.arn,
-        prodroutes.AgencyInvitationsController.getDetailsForAuthenticatedAgency().url))
+        prodroutes.AgencyInvitationsController
+          .getDetailsForAuthenticatedAgency()
+          .url))
   }
 
   def getDetailsForAgency(arn: Arn) = Action { implicit request =>
@@ -57,7 +61,12 @@ class SandboxAgencyInvitationsController extends BaseController with HalWriter w
   }
 
   def getDetailsForAgencyInvitations(arn: Arn) = Action { implicit request =>
-    Ok(toHalResource(arn, prodroutes.AgencyInvitationsController.getDetailsForAgencyInvitations(arn).url))
+    Ok(
+      toHalResource(
+        arn,
+        prodroutes.AgencyInvitationsController
+          .getDetailsForAgencyInvitations(arn)
+          .url))
   }
 
   def getSentInvitation(arn: Arn, invitationId: String) = Action { implicit request =>
