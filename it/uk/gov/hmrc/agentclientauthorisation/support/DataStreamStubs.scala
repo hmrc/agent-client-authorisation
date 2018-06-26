@@ -25,13 +25,13 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.Age
 trait DataStreamStubs extends Eventually {
   me: StartAndStopWireMock =>
 
-  override implicit val patienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
+  override implicit val patienceConfig =
+    PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
 
-  def verifyAuditRequestSent(
-    count: Int,
-    event: AgentClientInvitationEvent,
-    tags: Map[String, String] = Map.empty,
-    detail: Map[String, String] = Map.empty): Unit =
+  def verifyAuditRequestSent(count: Int,
+                             event: AgentClientInvitationEvent,
+                             tags: Map[String, String] = Map.empty,
+                             detail: Map[String, String] = Map.empty): Unit =
     eventually {
       verify(
         count,
@@ -58,12 +58,16 @@ trait DataStreamStubs extends Eventually {
     }
 
   def givenAuditConnector(): Unit = {
-    stubFor(post(urlPathMatching(auditUrl)).willReturn(aResponse().withStatus(204)))
-    stubFor(post(urlPathMatching(auditUrl + "/merged")).willReturn(aResponse().withStatus(204)))
+    stubFor(
+      post(urlPathMatching(auditUrl)).willReturn(aResponse().withStatus(204)))
+    stubFor(
+      post(urlPathMatching(auditUrl + "/merged"))
+        .willReturn(aResponse().withStatus(204)))
   }
 
   private def auditUrl = "/write/audit"
 
-  private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
+  private def similarToJson(value: String) =
+    equalToJson(value.stripMargin, true, true)
 
 }

@@ -31,12 +31,15 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
       val definition = response.json
 
-      (definition \ "api" \ "name").as[String] shouldBe "Agent Client Authorisation"
+      (definition \ "api" \ "name")
+        .as[String] shouldBe "Agent Client Authorisation"
 
       val accessConfig = definition \ "api" \ "versions" \\ "access"
       (accessConfig.head \ "type").as[String] shouldBe "PRIVATE"
-      (accessConfig.head \ "whitelistedApplicationIds").head.as[String] shouldBe "00010002-0003-0004-0005-000600070008"
-      (accessConfig.head \ "whitelistedApplicationIds")(1).as[String] shouldBe "00090002-0003-0004-0005-000600070008"
+      (accessConfig.head \ "whitelistedApplicationIds").head
+        .as[String] shouldBe "00010002-0003-0004-0005-000600070008"
+      (accessConfig.head \ "whitelistedApplicationIds")(1)
+        .as[String] shouldBe "00090002-0003-0004-0005-000600070008"
     }
   }
 
@@ -46,18 +49,21 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
     forAllApiVersions(ramlByVersion) {
       case (version, raml) =>
-        info(s"Checking API RAML documentation for version[$version] of the API")
+        info(
+          s"Checking API RAML documentation for version[$version] of the API")
 
         withClue("RAML does not contain a valid RAML 1.0 version header") {
           raml should include("#%RAML 1.0")
         }
 
-        withClue("RAML does not contain the title 'Agent Client Authorisation API'") {
+        withClue(
+          "RAML does not contain the title 'Agent Client Authorisation API'") {
           raml should include("title: Agent Client Authorisation")
 
         }
 
-        withClue(s"RAML does not contain a matching version declaration of [$version]") {
+        withClue(
+          s"RAML does not contain a matching version declaration of [$version]") {
           raml should include(s"version: $version")
         }
     }

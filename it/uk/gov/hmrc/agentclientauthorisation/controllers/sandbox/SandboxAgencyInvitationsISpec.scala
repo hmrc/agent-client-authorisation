@@ -21,13 +21,23 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
+import uk.gov.hmrc.agentclientauthorisation.support.{
+  ApiRequests,
+  MongoAppAndStubs,
+  Resource,
+  SecuredEndpointBehaviours
+}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class SandboxAgencyInvitationsISpec
-    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
+    extends UnitSpec
+    with MongoAppAndStubs
+    with SecuredEndpointBehaviours
+    with Eventually
+    with Inside
+    with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
 
   private val validInvitation: AgencyInvitationRequest =
@@ -48,7 +58,8 @@ class SandboxAgencyInvitationsISpec
   }
 
   "GET /sandbox/agencies/:arn/invitations" should {
-    behave like anEndpointWithAgencySentInvitationsLink(agencyInvitationsUrl(arn))
+    behave like anEndpointWithAgencySentInvitationsLink(
+      agencyInvitationsUrl(arn))
   }
 
   "POST of /sandbox/agencies/:arn/invitations/sent" should {
@@ -56,7 +67,8 @@ class SandboxAgencyInvitationsISpec
       val response = agencySendInvitation(arn, validInvitation)
 
       response.status shouldBe 201
-      response.header("location").get should startWith(externalUrl(agencyGetInvitationsUrl(arn)))
+      response.header("location").get should startWith(
+        externalUrl(agencyGetInvitationsUrl(arn)))
     }
   }
 
@@ -75,8 +87,10 @@ class SandboxAgencyInvitationsISpec
       val response = agencyGetSentInvitations(arn)
 
       response.status shouldBe 200
-      val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val invitationLinks = (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
+      val invitations =
+        (response.json \ "_embedded" \ "invitations").as[JsArray].value
+      val invitationLinks =
+        (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
 
       invitations.size shouldBe 2
       checkInvitation(invitations.head, testStartTime)
@@ -98,12 +112,15 @@ class SandboxAgencyInvitationsISpec
     }
   }
 
-  private def checkInvitation(invitation: JsValue, testStartTime: Long): Unit = {
+  private def checkInvitation(invitation: JsValue,
+                              testStartTime: Long): Unit = {
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val selfHref = selfLink(invitation)
-    selfHref should startWith(s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent")
-    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
+    selfHref should startWith(
+      s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent")
+    (invitation \ "_links" \ "cancel" \ "href")
+      .as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.value
     (invitation \ "service").as[String] shouldBe MtdItService
@@ -122,7 +139,9 @@ class SandboxAgencyInvitationsISpec
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
+      (response.json \ "_links" \ "self" \ "href")
+        .as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "sent" \ "href")
+        .as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
 }

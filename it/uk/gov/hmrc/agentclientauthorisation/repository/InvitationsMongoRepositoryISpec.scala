@@ -28,7 +28,10 @@ import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
+import uk.gov.hmrc.agentclientauthorisation.support.{
+  MongoApp,
+  ResetMongoBeforeTest
+}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
@@ -39,7 +42,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsMongoRepositoryISpec
-    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside with MockitoSugar
+    extends UnitSpec
+    with MongoSpecSupport
+    with ResetMongoBeforeTest
+    with Eventually
+    with Inside
+    with MockitoSugar
     with MongoApp {
 
   private val now = DateTime.now()
@@ -51,11 +59,13 @@ class InvitationsMongoRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
 
-  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+  val mockReactiveMongoComponent =
+    app.injector.instanceOf[ReactiveMongoComponent]
 
-  private def repository = new InvitationsRepository(mockReactiveMongoComponent) {
-    override def withCurrentTime[A](f: DateTime => A): A = f(now)
-  }
+  private def repository =
+    new InvitationsRepository(mockReactiveMongoComponent) {
+      override def withCurrentTime[A](f: DateTime => A): A = f(now)
+    }
 
   val ninoValue = nino1.value
 
@@ -63,7 +73,15 @@ class InvitationsMongoRepositoryISpec
 
     "create a new StatusChangedEvent of Pending" in {
 
-      inside(addInvitation((Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now))) {
+      inside(
+        addInvitation(
+          (Arn(arn),
+           Service.MtdIt,
+           mtdItId1,
+           nino1.value,
+           "ni",
+           "postcode",
+           now))) {
         case event =>
           event.arn shouldBe Arn(arn)
           event.clientId shouldBe ClientIdentifier(mtdItId1)
@@ -75,12 +93,21 @@ class InvitationsMongoRepositoryISpec
     "create a new StatusChangedEvent which can be found using a reconstructed id" in {
 
       val invitation: model.Invitation =
-        await(addInvitation((Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now)))
+        await(
+          addInvitation(
+            (Arn(arn),
+             Service.MtdIt,
+             mtdItId1,
+             nino1.value,
+             "ni",
+             "postcode",
+             now)))
 
       val id: BSONObjectID = invitation.id
       val stringifiedId: String = id.stringify
       val reconstructedId: BSONObjectID = parse(stringifiedId).get
-      val foundInvitation: model.Invitation = await(repository.findById(reconstructedId)).head
+      val foundInvitation: model.Invitation =
+        await(repository.findById(reconstructedId)).head
 
       id shouldBe foundInvitation.id
     }
@@ -90,12 +117,14 @@ class InvitationsMongoRepositoryISpec
 
     "create a new StatusChangedEvent" in {
 
-      val created = addInvitation((Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now))
+      val created = addInvitation(
+        (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now))
       val updated = update(created.id, Accepted, now)
 
       inside(updated) {
         case Invitation(created.id, _, _, _, _, _, _, _, events) =>
-          events shouldBe List(StatusChangeEvent(now, Pending), StatusChangeEvent(now, Accepted))
+          events shouldBe List(StatusChangeEvent(now, Pending),
+                               StatusChangeEvent(now, Accepted))
       }
     }
   }
@@ -108,38 +137,49 @@ class InvitationsMongoRepositoryISpec
       val vrn2 = "VRN3B"
 
       val requests = addInvitations(
-        (Arn(arn), Service.MtdIt, MtdItId(saUtr1), ninoValue, "ni", "postcode-1", now),
-        (Arn(arn), Service.PersonalIncomeRecord, MtdItId(vrn2), ninoValue, "ni", "postcode-2", now)
+        (Arn(arn),
+         Service.MtdIt,
+         MtdItId(saUtr1),
+         ninoValue,
+         "ni",
+         "postcode-1",
+         now),
+        (Arn(arn),
+         Service.PersonalIncomeRecord,
+         MtdItId(vrn2),
+         ninoValue,
+         "ni",
+         "postcode-2",
+         now)
       )
       update(requests.last.id, Accepted, now)
 
       val list = listByArn(Arn(arn)).sortBy(_.clientId.value)
 
       inside(list.head) {
-        case Invitation(
-            _,
-            _,
-            Arn(`arn`),
-            Service.MtdIt,
-            _,
-            _,
-            Some("postcode-1"),
-            _,
-            List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_,
+                        _,
+                        Arn(`arn`),
+                        Service.MtdIt,
+                        _,
+                        _,
+                        Some("postcode-1"),
+                        _,
+                        List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(list(1)) {
-        case Invitation(
-            _,
-            _,
-            Arn(`arn`),
-            Service.PersonalIncomeRecord,
-            _,
-            _,
-            Some("postcode-2"),
-            _,
-            List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
+        case Invitation(_,
+                        _,
+                        Arn(`arn`),
+                        Service.PersonalIncomeRecord,
+                        _,
+                        _,
+                        Some("postcode-2"),
+                        _,
+                        List(StatusChangeEvent(date1, Pending),
+                             StatusChangeEvent(date2, Accepted))) =>
           date1 shouldBe now
           date2 shouldBe now
       }
@@ -151,19 +191,24 @@ class InvitationsMongoRepositoryISpec
 
       addInvitations(
         (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now),
-        (Arn(arn2), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode", now))
+        (Arn(arn2),
+         Service.MtdIt,
+         mtdItId1,
+         nino1.value,
+         "ni",
+         "postcode",
+         now))
 
       inside(listByArn(Arn(arn)).loneElement) {
-        case Invitation(
-            _,
-            _,
-            Arn(`arn`),
-            Service.MtdIt,
-            ClientIdentifier(`mtdItId1`),
-            _,
-            Some("postcode"),
-            _,
-            List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_,
+                        _,
+                        Arn(`arn`),
+                        Service.MtdIt,
+                        ClientIdentifier(`mtdItId1`),
+                        _,
+                        Some("postcode"),
+                        _,
+                        List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -173,8 +218,20 @@ class InvitationsMongoRepositoryISpec
       val clientId2 = MtdItId("MTD-REG-3B")
 
       addInvitations(
-        (Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-1", now),
-        (Arn(arn), Service.PersonalIncomeRecord, clientId2, nino1.value, "ni", "postcode-2", now)
+        (Arn(arn),
+         Service.MtdIt,
+         clientId1,
+         nino1.value,
+         "ni",
+         "postcode-1",
+         now),
+        (Arn(arn),
+         Service.PersonalIncomeRecord,
+         clientId2,
+         nino1.value,
+         "ni",
+         "postcode-2",
+         now)
       )
 
       val list = listByArn(Arn(arn), Some(Service.MtdIt), None, None, None)
@@ -187,9 +244,20 @@ class InvitationsMongoRepositoryISpec
       val clientId1 = MtdItId("MTD-REG-3A")
       val clientId2 = MtdItId("MTD-REG-3B")
 
-      addInvitations(
-        (Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-1", now),
-        (Arn(arn), Service.MtdIt, clientId2, nino1.value, "ni", "postcode-2", now))
+      addInvitations((Arn(arn),
+                      Service.MtdIt,
+                      clientId1,
+                      nino1.value,
+                      "ni",
+                      "postcode-1",
+                      now),
+                     (Arn(arn),
+                      Service.MtdIt,
+                      clientId2,
+                      nino1.value,
+                      "ni",
+                      "postcode-2",
+                      now))
 
       val list = listByArn(Arn(arn), None, Some(clientId1.value), None, None)
 
@@ -201,9 +269,20 @@ class InvitationsMongoRepositoryISpec
       val clientId1 = MtdItId("MTD-REG-3A")
       val clientId2 = MtdItId("MTD-REG-3B")
 
-      val invitations = addInvitations(
-        (Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-1", now),
-        (Arn(arn), Service.MtdIt, clientId2, nino1.value, "ni", "postcode-2", now))
+      val invitations = addInvitations((Arn(arn),
+                                        Service.MtdIt,
+                                        clientId1,
+                                        nino1.value,
+                                        "ni",
+                                        "postcode-1",
+                                        now),
+                                       (Arn(arn),
+                                        Service.MtdIt,
+                                        clientId2,
+                                        nino1.value,
+                                        "ni",
+                                        "postcode-2",
+                                        now))
       update(invitations.head.id, Accepted, DateTime.now())
 
       val list = listByArn(Arn(arn), None, None, Some(Pending), None)
@@ -217,22 +296,48 @@ class InvitationsMongoRepositoryISpec
       val clientId2 = MtdItId("MTD-REG-3B")
 
       val invitations = addInvitations(
-        (Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-1", now.minusDays(30)),
-        (Arn(arn), Service.MtdIt, clientId2, nino1.value, "ni", "postcode-2", now.minusDays(20)),
-        (Arn(arn), Service.MtdIt, clientId1, nino1.value, "ni", "postcode-3", now.minusDays(10))
+        (Arn(arn),
+         Service.MtdIt,
+         clientId1,
+         nino1.value,
+         "ni",
+         "postcode-1",
+         now.minusDays(30)),
+        (Arn(arn),
+         Service.MtdIt,
+         clientId2,
+         nino1.value,
+         "ni",
+         "postcode-2",
+         now.minusDays(20)),
+        (Arn(arn),
+         Service.MtdIt,
+         clientId1,
+         nino1.value,
+         "ni",
+         "postcode-3",
+         now.minusDays(10))
       )
 
       update(invitations.head.id, Expired, DateTime.now())
       update(invitations(1).id, Rejected, DateTime.now().minusDays(11))
       update(invitations(2).id, Accepted, DateTime.now().minusDays(2))
 
-      val list1 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(10).toLocalDate))
+      val list1 = listByArn(Arn(arn),
+                            None,
+                            None,
+                            None,
+                            Some(now.minusDays(10).toLocalDate))
       list1.size shouldBe 1
       list1.head.clientId.underlying shouldBe clientId1
       list1.head.postcode shouldBe Some("postcode-3")
       list1.head.status shouldBe Accepted
 
-      val list2 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(20).toLocalDate))
+      val list2 = listByArn(Arn(arn),
+                            None,
+                            None,
+                            None,
+                            Some(now.minusDays(20).toLocalDate))
       list2.size shouldBe 2
       list2.head.clientId.underlying shouldBe clientId1
       list2.head.postcode shouldBe Some("postcode-3")
@@ -241,7 +346,11 @@ class InvitationsMongoRepositoryISpec
       list2(1).postcode shouldBe Some("postcode-2")
       list2(1).status shouldBe Rejected
 
-      val list21 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(21).toLocalDate))
+      val list21 = listByArn(Arn(arn),
+                             None,
+                             None,
+                             None,
+                             Some(now.minusDays(21).toLocalDate))
       list21.size shouldBe 2
       list21.head.clientId.underlying shouldBe clientId1
       list21.head.postcode shouldBe Some("postcode-3")
@@ -250,7 +359,11 @@ class InvitationsMongoRepositoryISpec
       list21(1).postcode shouldBe Some("postcode-2")
       list21(1).status shouldBe Rejected
 
-      val list3 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(30).toLocalDate))
+      val list3 = listByArn(Arn(arn),
+                            None,
+                            None,
+                            None,
+                            Some(now.minusDays(30).toLocalDate))
       list3.size shouldBe 3
       list3.head.clientId.underlying shouldBe clientId1
       list3.head.postcode shouldBe Some("postcode-3")
@@ -262,7 +375,11 @@ class InvitationsMongoRepositoryISpec
       list3(2).postcode shouldBe Some("postcode-1")
       list3(2).status shouldBe Expired
 
-      val list0 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(9).toLocalDate))
+      val list0 = listByArn(Arn(arn),
+                            None,
+                            None,
+                            None,
+                            Some(now.minusDays(9).toLocalDate))
       list0.size shouldBe 0
 
       val list01 = listByArn(Arn(arn), None, None, None, Some(now.toLocalDate))
@@ -276,7 +393,8 @@ class InvitationsMongoRepositoryISpec
       val service = Service.MtdIt
       val postcode = "postcode"
 
-      addInvitation((Arn(arn), service, mtdItId1, nino1.value, "ni", postcode, now))
+      addInvitation(
+        (Arn(arn), service, mtdItId1, nino1.value, "ni", postcode, now))
 
       listByClientId(service, MtdItId("no-such-id")) shouldBe Nil
       listByClientId(Service.PersonalIncomeRecord, mtdItId1) shouldBe Nil
@@ -287,19 +405,19 @@ class InvitationsMongoRepositoryISpec
       val service = Service.MtdIt
       val postcode = "postcode"
 
-      addInvitation((Arn(arn), service, mtdItId1, nino1.value, "ni", postcode, now))
+      addInvitation(
+        (Arn(arn), service, mtdItId1, nino1.value, "ni", postcode, now))
 
       inside(listByClientId(service, mtdItId1).loneElement) {
-        case Invitation(
-            _,
-            _,
-            Arn(`arn`),
-            `service`,
-            mtdItId1,
-            _,
-            Some(`postcode`),
-            _,
-            List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_,
+                        _,
+                        Arn(`arn`),
+                        `service`,
+                        mtdItId1,
+                        _,
+                        Some(`postcode`),
+                        _,
+                        List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -314,7 +432,13 @@ class InvitationsMongoRepositoryISpec
       addInvitations(
         (firstAgent, service, mtdItId1, nino1.value, "ni", postcode, now),
         (secondAgent, service, mtdItId1, nino1.value, "ni", postcode, now),
-        (Arn("should-not-show-up"), Service.MtdIt, MtdItId("another-client"), nino1.value, "ni", postcode, now)
+        (Arn("should-not-show-up"),
+         Service.MtdIt,
+         MtdItId("another-client"),
+         nino1.value,
+         "ni",
+         postcode,
+         now)
       )
 
       val requests = listByClientId(service, mtdItId1).sortBy(_.arn.value)
@@ -322,30 +446,28 @@ class InvitationsMongoRepositoryISpec
       requests.size shouldBe 2
 
       inside(requests.head) {
-        case Invitation(
-            _,
-            _,
-            `firstAgent`,
-            `service`,
-            mtdItId1,
-            _,
-            Some(`postcode`),
-            _,
-            List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_,
+                        _,
+                        `firstAgent`,
+                        `service`,
+                        mtdItId1,
+                        _,
+                        Some(`postcode`),
+                        _,
+                        List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(
-            _,
-            _,
-            `secondAgent`,
-            `service`,
-            mtdItId1,
-            _,
-            Some(`postcode`),
-            _,
-            List(StatusChangeEvent(date, Pending))) =>
+        case Invitation(_,
+                        _,
+                        `secondAgent`,
+                        `service`,
+                        mtdItId1,
+                        _,
+                        Some(`postcode`),
+                        _,
+                        List(StatusChangeEvent(date, Pending))) =>
           date shouldBe now
       }
     }
@@ -353,9 +475,20 @@ class InvitationsMongoRepositoryISpec
     "return elements with the specified status" in {
 
       val invitations =
-        addInvitations(
-          (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode-1", now),
-          (Arn(arn), Service.MtdIt, mtdItId1, nino1.value, "ni", "postcode-1", now))
+        addInvitations((Arn(arn),
+                        Service.MtdIt,
+                        mtdItId1,
+                        nino1.value,
+                        "ni",
+                        "postcode-1",
+                        now),
+                       (Arn(arn),
+                        Service.MtdIt,
+                        mtdItId1,
+                        nino1.value,
+                        "ni",
+                        "postcode-1",
+                        now))
       update(invitations.head.id, Accepted, DateTime.now())
 
       val list = listByClientId(Service.MtdIt, mtdItId1, Some(Pending))
@@ -365,46 +498,51 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
-  private type Invitation = (Arn, Service, MtdItId, String, String, String, DateTime)
+  private type Invitation =
+    (Arn, Service, MtdItId, String, String, String, DateTime)
 
   private def addInvitations(invitations: Invitation*) =
     await(Future sequence invitations.map {
-      case (
-          code: Arn,
-          service: Service,
-          clientId: MtdItId,
-          suppliedClientIdValue: String,
-          suppliedClientIdType: String,
-          postcode: String,
-          startDate: DateTime) => {
-        val suppliedClientId: ClientId = ClientIdentifier(suppliedClientIdValue, suppliedClientIdType)
-        repository.create(
-          code,
-          service,
-          ClientIdentifier(clientId),
-          suppliedClientId,
-          Some(postcode),
-          startDate,
-          startDate.plusDays(20).toLocalDate)
+      case (code: Arn,
+            service: Service,
+            clientId: MtdItId,
+            suppliedClientIdValue: String,
+            suppliedClientIdType: String,
+            postcode: String,
+            startDate: DateTime) => {
+        val suppliedClientId: ClientId =
+          ClientIdentifier(suppliedClientIdValue, suppliedClientIdType)
+        repository.create(code,
+                          service,
+                          ClientIdentifier(clientId),
+                          suppliedClientId,
+                          Some(postcode),
+                          startDate,
+                          startDate.plusDays(20).toLocalDate)
       }
     })
 
-  private def addInvitation(invitations: Invitation) = addInvitations(invitations) head
+  private def addInvitation(invitations: Invitation) =
+    addInvitations(invitations) head
 
-  private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None, None))
+  private def listByArn(arn: Arn) =
+    await(repository.list(arn, None, None, None, None))
 
-  private def listByArn(
-    arn: Arn,
-    service: Option[Service],
-    clientId: Option[String],
-    status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate]) =
+  private def listByArn(arn: Arn,
+                        service: Option[Service],
+                        clientId: Option[String],
+                        status: Option[InvitationStatus],
+                        createdOnOrAfter: Option[LocalDate]) =
     await(repository.list(arn, service, clientId, status, createdOnOrAfter))
 
-  private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
+  private def listByClientId(service: Service,
+                             clientId: MtdItId,
+                             status: Option[InvitationStatus] = None) =
     await(repository.list(service, clientId, status))
 
-  private def update(id: BSONObjectID, status: InvitationStatus, updateDate: DateTime) =
+  private def update(id: BSONObjectID,
+                     status: InvitationStatus,
+                     updateDate: DateTime) =
     await(repository.update(id, status, updateDate))
 
 }

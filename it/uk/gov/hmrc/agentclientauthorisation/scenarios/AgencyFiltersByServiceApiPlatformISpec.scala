@@ -24,8 +24,14 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByServiceApiPlatformISpec
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
-    with Inside with Eventually {
+    extends FeatureSpec
+    with ScenarioHelpers
+    with GivenWhenThen
+    with Matchers
+    with MongoAppAndStubs
+    with Inspectors
+    with Inside
+    with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -41,13 +47,16 @@ class AgencyFiltersByServiceApiPlatformISpec
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService),
+                                            (client, MtdItService))
 
       Then("The agent filters by HMRC-MTD-IT")
       agencyFiltersByServiceAndExpectsResultCount(agency, 2, Service.MtdIt)
 
       Then("The agent filters by PERSONAL_INCOME_RECORD")
-      agencyFiltersByServiceAndExpectsResultCount(agency, 0, Service.PersonalIncomeRecord)
+      agencyFiltersByServiceAndExpectsResultCount(agency,
+                                                  0,
+                                                  Service.PersonalIncomeRecord)
     }
 
     scenario("on the service of PersonalIncomeRecord invitations") {
@@ -68,12 +77,17 @@ class AgencyFiltersByServiceApiPlatformISpec
       agencyFiltersByServiceAndExpectsResultCount(agency, 0, Service.MtdIt)
 
       Then("The agent filters by PERSONAL_INCOME_RECORD")
-      agencyFiltersByServiceAndExpectsResultCount(agency, 2, Service.PersonalIncomeRecord)
+      agencyFiltersByServiceAndExpectsResultCount(agency,
+                                                  2,
+                                                  Service.PersonalIncomeRecord)
     }
   }
 
-  def agencyFiltersByServiceAndExpectsResultCount(agency: AgencyApi, expectedResultCount: Int, service: Service) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("service" -> service.id))
+  def agencyFiltersByServiceAndExpectsResultCount(agency: AgencyApi,
+                                                  expectedResultCount: Int,
+                                                  service: Service) = {
+    val invitations =
+      agency.sentInvitations(filteredBy = Seq("service" -> service.id))
 
     invitations.numberOfInvitations shouldBe expectedResultCount
   }

@@ -24,8 +24,14 @@ import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByClientIdAndStatusApiPlatformISpec
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
-    with Inside with Eventually {
+    extends FeatureSpec
+    with ScenarioHelpers
+    with GivenWhenThen
+    with Matchers
+    with MongoAppAndStubs
+    with Inspectors
+    with Inside
+    with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -45,11 +51,14 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec
         .client(mtdItId1, nino)
         .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
         .anMtdItRelationshipIsCreatedWith(arn)
-      given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given()
+        .client(mtdItId2, nino2)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId2)
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends invitations to Client 1")
-      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService),
+                                            (client, MtdItService))
 
       And("Sends an invitations to Client 2")
       agency sendInvitation (nino2, MtdItService)
@@ -68,13 +77,15 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec
   }
 
   def agencyFiltersByClient1Pending(mtdItId: MtdItId, agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Pending"))
+    val invitations = agency.sentInvitations(
+      filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Pending"))
 
     invitations.numberOfInvitations shouldBe 1
   }
 
   def agencyFiltersByClient2Accepted(mtdItId: MtdItId, agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Accepted"))
+    val invitations = agency.sentInvitations(
+      filteredBy = Seq("clientId" -> mtdItId.value, "status" -> "Accepted"))
 
     invitations.numberOfInvitations shouldBe 0
   }

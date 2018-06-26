@@ -33,7 +33,8 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
   override protected def additionalConfiguration: Map[String, Any] =
     super.additionalConfiguration ++ Map(
       "microservice.whitelist.enabled" -> "true",
-      "microservice.whitelist.ips"     -> Base64.getEncoder.encodeToString("192.168.1.2,192.168.1.3".getBytes))
+      "microservice.whitelist.ips" -> Base64.getEncoder.encodeToString(
+        "192.168.1.2,192.168.1.3".getBytes))
 
   "A service endpoint" should {
     "respond with NOT_IMPLEMENTED if whitelist is enabled and there is no IP address in header" in {
@@ -80,7 +81,9 @@ class WhitelistISpec extends UnitSpec with MongoAppAndStubs {
       .isLoggedInAndIsSubscribed
 
   def authResponseFor(arn: Arn, trueClientIp: Option[String]): HttpResponse =
-    new Resource(s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent", port)
+    new Resource(
+      s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent",
+      port)
       .get()(HeaderCarrier(trueClientIp = trueClientIp))
 
 }

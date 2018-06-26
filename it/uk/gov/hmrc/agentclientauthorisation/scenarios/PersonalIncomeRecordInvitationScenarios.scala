@@ -22,8 +22,14 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino
 
 class PersonalIncomeRecordInvitationScenarios
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
-    with Inside with Eventually {
+    extends FeatureSpec
+    with ScenarioHelpers
+    with GivenWhenThen
+    with Matchers
+    with MongoAppAndStubs
+    with Inspectors
+    with Inside
+    with Eventually {
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino

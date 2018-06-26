@@ -34,12 +34,16 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasABusinessPartnerRecord()
 
-      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
+      val response = await(
+        connector.getBusinessDetails(
+          client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.postalCode shouldBe Some(
+        "AA11AA")
       response.mtdbsa shouldBe None
-      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
+      verifyTimerExistsAndBeenUpdated(
+        "ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
     "return None if the client is not registered" in {
@@ -47,7 +51,9 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasNoBusinessPartnerRecord
 
-      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino]))
+      val response = await(
+        connector.getBusinessDetails(
+          client.clientId.underlying.asInstanceOf[Nino]))
 
       response shouldBe None
     }
@@ -59,12 +65,16 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
 
-      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
+      val response = await(
+        connector.getBusinessDetails(
+          client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.postalCode shouldBe Some(
+        "AA11AA")
       response.mtdbsa shouldBe Some(mtdItId1)
-      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
+      verifyTimerExistsAndBeenUpdated(
+        "ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
     "return mtdItId if the business data is empty" in {
@@ -72,7 +82,9 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
         .client()
         .hasBusinessPartnerRecordWithEmptyBusinessData(mtdItId1)
 
-      val response = await(connector.getBusinessDetails(client.clientId.underlying.asInstanceOf[Nino])).get
+      val response = await(
+        connector.getBusinessDetails(
+          client.clientId.underlying.asInstanceOf[Nino])).get
 
       response.businessData.size shouldBe 0
       response.mtdbsa shouldBe Some(mtdItId1)
@@ -88,8 +100,10 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
-        vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
+        val vatCustomerInfo =
+          await(connector.getVatCustomerInformation(clientVrn)).get
+        vatCustomerInfo.effectiveRegistrationDate shouldBe Some(
+          LocalDate.parse("2017-04-01"))
       }
 
       "effectiveRegistrationDate is not present" in {
@@ -97,7 +111,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetails(isEffectiveRegistrationDatePresent = false)
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo =
+          await(connector.getVatCustomerInformation(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
 
@@ -106,7 +121,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
           .client(clientId = clientVrn)
           .hasVatCustomerDetailsWithNoApprovedInformation
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo =
+          await(connector.getVatCustomerInformation(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
     }
@@ -126,7 +142,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs {
 
       await(connector.getVatCustomerInformation(clientVrn))
 
-      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetVatCustomerInformation-GET")
+      verifyTimerExistsAndBeenUpdated(
+        "ConsumedAPI-DES-GetVatCustomerInformation-GET")
     }
 
     "throw Upstream5xxResponse if DES is unavailable" in {

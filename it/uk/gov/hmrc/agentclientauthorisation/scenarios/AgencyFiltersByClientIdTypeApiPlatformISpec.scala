@@ -23,8 +23,14 @@ import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByClientIdTypeApiPlatformISpec
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
-    with Inside with Eventually {
+    extends FeatureSpec
+    with ScenarioHelpers
+    with GivenWhenThen
+    with Matchers
+    with MongoAppAndStubs
+    with Inspectors
+    with Inside
+    with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -39,10 +45,13 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = client.suppliedClientId).hasABusinessPartnerRecordWithMtdItId(mtdItId)
+      given()
+        .client(clientId = client.suppliedClientId)
+        .hasABusinessPartnerRecordWithMtdItId(mtdItId)
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService),
+                                            (client, MtdItService))
 
       Then("The agent filters by clientIdType=ni")
       agencyFiltersByNi(agency)
@@ -53,13 +62,15 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec
   }
 
   def agencyFiltersByNi(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientIdType" -> "ni"))
+    val invitations =
+      agency.sentInvitations(filteredBy = Seq("clientIdType" -> "ni"))
 
     invitations.numberOfInvitations shouldBe 2
   }
 
   def agencyFiltersByMtdItId(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations(filteredBy = Seq("clientIdType" -> "mtd-it-id"))
+    val invitations =
+      agency.sentInvitations(filteredBy = Seq("clientIdType" -> "mtd-it-id"))
 
     invitations.numberOfInvitations shouldBe 0
   }

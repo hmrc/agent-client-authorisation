@@ -29,34 +29,45 @@ import scala.concurrent.{Await, Future}
 
 object Http {
 
-  def get(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    request.get()
-  }
+  def get(url: String)(implicit hc: HeaderCarrier): HttpResponse =
+    perform(url) { request =>
+      request.get()
+    }
 
-  def post(url: String, body: String, headers: Seq[(String, String)] = Seq.empty)(
-    implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+  def post(url: String,
+           body: String,
+           headers: Seq[(String, String)] = Seq.empty)(
+      implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
     request.withHeaders(headers: _*).post(body)
   }
 
-  def postEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    import play.api.http.Writeable._
-    request.post(Results.EmptyContent())
-  }
+  def postEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse =
+    perform(url) { request =>
+      import play.api.http.Writeable._
+      request.post(Results.EmptyContent())
+    }
 
-  def putEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    import play.api.http.Writeable._
-    request.put(Results.EmptyContent())
-  }
+  def putEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse =
+    perform(url) { request =>
+      import play.api.http.Writeable._
+      request.put(Results.EmptyContent())
+    }
 
-  def delete(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    request.delete()
-  }
+  def delete(url: String)(implicit hc: HeaderCarrier): HttpResponse =
+    perform(url) { request =>
+      request.delete()
+    }
 
-  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
+  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(
+      implicit hc: HeaderCarrier): WSHttpResponse =
     await(
-      fun(WS.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
+      fun(
+        WS.url(url)
+          .withHeaders(hc.headers: _*)
+          .withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
 
-  private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
+  private def await[A](future: Future[A]) =
+    Await.result(future, Duration(10, SECONDS))
 
 }
 

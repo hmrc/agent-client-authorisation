@@ -28,7 +28,9 @@ trait BasicUserAuthStubs[A] {
   me: A with WiremockAware =>
 
   def isNotLoggedIn: A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(401)))
     this
   }
 }
@@ -39,7 +41,9 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   def canonicalClientId: TaxIdentifier
 
   def isLoggedInWithMtdEnrolment: A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
                                                                                                         |    {
@@ -60,7 +64,9 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   }
 
   def isLoggedInWithNiEnrolment(nino: Nino): A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
                                                                                                         |    {
@@ -81,7 +87,9 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   }
 
   def isLoggedInWithVATEnrolment(vrn: Vrn): A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
                                                                                                         |    {
@@ -110,7 +118,9 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   protected var saAgentReference: Option[SaAgentReference] = None
 
   def isLoggedInAndIsSubscribed: A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "affinityGroup": "Agent",
                                                                                                         |  "allEnrolments": [
@@ -155,7 +165,9 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
   }
 
   def isLoggedInAndNotSubscribed: A = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise"))
+        .willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "affinityGroup": "Agent",
                                                                                                         |  "allEnrolments": [
