@@ -33,7 +33,7 @@ trait MetricsTestSupport {
   def givenCleanMetricRegistry(): Unit = {
     val registry = app.injector.instanceOf[Metrics].defaultRegistry
     for (metric <- JavaConversions
-           .asScalaIterator[String](registry.getMetrics.keySet().iterator())) {
+                    .asScalaIterator[String](registry.getMetrics.keySet().iterator())) {
       registry.remove(metric)
     }
     metricsRegistry = registry
@@ -43,8 +43,7 @@ trait MetricsTestSupport {
     val timers = metricsRegistry.getTimers
     val metrics = timers.get(s"Timer-$metric")
     if (metrics == null)
-      throw new Exception(
-        s"Metric [$metric] not found, try one of ${timers.keySet()}")
+      throw new Exception(s"Metric [$metric] not found, try one of ${timers.keySet()}")
     metrics.getCount should be >= 1L
   }
 

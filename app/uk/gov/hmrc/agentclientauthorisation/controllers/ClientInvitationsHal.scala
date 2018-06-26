@@ -33,49 +33,33 @@ trait ClientInvitationsHal {
     val link = invitation.service match {
       case Service.MtdIt =>
         routes.MtdItClientInvitationsController
-          .getInvitation(MtdItId(invitation.clientId.value),
-                         invitation.invitationId)
+          .getInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
       case Service.PersonalIncomeRecord =>
-        routes.NiClientInvitationsController.getInvitation(
-          Nino(invitation.clientId.value),
-          invitation.invitationId)
+        routes.NiClientInvitationsController.getInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
-        routes.VatClientInvitationsController.getInvitation(
-          Vrn(invitation.clientId.value),
-          invitation.invitationId)
+        routes.VatClientInvitationsController.getInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
     }
     var links = HalLinks(Vector(HalLink("self", link.url)))
 
-    agencyLink(invitation).foreach(href =>
-      links = links ++ HalLink("agency", href))
+    agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     val acceptLink = invitation.service match {
       case Service.MtdIt =>
         routes.MtdItClientInvitationsController
-          .acceptInvitation(MtdItId(invitation.clientId.value),
-                            invitation.invitationId)
+          .acceptInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
       case Service.PersonalIncomeRecord =>
-        routes.NiClientInvitationsController.acceptInvitation(
-          Nino(invitation.clientId.value),
-          invitation.invitationId)
+        routes.NiClientInvitationsController.acceptInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
-        routes.VatClientInvitationsController.acceptInvitation(
-          Vrn(invitation.clientId.value),
-          invitation.invitationId)
+        routes.VatClientInvitationsController.acceptInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
     }
     val rejectLink = invitation.service match {
       case Service.MtdIt =>
         routes.MtdItClientInvitationsController
-          .rejectInvitation(MtdItId(invitation.clientId.value),
-                            invitation.invitationId)
+          .rejectInvitation(MtdItId(invitation.clientId.value), invitation.invitationId)
       case Service.PersonalIncomeRecord =>
-        routes.NiClientInvitationsController.rejectInvitation(
-          Nino(invitation.clientId.value),
-          invitation.invitationId)
+        routes.NiClientInvitationsController.rejectInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
-        routes.VatClientInvitationsController.rejectInvitation(
-          Vrn(invitation.clientId.value),
-          invitation.invitationId)
+        routes.VatClientInvitationsController.rejectInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
 
     }
 
@@ -91,17 +75,11 @@ trait ClientInvitationsHal {
     invitations.map { i =>
       val link = i.service match {
         case Service.MtdIt =>
-          routes.MtdItClientInvitationsController.getInvitation(
-            MtdItId(i.clientId.value),
-            i.invitationId)
+          routes.MtdItClientInvitationsController.getInvitation(MtdItId(i.clientId.value), i.invitationId)
         case Service.PersonalIncomeRecord =>
-          routes.NiClientInvitationsController.getInvitation(
-            Nino(i.clientId.value),
-            i.invitationId)
+          routes.NiClientInvitationsController.getInvitation(Nino(i.clientId.value), i.invitationId)
         case Service.Vat =>
-          routes.VatClientInvitationsController.getInvitation(
-            Vrn(i.clientId.value),
-            i.invitationId)
+          routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
 
       }
       HalLink("invitations", link.toString)
@@ -123,9 +101,7 @@ trait ClientInvitationsHal {
     hal(Json.obj(), selfLink ++ Vector(HalLink("received", link.url)), Vector())
   }
 
-  def toHalResource(invitations: Seq[Invitation],
-                    clientId: ClientId,
-                    status: Option[InvitationStatus]): HalResource = {
+  def toHalResource(invitations: Seq[Invitation], clientId: ClientId, status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] =
       invitations.map(invitation => toHalResource(invitation)).toVector
 
@@ -141,8 +117,7 @@ trait ClientInvitationsHal {
           .getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
     }
 
-    val links = Vector(HalLink("self", link.url)) ++ invitationLinks(
-      invitations)
+    val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)
     hal(Json.obj(), links, Vector("invitations" -> requestResources))
   }
 

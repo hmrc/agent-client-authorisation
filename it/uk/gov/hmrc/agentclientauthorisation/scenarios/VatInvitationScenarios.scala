@@ -22,14 +22,8 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 
 class VatInvitationScenarios
-    extends FeatureSpec
-    with ScenarioHelpers
-    with GivenWhenThen
-    with Matchers
-    with MongoAppAndStubs
-    with Inspectors
-    with Inside
-    with Eventually {
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val vrn: Vrn = Vrn("101747641")
@@ -43,8 +37,7 @@ class VatInvitationScenarios
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType =
-      "vrn", clientPostcode = None)
+    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client accepts the first invitation")
     val stubs: Client =
@@ -70,8 +63,7 @@ class VatInvitationScenarios
     given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
     When("An agent sends invitations to Client")
-    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType =
-      "vrn", clientPostcode = None)
+    agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
 
     And("Client rejects the first invitation")
 

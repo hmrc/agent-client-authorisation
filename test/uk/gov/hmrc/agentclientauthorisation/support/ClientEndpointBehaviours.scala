@@ -26,15 +26,8 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{
-  InvitationsService,
-  StatusUpdateFailure
-}
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{
-  mtdItId1,
-  nino,
-  nino1
-}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino, nino1}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -63,45 +56,39 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def generator: Generator
 
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] =
-    when(
-      invitationsService.findInvitation(eqs(invitationId))(any(), any(), any()))
+    when(invitationsService.findInvitation(eqs(invitationId))(any(), any(), any()))
 
   def noInvitation: Future[None.type] = Future successful None
 
   def anInvitation(nino: Nino) =
-    TestConstants.defaultInvitation.copy(id = BSONObjectID(invitationDbId),
-                                         invitationId = invitationId,
-                                         arn = arn,
-                                         clientId = ClientIdentifier(mtdItId1),
-                                         suppliedClientId =
-                                           ClientIdentifier(nino))
+    TestConstants.defaultInvitation.copy(
+      id = BSONObjectID(invitationDbId),
+      invitationId = invitationId,
+      arn = arn,
+      clientId = ClientIdentifier(mtdItId1),
+      suppliedClientId = ClientIdentifier(nino))
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation(nino1))
 
-  def whenInvitationIsAccepted
-    : OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
-    when(
-      invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier],
-                                                           any()))
+  def whenInvitationIsAccepted: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
+    when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
-  def whenInvitationIsRejected
-    : OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
+  def whenInvitationIsRejected: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
     when(invitationsService.rejectInvitation(any[Invitation])(any()))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
-    when(
-      invitationsService.clientsReceived(any[Service], any(), eqs(None))(any()))
+    when(invitationsService.clientsReceived(any[Service], any(), eqs(None))(any()))
 
   def assertCreateITSARelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
     val details = event.detail.toSeq
     details should contain allOf ("invitationId" -> invitationId.value,
-    "agentReferenceNumber" -> arn.value,
-    "clientIdType" -> "ni",
-    "clientId" -> mtdItId1.value,
-    "service" -> "HMRC-MTD-IT")
+    "agentReferenceNumber"                       -> arn.value,
+    "clientIdType"                               -> "ni",
+    "clientId"                                   -> mtdItId1.value,
+    "service"                                    -> "HMRC-MTD-IT")
   }
 
   def assertCreateIRVRelationshipEvent(event: DataEvent) = {
@@ -109,10 +96,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     event.auditType shouldBe "AgentClientRelationshipCreated"
     val details = event.detail.toSeq
     details should contain allOf ("invitationId" -> invitationId.value,
-    "agentReferenceNumber" -> arn.value,
-    "clientIdType" -> "ni",
-    "clientId" -> nino.value,
-    "service" -> "PERSONAL-INCOME-RECORD")
+    "agentReferenceNumber"                       -> arn.value,
+    "clientIdType"                               -> "ni",
+    "clientId"                                   -> nino.value,
+    "service"                                    -> "PERSONAL-INCOME-RECORD")
   }
 
   def verifyAgentClientRelationshipCreatedAuditEvent() =

@@ -31,11 +31,7 @@ import uk.gov.hmrc.play.it.Port
 import scala.concurrent.ExecutionContext
 
 trait AppAndStubs
-    extends StartAndStopWireMock
-    with StubUtils
-    with OneServerPerSuite
-    with DataStreamStubs
-    with MetricsTestSupport
+    extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
     with Matchers {
   me: Suite with TestSuite =>
 
@@ -52,19 +48,19 @@ trait AppAndStubs
 
   protected def additionalConfiguration: Map[String, Any] =
     Map(
-      "microservice.services.auth.host" -> wiremockHost,
-      "microservice.services.auth.port" -> wiremockPort,
-      "microservice.services.agencies-fake.host" -> wiremockHost,
-      "microservice.services.agencies-fake.port" -> wiremockPort,
-      "microservice.services.relationships.host" -> wiremockHost,
-      "microservice.services.relationships.port" -> wiremockPort,
+      "microservice.services.auth.host"              -> wiremockHost,
+      "microservice.services.auth.port"              -> wiremockPort,
+      "microservice.services.agencies-fake.host"     -> wiremockHost,
+      "microservice.services.agencies-fake.port"     -> wiremockPort,
+      "microservice.services.relationships.host"     -> wiremockHost,
+      "microservice.services.relationships.port"     -> wiremockPort,
       "microservice.services.afi-relationships.host" -> wiremockHost,
       "microservice.services.afi-relationships.port" -> wiremockPort,
-      "microservice.services.des.host" -> wiremockHost,
-      "microservice.services.des.port" -> wiremockPort,
-      "auditing.enabled" -> true,
-      "auditing.consumer.baseUri.host" -> wiremockHost,
-      "auditing.consumer.baseUri.port" -> wiremockPort
+      "microservice.services.des.host"               -> wiremockHost,
+      "microservice.services.des.port"               -> wiremockPort,
+      "auditing.enabled"                             -> true,
+      "auditing.consumer.baseUri.host"               -> wiremockHost,
+      "auditing.consumer.baseUri.port"               -> wiremockPort
     )
 
   override def commonStubs(): Unit = {
@@ -76,11 +72,7 @@ trait AppAndStubs
   def nextNino = generator.nextNino
 }
 
-trait MongoAppAndStubs
-    extends AppAndStubs
-    with MongoSpecSupport
-    with ResetMongoBeforeTest
-    with Matchers {
+trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
   implicit val db: InvitationsRepository =
@@ -99,9 +91,7 @@ trait ResetMongoBeforeTest extends BeforeAndAfterEach {
     dropMongoDb()
   }
 
-  def dropMongoDb()(
-      implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global)
-    : Unit =
+  def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit =
     Awaiting.await(mongo().drop())
 }
 

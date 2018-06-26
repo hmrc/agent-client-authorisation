@@ -34,10 +34,8 @@ object Http {
       request.get()
     }
 
-  def post(url: String,
-           body: String,
-           headers: Seq[(String, String)] = Seq.empty)(
-      implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+  def post(url: String, body: String, headers: Seq[(String, String)] = Seq.empty)(
+    implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
     request.withHeaders(headers: _*).post(body)
   }
 
@@ -58,8 +56,7 @@ object Http {
       request.delete()
     }
 
-  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(
-      implicit hc: HeaderCarrier): WSHttpResponse =
+  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
     await(
       fun(
         WS.url(url)

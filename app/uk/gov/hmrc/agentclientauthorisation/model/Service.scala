@@ -18,20 +18,15 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
-import uk.gov.hmrc.domain.{
-  Nino,
-  SimpleObjectReads,
-  SimpleObjectWrites,
-  TaxIdentifier
-}
+import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 
 sealed abstract class Service(
-    val id: String,
-    val invitationIdPrefix: Char,
-    val enrolmentKey: String,
-    val supportedSuppliedClientIdType: ClientIdType[_ <: TaxIdentifier],
-    val supportedClientIdType: ClientIdType[_ <: TaxIdentifier],
-    val requiresKnownFactsCheck: Boolean) {
+  val id: String,
+  val invitationIdPrefix: Char,
+  val enrolmentKey: String,
+  val supportedSuppliedClientIdType: ClientIdType[_ <: TaxIdentifier],
+  val supportedClientIdType: ClientIdType[_ <: TaxIdentifier],
+  val requiresKnownFactsCheck: Boolean) {
 
   override def equals(that: Any): Boolean =
     that match {
@@ -42,29 +37,11 @@ sealed abstract class Service(
 
 object Service {
 
-  case object MtdIt
-      extends Service("HMRC-MTD-IT",
-                      'A',
-                      "HMRC-MTD-IT",
-                      NinoType,
-                      MtdItIdType,
-                      true)
+  case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT", NinoType, MtdItIdType, true)
 
-  case object PersonalIncomeRecord
-      extends Service("PERSONAL-INCOME-RECORD",
-                      'B',
-                      "HMRC-NI",
-                      NinoType,
-                      NinoType,
-                      false)
+  case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI", NinoType, NinoType, false)
 
-  case object Vat
-      extends Service("HMRC-MTD-VAT",
-                      'C',
-                      "HMRC-MTD-VAT",
-                      VrnType,
-                      VrnType,
-                      false)
+  case object Vat extends Service("HMRC-MTD-VAT", 'C', "HMRC-MTD-VAT", VrnType, VrnType, false)
 
   val values = Seq(MtdIt, PersonalIncomeRecord, Vat)
   def findById(id: String): Option[Service] = values.find(_.id == id)
@@ -80,10 +57,10 @@ object Service {
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](
-    val clazz: Class[T],
-    val id: String,
-    val enrolmentId: String,
-    val createUnderlying: (String) => T) {
+  val clazz: Class[T],
+  val id: String,
+  val enrolmentId: String,
+  val createUnderlying: (String) => T) {
   def isValid(value: String): Boolean
 }
 
@@ -95,18 +72,15 @@ object ClientIdType {
       .getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
 
-case object NinoType
-    extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply) {
+case object NinoType extends ClientIdType(classOf[Nino], "ni", "NINO", Nino.apply) {
   override def isValid(value: String): Boolean = Nino.isValid(value)
 }
 
-case object MtdItIdType
-    extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDITID", MtdItId.apply) {
+case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDITID", MtdItId.apply) {
   override def isValid(value: String): Boolean = MtdItId.isValid(value)
 }
 
-case object VrnType
-    extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
+case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
   override def isValid(value: String) = Vrn.isValid(value)
 }
 
@@ -114,8 +88,7 @@ case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
 
   private val clientIdType = ClientIdType.supportedTypes
     .find(_.clazz == underlying.getClass)
-    .getOrElse(throw new Exception(
-      "Invalid type for clientId " + underlying.getClass.getCanonicalName))
+    .getOrElse(throw new Exception("Invalid type for clientId " + underlying.getClass.getCanonicalName))
 
   val value: String = underlying.value
   val typeId: String = clientIdType.id
@@ -130,8 +103,7 @@ object ClientIdentifier {
   def apply(value: String, typeId: String): ClientId =
     ClientIdType.supportedTypes
       .find(_.id == typeId)
-      .getOrElse(
-        throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
+      .getOrElse(throw new IllegalArgumentException("Invalid Client Id Type: " + typeId))
       .createUnderlying(value.replaceAll("\\s", ""))
 
   implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] =

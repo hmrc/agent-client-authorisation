@@ -27,11 +27,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.{
-  MtdItIdType,
-  NinoType,
-  Service
-}
+import uk.gov.hmrc.agentclientauthorisation.model.{MtdItIdType, NinoType, Service}
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -42,11 +38,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class AuthConnectorSpec
-    extends UnitSpec
-    with MockitoSugar
-    with BeforeAndAfterEach
-    with TestData {
+class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TestData {
 
   val mockPlayAuthConnector: PlayAuthConnector = mock[PlayAuthConnector]
   val mockMetrics: Metrics = mock[Metrics]
@@ -60,17 +52,12 @@ class AuthConnectorSpec
   val agentAction: AgentAuthAction = { implicit request => implicit arn =>
     Future successful Ok
   }
-  val clientAction: ClientAuthAction = {
-    implicit request => implicit clientId =>
-      Future successful Ok
+  val clientAction: ClientAuthAction = { implicit request => implicit clientId =>
+    Future successful Ok
   }
 
-  private def agentAuthStub(
-      returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
-    when(
-      mockPlayAuthConnector.authorise(
-        any(),
-        any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any()))
+  private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any()))
       .thenReturn(returnValue)
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
@@ -155,9 +142,10 @@ class AuthConnectorSpec
     "return FORBIDDEN when the user has no HMRC-NI enrolment and Service is PersonalIncomeRecord" in {
       clientAuthStub(clientNoEnrolments)
 
-      val response: Result = await(mockAuthConnector
-        .onlyForClients(Service.PersonalIncomeRecord, MtdItIdType)(clientAction)
-        .apply(FakeRequest()))
+      val response: Result = await(
+        mockAuthConnector
+          .onlyForClients(Service.PersonalIncomeRecord, MtdItIdType)(clientAction)
+          .apply(FakeRequest()))
 
       status(response) shouldBe FORBIDDEN
     }

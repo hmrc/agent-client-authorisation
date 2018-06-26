@@ -30,36 +30,28 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
-class VatClientInvitationsController @Inject()(
-    invitationsService: InvitationsService)(implicit
-                                            metrics: Metrics,
-                                            authConnector: AuthConnector,
-                                            auditService: AuditService)
-    extends BaseClientInvitationsController[Vrn](invitationsService,
-                                                 metrics,
-                                                 authConnector,
-                                                 auditService) {
+class VatClientInvitationsController @Inject()(invitationsService: InvitationsService)(
+  implicit
+  metrics: Metrics,
+  authConnector: AuthConnector,
+  auditService: AuditService)
+    extends BaseClientInvitationsController[Vrn](invitationsService, metrics, authConnector, auditService) {
 
   override val supportedService: Service = Service.Vat
 
-  def getDetailsForClient(vrn: Vrn): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
-      getDetailsForClient(ClientIdentifier(vrn), request)
+  def getDetailsForClient(vrn: Vrn): Action[AnyContent] = onlyForClients { implicit request => implicit authVrn =>
+    getDetailsForClient(ClientIdentifier(vrn), request)
   }
 
-  def acceptInvitation(vrn: Vrn,
-                       invitationId: InvitationId): Action[AnyContent] =
+  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
     onlyForClients { implicit request => implicit authVrn =>
       acceptInvitation(ClientIdentifier(vrn), invitationId)
     }
 
-  def rejectInvitation(vrn: Vrn,
-                       invitationId: InvitationId): Action[AnyContent] =
+  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
     onlyForClients { implicit request => implicit authVrn =>
       forThisClient(ClientIdentifier(vrn)) {
-        actionInvitation(ClientIdentifier(vrn),
-                         invitationId,
-                         invitationsService.rejectInvitation)
+        actionInvitation(ClientIdentifier(vrn), invitationId, invitationsService.rejectInvitation)
       }
     }
 
@@ -68,15 +60,12 @@ class VatClientInvitationsController @Inject()(
       getInvitation(ClientIdentifier(vrn), invitationId)
     }
 
-  def getInvitations(vrn: Vrn,
-                     status: Option[InvitationStatus]): Action[AnyContent] =
+  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] =
     onlyForClients { implicit request => implicit authVrn =>
       getInvitations(ClientIdentifier(vrn), status)
     }
 
-  def onlyForClients(
-      action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result])
-    : Action[AnyContent] =
+  def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.Vat, VrnType)(action)
 
 }

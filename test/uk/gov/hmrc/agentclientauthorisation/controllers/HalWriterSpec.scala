@@ -30,9 +30,7 @@ class HalWriterSpec extends UnitSpec {
 
   "HalWriter" should {
     "write embedded resources to an array" in {
-      val res = HalResource(HalLinks.empty,
-                            teddyBear,
-                            Vector("likes" -> Vector(ball, duplo)))
+      val res = HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(ball, duplo)))
 
       val json = Json.toJson(res)(HalWriter.halWrites)
 
@@ -79,9 +77,7 @@ class HalWriterSpec extends UnitSpec {
 
     "write multiple heterogeneous elements to several arrays of size 1" in {
       val res =
-        HalResource(HalLinks.empty,
-                    teddyBear,
-                    Vector("likes" -> Vector(duplo), "hates" -> Vector(ball)))
+        HalResource(HalLinks.empty, teddyBear, Vector("likes" -> Vector(duplo), "hates" -> Vector(ball)))
 
       val json = Json.toJson(res)(HalWriter.halWrites)
 
@@ -140,9 +136,7 @@ class HalWriterSpec extends UnitSpec {
       val res = HalResource(
         HalLinks(Vector(HalLink("self", "/toys/bear"))),
         teddyBear,
-        Vector(
-          "has" -> Vector(toHalResourceWithLink(ball, "ball"),
-                          toHalResourceWithLink(duplo, "duplo")))
+        Vector("has" -> Vector(toHalResourceWithLink(ball, "ball"), toHalResourceWithLink(duplo, "duplo")))
       )
 
       val json = Json.toJson(res)(HalWriter.halWrites)

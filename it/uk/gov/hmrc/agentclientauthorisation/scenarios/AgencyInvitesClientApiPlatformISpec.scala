@@ -23,14 +23,8 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyInvitesClientApiPlatformISpec
-    extends FeatureSpec
-    with ScenarioHelpers
-    with GivenWhenThen
-    with Matchers
-    with MongoAppAndStubs
-    with Inspectors
-    with Inside
-    with Eventually {
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino
@@ -48,8 +42,7 @@ class AgencyInvitesClientApiPlatformISpec
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends 2 invitations to the Client")
-      agencySendsSeveralInvitations(agency)((client, MtdItService),
-                                            (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given()
@@ -76,8 +69,7 @@ class AgencyInvitesClientApiPlatformISpec
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("the Agency sends several invitations to the Client")
-      agencySendsSeveralInvitations(agency)((client, MtdItService),
-                                            (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given()

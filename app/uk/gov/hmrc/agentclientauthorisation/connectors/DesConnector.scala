@@ -34,13 +34,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
 import uk.gov.hmrc.http.logging.Authorization
 
-case class BusinessDetails(businessData: Array[BusinessData],
-                           mtdbsa: Option[MtdItId])
+case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
 
 case class BusinessData(businessAddressDetails: BusinessAddressDetails)
 
-case class BusinessAddressDetails(countryCode: String,
-                                  postalCode: Option[String])
+case class BusinessAddressDetails(countryCode: String, postalCode: Option[String])
 
 object BusinessDetails {
   implicit val businessAddressDetailsReads: Reads[BusinessAddressDetails] =
@@ -68,43 +66,34 @@ object VatCustomerInfo {
 
 @Singleton
 class DesConnector @Inject()(
-    @Named("des-baseUrl") baseUrl: URL,
-    @Named("des.authorizationToken") authorizationToken: String,
-    @Named("des.environment") environment: String,
-    httpGet: HttpGet,
-    metrics: Metrics)
+  @Named("des-baseUrl") baseUrl: URL,
+  @Named("des.authorizationToken") authorizationToken: String,
+  @Named("des.environment") environment: String,
+  httpGet: HttpGet,
+  metrics: Metrics)
     extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def getBusinessDetails(nino: Nino)(
-      implicit hc: HeaderCarrier,
-      ec: ExecutionContext): Future[Option[BusinessDetails]] =
+  def getBusinessDetails(
+    nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
     getWithDesHeaders[BusinessDetails](
       "getRegistrationBusinessDetailsByNino",
-      new URL(
-        baseUrl,
-        s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
+      new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
 
-  def getVatCustomerInformation(vrn: Vrn)(
-      implicit hc: HeaderCarrier,
-      ec: ExecutionContext): Future[Option[VatCustomerInfo]] = {
-    val url = new URL(
-      baseUrl,
-      s"/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
-    getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation",
-                                       url.toString)
+  def getVatCustomerInformation(
+    vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]] = {
+    val url = new URL(baseUrl, s"/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
+    getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
   }
 
   private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
-      implicit hc: HeaderCarrier,
-      ec: ExecutionContext): Future[Option[T]] = {
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Option[T]] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
     monitor(s"ConsumedAPI-DES-$apiName-GET") {
-      httpGet.GET[Option[T]](url)(implicitly[HttpReads[Option[T]]],
-                                  desHeaderCarrier,
-                                  ec)
+      httpGet.GET[Option[T]](url)(implicitly[HttpReads[Option[T]]], desHeaderCarrier, ec)
     }
   }
 }

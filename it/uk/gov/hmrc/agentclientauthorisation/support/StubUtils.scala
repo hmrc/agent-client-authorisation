@@ -35,8 +35,7 @@ trait StubUtils {
     def agentAdmin(arn: Arn, agentCode: AgentCode): AgentAdmin =
       agentAdmin(arn.value, agentCode.value)
 
-    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"),
-               clientId: ClientId = nino1): Client =
+    def client(canonicalClientId: TaxIdentifier = MtdItId("mtdItId1"), clientId: ClientId = nino1): Client =
       Client(clientId, canonicalClientId)
   }
 
@@ -47,14 +46,8 @@ trait StubUtils {
     override def wiremockBaseUrl: String = me.wiremockBaseUrl
   }
 
-  case class AgentAdmin(override val arn: String)
-      extends BaseUser
-      with AgentAuthStubs[AgentAdmin] {}
+  case class AgentAdmin(override val arn: String) extends BaseUser with AgentAuthStubs[AgentAdmin] {}
 
-  case class Client(override val clientId: ClientId,
-                    override val canonicalClientId: TaxIdentifier)
-      extends BaseUser
-      with ClientUserAuthStubs[Client]
-      with RelationshipStubs[Client]
-      with DesStubs[Client]
+  case class Client(override val clientId: ClientId, override val canonicalClientId: TaxIdentifier)
+      extends BaseUser with ClientUserAuthStubs[Client] with RelationshipStubs[Client] with DesStubs[Client]
 }

@@ -24,8 +24,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
   this: UnitSpec with AppAndStubs =>
 
-  def anEndpointAccessibleForMtdAgentsOnly(
-      makeRequest: => HttpResponse): Unit = {
+  def anEndpointAccessibleForMtdAgentsOnly(makeRequest: => HttpResponse): Unit = {
     "return 401 when the requester is an Agent but not authenticated" in {
       given().agentAdmin(RandomArn(), AgentCode("tehCode")).isNotLoggedIn
       makeRequest.status shouldBe 401
@@ -41,8 +40,7 @@ trait SecuredEndpointBehaviours extends AkkaMaterializerSpec {
     }
   }
 
-  def anEndpointAccessibleForSaClientsOnly(id: Nino)(
-      makeRequest: => HttpResponse): Unit =
+  def anEndpointAccessibleForSaClientsOnly(id: Nino)(makeRequest: => HttpResponse): Unit =
     "return 401 when the requester is not authenticated" in {
       given().client(clientId = id).isNotLoggedIn
       makeRequest.status shouldBe 401

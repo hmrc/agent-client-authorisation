@@ -18,12 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import javax.inject.Inject
 
-import play.api.http.{
-  DefaultHttpRequestHandler,
-  HttpConfiguration,
-  HttpErrorHandler,
-  HttpFilters
-}
+import play.api.http.{DefaultHttpRequestHandler, HttpConfiguration, HttpErrorHandler, HttpFilters}
 import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 
@@ -32,20 +27,16 @@ import play.api.routing.Router
   * '/agent-client-authorisation' from the URL before forwarding the request.
   * Re-add it here if necessary.
   */
-class ApiPlatformRequestHandler @Inject()(router: Router,
-                                          errorHandler: HttpErrorHandler,
-                                          configuration: HttpConfiguration,
-                                          filters: HttpFilters)
-    extends DefaultHttpRequestHandler(router,
-                                      errorHandler,
-                                      configuration,
-                                      filters) {
+class ApiPlatformRequestHandler @Inject()(
+  router: Router,
+  errorHandler: HttpErrorHandler,
+  configuration: HttpConfiguration,
+  filters: HttpFilters)
+    extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
 
-  override def handlerForRequest(
-      request: RequestHeader): (RequestHeader, Handler) =
+  override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) =
     if (isApiPlatformRequest(request)) {
-      super.handlerForRequest(
-        request.copy(path = addApiPlatformContext(request.path)))
+      super.handlerForRequest(request.copy(path = addApiPlatformContext(request.path)))
     } else {
       super.handlerForRequest(request)
     }

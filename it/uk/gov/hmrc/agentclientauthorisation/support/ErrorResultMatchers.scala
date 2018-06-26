@@ -29,8 +29,7 @@ trait ErrorResultMatchers { this: UnitSpec =>
 
   implicit def materializer: ActorMaterializer
 
-  class ErrorResultMatcher(expectedResult: Result)
-      extends Matcher[HttpResponse] {
+  class ErrorResultMatcher(expectedResult: Result) extends Matcher[HttpResponse] {
     override def apply(left: HttpResponse): MatchResult = {
       val expectedBodyJson = jsonBodyOf(expectedResult)
       val rawNegatedFailureMessage =
@@ -42,11 +41,12 @@ trait ErrorResultMatchers { this: UnitSpec =>
           rawNegatedFailureMessage)
       } else {
         Try(left.json)
-          .map(json =>
-            MatchResult(
-              json == expectedBodyJson,
-              s"""Response had body "$json" not expected body "$expectedBodyJson""",
-              rawNegatedFailureMessage))
+          .map(
+            json =>
+              MatchResult(
+                json == expectedBodyJson,
+                s"""Response had body "$json" not expected body "$expectedBodyJson""",
+                rawNegatedFailureMessage))
           .recover {
             case e: JsonMappingException =>
               MatchResult(

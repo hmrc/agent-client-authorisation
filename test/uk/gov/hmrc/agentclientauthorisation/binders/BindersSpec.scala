@@ -18,21 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation.binders
 
 import org.joda.time.LocalDate
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.binders.Binders.{
-  InvitationStatusBinder,
-  LocalDateBinder,
-  LocalDateQueryStringBinder
-}
+import uk.gov.hmrc.agentclientauthorisation.binders.Binders.{InvitationStatusBinder, LocalDateBinder, LocalDateQueryStringBinder}
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 
 class BindersSpec extends UnitSpec {
 
   "InvitationStatusBinder" should {
     "only consider the first argument" in {
-      InvitationStatusBinder.bind(
-        "status",
-        Map("status" -> Seq("Accepted", "Pending"))) shouldBe Some(
-        Right(Accepted))
+      InvitationStatusBinder.bind("status", Map("status" -> Seq("Accepted", "Pending"))) shouldBe Some(Right(Accepted))
     }
 
     "reject unknown status" in {
@@ -48,8 +41,7 @@ class BindersSpec extends UnitSpec {
 
   "LocalDateBinder" should {
     "accept bind of valid dates" in {
-      LocalDateBinder.bind("date", "2001-01-02") shouldBe Right(
-        LocalDate.parse("2001-01-02"))
+      LocalDateBinder.bind("date", "2001-01-02") shouldBe Right(LocalDate.parse("2001-01-02"))
     }
     "reject bind of invalid dates" in {
       LocalDateBinder.bind("date", "01-01-02").isLeft shouldBe true

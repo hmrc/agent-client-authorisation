@@ -34,8 +34,7 @@ class InvitationSpec extends UnitSpec {
         arn = Arn("myAgency"),
         service = Service.MtdIt,
         postcode = Some("A11 1AA"),
-        events = List(StatusChangeEvent(parse(created), Pending),
-                      StatusChangeEvent(parse(lastUpdated), Accepted))
+        events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
       )
 
       val json = toJson(invitation)

@@ -46,23 +46,19 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq()
       }
-      tested.preparePatternAndVariables(
-        """/some/test/:service/:clientId/:test1""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)$", Seq(
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)$", Seq(
         "{service}",
         "{clientId}",
         "{test1}"))
-      tested.preparePatternAndVariables(
-        """/some/test/:service/:clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
         "{service}",
         "{clientId}",
         "{test1}"))
-      tested.preparePatternAndVariables(
-        """/some/test/:service/::clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
+      tested.preparePatternAndVariables("""/some/test/:service/::clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
         "{service}",
         "{:clientId}",
         "{test1}"))
-      tested.preparePatternAndVariables(
-        """/some/test/:service/clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/clientId/([^/]+)/$", Seq(
+      tested.preparePatternAndVariables("""/some/test/:service/clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/clientId/([^/]+)/$", Seq(
         "{service}",
         "{test1}"))
     }
@@ -72,53 +68,45 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
         override val keyToPatternMapping: Seq[(String, String)] = Seq()
       }
       an[IllegalArgumentException] shouldBe thrownBy {
-        tested.preparePatternAndVariables(
-          """/some/test/:service/:clientId/:service""")
+        tested.preparePatternAndVariables("""/some/test/:service/:clientId/:service""")
       }
     }
 
     "match value to known pattern and produce key with placeholders replaced" in {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq(
-          "A-{service}" -> """/some/test/:service/:clientId""",
-          "B-{service}" -> """/test/:service/bar/some""",
-          "C-{service}" -> """/test/:service/bar""",
-          "D-{service}" -> """/test/:service/""",
+          "A-{service}"            -> """/some/test/:service/:clientId""",
+          "B-{service}"            -> """/test/:service/bar/some""",
+          "C-{service}"            -> """/test/:service/bar""",
+          "D-{service}"            -> """/test/:service/""",
           "E-{clientId}-{service}" -> """/test/:service/:clientId"""
         )
       }
-      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar") shouldBe Some(
-        "C-ME")
-      tested.findMatchingKey(
-        "http://www.tax.service.hmrc.gov.uk/test/ME/bar/some") shouldBe Some(
-        "B-ME")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar") shouldBe Some("C-ME")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/bar/some") shouldBe Some("B-ME")
       tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME") shouldBe None
       tested.findMatchingKey("/some/test/ME/12616276") shouldBe Some("A-ME")
-      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/TOO") shouldBe Some(
-        "E-TOO-ME")
+      tested.findMatchingKey("http://www.tax.service.hmrc.gov.uk/test/ME/TOO") shouldBe Some("E-TOO-ME")
       tested.findMatchingKey("/test/ME/TOO/") shouldBe None
     }
 
     "match URI to known pattern and produce key with placeholders replaced" in {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq(
-          "foo-{service}" -> "/foo/agent/:arn/service/:service/client/:clientId",
-          "foo-PIR" -> "/foo/PERSONAL-INCOME-RECORD/agent/:arn/client/:clientId",
-          "foo-AFI" -> "/foo/afi/agent/:arn/client/:clientId",
+          "foo-{service}"        -> "/foo/agent/:arn/service/:service/client/:clientId",
+          "foo-PIR"              -> "/foo/PERSONAL-INCOME-RECORD/agent/:arn/client/:clientId",
+          "foo-AFI"              -> "/foo/afi/agent/:arn/client/:clientId",
           "client-foo-{service}" -> "/foo/service/:service/clientId/:clientId"
         )
       }
       tested.findMatchingKey(
         "http://foo.protected.mdtp/foo/agent/ARN123456/service/PERSONAL-INCOME-RECORD/client/GHZ8983HJ") shouldBe Some(
         "foo-PERSONAL-INCOME-RECORD")
-      tested.findMatchingKey(
-        "http://foo.protected.mdtp/foo/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some(
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/PERSONAL-INCOME-RECORD/agent/ARN123456/client/GHZ8983HJ") shouldBe Some(
         "foo-PIR")
-      tested.findMatchingKey(
-        "http://foo.protected.mdtp/foo/afi/agent/ARN123456/client/GHZ8983HJ") shouldBe Some(
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/afi/agent/ARN123456/client/GHZ8983HJ") shouldBe Some(
         "foo-AFI")
-      tested.findMatchingKey(
-        "http://foo.protected.mdtp/foo/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some(
+      tested.findMatchingKey("http://foo.protected.mdtp/foo/service/PERSONAL-INCOME-RECORD/clientId/GHZ8983HJ") shouldBe Some(
         "client-foo-PERSONAL-INCOME-RECORD")
     }
 

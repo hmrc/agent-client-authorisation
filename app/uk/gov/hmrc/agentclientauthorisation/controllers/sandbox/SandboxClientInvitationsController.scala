@@ -21,19 +21,13 @@ import javax.inject.Singleton
 import org.joda.time.DateTime.now
 import play.api.mvc.Action
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.controllers.{
-  routes => prodroutes,
-  _
-}
+import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
-class SandboxClientInvitationsController
-    extends BaseController
-    with HalWriter
-    with ClientInvitationsHal {
+class SandboxClientInvitationsController extends BaseController with HalWriter with ClientInvitationsHal {
 
   //  def getDetailsForAuthenticatedClient() = Action { implicit request =>
   //    Ok(toHalResource(HardCodedSandboxIds.clientId.value, prodroutes.ClientInvitationsController.getDetailsForAuthenticatedClient().url))

@@ -29,11 +29,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class KnownFactsCheckServiceSpec
-    extends UnitSpec
-    with MockitoSugar
-    with BeforeAndAfterEach
-    with TransitionInvitation {
+class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val desConnector: DesConnector = mock[DesConnector]
 
   val service = new KnownFactsCheckService(desConnector)
@@ -53,12 +49,9 @@ class KnownFactsCheckServiceSpec
       val vatRegDateSupplied = LocalDate.parse("2001-02-03")
 
       when(desConnector.getVatCustomerInformation(clientVrn))
-        .thenReturn(
-          Future successful Some(VatCustomerInfo(Some(vatRegDateInETMP))))
+        .thenReturn(Future successful Some(VatCustomerInfo(Some(vatRegDateInETMP))))
 
-      await(service.clientVatRegistrationDateMatches(
-        clientVrn,
-        vatRegDateSupplied)) shouldBe Some(true)
+      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe Some(true)
     }
 
     "return Some(false) if the supplied date does not match the effectiveRegistrationDate from the VAT Customer Information in ETMP" in {
@@ -66,12 +59,9 @@ class KnownFactsCheckServiceSpec
       val vatRegDateSupplied = LocalDate.parse("2001-02-03")
 
       when(desConnector.getVatCustomerInformation(clientVrn))
-        .thenReturn(
-          Future successful Some(VatCustomerInfo(Some(vatRegDateInETMP))))
+        .thenReturn(Future successful Some(VatCustomerInfo(Some(vatRegDateInETMP))))
 
-      await(service.clientVatRegistrationDateMatches(
-        clientVrn,
-        vatRegDateSupplied)) shouldBe Some(false)
+      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe Some(false)
     }
 
     "return Some(false) if the VAT Customer Information in ETMP does not contain an effectiveRegistrationDate" in {
@@ -80,9 +70,7 @@ class KnownFactsCheckServiceSpec
       when(desConnector.getVatCustomerInformation(clientVrn))
         .thenReturn(Future successful Some(VatCustomerInfo(None)))
 
-      await(service.clientVatRegistrationDateMatches(
-        clientVrn,
-        vatRegDateSupplied)) shouldBe Some(false)
+      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe Some(false)
     }
 
     "return None if there is no VAT Customer Information in ETMP (client not subscribed)" in {
@@ -91,9 +79,7 @@ class KnownFactsCheckServiceSpec
       when(desConnector.getVatCustomerInformation(clientVrn))
         .thenReturn(Future successful None)
 
-      await(service.clientVatRegistrationDateMatches(
-        clientVrn,
-        vatRegDateSupplied)) shouldBe None
+      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe None
     }
 
     "throw Upstream5xxResponse if DES is unavailable" in {
@@ -103,9 +89,7 @@ class KnownFactsCheckServiceSpec
         .thenReturn(Future failed Upstream5xxResponse("error", 502, 503))
 
       assertThrows[Upstream5xxResponse] {
-        await(
-          service.clientVatRegistrationDateMatches(clientVrn,
-                                                   vatRegDateSupplied))
+        await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied))
       }
     }
   }

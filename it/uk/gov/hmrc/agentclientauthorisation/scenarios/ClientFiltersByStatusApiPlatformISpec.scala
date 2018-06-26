@@ -24,14 +24,8 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class ClientFiltersByStatusApiPlatformISpec
-    extends FeatureSpec
-    with ScenarioHelpers
-    with GivenWhenThen
-    with Matchers
-    with MongoAppAndStubs
-    with Inspectors
-    with Inside
-    with Eventually {
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    with Inside with Eventually {
 
   implicit val arn = RandomArn()
   private implicit val agentCode = AgentCode("LMNOP123456")
@@ -51,8 +45,7 @@ class ClientFiltersByStatusApiPlatformISpec
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
 
       When("An agent sends several invitations")
-      agencySendsSeveralInvitations(agency)((client, MtdItService),
-                                            (client, MtdItService))
+      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
       given()
@@ -76,8 +69,7 @@ class ClientFiltersByStatusApiPlatformISpec
       clientFiltersByMultipleStatuses(client)
     }
 
-    scenario(
-      s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
+    scenario(s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino1, nino1, port)
 
@@ -97,10 +89,7 @@ class ClientFiltersByStatusApiPlatformISpec
       given()
         .client(clientId = nino1, canonicalClientId = nino1)
         .isLoggedInWithNiEnrolment(nino1)
-      clientsViewOfPendingInvitations(client,
-                                      PersonalIncomeRecordService,
-                                      "NI",
-                                      nino1)
+      clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
 
       When(s"the Client accepts the first Agency invitation")
       clientAcceptsFirstInvitation(client)
@@ -151,13 +140,11 @@ class ClientFiltersByStatusApiPlatformISpec
   }
 
   private def clientFiltersByMultipleStatuses(client: ClientApi): Unit = {
-    val acceptedFiltered = client.getInvitations(
-      filteredBy = Seq("status" -> "accepted", "status" -> "rejected"))
+    val acceptedFiltered = client.getInvitations(filteredBy = Seq("status" -> "accepted", "status" -> "rejected"))
     acceptedFiltered.numberOfInvitations shouldBe 1
     acceptedFiltered.firstInvitation.status shouldBe "Accepted"
 
-    val rejectedFiltered = client.getInvitations(
-      filteredBy = Seq("status" -> "rejected", "status" -> "accepted"))
+    val rejectedFiltered = client.getInvitations(filteredBy = Seq("status" -> "rejected", "status" -> "accepted"))
     rejectedFiltered.numberOfInvitations shouldBe 1
     rejectedFiltered.firstInvitation.status shouldBe "Rejected"
   }

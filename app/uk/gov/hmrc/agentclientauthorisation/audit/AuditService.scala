@@ -41,73 +41,59 @@ object AgentClientInvitationEvent extends Enumeration {
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String,
-                                         arn: Arn,
-                                         clientId: ClientId,
-                                         service: Service)(
-      implicit hc: HeaderCarrier,
-      request: Request[Any]): Unit =
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)(
+    implicit hc: HeaderCarrier,
+    request: Request[Any]): Unit =
     auditEvent(
       AgentClientInvitationEvent.AgentClientRelationshipCreated,
       "agent-client-relationship-created",
       Seq(
-        "invitationId" -> invitationId,
+        "invitationId"         -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "clientIdType" -> clientIdentifierType(clientId.value),
-        "clientId" -> clientId.value,
-        "service" -> service.id
+        "clientIdType"         -> clientIdentifierType(clientId.value),
+        "clientId"             -> clientId.value,
+        "service"              -> service.id
       )
     )
 
-  def sendInvitationExpired(invitation: Invitation)(
-      implicit hc: HeaderCarrier,
-      request: Request[Any]): Unit =
+  def sendInvitationExpired(invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any]): Unit =
     auditEvent(
       AgentClientInvitationEvent.AgentClientInvitationResponse,
       "Client responded to agent invitation",
       Seq(
-        "invitationId" -> invitation.id.stringify,
+        "invitationId"         -> invitation.id.stringify,
         "agentReferenceNumber" -> invitation.arn.value,
-        "clientIdType" -> clientIdentifierType(invitation.clientId.value),
-        "clientId" -> invitation.clientId,
-        "service" -> invitation.service.id,
-        "clientResponse" -> "Expired"
+        "clientIdType"         -> clientIdentifierType(invitation.clientId.value),
+        "clientId"             -> invitation.clientId,
+        "service"              -> invitation.service.id,
+        "clientResponse"       -> "Expired"
       )
     )
 
   private def clientIdentifierType(clientId: String): String = clientId match {
     case maybeVrn if Vrn.isValid(maybeVrn) => "vrn"
-    case maybeNinoOrMtdItd
-        if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(
-          maybeNinoOrMtdItd) =>
+    case maybeNinoOrMtdItd if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(maybeNinoOrMtdItd) =>
       "ni"
     case _ => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
-  private[audit] def auditEvent(event: AgentClientInvitationEvent,
-                                transactionName: String,
-                                details: Seq[(String, Any)] = Seq.empty)(
-      implicit hc: HeaderCarrier,
-      request: Request[Any]): Future[Unit] =
+  private[audit] def auditEvent(
+    event: AgentClientInvitationEvent,
+    transactionName: String,
+    details: Seq[(String, Any)] = Seq.empty)(implicit hc: HeaderCarrier, request: Request[Any]): Future[Unit] =
     send(createEvent(event, transactionName, details: _*))
 
-  private def createEvent(event: AgentClientInvitationEvent,
-                          transactionName: String,
-                          details: (String, Any)*)(
-      implicit hc: HeaderCarrier,
-      request: Request[Any]): DataEvent = {
+  private def createEvent(event: AgentClientInvitationEvent, transactionName: String, details: (String, Any)*)(
+    implicit hc: HeaderCarrier,
+    request: Request[Any]): DataEvent = {
 
     val detail =
       hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
     val tags = hc.toAuditTags(transactionName, request.path)
-    DataEvent(auditSource = "agent-client-authorisation",
-              auditType = event.toString,
-              tags = tags,
-              detail = detail)
+    DataEvent(auditSource = "agent-client-authorisation", auditType = event.toString, tags = tags, detail = detail)
   }
 
-  private def send(events: DataEvent*)(
-      implicit hc: HeaderCarrier): Future[Unit] =
+  private def send(events: DataEvent*)(implicit hc: HeaderCarrier): Future[Unit] =
     Future {
       events.foreach { event =>
         Try(auditConnector.sendEvent(event))

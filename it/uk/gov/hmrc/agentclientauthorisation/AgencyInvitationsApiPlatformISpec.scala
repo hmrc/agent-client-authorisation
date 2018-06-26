@@ -40,24 +40,18 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
   "GET /agencies/:arn" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyResource(arn1))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(
-      agencyUrl(arn1))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(
-      agencyUrl(arn1))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl(arn1))
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyUrl(arn1))
   }
 
   "GET /agencies/:arn/invitations" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(
-      agencyGetSentInvitations(arn1))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(
-      agencyInvitationsUrl(arn1))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(
-      agencyInvitationsUrl(arn1))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
+    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyInvitationsUrl(arn1))
+    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyInvitationsUrl(arn1))
   }
 
   "GET /agencies/:arn/invitations/sent" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(
-      agencyGetSentInvitations(arn1))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     s"return 403 NO_PERMISSION_ON_AGENCY for someone else's invitation list" in {
       given()
@@ -75,8 +69,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   }
 
   "GET /agencies/:arn/invitations/sent/:invitationId" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(
-      agencyGetSentInvitations(arn1))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
 
     "Return 404 for an invitation that doesn't exist" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
@@ -108,8 +101,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       val response =
         agencySendInvitation(arn1, validInvitation.copy(service = "sa"))
       withClue(response.body) {
-        response should matchErrorResult(
-          unsupportedService("Unsupported service \"sa\""))
+        response should matchErrorResult(unsupportedService("Unsupported service \"sa\""))
       }
     }
 
@@ -117,19 +109,17 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
       val response =
-        agencySendInvitation(arn1,
-                             validInvitation.copy(clientIdType = "MTDITID"))
+        agencySendInvitation(arn1, validInvitation.copy(clientIdType = "MTDITID"))
       withClue(response.body) {
-        response should matchErrorResult(unsupportedClientIdType(
-          "Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
+        response should matchErrorResult(
+          unsupportedClientIdType("Unsupported clientIdType \"MTDITID\", for service type \"HMRC-MTD-IT\""))
       }
     }
 
     "should not create invitation for invalid NINO" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecord()
-      agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(
-        InvalidClientId)
+      agencySendInvitation(arn1, validInvitation.copy(clientId = "NOTNINO")) should matchErrorResult(InvalidClientId)
     }
 
     "should create invitation if postcode has no spaces" in {
@@ -146,9 +136,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId()
 
-      val response = agencySendInvitation(
-        arn1,
-        validInvitation.copy(clientPostcode = Some("A A1 1A A")))
+      val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("A A1 1A A")))
       withClue(response.body) {
         response.status shouldBe 201
       }
@@ -157,8 +145,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should not create invitation if DES does not return any Business Partner Record" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = nino).hasNoBusinessPartnerRecord
-      agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(
-        ClientRegistrationNotFound)
+      agencySendInvitation(arn1, validInvitationWithPostcode) should matchErrorResult(ClientRegistrationNotFound)
     }
   }
 
@@ -166,8 +153,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     val clientNino = Nino("ZR987654C")
     val postcode = "AA11AA"
 
-    behave like anEndpointAccessibleForMtdAgentsOnly(
-      agentGetCheckItsaKnownFact(clientNino, postcode))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agentGetCheckItsaKnownFact(clientNino, postcode))
 
     "return 204 when ITSA information in ETMP has matching postcode" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
@@ -239,8 +225,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     val clientVrn = Vrn("101747641")
     val effectiveRegistrationDate = LocalDate.parse("2017-04-01")
 
-    behave like anEndpointAccessibleForMtdAgentsOnly(
-      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate))
+    behave like anEndpointAccessibleForMtdAgentsOnly(agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate))
 
     "return 204 when customer VAT information in ETMP has a matching effectiveRegistrationDate" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
@@ -255,9 +240,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given()
         .client(clientId = clientVrn)
         .hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
-      agentGetCheckVatKnownFact(
-        clientVrn,
-        effectiveRegistrationDate.plusDays(1)).status shouldBe 403
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate.plusDays(1)).status shouldBe 403
     }
 
     "return 403 when customer VAT information in ETMP but effectiveRegistrationDate is not present" in {
@@ -291,14 +274,8 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 }
 
 trait AgencyInvitationsISpec
-    extends UnitSpec
-    with MongoAppAndStubs
-    with Inspectors
-    with Inside
-    with Eventually
-    with SecuredEndpointBehaviours
-    with ApiRequests
-    with ErrorResultMatchers {
+    extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours
+    with ApiRequests with ErrorResultMatchers {
 
   protected implicit val arn1 = Arn(arn)
   protected val otherAgencyArn: Arn = Arn("98765")
@@ -329,13 +306,11 @@ trait AgencyInvitationsISpec
         .as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn1))
     }
 
-  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(
-      url: String): Unit =
+  def anEndpointThatPreventsAccessToAnotherAgenciesInvitations(url: String): Unit =
     "return 403 for someone else's invitations" in {
       given()
         .agentAdmin(otherAgencyArn, otherAgencyCode)
         .isLoggedInAndIsSubscribed
-      new Resource(url, port).get() should matchErrorResult(
-        NoPermissionOnAgency)
+      new Resource(url, port).get() should matchErrorResult(NoPermissionOnAgency)
     }
 }

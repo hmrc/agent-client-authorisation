@@ -21,23 +21,13 @@ import org.joda.time.DateTime.now
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import play.api.libs.json.{JsArray, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.support.{
-  ApiRequests,
-  MongoAppAndStubs,
-  Resource,
-  SecuredEndpointBehaviours
-}
+import uk.gov.hmrc.agentclientauthorisation.support.{ApiRequests, MongoAppAndStubs, Resource, SecuredEndpointBehaviours}
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class SandboxAgencyInvitationsISpec
-    extends UnitSpec
-    with MongoAppAndStubs
-    with SecuredEndpointBehaviours
-    with Eventually
-    with Inside
-    with ApiRequests {
+    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
   private implicit val arn = HardCodedSandboxIds.arn
 
   private val validInvitation: AgencyInvitationRequest =
@@ -58,8 +48,7 @@ class SandboxAgencyInvitationsISpec
   }
 
   "GET /sandbox/agencies/:arn/invitations" should {
-    behave like anEndpointWithAgencySentInvitationsLink(
-      agencyInvitationsUrl(arn))
+    behave like anEndpointWithAgencySentInvitationsLink(agencyInvitationsUrl(arn))
   }
 
   "POST of /sandbox/agencies/:arn/invitations/sent" should {
@@ -67,8 +56,7 @@ class SandboxAgencyInvitationsISpec
       val response = agencySendInvitation(arn, validInvitation)
 
       response.status shouldBe 201
-      response.header("location").get should startWith(
-        externalUrl(agencyGetInvitationsUrl(arn)))
+      response.header("location").get should startWith(externalUrl(agencyGetInvitationsUrl(arn)))
     }
   }
 
@@ -112,13 +100,11 @@ class SandboxAgencyInvitationsISpec
     }
   }
 
-  private def checkInvitation(invitation: JsValue,
-                              testStartTime: Long): Unit = {
+  private def checkInvitation(invitation: JsValue, testStartTime: Long): Unit = {
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val selfHref = selfLink(invitation)
-    selfHref should startWith(
-      s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent")
+    selfHref should startWith(s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent")
     (invitation \ "_links" \ "cancel" \ "href")
       .as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None

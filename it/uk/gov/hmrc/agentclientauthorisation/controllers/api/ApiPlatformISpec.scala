@@ -49,21 +49,18 @@ class ApiPlatformISpec extends UnitSpec with MongoAppAndStubs {
 
     forAllApiVersions(ramlByVersion) {
       case (version, raml) =>
-        info(
-          s"Checking API RAML documentation for version[$version] of the API")
+        info(s"Checking API RAML documentation for version[$version] of the API")
 
         withClue("RAML does not contain a valid RAML 1.0 version header") {
           raml should include("#%RAML 1.0")
         }
 
-        withClue(
-          "RAML does not contain the title 'Agent Client Authorisation API'") {
+        withClue("RAML does not contain the title 'Agent Client Authorisation API'") {
           raml should include("title: Agent Client Authorisation")
 
         }
 
-        withClue(
-          s"RAML does not contain a matching version declaration of [$version]") {
+        withClue(s"RAML does not contain a matching version declaration of [$version]") {
           raml should include(s"version: $version")
         }
     }

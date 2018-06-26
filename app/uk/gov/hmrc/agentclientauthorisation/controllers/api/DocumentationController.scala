@@ -31,10 +31,8 @@ object ApiAccess {
 }
 
 @Singleton
-class DocumentationController @Inject()(errorHandler: HttpErrorHandler,
-                                        configuration: Configuration)
-    extends uk.gov.hmrc.api.controllers.DocumentationController(
-      errorHandler = errorHandler) {
+class DocumentationController @Inject()(errorHandler: HttpErrorHandler, configuration: Configuration)
+    extends uk.gov.hmrc.api.controllers.DocumentationController(errorHandler = errorHandler) {
 
   private lazy val apiAccess = {
     val accessConfig = configuration.getConfig("api.access")

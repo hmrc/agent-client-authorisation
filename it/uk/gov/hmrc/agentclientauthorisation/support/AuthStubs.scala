@@ -44,20 +44,20 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise"))
         .willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-MTD-IT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "MTDITID",
-                                                                                                        |          "value": "${canonicalClientId.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+                                                            |{
+                                                            |  "allEnrolments": [
+                                                            |    {
+                                                            |      "key": "HMRC-MTD-IT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "MTDITID",
+                                                            |          "value": "${canonicalClientId.value}"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    }
+                                                            |  ]
+                                                            |}
        """.stripMargin)))
 
     this
@@ -67,20 +67,20 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise"))
         .willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-NI",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "NINO",
-                                                                                                        |          "value": "${nino.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+                                                            |{
+                                                            |  "allEnrolments": [
+                                                            |    {
+                                                            |      "key": "HMRC-NI",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "NINO",
+                                                            |          "value": "${nino.value}"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    }
+                                                            |  ]
+                                                            |}
        """.stripMargin)))
 
     this
@@ -90,20 +90,20 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise"))
         .willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-MTD-VAT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "VRN",
-                                                                                                        |          "value": "${vrn.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+                                                            |{
+                                                            |  "allEnrolments": [
+                                                            |    {
+                                                            |      "key": "HMRC-MTD-VAT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "VRN",
+                                                            |          "value": "${vrn.value}"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    }
+                                                            |  ]
+                                                            |}
        """.stripMargin)))
 
     this
@@ -121,45 +121,45 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise"))
         .willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "affinityGroup": "Agent",
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-AS-AGENT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "AgentReferenceNumber",
-                                                                                                        |          "value": "$arn"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    },
-                                                                                                        |    {
-                                                                                                        |      "key": "IR-PAYE-AGENT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "IrAgentReference",
-                                                                                                        |          "value": "HZ1234"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    },
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-AS-AGENT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "AnotherIdentifier",
-                                                                                                        |          "value": "not the ARN"
-                                                                                                        |        },
-                                                                                                        |        {
-                                                                                                        |          "key": "AgentReferenceNumber",
-                                                                                                        |          "value": "$arn"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+                                                            |{
+                                                            |  "affinityGroup": "Agent",
+                                                            |  "allEnrolments": [
+                                                            |    {
+                                                            |      "key": "HMRC-AS-AGENT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "AgentReferenceNumber",
+                                                            |          "value": "$arn"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    },
+                                                            |    {
+                                                            |      "key": "IR-PAYE-AGENT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "IrAgentReference",
+                                                            |          "value": "HZ1234"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    },
+                                                            |    {
+                                                            |      "key": "HMRC-AS-AGENT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "AnotherIdentifier",
+                                                            |          "value": "not the ARN"
+                                                            |        },
+                                                            |        {
+                                                            |          "key": "AgentReferenceNumber",
+                                                            |          "value": "$arn"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    }
+                                                            |  ]
+                                                            |}
        """.stripMargin)))
     this
   }
@@ -168,31 +168,31 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise"))
         .willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "affinityGroup": "Agent",
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-AGENT-AGENT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "AgentRefNumber",
-                                                                                                        |          "value": "JARN1234567"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    },
-                                                                                                        |    {
-                                                                                                        |      "key": "IR-PAYE-AGENT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "IrAgentReference",
-                                                                                                        |          "value": "HZ1234"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+                                                            |{
+                                                            |  "affinityGroup": "Agent",
+                                                            |  "allEnrolments": [
+                                                            |    {
+                                                            |      "key": "HMRC-AGENT-AGENT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "AgentRefNumber",
+                                                            |          "value": "JARN1234567"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    },
+                                                            |    {
+                                                            |      "key": "IR-PAYE-AGENT",
+                                                            |      "identifiers": [
+                                                            |        {
+                                                            |          "key": "IrAgentReference",
+                                                            |          "value": "HZ1234"
+                                                            |        }
+                                                            |      ],
+                                                            |      "state": "Activated"
+                                                            |    }
+                                                            |  ]
+                                                            |}
        """.stripMargin)))
     this
   }

@@ -25,11 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AgentInvitationValidationSpec
-    extends UnitSpec
-    with AgentInvitationValidation
-    with Results
-    with MockitoSugar
-    with AkkaMaterializerSpec {
+    extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
   private val validMtdItInvite: AgentInvitation =
     AgentInvitation("HMRC-MTD-IT", "ni", "AA123456A", Some("AN11PA"))
@@ -68,9 +64,7 @@ class AgentInvitationValidationSpec
     }
 
     "only perform NINO format validation after establishing that clientId is a NINO" in {
-      val result = responseFor(
-        validMtdItInvite.copy(clientIdType = "not nino",
-                              clientId = "not a valid NINO"))
+      val result = responseFor(validMtdItInvite.copy(clientIdType = "not nino", clientId = "not a valid NINO"))
       result is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"
     }
 

@@ -30,44 +30,34 @@ object ErrorResults {
   }
 
   val GenericUnauthorized = Unauthorized(
-    toJson(
-      ErrorBody("UNAUTHORIZED", "Bearer token is missing or not authorized.")))
+    toJson(ErrorBody("UNAUTHORIZED", "Bearer token is missing or not authorized.")))
   val AgentNotSubscribed = Forbidden(
-    toJson(
-      ErrorBody("AGENT_NOT_SUBSCRIBED",
-                "The Agent is not subscribed to Agent Services.")))
+    toJson(ErrorBody("AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")))
   val ClientRegistrationNotFound = Forbidden(
-    toJson(
-      ErrorBody("CLIENT_REGISTRATION_NOT_FOUND",
-                "The Client's MTDfB registration was not found.")))
+    toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")))
   val ClientNinoNotFound = Forbidden(
-    toJson(
-      ErrorBody("CLIENT_NINO_NOT_FOUND",
-                "There must be a NINO in the client's user profile.")))
-  val NotAnAgent = Forbidden(
-    toJson(ErrorBody("NOT_AN_AGENT", "The logged in user is not an agent.")))
+    toJson(ErrorBody("CLIENT_NINO_NOT_FOUND", "There must be a NINO in the client's user profile.")))
+  val NotAnAgent = Forbidden(toJson(ErrorBody("NOT_AN_AGENT", "The logged in user is not an agent.")))
   val NoPermissionOnAgency = Forbidden(
-    toJson(ErrorBody(
-      "NO_PERMISSION_ON_AGENCY",
-      "The logged in user is not permitted to access invitations for the specified agency.")))
+    toJson(
+      ErrorBody(
+        "NO_PERMISSION_ON_AGENCY",
+        "The logged in user is not permitted to access invitations for the specified agency.")))
   val NoPermissionOnClient = Forbidden(
-    toJson(ErrorBody(
-      "NO_PERMISSION_ON_CLIENT",
-      "The logged in client is not permitted to access invitations for the specified client.")))
+    toJson(
+      ErrorBody(
+        "NO_PERMISSION_ON_CLIENT",
+        "The logged in client is not permitted to access invitations for the specified client.")))
   val PostcodeDoesNotMatch = Forbidden(
-    toJson(ErrorBody(
-      "POSTCODE_DOES_NOT_MATCH",
-      "The submitted postcode did not match the client's postcode as held by HMRC.")))
+    toJson(
+      ErrorBody(
+        "POSTCODE_DOES_NOT_MATCH",
+        "The submitted postcode did not match the client's postcode as held by HMRC.")))
   val InvitationNotFound = NotFound(
-    toJson(
-      ErrorBody("INVITATION_NOT_FOUND",
-                "The specified invitation was not found.")))
+    toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val InvalidClientId = BadRequest(
-    toJson(
-      ErrorBody("INVALID_CLIENT_ID",
-                "The CLIENT_ID specified is not in a valid format")))
-  val InvitationExpired = Gone(
-    toJson(ErrorBody("INVITATION_EXPIRED", "Invitation has expired")))
+    toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
+  val InvitationExpired = Gone(toJson(ErrorBody("INVITATION_EXPIRED", "Invitation has expired")))
   def nonUkAddress(countryCode: String) =
     NotImplemented(toJson(ErrorBody(
       "NON_UK_ADDRESS",
@@ -81,9 +71,6 @@ object ErrorResults {
   def postcodeFormatInvalid(message: String) =
     BadRequest(toJson(ErrorBody("POSTCODE_FORMAT_INVALID", message)))
   def postcodeRequired(service: String) =
-    BadRequest(
-      toJson(
-        ErrorBody("POSTCODE_REQUIRED",
-                  s"Postcode is required for service $service")))
+    BadRequest(toJson(ErrorBody("POSTCODE_REQUIRED", s"Postcode is required for service $service")))
 
 }

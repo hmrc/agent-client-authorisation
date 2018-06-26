@@ -55,8 +55,7 @@ trait ApiTestSupport {
   }
 
   def ramlByVersion(api: JsValue): (String, String) = {
-    val (apiVersion: String, response: HttpResponse) = ramlResponseByVersion(
-      api)
+    val (apiVersion: String, response: HttpResponse) = ramlResponseByVersion(api)
     require(response.status == 200)
     apiVersion -> response.body
   }
@@ -68,9 +67,7 @@ trait ApiTestSupport {
     apiVersion -> response
   }
 
-  def forAllApiVersions[T](
-      generator: (JsValue) => T,
-      versions: List[JsValue] = DefinitionsFileApiVersions)(
-      fn: T => Unit): Unit =
+  def forAllApiVersions[T](generator: (JsValue) => T, versions: List[JsValue] = DefinitionsFileApiVersions)(
+    fn: T => Unit): Unit =
     versions.foreach(version => fn(generator(version)))
 }

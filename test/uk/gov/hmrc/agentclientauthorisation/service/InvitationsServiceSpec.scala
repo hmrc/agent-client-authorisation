@@ -46,11 +46,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InvitationsServiceSpec
-    extends UnitSpec
-    with MockitoSugar
-    with BeforeAndAfterEach
-    with TransitionInvitation {
+class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository: InvitationsRepository = mock[InvitationsRepository]
   val relationshipsConnector: RelationshipsConnector =
     mock[RelationshipsConnector]
@@ -61,12 +57,13 @@ class InvitationsServiceSpec
     override def toJson: String = ""
   }
 
-  val service = new InvitationsService(invitationsRepository,
-                                       relationshipsConnector,
-                                       desConnector,
-                                       auditService,
-                                       "10 days",
-                                       metrics)
+  val service = new InvitationsService(
+    invitationsRepository,
+    relationshipsConnector,
+    desConnector,
+    auditService,
+    "10 days",
+    metrics)
 
   val ninoAsString: String = nino1.value
 
@@ -89,9 +86,7 @@ class InvitationsServiceSpec
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID],
-                                                       any[InvitationStatus],
-                                                       any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
       }
 
     }
@@ -108,9 +103,7 @@ class InvitationsServiceSpec
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID],
-                                                       any[InvitationStatus],
-                                                       any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
       }
     }
 
@@ -118,10 +111,7 @@ class InvitationsServiceSpec
       "invitation status update succeeds" in {
         val invitation = Invitation(
           generate,
-          InvitationId.create(arn,
-                              mtdItId1.value,
-                              Service.PersonalIncomeRecord.id,
-                              DateTime.parse("2001-01-01"))('B'),
+          InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2001-01-01"))('B'),
           Arn(arn),
           Service.PersonalIncomeRecord,
           ClientIdentifier(nino1),
@@ -139,9 +129,7 @@ class InvitationsServiceSpec
 
         response shouldBe Right(acceptedTestInvitation)
 
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID],
-                                                       any[InvitationStatus],
-                                                       any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
       }
 
     }
@@ -191,16 +179,13 @@ class InvitationsServiceSpec
 
     "should not change the invitation status when relationship creation fails" in {
       val invitation = testInvitation
-      whenRelationshipIsCreated(invitation) thenReturn (Future failed ReactiveMongoException(
-        "Mongo error"))
+      whenRelationshipIsCreated(invitation) thenReturn (Future failed ReactiveMongoException("Mongo error"))
 
       intercept[ReactiveMongoException] {
         await(service.acceptInvitation(invitation))
       }
 
-      verify(invitationsRepository, never()).update(any[BSONObjectID],
-                                                    any[InvitationStatus],
-                                                    any[DateTime])(any())
+      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
     }
   }
 
@@ -328,8 +313,7 @@ class InvitationsServiceSpec
       when(invitationsRepository.find((any[String], any[JsObject])))
         .thenReturn(Future successful List(invitation))
 
-      await(service.findInvitation(invitation.invitationId)) shouldBe Some(
-        invitation)
+      await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
     }
 
     "return some invitation with status Expired when invitation is older than expiryDuration" in {
@@ -337,10 +321,7 @@ class InvitationsServiceSpec
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject])))
         .thenReturn(Future successful List(invitation))
-      when(
-        invitationsRepository.update(eqs(invitation.id),
-                                     eqs(Expired),
-                                     any[DateTime])(any()))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
         .thenReturn(testInvitationWithStatus(Expired))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
@@ -353,22 +334,19 @@ class InvitationsServiceSpec
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject])))
         .thenReturn(Future successful List(invitation))
-      when(
-        invitationsRepository.update(eqs(invitation.id),
-                                     eqs(Expired),
-                                     any[DateTime])(any()))
+      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
         .thenReturn(testInvitationWithStatus(Expired))
 
       val serviceWithUnderscoreInDuration =
-        new InvitationsService(invitationsRepository,
-                               relationshipsConnector,
-                               desConnector,
-                               auditService,
-                               "10_days",
-                               metrics)
+        new InvitationsService(
+          invitationsRepository,
+          relationshipsConnector,
+          desConnector,
+          auditService,
+          "10_days",
+          metrics)
 
-      await(serviceWithUnderscoreInDuration.findInvitation(
-        invitation.invitationId)).get.status shouldBe Expired
+      await(serviceWithUnderscoreInDuration.findInvitation(invitation.invitationId)).get.status shouldBe Expired
 
       verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
     }
@@ -408,23 +386,24 @@ class InvitationsServiceSpec
     }
   }
 
-  def serviceWithDurationAndCurrentDate(
-      invitationExpiryDuration: String): InvitationsService =
-    new InvitationsService(invitationsRepository,
-                           relationshipsConnector,
-                           desConnector,
-                           auditService,
-                           invitationExpiryDuration,
-                           metrics)
+  def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService =
+    new InvitationsService(
+      invitationsRepository,
+      relationshipsConnector,
+      desConnector,
+      auditService,
+      invitationExpiryDuration,
+      metrics)
 
   "isInvitationExpired" should {
     "return expired when duration is one day and invitation created yesterday an hour before midnight" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 days",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def yesterdayAnHourBeforeMidnight() =
         now().minusDays(1).millisOfDay().withMaximumValue().minusHours(1)
@@ -434,12 +413,13 @@ class InvitationsServiceSpec
     }
 
     "return expired when duration is one day and invitation created yesterday a millisecond before midnight" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 days",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def yesterdayAMilliBeforeMidnight() =
         now().minusDays(1).millisOfDay().withMaximumValue()
@@ -449,12 +429,13 @@ class InvitationsServiceSpec
     }
 
     "return expired when duration is one day and invitation created today" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 days",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 days",
+        metrics)
 
       def todayAtMidnight() =
         now().minusDays(1).millisOfDay().withMaximumValue().plusMillis(1)
@@ -464,12 +445,13 @@ class InvitationsServiceSpec
     }
 
     "return not expired when duration is one hour and 59 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 hour",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAt10FiftyNine() = now().withTime(10, 59, 0, 0)
@@ -479,12 +461,13 @@ class InvitationsServiceSpec
     }
 
     "return not expired when duration is one hour and 60 minutes pass" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 hour",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtEleven() = now().withTime(11, 0, 0, 0)
@@ -494,12 +477,13 @@ class InvitationsServiceSpec
     }
 
     "return expired when duration is one hour and 60 and one millisecond minutes pass" in {
-      val service = new InvitationsService(invitationsRepository,
-                                           relationshipsConnector,
-                                           desConnector,
-                                           auditService,
-                                           "1 hour",
-                                           metrics)
+      val service = new InvitationsService(
+        invitationsRepository,
+        relationshipsConnector,
+        desConnector,
+        auditService,
+        "1 hour",
+        metrics)
 
       def todayAtTen() = now().withTime(10, 0, 0, 0)
       def todayAtElevenAndOneMilli() = now().withTime(11, 0, 0, 1)
@@ -512,10 +496,7 @@ class InvitationsServiceSpec
   private def testInvitationWithStatus(status: InvitationStatus) =
     Invitation(
       generate,
-      InvitationId.create(arn,
-                          mtdItId1.value,
-                          "mtd-sa",
-                          DateTime.parse("2001-01-01"))('A'),
+      InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
       Arn(arn),
       Service.MtdIt,
       mtdItId1,
@@ -530,10 +511,7 @@ class InvitationsServiceSpec
   private def testInvitationWithDate(creationDate: () => DateTime) =
     Invitation(
       generate,
-      InvitationId.create(arn,
-                          mtdItId1.value,
-                          "mtd-sa",
-                          DateTime.parse("2001-01-01"))('A'),
+      InvitationId.create(arn, mtdItId1.value, "mtd-sa", DateTime.parse("2001-01-01"))('A'),
       Arn(arn),
       Service.MtdIt,
       ClientIdentifier(mtdItId1),
@@ -543,41 +521,30 @@ class InvitationsServiceSpec
       List(StatusChangeEvent(creationDate(), Pending))
     )
 
-  private def whenStatusIsChangedTo(
-      status: InvitationStatus): OngoingStubbing[Future[Invitation]] =
+  private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] =
     when(
       invitationsRepository
         .update(any[BSONObjectID], eqs(status), any[DateTime])(any()))
 
-  private def whenRelationshipIsCreated(
-      invitation: Invitation): OngoingStubbing[Future[Unit]] =
+  private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
     when(relationshipsConnector.createMtdItRelationship(invitation))
 
-  private def whenAfiRelationshipIsCreated(
-      invitation: Invitation): OngoingStubbing[Future[Unit]] =
-    when(
-      relationshipsConnector.createAfiRelationship(eqs(invitation),
-                                                   any[DateTime])(any()))
+  private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
+    when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any()))
 
   private def whenDesBusinessPartnerRecordExistsFor(
-      nino: Nino,
-      mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] =
+    nino: Nino,
+    mtdItId: String): OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino)).thenReturn(
       Future successful Some(
-        BusinessDetails(
-          Array(BusinessData(BusinessAddressDetails("postcode", None))),
-          Some(MtdItId(mtdItId)))))
+        BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), Some(MtdItId(mtdItId)))))
 
   private def whenDesBusinessPartnerRecordExistsWithoutMtdItIdFor(
-      nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] =
+    nino: Nino): OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino)).thenReturn(
-      Future successful Some(
-        BusinessDetails(
-          Array(BusinessData(BusinessAddressDetails("postcode", None))),
-          None)))
+      Future successful Some(BusinessDetails(Array(BusinessData(BusinessAddressDetails("postcode", None))), None)))
 
-  private def whenDesBusinessPartnerRecordDoesNotExist
-    : OngoingStubbing[Future[Option[BusinessDetails]]] =
+  private def whenDesBusinessPartnerRecordDoesNotExist: OngoingStubbing[Future[Option[BusinessDetails]]] =
     when(desConnector.getBusinessDetails(nino1))
       .thenReturn(Future successful None)
 }

@@ -25,18 +25,10 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{
-  AuthActions,
-  MicroserviceAuthConnector
-}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{
-  InvitationsService,
-  KnownFactsCheckService,
-  PostcodeService,
-  StatusUpdateFailure
-}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
@@ -47,10 +39,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import scala.concurrent.{ExecutionContext, Future}
 
 class AgencyInvitationsControllerSpec
-    extends AkkaMaterializerSpec
-    with ResettingMockitoSugar
-    with BeforeAndAfterEach
-    with TransitionInvitation
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation
     with TestData {
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
@@ -67,60 +56,40 @@ class AgencyInvitationsControllerSpec
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
-  val controller = new AgencyInvitationsController(
-    postcodeService,
-    invitationsService,
-    kfcService)(metrics, microserviceAuthConnector) {
+  val controller = new AgencyInvitationsController(postcodeService, invitationsService, kfcService)(
+    metrics,
+    microserviceAuthConnector) {
     override val authConnector: PlayAuthConnector = mockPlayAuthConnector
   }
 
-  private def agentAuthStub(
-      returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
+  private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
       mockPlayAuthConnector
-        .authorise(any(),
-                   any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(
-          any(),
-          any[ExecutionContext]))
+        .authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
 
-    when(
-      invitationsService.agencySent(eqs(arn),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None))(any()))
+    when(invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(None), eqs(None))(any()))
       .thenReturn(Future successful allInvitations)
 
     when(
-      invitationsService.agencySent(eqs(arn),
-                                    eqs(Some(Service.MtdIt)),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None))(any())).thenReturn(
-      Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
+      invitationsService.agencySent(eqs(arn), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None), eqs(None))(
+        any())).thenReturn(Future successful allInvitations.filter(_.service == "HMRC-MTD-IT"))
 
     when(
-      invitationsService.agencySent(eqs(arn),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(None),
-                                    eqs(Some(Accepted)),
-                                    eqs(None))(any()))
+      invitationsService.agencySent(eqs(arn), eqs(None), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any()))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(
-      invitationsService.agencySent(eqs(arn),
-                                    eqs(Some(Service.MtdIt)),
-                                    eqs(Some("ni")),
-                                    any[Option[String]],
-                                    eqs(Some(Accepted)),
-                                    eqs(None))(any()))
+      invitationsService.agencySent(
+        eqs(arn),
+        eqs(Some(Service.MtdIt)),
+        eqs(Some("ni")),
+        any[Option[String]],
+        eqs(Some(Accepted)),
+        eqs(None))(any()))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
   }
 
@@ -130,14 +99,9 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentAffinityAndEnrolments)
 
       val inviteCreated = TestConstants.defaultInvitation
-        .copy(id = mtdSaPendingInvitationDbId,
-              invitationId = mtdSaPendingInvitationId,
-              arn = arn,
-              clientId = mtdItId1)
+        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
-      when(
-        postcodeService.postCodeMatches(any[String](), any[String]())(any(),
-                                                                      any()))
+      when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any()))
         .thenReturn(Future successful None)
       when(
         invitationsService
@@ -148,8 +112,7 @@ class AgencyInvitationsControllerSpec
           .create(any[Arn](), any[Service](), any(), any(), any())(any()))
         .thenReturn(Future successful inviteCreated)
 
-      val response = await(
-        controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
+      val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 201
       response.header.headers.get("Location") shouldBe Some(
@@ -159,9 +122,7 @@ class AgencyInvitationsControllerSpec
     "not create an invitation when given arn is incorrect" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(
-        controller.createInvitation(new Arn("1234"))(
-          FakeRequest().withJsonBody(jsonBody)))
+      val response = await(controller.createInvitation(new Arn("1234"))(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 403
     }
@@ -173,33 +134,23 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(
-        controller.getSentInvitations(arn, None, None, None, None, None)(
-          FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
       invitationsSize(jsonBody) shouldBe 3
 
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(
-        arn,
-        mtdSaPendingInvitationId)
-      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(
-        arn,
-        mtdSaAcceptedInvitationId)
-      invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(
-        arn,
-        otherRegimePendingInvitationId)
+      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
+      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
+      invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
     }
 
     "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(
-        controller.getSentInvitations(arn, None, None, None, None, None)(
-          FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -222,24 +173,14 @@ class AgencyInvitationsControllerSpec
       val clientId = Some("AA123456A")
       val invitationStatus = Some(Accepted)
       val response = await(
-        controller.getSentInvitations(arn,
-                                      service,
-                                      clientIdType,
-                                      clientId,
-                                      invitationStatus,
-                                      None)(FakeRequest()))
+        controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
       (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
         routes.AgencyInvitationsController
-          .getSentInvitations(arn,
-                              service,
-                              clientIdType,
-                              clientId,
-                              invitationStatus,
-                              None)
+          .getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)
           .url
     }
 
@@ -253,13 +194,10 @@ class AgencyInvitationsControllerSpec
       val invitation = anInvitation()
       val cancelledInvitation = transitionInvitation(invitation, Cancelled)
 
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(
-        cancelledInvitation))
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
       whenFindingAnInvitation() thenReturn (Future successful Some(invitation))
 
-      val response = await(
-        controller.cancelInvitation(arn, mtdSaPendingInvitationId)(
-          FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 
       status(response) shouldBe 204
     }
@@ -268,13 +206,10 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(
-        StatusUpdateFailure(Cancelled, "message")))
+      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(StatusUpdateFailure(Cancelled, "message")))
       whenFindingAnInvitation() thenReturn aFutureOptionInvitation()
 
-      val response = await(
-        controller.cancelInvitation(arn, mtdSaPendingInvitationId)(
-          FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("message")
     }
 
@@ -282,13 +217,10 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(
-        new Arn("1234"))
+      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(new Arn("1234"))
 
       val response =
-        await(
-          controller.cancelInvitation(new Arn("1234"),
-                                      mtdSaPendingInvitationId)(FakeRequest()))
+        await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnAgency
     }
@@ -297,12 +229,9 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(
-        Arn("a-different-arn"))
+      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
 
-      val response = await(
-        controller.cancelInvitation(arn, mtdSaPendingInvitationId)(
-          FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe NoPermissionOnAgency
     }
 
@@ -312,9 +241,7 @@ class AgencyInvitationsControllerSpec
 
       whenFindingAnInvitation() thenReturn (Future successful None)
 
-      val response = await(
-        controller.cancelInvitation(arn, mtdSaPendingInvitationId)(
-          FakeRequest()))
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
       response shouldBe InvitationNotFound
     }
 
@@ -326,46 +253,34 @@ class AgencyInvitationsControllerSpec
 
     "return 204 if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(
-        postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(),
-                                                                        any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
         .thenReturn(Future successful None)
 
-      status(await(controller.checkKnownFactItsa(nino, postcode)(
-        FakeRequest()))) shouldBe 204
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 204
     }
 
     "return 400 if given invalid postcode" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(
-        postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(),
-                                                                        any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
         .thenReturn(Future successful Some(BadRequest))
 
-      status(await(controller.checkKnownFactItsa(nino, postcode)(
-        FakeRequest()))) shouldBe 400
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 400
     }
 
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(
-        postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(),
-                                                                        any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
         .thenReturn(Future successful Some(Forbidden))
 
-      status(await(controller.checkKnownFactItsa(nino, postcode)(
-        FakeRequest()))) shouldBe 403
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
     }
 
     "return 501 if Nino is known in ETMP but the postcode is non-UK" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(
-        postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(),
-                                                                        any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
         .thenReturn(Future successful Some(NotImplemented))
 
-      status(await(controller.checkKnownFactItsa(nino, postcode)(
-        FakeRequest()))) shouldBe 501
+      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 501
     }
   }
 
@@ -376,47 +291,34 @@ class AgencyInvitationsControllerSpec
     "return 204 if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(
-        kfcService.clientVatRegistrationDateMatches(eqs(vrn),
-                                                    eqs(suppliedDate))(any(),
-                                                                       any()))
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful Some(true))
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(
-        FakeRequest()))) shouldBe 204
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 204
     }
 
     "return 403 if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(
-        kfcService.clientVatRegistrationDateMatches(eqs(vrn),
-                                                    eqs(suppliedDate))(any(),
-                                                                       any()))
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful Some(false))
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(
-        FakeRequest()))) shouldBe 403
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
     }
 
     "return 404 if Vrn is unknown in ETMP" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(
-        kfcService.clientVatRegistrationDateMatches(eqs(vrn),
-                                                    eqs(suppliedDate))(any(),
-                                                                       any()))
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful None)
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(
-        FakeRequest()))) shouldBe 404
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 404
     }
 
     "return 403 if logged in user is not an agent with HMRC-AS-AGENT" in {
       agentAuthStub(agentNoEnrolments)
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(
-        FakeRequest()))) shouldBe 403
+      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
     }
   }
 
@@ -430,8 +332,7 @@ class AgencyInvitationsControllerSpec
   private def embeddedInvitations(agencyInvitationsSent: JsValue): JsArray =
     (agencyInvitationsSent \ "_embedded" \ "invitations").as[JsArray]
 
-  private def expectedAgencySentInvitationLink(arn: Arn,
-                                               invitationId: InvitationId) =
+  private def expectedAgencySentInvitationLink(arn: Arn, invitationId: InvitationId) =
     encodePathSegments(
       // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
       // "agent-client-authorisation",
@@ -444,16 +345,13 @@ class AgencyInvitationsControllerSpec
 
   private def anInvitation(arn: Arn = arn) =
     TestConstants.defaultInvitation
-      .copy(id = mtdSaPendingInvitationDbId,
-            invitationId = mtdSaPendingInvitationId,
-            arn = arn)
+      .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn)
 
   private def aFutureOptionInvitation(arn: Arn = arn) =
     Future successful Some(anInvitation(arn))
 
   private def whenFindingAnInvitation() =
-    when(
-      invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
+    when(invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
 
   private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) =
     when(invitationsService.cancelInvitation(any[Invitation]))

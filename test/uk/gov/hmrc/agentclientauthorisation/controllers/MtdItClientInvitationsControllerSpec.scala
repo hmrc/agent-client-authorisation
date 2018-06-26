@@ -28,10 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{
-  mtdItId1,
-  nino1
-}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -41,10 +38,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import scala.concurrent.{ExecutionContext, Future}
 
 class MtdItClientInvitationsControllerSpec
-    extends AkkaMaterializerSpec
-    with ResettingMockitoSugar
-    with ClientEndpointBehaviours
-    with TestData {
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector =
     resettingMock[MicroserviceAuthConnector]
@@ -52,10 +46,7 @@ class MtdItClientInvitationsControllerSpec
     resettingMock[PlayAuthConnector]
 
   val controller =
-    new MtdItClientInvitationsController(invitationsService)(
-      metrics,
-      microserviceAuthConnector,
-      auditService) {
+    new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -65,10 +56,7 @@ class MtdItClientInvitationsControllerSpec
   val nino: Nino = nino1
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
-    when(
-      mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(
-        any(),
-        any[ExecutionContext]))
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "getDetailsForClient" should {
@@ -88,11 +76,9 @@ class MtdItClientInvitationsControllerSpec
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-      whenInvitationIsAccepted thenReturn (Future successful Right(
-        transitionInvitation(invitation, Accepted)))
+      whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
 
-      val response = await(
-        controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response.header.status shouldBe 204
       verifyAgentClientRelationshipCreatedAuditEvent()
     }
@@ -102,8 +88,7 @@ class MtdItClientInvitationsControllerSpec
 
       whenFindingAnInvitation thenReturn noInvitation
 
-      val response = await(
-        controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response shouldBe InvitationNotFound
       verifyNoAuditEventSent()
     }
@@ -112,11 +97,9 @@ class MtdItClientInvitationsControllerSpec
       clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-      whenInvitationIsAccepted thenReturn (Future successful Left(
-        StatusUpdateFailure(Accepted, "failure message")))
+      whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted, "failure message")))
 
-      val response = await(
-        controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response shouldBe invalidInvitationStatus("failure message")
       verifyNoAuditEventSent()
     }
@@ -124,9 +107,7 @@ class MtdItClientInvitationsControllerSpec
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response = await(
-        controller.acceptInvitation(MtdItId("invalid"), invitationId)(
-          FakeRequest()))
+      val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
       verifyNoAuditEventSent()
@@ -135,8 +116,7 @@ class MtdItClientInvitationsControllerSpec
     "Return unauthorised when the user is not logged in to MDTP" in {
       clientAuthStub(failedStubForClient)
 
-      val response = await(
-        controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
       verifyNoAuditEventSent()
@@ -153,11 +133,9 @@ class MtdItClientInvitationsControllerSpec
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-      whenInvitationIsRejected thenReturn (Future successful Right(
-        transitionInvitation(invitation, Rejected)))
+      whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
 
-      val response = await(
-        controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
     }
@@ -167,8 +145,7 @@ class MtdItClientInvitationsControllerSpec
 
       whenFindingAnInvitation thenReturn noInvitation
 
-      val response = await(
-        controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe InvitationNotFound
     }
@@ -177,11 +154,9 @@ class MtdItClientInvitationsControllerSpec
       clientAuthStub(clientMtdItEnrolments)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
-      whenInvitationIsRejected thenReturn (Future successful Left(
-        StatusUpdateFailure(Rejected, "failure message")))
+      whenInvitationIsRejected thenReturn (Future successful Left(StatusUpdateFailure(Rejected, "failure message")))
 
-      val response = await(
-        controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe invalidInvitationStatus("failure message")
     }
@@ -189,9 +164,7 @@ class MtdItClientInvitationsControllerSpec
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response = await(
-        controller.rejectInvitation(MtdItId("invalid"), invitationId)(
-          FakeRequest()))
+      val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
     }
@@ -199,8 +172,7 @@ class MtdItClientInvitationsControllerSpec
     "Return unauthorised when the user is not logged in to MDTP" in {
       clientAuthStub(failedStubForClient)
 
-      val response = await(
-        controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
+      val response = await(controller.rejectInvitation(mtdItId1, invitationId)(FakeRequest()))
 
       response shouldBe GenericUnauthorized
     }
@@ -210,9 +182,7 @@ class MtdItClientInvitationsControllerSpec
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response = await(
-        controller.getInvitation(MtdItId("invalid"), invitationId)(
-          FakeRequest()))
+      val response = await(controller.getInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
     }
@@ -233,8 +203,7 @@ class MtdItClientInvitationsControllerSpec
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response = await(
-        controller.getInvitations(MtdItId("invalid"), None)(FakeRequest()))
+      val response = await(controller.getInvitations(MtdItId("invalid"), None)(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
     }
@@ -248,8 +217,7 @@ class MtdItClientInvitationsControllerSpec
             arn = arn,
             clientId = mtdItId1,
             suppliedClientId = nino1,
-            events = List(
-              StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
+            events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
       val result: Result =
         await(controller.getInvitations(mtdItId1, None)(FakeRequest()))

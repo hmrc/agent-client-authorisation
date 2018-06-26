@@ -30,12 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 @Ignore
 class SandboxClientInvitationsISpec
-    extends UnitSpec
-    with MongoAppAndStubs
-    with SecuredEndpointBehaviours
-    with Eventually
-    with Inside
-    with ApiRequests {
+    extends UnitSpec with MongoAppAndStubs with SecuredEndpointBehaviours with Eventually with Inside with ApiRequests {
 
   private implicit val arn = HardCodedSandboxIds.arn
 
@@ -89,12 +84,8 @@ class SandboxClientInvitationsISpec
         HalTestHelpers(clientGetReceivedInvitations(mtdItId1).json)
 
       response.embedded.invitations.size shouldBe 2
-      checkInvitation(mtdItId1,
-                      response.firstInvitation.underlying,
-                      testStartTime)
-      checkInvitation(mtdItId1,
-                      response.secondInvitation.underlying,
-                      testStartTime)
+      checkInvitation(mtdItId1, response.firstInvitation.underlying, testStartTime)
+      checkInvitation(mtdItId1, response.secondInvitation.underlying, testStartTime)
       response.links.selfLink shouldBe s"/agent-client-authorisation/clients/MTDITID/${mtdItId1.value}/invitations/received"
       response.embedded.invitations
         .map(_.links.selfLink) shouldBe response.links.invitations
@@ -122,16 +113,13 @@ class SandboxClientInvitationsISpec
         .as[String] shouldBe externalUrl(clientReceivedInvitationsUrl(mtdItId1))
     }
 
-  private def checkInvitation(clientId: MtdItId,
-                              invitation: JsValue,
-                              testStartTime: Long): Unit = {
+  private def checkInvitation(clientId: MtdItId, invitation: JsValue, testStartTime: Long): Unit = {
 
     def selfLink: String = (invitation \ "_links" \ "self" \ "href").as[String]
 
     implicit val dateTimeRead = RestFormats.dateTimeRead
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
-    selfLink should startWith(
-      s"/agent-client-authorisation/clients/MTDITID/${clientId.value}/invitations/received/")
+    selfLink should startWith(s"/agent-client-authorisation/clients/MTDITID/${clientId.value}/invitations/received/")
     (invitation \ "_links" \ "accept" \ "href")
       .as[String] shouldBe s"$selfLink/accept"
     (invitation \ "_links" \ "reject" \ "href")

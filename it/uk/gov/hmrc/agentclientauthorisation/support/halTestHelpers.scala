@@ -18,10 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
-import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{
-  EmbeddedInvitation,
-  EmbeddedInvitationLinks
-}
+import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.http.controllers.RestFormats
 
@@ -40,19 +37,21 @@ object HalTestHelpers {
 
 object EmbeddedSection {
 
-  case class EmbeddedInvitationLinks(selfLink: String,
-                                     cancelLink: Option[String],
-                                     acceptLink: Option[String],
-                                     rejectLink: Option[String])
-  case class EmbeddedInvitation(underlying: JsValue,
-                                links: EmbeddedInvitationLinks,
-                                arn: Arn,
-                                service: String,
-                                clientIdType: String,
-                                clientId: String,
-                                status: String,
-                                created: DateTime,
-                                lastUpdated: DateTime)
+  case class EmbeddedInvitationLinks(
+    selfLink: String,
+    cancelLink: Option[String],
+    acceptLink: Option[String],
+    rejectLink: Option[String])
+  case class EmbeddedInvitation(
+    underlying: JsValue,
+    links: EmbeddedInvitationLinks,
+    arn: Arn,
+    service: String,
+    clientIdType: String,
+    clientId: String,
+    status: String,
+    created: DateTime,
+    lastUpdated: DateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {

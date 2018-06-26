@@ -34,10 +34,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import scala.concurrent.{ExecutionContext, Future}
 
 class NiClientInvitationsControllerSpec
-    extends AkkaMaterializerSpec
-    with ResettingMockitoSugar
-    with ClientEndpointBehaviours
-    with TestData {
+    extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
 
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector =
@@ -48,10 +45,7 @@ class NiClientInvitationsControllerSpec
     resettingMock[ClientInvitationsHal]
 
   val controller =
-    new NiClientInvitationsController(invitationsService)(
-      metrics,
-      microserviceAuthConnector,
-      auditService) {
+    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -60,19 +54,14 @@ class NiClientInvitationsControllerSpec
   val generator = new Generator()
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
-    when(
-      mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(
-        any(),
-        any[ExecutionContext]))
+    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "getInvitation" should {
     "Return OK when given nino has spaces in between" in {
       clientAuthStub(clientNiEnrolments)
       val invitation = anInvitation(ninoSpace)
-        .copy(service = Service.PersonalIncomeRecord,
-              clientId = ninoSpace,
-              postcode = None)
+        .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
 
       val response = await(
@@ -85,12 +74,9 @@ class NiClientInvitationsControllerSpec
     "Return NO_CONTENT when accepting an invitation that has nino with spaces in between" in {
       clientAuthStub(clientNiEnrolments)
       val invitation = anInvitation(ninoSpace)
-        .copy(service = Service.PersonalIncomeRecord,
-              clientId = ninoSpace,
-              postcode = None)
+        .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-      whenInvitationIsAccepted thenReturn (Future successful Right(
-        transitionInvitation(invitation, Accepted)))
+      whenInvitationIsAccepted thenReturn (Future successful Right(transitionInvitation(invitation, Accepted)))
 
       val response = await(
         controller
@@ -103,12 +89,9 @@ class NiClientInvitationsControllerSpec
     "Return NO_CONTENT when rejecting an invitation that has nino with spaces in between" in {
       clientAuthStub(clientNiEnrolments)
       val invitation = anInvitation(ninoSpace)
-        .copy(service = Service.PersonalIncomeRecord,
-              clientId = ninoSpace,
-              postcode = None)
+        .copy(service = Service.PersonalIncomeRecord, clientId = ninoSpace, postcode = None)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
-      whenInvitationIsRejected thenReturn (Future successful Right(
-        transitionInvitation(invitation, Rejected)))
+      whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
 
       val response = await(
         controller

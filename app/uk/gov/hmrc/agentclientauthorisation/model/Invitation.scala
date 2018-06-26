@@ -83,11 +83,12 @@ object InvitationStatus {
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
-case class ClientIdMapping(id: BSONObjectID,
-                           canonicalClientId: String,
-                           canonicalClientIdType: String,
-                           suppliedClientId: String,
-                           suppliedClientIdType: String)
+case class ClientIdMapping(
+  id: BSONObjectID,
+  canonicalClientId: String,
+  canonicalClientIdType: String,
+  suppliedClientId: String,
+  suppliedClientIdType: String)
 
 object ClientIdMapping {
   implicit val dateWrites = RestFormats.dateTimeWrite
@@ -96,12 +97,12 @@ object ClientIdMapping {
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) =
       Json.obj(
-        "canonicalClientId" -> invitation.clientId.value,
+        "canonicalClientId"     -> invitation.clientId.value,
         "canonicalClientIdType" -> invitation.clientId.typeId,
-        "suppliedClientId" -> invitation.suppliedClientId.value,
-        "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-        "created" -> invitation.firstEvent().time,
-        "lastUpdated" -> invitation.mostRecentEvent().time
+        "suppliedClientId"      -> invitation.suppliedClientId.value,
+        "suppliedClientIdType"  -> invitation.suppliedClientId.typeId,
+        "created"               -> invitation.firstEvent().time,
+        "lastUpdated"           -> invitation.mostRecentEvent().time
       )
 
   }
@@ -110,15 +111,16 @@ object ClientIdMapping {
     ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
-case class Invitation(id: BSONObjectID = BSONObjectID.generate(),
-                      invitationId: InvitationId,
-                      arn: Arn,
-                      service: Service,
-                      clientId: ClientId,
-                      suppliedClientId: ClientId,
-                      postcode: Option[String],
-                      expiryDate: LocalDate,
-                      events: List[StatusChangeEvent]) {
+case class Invitation(
+  id: BSONObjectID = BSONObjectID.generate(),
+  invitationId: InvitationId,
+  arn: Arn,
+  service: Service,
+  clientId: ClientId,
+  suppliedClientId: ClientId,
+  postcode: Option[String],
+  expiryDate: LocalDate,
+  events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent =
     events.head
@@ -131,16 +133,16 @@ case class Invitation(id: BSONObjectID = BSONObjectID.generate(),
 
 object Invitation {
 
-  def createNew(arn: Arn,
-                service: Service,
-                clientId: ClientId,
-                suppliedClientId: ClientId,
-                postcode: Option[String],
-                startDate: DateTime,
-                expiryDate: LocalDate): Invitation =
+  def createNew(
+    arn: Arn,
+    service: Service,
+    clientId: ClientId,
+    suppliedClientId: ClientId,
+    postcode: Option[String],
+    startDate: DateTime,
+    expiryDate: LocalDate): Invitation =
     Invitation(
-      invitationId = InvitationId.create(arn.value, clientId.value, service.id)(
-        service.invitationIdPrefix),
+      invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
       service = service,
       clientId = clientId,
@@ -155,27 +157,24 @@ object Invitation {
   implicit val jsonWrites = new Writes[Invitation] {
     def writes(invitation: Invitation) =
       Json.obj(
-        "service" -> invitation.service.id,
-        "clientIdType" -> invitation.clientId.typeId,
-        "clientId" -> invitation.clientId.value,
-        "postcode" -> invitation.postcode,
-        "arn" -> invitation.arn.value,
-        "suppliedClientId" -> invitation.suppliedClientId.value,
+        "service"              -> invitation.service.id,
+        "clientIdType"         -> invitation.clientId.typeId,
+        "clientId"             -> invitation.clientId.value,
+        "postcode"             -> invitation.postcode,
+        "arn"                  -> invitation.arn.value,
+        "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-        "created" -> invitation.firstEvent().time,
-        "lastUpdated" -> invitation.mostRecentEvent().time,
-        "expiryDate" -> invitation.expiryDate,
-        "status" -> invitation.status
+        "created"              -> invitation.firstEvent().time,
+        "lastUpdated"          -> invitation.mostRecentEvent().time,
+        "expiryDate"           -> invitation.expiryDate,
+        "status"               -> invitation.status
       )
   }
 
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvitation(service: String,
-                           clientIdType: String,
-                           clientId: String,
-                           clientPostcode: Option[String]) {
+case class AgentInvitation(service: String, clientIdType: String, clientId: String, clientPostcode: Option[String]) {
 
   lazy val getService = Service.forId(service)
 }

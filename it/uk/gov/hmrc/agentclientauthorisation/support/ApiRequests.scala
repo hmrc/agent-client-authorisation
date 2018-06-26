@@ -48,8 +48,7 @@ trait ApiRequests {
 
   private def stripPrefix(s: String, prefix: String): String = {
     if (!s.startsWith(prefix))
-      throw new IllegalArgumentException(
-        s""""$s\" does not start with $prefix"""")
+      throw new IllegalArgumentException(s""""$s\" does not start with $prefix"""")
     s.substring(prefix.length)
   }
 
@@ -74,27 +73,23 @@ trait ApiRequests {
   def agencyResource(arn: Arn)(implicit port: Int) =
     new Resource(agencyUrl(arn), port).get()
 
-  def agencyGetSentInvitations(arn: Arn,
-                               filteredBy: Seq[(String, String)] = Nil)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse = {
+  def agencyGetSentInvitations(arn: Arn, filteredBy: Seq[(String, String)] = Nil)(
+    implicit port: Int,
+    hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(agencyGetInvitationsUrl(arn) + params, port).get()(hc)
   }
 
-  def agencyGetSentInvitation(arn: Arn, invitationId: String)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse =
+  def agencyGetSentInvitation(arn: Arn, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
     new Resource(agencyGetInvitationUrl(arn, invitationId), port).get()(hc)
 
-  case class AgencyInvitationRequest(service: String,
-                                     clientIdType: String,
-                                     clientId: String,
-                                     clientPostcode: Option[String]) {
+  case class AgencyInvitationRequest(
+    service: String,
+    clientIdType: String,
+    clientId: String,
+    clientPostcode: Option[String]) {
     val jsObj: JsObject = {
-      val obj = Json.obj("service" -> service,
-                         "clientIdType" -> clientIdType,
-                         "clientId" -> clientId)
+      val obj = Json.obj("service" -> service, "clientIdType" -> clientIdType, "clientId" -> clientId)
       if (clientPostcode.isDefined)
         obj + ("clientPostcode" -> JsString(clientPostcode.get))
       else obj
@@ -103,27 +98,23 @@ trait ApiRequests {
   }
 
   def agencySendInvitation(arn: Arn, invitation: AgencyInvitationRequest)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse = {
+    implicit port: Int,
+    hc: HeaderCarrier): HttpResponse = {
     val url: String = agencyGetInvitationsUrl(arn)
     new Resource(url, port).postAsJson(invitation.json)
   }
 
-  def agencyCancelInvitation(arn: Arn, invitationId: String)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse = {
+  def agencyCancelInvitation(arn: Arn, invitationId: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse = {
     val url: String = agencyGetInvitationUrl(arn, invitationId) + "/cancel"
     new Resource(url, port).putEmpty()
   }
 
   def agentGetCheckVatKnownFact(vrn: Vrn, suppliedDate: LocalDate)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse =
+    implicit port: Int,
+    hc: HeaderCarrier): HttpResponse =
     new Resource(agencyGetCheckKnownFactVat(vrn, suppliedDate), port).get()(hc)
 
-  def agentGetCheckItsaKnownFact(nino: Nino, postcode: String)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse =
+  def agentGetCheckItsaKnownFact(nino: Nino, postcode: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
     new Resource(agencyGetCheckKnownFactItsa(nino, postcode), port).get()(hc)
 
   /*
@@ -141,8 +132,7 @@ trait ApiRequests {
   def clientReceivedInvitationsUrl(clientId: ClientId) =
     s"${clientUrl(clientId)}/invitations/received"
 
-  def clientReceivedInvitationUrl(clientId: ClientId,
-                                  invitationId: String): String =
+  def clientReceivedInvitationUrl(clientId: ClientId, invitationId: String): String =
     s"${clientUrl(clientId)}/invitations/received/$invitationId"
 
   def clientsResource()(implicit port: Int) =
@@ -150,39 +140,29 @@ trait ApiRequests {
 
   def clientResource(mtdItId: MtdItId)(implicit port: Int) =
     new Resource(clientUrl(mtdItId), port).get
-  def clientGetReceivedInvitations(clientId: ClientId,
-                                   filteredBy: Seq[(String, String)] = Nil)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse = {
+  def clientGetReceivedInvitations(clientId: ClientId, filteredBy: Seq[(String, String)] = Nil)(
+    implicit port: Int,
+    hc: HeaderCarrier): HttpResponse = {
     val params = withFilterParams(filteredBy)
     new Resource(clientReceivedInvitationsUrl(clientId) + params, port)
       .get()(hc)
   }
 
   def clientGetReceivedInvitation(mtdItId: MtdItId, invitationId: String)(
-      implicit port: Int,
-      hc: HeaderCarrier): HttpResponse =
-    getReceivedInvitationResource(
-      clientReceivedInvitationUrl(mtdItId, invitationId))
+    implicit port: Int,
+    hc: HeaderCarrier): HttpResponse =
+    getReceivedInvitationResource(clientReceivedInvitationUrl(mtdItId, invitationId))
 
-  def getReceivedInvitationResource(
-      link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
+  def getReceivedInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
     new Resource(link, port).get()(hc)
 
-  def clientAcceptInvitation(mtdItId: MtdItId, invitationId: String)(
-      implicit port: Int,
-      hc: HeaderCarrier) =
-    updateInvitationResource(
-      clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/accept")
+  def clientAcceptInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier) =
+    updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/accept")
 
-  def clientRejectInvitation(mtdItId: MtdItId, invitationId: String)(
-      implicit port: Int,
-      hc: HeaderCarrier) =
-    updateInvitationResource(
-      clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/reject")
+  def clientRejectInvitation(mtdItId: MtdItId, invitationId: String)(implicit port: Int, hc: HeaderCarrier) =
+    updateInvitationResource(clientReceivedInvitationsUrl(mtdItId) + s"/$invitationId/reject")
 
-  def updateInvitationResource(link: String)(implicit port: Int,
-                                             hc: HeaderCarrier): HttpResponse =
+  def updateInvitationResource(link: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
     new Resource(link, port).putEmpty()(hc)
 
   def withFilterParams(filteredBy: Seq[(String, String)]): String =
