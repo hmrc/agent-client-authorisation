@@ -42,9 +42,8 @@ trait AppAndStubs
 
   override lazy val port: Int = Port.randomAvailable
 
-  implicit lazy val appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .configure(additionalConfiguration)
+  implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
+    .configure(additionalConfiguration)
 
   protected def additionalConfiguration: Map[String, Any] =
     Map(
@@ -75,8 +74,7 @@ trait AppAndStubs
 trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
-  implicit val db: InvitationsRepository =
-    app.injector.instanceOf[InvitationsRepository]
+  implicit val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

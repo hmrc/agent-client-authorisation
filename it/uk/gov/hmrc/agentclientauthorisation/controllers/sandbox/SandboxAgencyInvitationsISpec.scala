@@ -75,10 +75,8 @@ class SandboxAgencyInvitationsISpec
       val response = agencyGetSentInvitations(arn)
 
       response.status shouldBe 200
-      val invitations =
-        (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val invitationLinks =
-        (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
+      val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
+      val invitationLinks = (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
 
       invitations.size shouldBe 2
       checkInvitation(invitations.head, testStartTime)
@@ -105,8 +103,7 @@ class SandboxAgencyInvitationsISpec
     val beRecent = be >= testStartTime and be <= (testStartTime + 5000)
     val selfHref = selfLink(invitation)
     selfHref should startWith(s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent")
-    (invitation \ "_links" \ "cancel" \ "href")
-      .as[String] shouldBe s"$selfHref/cancel"
+    (invitation \ "_links" \ "cancel" \ "href").as[String] shouldBe s"$selfHref/cancel"
     (invitation \ "_links" \ "agency").asOpt[String] shouldBe None
     (invitation \ "arn").as[String] shouldBe arn.value
     (invitation \ "service").as[String] shouldBe MtdItService
@@ -125,9 +122,7 @@ class SandboxAgencyInvitationsISpec
       val response = new Resource(url, port).get()
 
       response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href")
-        .as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "sent" \ "href")
-        .as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
+      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
+      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
     }
 }

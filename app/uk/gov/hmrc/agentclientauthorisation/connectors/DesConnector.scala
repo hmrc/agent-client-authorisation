@@ -41,11 +41,9 @@ case class BusinessData(businessAddressDetails: BusinessAddressDetails)
 case class BusinessAddressDetails(countryCode: String, postalCode: Option[String])
 
 object BusinessDetails {
-  implicit val businessAddressDetailsReads: Reads[BusinessAddressDetails] =
-    reads[BusinessAddressDetails]
+  implicit val businessAddressDetailsReads: Reads[BusinessAddressDetails] = reads[BusinessAddressDetails]
   implicit val businessDataReads: Reads[BusinessData] = reads[BusinessData]
-  implicit val businessDetailsReads: Reads[BusinessDetails] =
-    reads[BusinessDetails]
+  implicit val businessDetailsReads: Reads[BusinessDetails] = reads[BusinessDetails]
 }
 
 case class VatCustomerInfo(effectiveRegistrationDate: Option[LocalDate])
@@ -54,9 +52,7 @@ object VatCustomerInfo {
     (__ \ "approvedInformation").readNullable[JsObject].map {
       case Some(approvedInformation) =>
         val maybeDate =
-          (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate")
-            .asOpt[String]
-            .map(LocalDate.parse)
+          (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate").asOpt[String].map(LocalDate.parse)
         VatCustomerInfo(maybeDate)
       case None =>
         VatCustomerInfo(None)

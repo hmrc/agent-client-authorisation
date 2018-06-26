@@ -62,6 +62,5 @@ class SandboxClientInvitationsController extends BaseController with HalWriter w
   //        List(StatusChangeEvent(now(), Pending))
   //      )
   //
-  override protected def agencyLink(invitation: Invitation): Option[String] =
-    None
+  override protected def agencyLink(invitation: Invitation): Option[String] = None
 }

@@ -35,8 +35,7 @@ import scala.util.{Failure, Success}
 @Singleton
 class MicroserviceMonitoringFilter @Inject()(metrics: Metrics, routes: Routes)(implicit ec: ExecutionContext)
     extends MonitoringFilter(metrics.defaultRegistry) with MicroserviceFilterSupport {
-  override def keyToPatternMapping: Seq[(String, String)] =
-    KeyToPatternMappingFromRoutes(routes, Set())
+  override def keyToPatternMapping: Seq[(String, String)] = KeyToPatternMappingFromRoutes(routes, Set())
 }
 
 object KeyToPatternMappingFromRoutes {
@@ -94,31 +93,23 @@ abstract class MonitoringFilter(kenshooRegistry: MetricRegistry)(implicit ec: Ex
         kenshooRegistry.getTimers
           .getOrDefault(timerName, kenshooRegistry.timer(timerName))
           .update(System.nanoTime() - start, NANOSECONDS)
-        kenshooRegistry.getCounters
-          .getOrDefault(counterName, kenshooRegistry.counter(counterName))
-          .inc()
+        kenshooRegistry.getCounters.getOrDefault(counterName, kenshooRegistry.counter(counterName)).inc()
 
-      case Failure(exception: Upstream5xxResponse) =>
-        recordFailure(serviceName, exception.upstreamResponseCode, start)
-      case Failure(exception: Upstream4xxResponse) =>
-        recordFailure(serviceName, exception.upstreamResponseCode, start)
-      case Failure(exception: HttpException) =>
-        recordFailure(serviceName, exception.responseCode, start)
-      case Failure(_: Throwable) => recordFailure(serviceName, 500, start)
+      case Failure(exception: Upstream5xxResponse) => recordFailure(serviceName, exception.upstreamResponseCode, start)
+      case Failure(exception: Upstream4xxResponse) => recordFailure(serviceName, exception.upstreamResponseCode, start)
+      case Failure(exception: HttpException)       => recordFailure(serviceName, exception.responseCode, start)
+      case Failure(_: Throwable)                   => recordFailure(serviceName, 500, start)
     }
   }
 
   private def recordFailure(serviceName: String, upstreamResponseCode: Int, startTime: Long): Unit = {
     val timerName = s"Timer-$serviceName"
     val counterName =
-      if (upstreamResponseCode >= 500) s"Http5xxErrorCount-$serviceName"
-      else s"Http4xxErrorCount-$serviceName"
+      if (upstreamResponseCode >= 500) s"Http5xxErrorCount-$serviceName" else s"Http4xxErrorCount-$serviceName"
     kenshooRegistry.getTimers
       .getOrDefault(timerName, kenshooRegistry.timer(timerName))
       .update(System.nanoTime() - startTime, NANOSECONDS)
-    kenshooRegistry.getCounters
-      .getOrDefault(counterName, kenshooRegistry.counter(counterName))
-      .inc()
+    kenshooRegistry.getCounters.getOrDefault(counterName, kenshooRegistry.counter(counterName)).inc()
   }
 }
 
@@ -128,10 +119,9 @@ trait MonitoringKeyMatcher {
 
   def keyToPatternMapping: Seq[(String, String)]
 
-  private lazy val patterns: Seq[(String, (Pattern, Seq[String]))] =
-    keyToPatternMapping
-      .map { case (k, p) => (k, preparePatternAndVariables(p)) }
-      .map { case (k, (p, vs)) => (k, (Pattern.compile(p), vs)) }
+  private lazy val patterns: Seq[(String, (Pattern, Seq[String]))] = keyToPatternMapping
+    .map { case (k, p) => (k, preparePatternAndVariables(p)) }
+    .map { case (k, (p, vs)) => (k, (Pattern.compile(p), vs)) }
 
   def preparePatternAndVariables(p: String): (String, Seq[String]) = {
     var pattern = p

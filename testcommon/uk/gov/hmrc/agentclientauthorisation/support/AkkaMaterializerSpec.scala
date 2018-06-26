@@ -26,8 +26,7 @@ import uk.gov.hmrc.play.test.UnitSpec
   * is starting an app (e.g. via OneAppPerSuite or OneAppPerTest) then you
   * should probably use the app's Materializer instead.
   */
-trait AkkaMaterializerSpec extends UnitSpec with BeforeAndAfterAll {
-  this: Suite =>
+trait AkkaMaterializerSpec extends UnitSpec with BeforeAndAfterAll { this: Suite =>
 
   implicit lazy val actorSystem = ActorSystem()
   implicit lazy val materializer = ActorMaterializer()

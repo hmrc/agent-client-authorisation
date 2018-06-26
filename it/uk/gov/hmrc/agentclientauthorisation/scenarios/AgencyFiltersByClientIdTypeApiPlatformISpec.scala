@@ -39,9 +39,7 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given()
-        .client(clientId = client.suppliedClientId)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId)
+      given().client(clientId = client.suppliedClientId).hasABusinessPartnerRecordWithMtdItId(mtdItId)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
@@ -55,15 +53,13 @@ class AgencyFiltersByClientIdTypeApiPlatformISpec
   }
 
   def agencyFiltersByNi(agency: AgencyApi) = {
-    val invitations =
-      agency.sentInvitations(filteredBy = Seq("clientIdType" -> "ni"))
+    val invitations = agency.sentInvitations(filteredBy = Seq("clientIdType" -> "ni"))
 
     invitations.numberOfInvitations shouldBe 2
   }
 
   def agencyFiltersByMtdItId(agency: AgencyApi) = {
-    val invitations =
-      agency.sentInvitations(filteredBy = Seq("clientIdType" -> "mtd-it-id"))
+    val invitations = agency.sentInvitations(filteredBy = Seq("clientIdType" -> "mtd-it-id"))
 
     invitations.numberOfInvitations shouldBe 0
   }

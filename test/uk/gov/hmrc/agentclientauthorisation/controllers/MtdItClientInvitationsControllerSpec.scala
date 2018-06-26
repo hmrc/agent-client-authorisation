@@ -40,10 +40,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class MtdItClientInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
   val metrics: Metrics = resettingMock[Metrics]
-  val microserviceAuthConnector: MicroserviceAuthConnector =
-    resettingMock[MicroserviceAuthConnector]
-  val mockPlayAuthConnector: PlayAuthConnector =
-    resettingMock[PlayAuthConnector]
+  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
+  val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
 
   val controller =
     new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
@@ -63,8 +61,7 @@ class MtdItClientInvitationsControllerSpec
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
       clientAuthStub(clientMtdItEnrolments)
 
-      val response =
-        await(controller.getDetailsForClient(MtdItId("invalid"))(FakeRequest()))
+      val response = await(controller.getDetailsForClient(MtdItId("invalid"))(FakeRequest()))
 
       response shouldBe NoPermissionOnClient
     }
@@ -193,8 +190,7 @@ class MtdItClientInvitationsControllerSpec
       clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
-      val result: Result =
-        await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200
 
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
@@ -219,14 +215,11 @@ class MtdItClientInvitationsControllerSpec
             suppliedClientId = nino1,
             events = List(StatusChangeEvent(new DateTime(2016, 11, 1, 11, 30), Accepted)))))
 
-      val result: Result =
-        await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
       status(result) shouldBe 200
 
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id")
-        .asOpt[String] shouldBe None
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId")
-        .asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
     }
   }
 }
