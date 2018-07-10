@@ -115,7 +115,6 @@ case class Invitation(
   service: Service,
   clientId: ClientId,
   suppliedClientId: ClientId,
-  postcode: Option[String],
   expiryDate: LocalDate,
   events: List[StatusChangeEvent]) {
 
@@ -135,7 +134,6 @@ object Invitation {
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
-    postcode: Option[String],
     startDate: DateTime,
     expiryDate: LocalDate): Invitation =
     Invitation(
@@ -144,7 +142,6 @@ object Invitation {
       service = service,
       clientId = clientId,
       suppliedClientId = suppliedClientId,
-      postcode = postcode,
       expiryDate = expiryDate,
       events = List(StatusChangeEvent(startDate, Pending))
     )
@@ -157,7 +154,6 @@ object Invitation {
         "service"              -> invitation.service.id,
         "clientIdType"         -> invitation.clientId.typeId,
         "clientId"             -> invitation.clientId.value,
-        "postcode"             -> invitation.postcode,
         "arn"                  -> invitation.arn.value,
         "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
@@ -171,7 +167,7 @@ object Invitation {
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvitation(service: String, clientIdType: String, clientId: String, clientPostcode: Option[String]) {
+case class AgentInvitation(service: String, clientIdType: String, clientId: String) {
 
   lazy val getService = Service.forId(service)
 }

@@ -62,11 +62,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
-    postcode: Option[String],
     startDate: DateTime,
     expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] = {
 
-    val invitation = Invitation.createNew(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate)
+    val invitation = Invitation.createNew(arn, service, clientId, suppliedClientId, startDate, expiryDate)
     insert(invitation).map(_ => invitation)
   }
 
@@ -150,7 +149,6 @@ object DomainFormat {
     clientIdTypeOp: Option[String],
     suppliedClientId: String,
     suppliedClientIdType: String,
-    postcode: Option[String],
     expiryDateOp: Option[LocalDate],
     events: List[StatusChangeEvent]): Invitation = {
 
@@ -167,7 +165,6 @@ object DomainFormat {
       service,
       ClientIdentifier(clientId, clientIdType),
       ClientIdentifier(suppliedClientId, suppliedClientIdType),
-      postcode,
       expiryDate,
       events
     )
@@ -181,7 +178,6 @@ object DomainFormat {
     (JsPath \ "clientIdType").readNullable[String] and
     (JsPath \ "suppliedClientId").read[String] and
     (JsPath \ "suppliedClientIdType").read[String] and
-    (JsPath \ "postcode").readNullable[String] and
     (JsPath \ "expiryDate").readNullable[LocalDate] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
@@ -194,7 +190,6 @@ object DomainFormat {
         "service"              -> invitation.service.id,
         "clientId"             -> invitation.clientId.value,
         "clientIdType"         -> invitation.clientId.typeId,
-        "postcode"             -> invitation.postcode,
         "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
         "events"               -> invitation.events,

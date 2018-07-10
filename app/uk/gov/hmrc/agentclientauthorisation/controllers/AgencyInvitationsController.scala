@@ -51,11 +51,10 @@ class AgencyInvitationsController @Inject()(
       val invitationJson: Option[JsValue] = request.body.asJson
       localWithJsonBody(
         { agentInvitation =>
-          {
-            val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
-            checkForErrors(agentInvitation.copy(clientId = normalizedClientId))
-              .flatMap(_.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
-          }
+          val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
+          checkForErrors(agentInvitation.copy(clientId = normalizedClientId))
+            .flatMap(_.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
+
         },
         invitationJson.get
       )
@@ -80,7 +79,7 @@ class AgencyInvitationsController @Inject()(
         Future successful ClientRegistrationNotFound
       case Some(taxId) =>
         invitationsService
-          .create(arn, agentInvitation.getService, taxId, agentInvitation.clientPostcode, suppliedClientId)
+          .create(arn, agentInvitation.getService, taxId, suppliedClientId)
           .map(invitation => Created.withHeaders(location(invitation)))
     }
   }
