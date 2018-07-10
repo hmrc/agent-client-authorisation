@@ -33,7 +33,6 @@ class InvitationSpec extends UnitSpec {
         invitationId = InvitationId("ABBBBBBBBBBCC"),
         arn = Arn("myAgency"),
         service = Service.MtdIt,
-        postcode = Some("A11 1AA"),
         events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
       )
 

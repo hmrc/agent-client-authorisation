@@ -102,7 +102,7 @@ class AgencyInvitationsControllerSpec
         .thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any()))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
-      when(invitationsService.create(any[Arn](), any[Service](), any(), any(), any())(any()))
+      when(invitationsService.create(any[Arn](), any[Service](), any(), any())(any()))
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))

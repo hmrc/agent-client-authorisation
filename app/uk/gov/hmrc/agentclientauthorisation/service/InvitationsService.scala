@@ -69,15 +69,14 @@ class InvitationsService @Inject()(
       case _ => Future successful None
     }
 
-  def create(arn: Arn, service: Service, clientId: ClientId, postcode: Option[String], suppliedClientId: ClientId)(
+  def create(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId)(
     implicit ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, service, clientId, suppliedClientId, postcode, startDate, expiryDate).map {
-        invitation =>
-          Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
-          invitation
+      invitationsRepository.create(arn, service, clientId, suppliedClientId, startDate, expiryDate).map { invitation =>
+        Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
+        invitation
       }
     }
   }
@@ -87,7 +86,7 @@ class InvitationsService @Inject()(
     ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     val acceptedDate = currentTime()
     invitation.status match {
-      case Pending => {
+      case Pending =>
         val future = invitation.service match {
           case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
@@ -109,7 +108,6 @@ class InvitationsService @Inject()(
                   case Success(_) => reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
                 }
           }
-      }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }

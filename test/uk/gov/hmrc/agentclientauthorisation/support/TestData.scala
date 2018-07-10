@@ -50,7 +50,6 @@ trait TestData {
       Service.MtdIt,
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
-      Some("postcode"),
       now().toLocalDate.plusDays(100),
       events = List(StatusChangeEvent(now(), Pending))
     ),
@@ -61,7 +60,6 @@ trait TestData {
       Service.MtdIt,
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
-      Some("postcode"),
       now().toLocalDate.plusDays(100),
       events = List(StatusChangeEvent(now(), Accepted))
     ),
@@ -72,7 +70,6 @@ trait TestData {
       Service.PersonalIncomeRecord,
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
-      Some("postcode"),
       now().toLocalDate.plusDays(100),
       events = List(StatusChangeEvent(now(), Pending))
     )

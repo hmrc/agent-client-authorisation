@@ -93,7 +93,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "change invitation status to Accept" when {
       "relationship already exists" in {
         val invitation = testInvitation
-        whenRelationshipIsCreated(invitation) thenReturn (Future failed { new Exception("RELATIONSHIP_ALREADY_EXISTS") })
+        whenRelationshipIsCreated(invitation) thenReturn (Future failed new Exception("RELATIONSHIP_ALREADY_EXISTS"))
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
 
@@ -113,7 +113,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           Service.PersonalIncomeRecord,
           ClientIdentifier(nino1),
           ClientIdentifier(nino1),
-          Some("A11 1AA"),
           now().toLocalDate.plusDays(10),
           List(StatusChangeEvent(now(), Pending))
         )
@@ -474,7 +473,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       Service.MtdIt,
       mtdItId1,
       ClientIdentifier(nino1),
-      Some("A11 1AA"),
       LocalDate.now().plusDays(10),
       List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
     )
@@ -489,7 +487,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       Service.MtdIt,
       ClientIdentifier(mtdItId1),
       ClientIdentifier(nino1),
-      Some("A11 1AA"),
       LocalDate.now().plusDays(10),
       List(StatusChangeEvent(creationDate(), Pending))
     )

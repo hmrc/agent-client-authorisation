@@ -42,7 +42,6 @@ object TestConstants {
     service = Service.MtdIt,
     clientId = ClientIdentifier(Nino("AA123456A")),
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),
-    postcode = Some("A11 1AA"),
     expiryDate = LocalDate.now().plusDays(10),
     events = List(StatusChangeEvent(DateTime.now(), Pending))
   )
