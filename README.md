@@ -61,7 +61,7 @@ Any unauthorised access could receive one of the following responses:
 
 
 #### Create Invitation <a name="createInvitation"></a>
-Validates the service, clientIdentifier, type and optionally postcode (only applicable for Self-Assessment) and creates an invitation.
+Validates the service, clientIdentifier and type, then creates an invitation.
 
 ```
 POST  /agencies/:arn/invitations/sent
@@ -77,8 +77,7 @@ Example Body of ITSA:
 {
   "service": "HMRC-MTD-IT",
   "clientIdType": "ni",
-  "clientId": "AB123456A",
-  "clientPostcode": "DHJ4EJ"
+  "clientId": "AB123456A"
 }
 ```
 
@@ -87,8 +86,7 @@ Example Body of VAT:
 {
   "service": "HMRC-MTD-VAT",
   "clientIdType": "vrn",
-  "clientId": "101747696",
-  "clientPostcode": null
+  "clientId": "101747696"
 }
 ```
 
@@ -97,8 +95,7 @@ Example Body of IRV:
 {
   "service": "PERSONAL-INCOME-RECORD",
   "clientIdType": "ni",
-  "clientId": "AE123456C",
-  "clientPostcode": null
+  "clientId": "AE123456C"
 }
 ```
 
@@ -147,8 +144,7 @@ Example Response: 200 with Body:
          "href" : "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CS5AK7O8FPC43"
       }
    },
-   "status" : "Expired",
-   "postcode" : null
+   "status" : "Expired"
 }
 ```
 
@@ -198,8 +194,7 @@ Example Response: 200 with Body:
          "href" : "/agent-client-authorisation/agencies/TARN0000001/invitations/sent/CS5AK7O8FPC43"
       }
    },
-   "status" : "Expired",
-   "postcode" : null
+   "status" : "Expired"
 }]
 ```
 
@@ -324,8 +319,7 @@ Example Response, 200 with Body:
    "status" : "Pending",
    "expiryDate" : "2018-05-14",
    "suppliedClientIdType" : "vrn",
-   "clientIdType" : "vrn",
-   "postcode" : null,
+   "clientIdType" : "vrn"
    "clientId" : "101747696"
 }
 ```
