@@ -52,6 +52,16 @@ object ErrorResults {
       ErrorBody(
         "POSTCODE_DOES_NOT_MATCH",
         "The submitted postcode did not match the client's postcode as held by HMRC.")))
+  val DateOfBirthDoesNotMatch = Forbidden(
+    toJson(
+      ErrorBody(
+        "DATE_OF_BIRTH_DOES_NOT_MATCH",
+        "The submitted date of birth did not match the client's date of birth as held by HMRC.")))
+  val VatRegistrationDateDoesNotMatch = Forbidden(
+    toJson(
+      ErrorBody(
+        "VAT_REGISTRATION_DATE_DOES_NOT_MATCH",
+        "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC.")))
   val InvitationNotFound = NotFound(
     toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val InvalidClientId = BadRequest(

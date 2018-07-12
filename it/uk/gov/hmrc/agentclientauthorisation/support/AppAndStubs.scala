@@ -55,6 +55,8 @@ trait AppAndStubs
       "microservice.services.relationships.port"     -> wiremockPort,
       "microservice.services.afi-relationships.host" -> wiremockHost,
       "microservice.services.afi-relationships.port" -> wiremockPort,
+      "microservice.services.citizen-details.host"   -> wiremockHost,
+      "microservice.services.citizen-details.port"   -> wiremockPort,
       "microservice.services.des.host"               -> wiremockHost,
       "microservice.services.des.port"               -> wiremockPort,
       "auditing.enabled"                             -> true,

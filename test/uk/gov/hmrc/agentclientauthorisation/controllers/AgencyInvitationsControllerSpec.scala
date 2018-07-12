@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
+import org.joda.time.format.DateTimeFormat
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
@@ -241,12 +242,12 @@ class AgencyInvitationsControllerSpec
     val nino = Nino("AB123456A")
     val postcode = "AA11AA"
 
-    "return 204 if Nino is known in ETMP and the postcode matched" in {
+    "return No Content if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
         .thenReturn(Future successful None)
 
-      status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 204
+      await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest())) shouldBe NoContent
     }
 
     "return 400 if given invalid postcode" in {
@@ -278,37 +279,76 @@ class AgencyInvitationsControllerSpec
     val vrn = Vrn("101747641")
     val suppliedDate = LocalDate.parse("2001-02-03")
 
-    "return 204 if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
+    "return No Content if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
       when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful Some(true))
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 204
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NoContent
     }
 
-    "return 403 if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
+    "return Vat Registration Date Does Not Match if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
       when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful Some(false))
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatRegistrationDateDoesNotMatch
     }
 
-    "return 404 if Vrn is unknown in ETMP" in {
+    "return Not Found if Vrn is unknown in ETMP" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
       when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
         .thenReturn(Future successful None)
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 404
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NotFound
     }
 
-    "return 403 if logged in user is not an agent with HMRC-AS-AGENT" in {
+    "return Agent Not Subscribed if logged in user is not an agent with HMRC-AS-AGENT" in {
       agentAuthStub(agentNoEnrolments)
 
-      status(await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest()))) shouldBe 403
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe AgentNotSubscribed
+    }
+  }
+
+  "checkKnownFactIrv" should {
+    val format = DateTimeFormat.forPattern("ddMMyyyy")
+    val nino = Nino("AB123456A")
+    val suppliedDateOfBirth = LocalDate.parse("03022001", format)
+
+    "return No Content if Nino is known in citizen details and the dateOfBirth matched" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+        .thenReturn(Future successful Some(true))
+
+      await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NoContent
+    }
+
+    "return Date Of Birth Does Not Match if Nino is known in citizen details and the dateOfBirth did not match" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+        .thenReturn(Future successful Some(false))
+
+      await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe DateOfBirthDoesNotMatch
+    }
+
+    "return Not Found if Nino is unknown in citizen details" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+        .thenReturn(Future successful None)
+
+      await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NotFound
+    }
+
+    "return Agent Not Subscribed if logged in user is not an agent with HMRC-AS-AGENT" in {
+      agentAuthStub(agentNoEnrolments)
+
+      await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
     }
   }
 

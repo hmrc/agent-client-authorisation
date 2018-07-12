@@ -3,8 +3,10 @@
 GET         /agencies/:arn/invitations/sent                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitations(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, service: Option[String], clientIdType: Option[String], clientId: Option[String], status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus], createdOnOrAfter: Option[LocalDate])
 POST        /agencies/:arn/invitations/sent                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.createInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 GET         /agencies/:arn/invitations/sent/:invitationId                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-GET         /agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
-GET         /agencies/check-sa-known-fact/:nino/postcode/:postcode                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
+
+GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
+GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
+GET         /known-facts/individuals/:nino/dob/:dob                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactIrv(nino: uk.gov.hmrc.domain.Nino, dob: LocalDate)
 
 # Client routes
 # --------------------------------
@@ -34,6 +36,8 @@ GET         /clients/VAT/:vrn/invitations/received/:invitationId                
 GET         /clients/VAT/:vrn                                                                 @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.getDetailsForClient(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
 GET         /clients/VAT/:vrn/invitations                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.getDetailsForClient(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
 GET         /clients/VAT/:vrn/invitations/received                                            @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.getInvitations(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
+GET         /agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
+GET         /agencies/check-sa-known-fact/:nino/postcode/:postcode                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
 
 # Agent routes
 # --------------------------------
