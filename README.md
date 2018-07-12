@@ -197,17 +197,53 @@ Example Response: 200 with Body:
    "status" : "Expired"
 }]
 ```
+#### GET Known Fact for ITSA <a name="itsaKnownFact"></a>
+Checks a known fact for a given Postcode.
+
+```
+GET   /known-facts/individuals/nino/:nino/sa/postcode/:postcode
+```
+
+Request
+```
+http://localhost:9432/agent-client-authorisation//known-facts/individuals/nino/AB123456A/sa/postcode/DH14EJ
+```
+
+|Response|Description|
+|--------|---------|
+|204|There is a record found for given nino and postcode|
+|403|There is a record for given nino but with a different poatcode|
+|404|There is no record found for given nino|
+
+#### GET Known Fact for IRV <a name="irvKnownFact"></a>
+Checks a known fact for a given Date of Birth.
+
+```
+GET   /known-facts/individuals/:nino/dob/:dob
+```
+
+Request
+```
+http://localhost:9432/agent-client-authorisation/known-facts/individuals/AB123456A/dob/1993-09-21 
+```
+
+|Response|Description|
+|--------|---------|
+|204|There is a record found for given nino and date|
+|403|There is a record for given nino but with a different date|
+|404|There is no record found for given nino|
+
 
 #### GET Known Fact for VAT <a name="vatKnownFact"></a>
 Checks a known fact for a given Vat Registration Number.
 
 ```
-GET   /agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate
+GET   /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate
 ```
 
 Request
 ```
-http://localhost:9432/agent-client-authorisation/agencies/check-vat-known-fact/101747641/registration-date/2010-04-01
+http://localhost:9432/agent-client-authorisation/known-facts/organisations/vat/101747641/registration-date/2010-04-01
 ```
 
 |Response|Description|
