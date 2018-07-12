@@ -17,13 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import org.joda.time.LocalDate
+import org.joda.time.format.DateTimeFormat
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,8 +33,9 @@ import scala.concurrent.Future
 
 class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val desConnector: DesConnector = mock[DesConnector]
+  val citizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
 
-  val service = new KnownFactsCheckService(desConnector)
+  val service = new KnownFactsCheckService(desConnector, citizenDetailsConnector)
 
   implicit val hc = HeaderCarrier()
 
@@ -90,6 +93,51 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
 
       assertThrows[Upstream5xxResponse] {
         await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied))
+      }
+    }
+  }
+
+  "clientDateOfBirthMatches" should {
+    val clientNino = Nino("AE123456A")
+    val format = DateTimeFormat.forPattern("ddMMyyyy")
+
+    "return Some(true) if the supplied date of birth matches the date of birth returned from citizen details" in {
+      val dateOfBirthInCitizenDetails = LocalDate.parse("03022001", format)
+      val dateOfBirthSupplied = LocalDate.parse("03022001", format)
+
+      when(citizenDetailsConnector.getCitizenDateOfBirth(clientNino))
+        .thenReturn(Future successful Some(CitizenDateOfBirth(Some(dateOfBirthInCitizenDetails))))
+
+      await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied)) shouldBe Some(true)
+    }
+
+    "return Some(false) if the supplied date of birth does not match the date of birth returned from citizen details" in {
+      val dateOfBirthInCitizenDetails = LocalDate.parse("03022002", format)
+      val dateOfBirthSupplied = LocalDate.parse("03022001", format)
+
+      when(citizenDetailsConnector.getCitizenDateOfBirth(clientNino))
+        .thenReturn(Future successful Some(CitizenDateOfBirth(Some(dateOfBirthInCitizenDetails))))
+
+      await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied)) shouldBe Some(false)
+    }
+
+    "return None if there is not record in citizen details" in {
+      val dateOfBirthSupplied = LocalDate.parse("03022001", format)
+
+      when(citizenDetailsConnector.getCitizenDateOfBirth(clientNino))
+        .thenReturn(Future successful None)
+
+      await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied)) shouldBe None
+    }
+
+    "throw Upstream 5xx exception is citizen details is down" in {
+      val dateOfBirthSupplied = LocalDate.parse("03022001", format)
+
+      when(citizenDetailsConnector.getCitizenDateOfBirth(clientNino))
+        .thenReturn(Future failed Upstream5xxResponse("error", 502, 503))
+
+      assertThrows[Upstream5xxResponse] {
+        await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied))
       }
     }
   }

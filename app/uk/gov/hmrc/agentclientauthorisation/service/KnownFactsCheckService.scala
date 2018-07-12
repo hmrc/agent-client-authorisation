@@ -19,14 +19,15 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Singleton}
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, VatCustomerInfo}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDateOfBirth, CitizenDetailsConnector, DesConnector, VatCustomerInfo}
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class KnownFactsCheckService @Inject()(desConnector: DesConnector) {
+class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetailsConnector: CitizenDetailsConnector) {
 
   def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
@@ -39,5 +40,14 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector) {
         Some(false)
       case None =>
         None
+    }
+
+  def clientDateOfBirthMatches(clientNino: Nino, suppliedDob: LocalDate)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext) =
+    citizenDetailsConnector.getCitizenDateOfBirth(clientNino).map {
+      case Some(CitizenDateOfBirth(Some(clientDob))) if clientDob == suppliedDob => Some(true)
+      case Some(CitizenDateOfBirth(_))                                           => Some(false)
+      case None                                                                  => None
     }
 }

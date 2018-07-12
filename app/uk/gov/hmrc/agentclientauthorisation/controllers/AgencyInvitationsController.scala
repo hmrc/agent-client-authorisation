@@ -23,7 +23,7 @@ import org.joda.time.LocalDate
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, InvitationNotFound, NoPermissionOnAgency, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure}
@@ -156,7 +156,16 @@ class AgencyInvitationsController @Inject()(
     implicit request => implicit arn =>
       knownFactsCheckService.clientVatRegistrationDateMatches(vrn, vatRegistrationDate).map {
         case Some(true)  => NoContent
-        case Some(false) => Forbidden
+        case Some(false) => VatRegistrationDateDoesNotMatch
+        case None        => NotFound
+      }
+  }
+
+  def checkKnownFactIrv(nino: Nino, dateOfBirth: LocalDate): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+      knownFactsCheckService.clientDateOfBirthMatches(nino, dateOfBirth).map {
+        case Some(true)  => NoContent
+        case Some(false) => DateOfBirthDoesNotMatch
         case None        => NotFound
       }
   }
