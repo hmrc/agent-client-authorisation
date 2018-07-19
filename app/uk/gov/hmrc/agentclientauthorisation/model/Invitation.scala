@@ -160,7 +160,8 @@ object Invitation {
         "created"              -> invitation.firstEvent().time,
         "lastUpdated"          -> invitation.mostRecentEvent().time,
         "expiryDate"           -> invitation.expiryDate,
-        "status"               -> invitation.status
+        "status"               -> invitation.status,
+        "invitationId"         -> invitation.invitationId.value
       )
   }
 

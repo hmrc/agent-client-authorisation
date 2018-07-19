@@ -119,9 +119,8 @@ class MtdItClientInvitationsControllerSpec
       verifyNoAuditEventSent()
     }
 
-    "not change the invitation status if relationship creation fails" in {
+    "not change the invitation status if relationship creation fails" in
       pending
-    }
   }
 
   "Rejecting an invitation" should {
@@ -204,7 +203,7 @@ class MtdItClientInvitationsControllerSpec
       response shouldBe NoPermissionOnClient
     }
 
-    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+    "include the invitation ID in invitations" in {
       clientAuthStub(clientMtdItEnrolments)
       whenClientReceivedInvitation.thenReturn(
         Future successful List(
@@ -219,7 +218,8 @@ class MtdItClientInvitationsControllerSpec
       status(result) shouldBe 200
 
       ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "id").asOpt[String] shouldBe None
-      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe None
+      ((jsonBodyOf(result) \ "_embedded" \ "invitations")(0) \ "invitationId").asOpt[String] shouldBe Some(
+        invitationId.value)
     }
   }
 }

@@ -140,7 +140,7 @@ class AgencyInvitationsControllerSpec
       invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
     }
 
-    "not include the invitation ID in invitations to encourage HATEOAS API usage" in {
+    "include the invitation ID in invitations" in {
 
       agentAuthStub(agentAffinityAndEnrolments)
 
@@ -153,7 +153,7 @@ class AgencyInvitationsControllerSpec
 
       (embeddedInvitations(jsonBody)(0) \ "status").asOpt[String] should not be None
       (embeddedInvitations(jsonBody)(0) \ "id").asOpt[String] shouldBe None
-      (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe None
+      (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe Some("ASZPJLZMLKRBO")
     }
 
     "include all query parameters in the self link" in {
