@@ -24,8 +24,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.play.microservice.controller.BaseController
-
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 @Singleton
 class SandboxClientInvitationsController extends BaseController with HalWriter with ClientInvitationsHal {
 

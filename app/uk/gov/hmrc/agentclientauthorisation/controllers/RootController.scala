@@ -17,8 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
-
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.language.postfixOps
 
