@@ -22,7 +22,7 @@ import play.api.hal.{Hal, HalLink, HalResource}
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import uk.gov.hmrc.agentclientauthorisation.controllers.{HalWriter, routes => prodroutes}
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 @Singleton
 class SandboxRootController extends BaseController with HalWriter {

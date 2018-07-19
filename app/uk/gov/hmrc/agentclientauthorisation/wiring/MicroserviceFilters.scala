@@ -18,13 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.wiring
 
 import java.util.Base64
 
+import akka.stream.Materializer
 import javax.inject.{Inject, Singleton}
 import com.kenshoo.play.metrics.MetricsFilter
 import play.api.{Configuration, Logger}
 import play.api.http.DefaultHttpFilters
 import play.api.mvc.{Call, EssentialFilter}
 import uk.gov.hmrc.play.bootstrap.filters.{AuditFilter, CacheControlFilter, LoggingFilter}
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
 
 @Singleton
@@ -40,8 +40,7 @@ class MicroserviceFilters @Inject()(
         .whitelistFilterSeq(whitelistFilter): _*)
 
 @Singleton
-class WhitelistFilter @Inject()(configuration: Configuration)
-    extends AkamaiWhitelistFilter with MicroserviceFilterSupport {
+class WhitelistFilter @Inject()(configuration: Configuration, val mat: Materializer) extends AkamaiWhitelistFilter {
 
   override val whitelist: Seq[String] = whitelistConfig("microservice.whitelist.ips")
   override val destination: Call = Call("GET", "/agent-client-authorisation/forbidden")

@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.{routes => prodroutes, _
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 @Singleton
 class SandboxAgencyInvitationsController extends BaseController with HalWriter with AgencyInvitationsHal {

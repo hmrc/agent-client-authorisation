@@ -34,8 +34,8 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
-import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -68,10 +68,9 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         }
       case _ => Future successful GenericUnauthorized
     } recover {
-      case e: AuthorisationException => {
+      case e: AuthorisationException =>
         Logger.error("Failed to auth", e)
         GenericUnauthorized
-      }
     }
   }
 
@@ -85,10 +84,9 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
         else Future successful ClientNinoNotFound
       } recover {
-        case e: AuthorisationException => {
+        case e: AuthorisationException =>
           Logger.error("Failed to auth", e)
           GenericUnauthorized
-        }
       }
   }
 
