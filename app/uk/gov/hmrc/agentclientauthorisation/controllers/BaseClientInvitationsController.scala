@@ -41,12 +41,6 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
   val supportedService: Service
 
-  protected def getDetailsForClient(clientId: ClientIdentifier[T], request: Request[AnyContent])(
-    implicit ec: ExecutionContext,
-    authTaxId: ClientIdentifier[T]) = forThisClient(clientId) {
-    Future successful Ok(toHalResource(clientId, request.path))
-  }
-
   protected def acceptInvitation(clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,

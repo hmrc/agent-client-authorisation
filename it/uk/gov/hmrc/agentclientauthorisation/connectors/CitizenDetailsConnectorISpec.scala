@@ -38,32 +38,29 @@ class CitizenDetailsConnectorISpec extends UnitSpec with AppAndStubs with Citize
       result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe Some(LocalDate.parse("1971-12-11"))
     }
 
-    "throw an illegal field value exception if date is invalid" in {
+    "return None if date is invalid" in {
       givenCitizenDetailsAreKnownFor(nino.value, "11131971")
-      an[IllegalFieldValueException] shouldBe thrownBy {
-        await(connector.getCitizenDateOfBirth(nino))
-      }
-    }
-
-    "return an illegal argument exception if the date is blank" in {
-      givenCitizenDetailsAreKnownFor(nino.value, "")
-      an[IllegalArgumentException] shouldBe thrownBy {
-        await(connector.getCitizenDateOfBirth(nino))
-      }
-    }
-
-    "return None is the nino is not found" in {
-      givenCitizenDetailsReturns404For(nino.value)
       val result = await(connector.getCitizenDateOfBirth(nino))
       result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe None
     }
 
-    "return BAD REQUEST if nino is not valid" in {
-      givenCitizenDetailsReturns400For(nino.value)
-      a[BadRequestException] shouldBe thrownBy {
-        await(connector.getCitizenDateOfBirth(nino))
-      }
-
+    "return None if the date is blank" in {
+      givenCitizenDetailsAreKnownFor(nino.value, "")
+      val result = await(connector.getCitizenDateOfBirth(nino))
+      result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe None
     }
+
+    "return None is the nino is not found" in {
+      givenCitizenDetailsReturnsResponseFor(nino.value, 404)
+      val result = await(connector.getCitizenDateOfBirth(nino))
+      result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe None
+    }
+
+    "return None if nino is not valid" in {
+      givenCitizenDetailsReturnsResponseFor(nino.value, 400)
+      val result = await(connector.getCitizenDateOfBirth(nino))
+      result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe None
+    }
+
   }
 }

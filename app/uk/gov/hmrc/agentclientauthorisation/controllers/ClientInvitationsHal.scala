@@ -84,19 +84,6 @@ trait ClientInvitationsHal {
       HalLink("invitations", link.toString)
     }.toVector
 
-  def toHalResource(clientId: ClientId, selfLinkHref: String): HalResource = {
-    val selfLink = Vector(HalLink("self", selfLinkHref))
-    val link = clientId match {
-      case clientId @ ClientIdentifier(MtdItId(_)) =>
-        routes.MtdItClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[MtdItId], None)
-      case clientId @ ClientIdentifier(Nino(_)) =>
-        routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
-      case clientId @ ClientIdentifier(Vrn(_)) =>
-        routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
-    }
-    hal(Json.obj(), selfLink ++ Vector(HalLink("received", link.url)), Vector())
-  }
-
   def toHalResource(invitations: Seq[Invitation], clientId: ClientId, status: Option[InvitationStatus]): HalResource = {
     val requestResources: Vector[HalResource] = invitations.map(invitation => toHalResource(invitation)).toVector
 

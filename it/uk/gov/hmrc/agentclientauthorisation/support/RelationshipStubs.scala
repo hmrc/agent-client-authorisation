@@ -55,7 +55,7 @@ trait RelationshipStubs[A] {
         urlPathEqualTo(
           s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
 
-  def verifyNoCallsToCreateMtdVatRelationship =
+  val verifyNoCallsToCreateMtdVatRelationship =
     verify(
       0,
       putRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/[^/]+/service/[^/]+/client/[^/]+/[^/]+")))

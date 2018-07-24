@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
 import scala.concurrent.{ExecutionContext, Future}
 

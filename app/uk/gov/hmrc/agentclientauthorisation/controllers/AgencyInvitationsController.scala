@@ -87,18 +87,6 @@ class AgencyInvitationsController @Inject()(
   private def location(invitation: Invitation) =
     LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
 
-  def getDetailsForAuthenticatedAgency: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    Future successful Ok(toHalResource(arn, request.path))
-  }
-
-  def getDetailsForAgency(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    forThisAgency(givenArn) {
-      Future successful Ok(toHalResource(arn, request.path))
-    }
-  }
-
-  def getDetailsForAgencyInvitations(arn: Arn): Action[AnyContent] = getDetailsForAgency(arn)
-
   def getSentInvitations(
     givenArn: Arn,
     service: Option[String],
@@ -128,21 +116,6 @@ class AgencyInvitationsController @Inject()(
     if (requestedArn != arn)
       Future successful NoPermissionOnAgency
     else block
-
-  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
-      forThisAgency(givenArn) {
-        invitationsService.findInvitation(invitationId) flatMap {
-          case Some(i) if i.arn == givenArn =>
-            invitationsService.cancelInvitation(i) map {
-              case Right(_)                          => NoContent
-              case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
-            }
-          case None => Future successful InvitationNotFound
-          case _    => Future successful NoPermissionOnAgency
-        }
-      }
-  }
 
   def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents {
     implicit request => implicit arn =>

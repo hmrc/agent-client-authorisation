@@ -40,11 +40,6 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
 
   override val supportedService: Service = Service.MtdIt
 
-  def getDetailsForClient(mtdItId: MtdItId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authMtdItId =>
-      getDetailsForClient(ClientIdentifier(mtdItId), request)
-  }
-
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authMtdItId =>
       acceptInvitation(ClientIdentifier(mtdItId), invitationId)

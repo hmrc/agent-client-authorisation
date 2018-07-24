@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.mockito.Mockito
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Suite}
 
 import scala.reflect.Manifest

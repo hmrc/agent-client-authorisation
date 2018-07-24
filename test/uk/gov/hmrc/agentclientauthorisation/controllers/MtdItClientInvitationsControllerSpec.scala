@@ -57,16 +57,6 @@ class MtdItClientInvitationsControllerSpec
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
-  "getDetailsForClient" should {
-    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientMtdItEnrolments)
-
-      val response = await(controller.getDetailsForClient(MtdItId("invalid"))(FakeRequest()))
-
-      response shouldBe NoPermissionOnClient
-    }
-  }
-
   "Accepting an invitation" should {
     "Return no content" in {
       clientAuthStub(clientMtdItEnrolments)

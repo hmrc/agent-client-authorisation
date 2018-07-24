@@ -178,66 +178,6 @@ class AgencyInvitationsControllerSpec
 
   }
 
-  "cancelInvitation" should {
-    "cancel a pending invitation" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val invitation = anInvitation()
-      val cancelledInvitation = transitionInvitation(invitation, Cancelled)
-
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Right(cancelledInvitation))
-      whenFindingAnInvitation() thenReturn (Future successful Some(invitation))
-
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
-
-      status(response) shouldBe 204
-    }
-
-    "not cancel an already cancelled invitation" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      whenAnInvitationIsCancelled(any()) thenReturn (Future successful Left(StatusUpdateFailure(Cancelled, "message")))
-      whenFindingAnInvitation() thenReturn aFutureOptionInvitation()
-
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
-      response shouldBe invalidInvitationStatus("message")
-    }
-
-    "return 403 NO_PERMISSION_ON_AGENCY if the invitation belongs to a different agency" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(new Arn("1234"))
-
-      val response = await(controller.cancelInvitation(new Arn("1234"), mtdSaPendingInvitationId)(FakeRequest()))
-
-      response shouldBe NoPermissionOnAgency
-    }
-
-    "return 403 NO_PERMISSION_ON_AGENCY when the ARN in the invitation is not the same as the ARN in the URL" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      whenFindingAnInvitation() thenReturn aFutureOptionInvitation(Arn("a-different-arn"))
-
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
-      response shouldBe NoPermissionOnAgency
-    }
-
-    "return 404 if the invitation doesn't exist" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      whenFindingAnInvitation() thenReturn (Future successful None)
-
-      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
-      response shouldBe InvitationNotFound
-    }
-
-  }
-
   "checkKnownFactItsa" should {
     val nino = Nino("AB123456A")
     val postcode = "AA11AA"

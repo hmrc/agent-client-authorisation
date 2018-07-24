@@ -34,18 +34,6 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   //    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientsUrl)
   //  }
 
-  "GET /clients/MTDITID/:mtdItId" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientResource(mtdItId1))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(clientUrl(mtdItId1))
-    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(clientUrl(MtdItId("0123456789")))
-  }
-
-  "GET /clients/MTDITID/:mtdItId/invitations" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(new Resource(invitationsUrl, port).get())
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedClient(invitationsUrl)
-    behave like anEndpointThatPreventsAccessToAnotherClientsInvitations(invitationsUrl)
-  }
-
   "PUT of /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept" should {
     behave like anEndpointAccessibleForSaClientsOnly(nino)(clientAcceptInvitation(mtdItId1, "ABBBBBBBBBBCC"))
   }

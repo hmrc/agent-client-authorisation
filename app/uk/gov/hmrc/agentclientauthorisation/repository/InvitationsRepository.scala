@@ -22,7 +22,7 @@ import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json.Json.{JsValueWrapper, toJsFieldJsValueWrapper}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.ReadPreference
+import reactivemongo.api.{Cursor, ReadPreference}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.{BSONFormats, ImplicitBSONHandlers}
@@ -79,7 +79,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       .find(Json.obj(query: _*))
       .sort(sortBy)
       .cursor[Invitation](ReadPreference.primaryPreferred)
-      .collect[List]()
+      .collect[List](100, Cursor.FailOnError[List[Invitation]]())
   }
 
   def list(

@@ -63,6 +63,7 @@ class EmbeddedSection(embedded: JsValue) {
     (embedded \ "invitations").get match {
       case array: JsArray => array
       case obj: JsObject  => JsArray(Seq(obj))
+      case _              => JsArray(Seq.empty)
     }
 
   private def asInvitation(invitation: JsValue): EmbeddedInvitation = {
