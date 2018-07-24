@@ -37,7 +37,10 @@ object CitizenDateOfBirth {
   implicit val reads: Reads[CitizenDateOfBirth] =
     (JsPath \ "dateOfBirth")
       .readNullable[String]
-      .map(x => CitizenDateOfBirth(Some(LocalDate.parse(x.getOrElse(""), format))))
+      .map {
+        case Some(dob) => CitizenDateOfBirth(Some(LocalDate.parse(dob, format)))
+        case None      => CitizenDateOfBirth(None)
+      }
 }
 
 @Singleton
@@ -54,7 +57,7 @@ class CitizenDetailsConnector @Inject()(
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
       http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
-        case _: NotFoundException => None
+        case _ => None
       }
     }
 }

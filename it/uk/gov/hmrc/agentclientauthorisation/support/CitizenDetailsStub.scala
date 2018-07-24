@@ -25,15 +25,28 @@ trait CitizenDetailsStub {
                          |   "dateOfBirth": "$dob"
                          |}""".stripMargin)))
 
-  def givenCitizenDetailsReturns404For(nino: String): Unit =
+  def givenCitizenDetailsNoDob(nino: String): Unit =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
-        .willReturn(aResponse()
-          .withStatus(404)))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""{
+                         |   "name": {
+                         |      "current": {
+                         |         "firstName": "John",
+                         |         "lastName": "Smith"
+                         |      },
+                         |      "previous": []
+                         |   },
+                         |   "ids": {
+                         |      "nino": "$nino"
+                         |   }
+                         |}""".stripMargin)))
 
-  def givenCitizenDetailsReturns400For(nino: String): Unit =
+  def givenCitizenDetailsReturnsResponseFor(nino: String, response: Int): Unit =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(aResponse()
-          .withStatus(400)))
+          .withStatus(response)))
 }

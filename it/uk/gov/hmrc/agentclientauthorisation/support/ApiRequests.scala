@@ -54,9 +54,11 @@ trait ApiRequests {
   def agencyGetInvitationUrl(arn: Arn, invitationId: String): String =
     s"$baseUrl/agencies/${arn.value}/invitations/sent/$invitationId"
   def agencyGetCheckKnownFactVat(vrn: Vrn, suppliedDate: LocalDate): String =
-    s"$baseUrl/agencies/check-vat-known-fact/${vrn.value}/registration-date/${suppliedDate.toString}"
+    s"/agent-client-authorisation/known-facts/organisations/vat/${vrn.value}/registration-date/${suppliedDate.toString}"
   def agencyGetCheckKnownFactItsa(nino: Nino, postcode: String): String =
-    s"$baseUrl/agencies/check-sa-known-fact/${nino.value}/postcode/$postcode"
+    s"/agent-client-authorisation/known-facts/individuals/nino/${nino.value}/sa/postcode/$postcode"
+  def agencyGetCheckKnownFactIrv(nino: Nino, dob: LocalDate): String =
+    s"/agent-client-authorisation/known-facts/individuals/${nino.value}/dob/${dob.toString}"
 
   def rootResource()(implicit port: Int) =
     new Resource(baseUrl, port).get()
@@ -108,6 +110,9 @@ trait ApiRequests {
 
   def agentGetCheckItsaKnownFact(nino: Nino, postcode: String)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
     new Resource(agencyGetCheckKnownFactItsa(nino, postcode), port).get()(hc)
+
+  def agentGetCheckIrvKnownFact(nino: Nino, dob: LocalDate)(implicit port: Int, hc: HeaderCarrier): HttpResponse =
+    new Resource(agencyGetCheckKnownFactIrv(nino, dob), port).get()(hc)
 
   /*
   CLIENT RELATED RESOURCES

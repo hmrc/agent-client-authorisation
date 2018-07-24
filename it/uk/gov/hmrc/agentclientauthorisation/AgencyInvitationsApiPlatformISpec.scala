@@ -139,7 +139,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
   }
 
-  "/agencies/check-sa-known-fact/:nino/postcode/:postcode" should {
+  "/known-facts/individuals/nino/:nino/sa/postcode/:postcode" should {
     val clientNino = Nino("ZR987654C")
     val postcode = "AA11AA"
 
@@ -201,7 +201,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     }
   }
 
-  "/agencies/check-vat-known-fact/:vrn/registration-date/:vatRegistrationDate" should {
+  "/known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate" should {
     val clientVrn = Vrn("101747641")
     val effectiveRegistrationDate = LocalDate.parse("2017-04-01")
 
@@ -216,7 +216,14 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "return 403 when customer VAT information in ETMP but has a non-matching effectiveRegistrationDate" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientVrn).hasVatCustomerDetails(isEffectiveRegistrationDatePresent = true)
-      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate.plusDays(1)).status shouldBe 403
+      val expectedError = Json.parse(s"""|{
+                                         |"code":"VAT_REGISTRATION_DATE_DOES_NOT_MATCH",
+                                         |"message":"The submitted VAT registration date did not match the client's VAT registration date as held by HMRC."
+                                         |}""".stripMargin)
+
+      val result = agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate.plusDays(1))
+      result.status shouldBe 403
+      Json.parse(result.body) shouldBe expectedError
     }
 
     "return 403 when customer VAT information in ETMP but effectiveRegistrationDate is not present" in {
@@ -243,11 +250,61 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 502
     }
   }
+
+  "/known-facts/individuals/:nino/dob/:dob" should {
+    val clientNino = Nino("ZR987654C")
+    val dateOfBirth = LocalDate.parse("1988-01-01")
+
+    behave like anEndpointAccessibleForMtdAgentsOnly(agentGetCheckIrvKnownFact(clientNino, dateOfBirth))
+
+    "return 204 when customer IRV information in Citizen Details has a matching dateOfBirth" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsAreKnownFor(clientNino.value, "01011988")
+      agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 204
+    }
+
+    "return 403 when customer IRV information in Citizen Details but has a non-matching dateOfBirth" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsAreKnownFor(clientNino.value, "01011988")
+      val expectedError = Json.parse(s"""|
+                                         |{"code":"DATE_OF_BIRTH_DOES_NOT_MATCH",
+                                         |"message":"The submitted date of birth did not match the client's date of birth as held by HMRC."
+                                         |}""".stripMargin)
+
+      val result = agentGetCheckIrvKnownFact(clientNino, dateOfBirth.plusDays(1))
+      result.status shouldBe 403
+      Json.parse(result.body) shouldBe expectedError
+    }
+
+    "return 403 when customer IRV information in Citizen Details but dateOfBirth is not present" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsNoDob(clientNino.value)
+      agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 403
+    }
+
+    "return 404 when no customer IRV information is in Citizen Details" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsReturnsResponseFor(clientNino.value, 404)
+      agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 404
+    }
+
+    "return 404 when Nino is invalid" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsReturnsResponseFor(clientNino.value, 400)
+      agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 404
+    }
+
+    "return 404 when Citizen Detials returns more than one matching result" in {
+      given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
+      givenCitizenDetailsReturnsResponseFor(clientNino.value, 500)
+      agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 404
+    }
+  }
 }
 
 trait AgencyInvitationsISpec
     extends UnitSpec with MongoAppAndStubs with Inspectors with Inside with Eventually with SecuredEndpointBehaviours
-    with ApiRequests with ErrorResultMatchers {
+    with ApiRequests with ErrorResultMatchers with CitizenDetailsStub {
 
   protected implicit val arn1 = Arn(arn)
   protected val otherAgencyArn: Arn = Arn("98765")
