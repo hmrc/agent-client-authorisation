@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation

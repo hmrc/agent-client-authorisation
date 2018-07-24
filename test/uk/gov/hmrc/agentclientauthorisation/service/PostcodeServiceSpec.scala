@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation

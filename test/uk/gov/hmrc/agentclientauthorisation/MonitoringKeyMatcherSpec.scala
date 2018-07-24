@@ -46,21 +46,22 @@ class MonitoringKeyMatcherSpec extends UnitSpec {
       val tested = new MonitoringKeyMatcher {
         override val keyToPatternMapping: Seq[(String, String)] = Seq()
       }
-      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)$", Seq(
-        "{service}",
-        "{clientId}",
-        "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
-        "{service}",
-        "{clientId}",
-        "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/::clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$", Seq(
-        "{service}",
-        "{:clientId}",
-        "{test1}"))
-      tested.preparePatternAndVariables("""/some/test/:service/clientId/:test1/""") shouldBe ("^.*/some/test/([^/]+)/clientId/([^/]+)/$", Seq(
-        "{service}",
-        "{test1}"))
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1""") shouldBe (
+        (
+          "^.*/some/test/([^/]+)/([^/]+)/([^/]+)$",
+          Seq("{service}", "{clientId}", "{test1}")))
+      tested.preparePatternAndVariables("""/some/test/:service/:clientId/:test1/""") shouldBe (
+        (
+          "^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$",
+          Seq("{service}", "{clientId}", "{test1}")))
+      tested.preparePatternAndVariables("""/some/test/:service/::clientId/:test1/""") shouldBe (
+        (
+          "^.*/some/test/([^/]+)/([^/]+)/([^/]+)/$",
+          Seq("{service}", "{:clientId}", "{test1}")))
+      tested.preparePatternAndVariables("""/some/test/:service/clientId/:test1/""") shouldBe (
+        (
+          "^.*/some/test/([^/]+)/clientId/([^/]+)/$",
+          Seq("{service}", "{test1}")))
     }
 
     "throw exception if duplicate variable name in pattern" in {

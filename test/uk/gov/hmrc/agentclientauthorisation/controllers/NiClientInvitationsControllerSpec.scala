@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -95,6 +96,16 @@ class NiClientInvitationsControllerSpec
           .rejectInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
+    }
+  }
+
+  "getDetailsForClient" should {
+    "Return NoPermissionOnClient when given nino does not match authNino" in {
+      clientAuthStub(clientNiEnrolments)
+
+      val response = await(controller.getDetailsForClient(Nino("AA000003C"))(FakeRequest()))
+
+      response shouldBe NoPermissionOnClient
     }
   }
 
