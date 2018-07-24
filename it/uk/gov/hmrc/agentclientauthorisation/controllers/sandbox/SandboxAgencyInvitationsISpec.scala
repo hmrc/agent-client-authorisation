@@ -39,18 +39,6 @@ class SandboxAgencyInvitationsISpec
   //    behave like anEndpointWithAgencySentInvitationsLink(baseUrl)
   //  }
 
-  "GET /sandbox/agencies" should {
-    behave like anEndpointWithAgencySentInvitationsLink(agenciesUrl)
-  }
-
-  "GET /sandbox/agencies/:arn" should {
-    behave like anEndpointWithAgencySentInvitationsLink(agencyUrl(arn))
-  }
-
-  "GET /sandbox/agencies/:arn/invitations" should {
-    behave like anEndpointWithAgencySentInvitationsLink(agencyInvitationsUrl(arn))
-  }
-
   "POST of /sandbox/agencies/:arn/invitations/sent" should {
     "return a 201 response with a location header" in {
       val response = agencySendInvitation(arn, validInvitation)
@@ -65,36 +53,6 @@ class SandboxAgencyInvitationsISpec
       val response = agencyCancelInvitation(arn, "ABBBBBBBBBBCC")
 
       response.status shouldBe 204
-    }
-  }
-
-  "GET /agencies/:arn/invitations/sent" should {
-    "return some invitations" in {
-      val testStartTime = now().getMillis
-
-      val response = agencyGetSentInvitations(arn)
-
-      response.status shouldBe 200
-      val invitations = (response.json \ "_embedded" \ "invitations").as[JsArray].value
-      val invitationLinks = (response.json \ "_links" \ "invitations" \\ "href").map(_.as[String])
-
-      invitations.size shouldBe 2
-      checkInvitation(invitations.head, testStartTime)
-      checkInvitation(invitations(1), testStartTime)
-      invitations.map(selfLink) shouldBe invitationLinks
-
-      selfLink(response.json) shouldBe externalUrl(agencyGetInvitationsUrl(arn))
-    }
-  }
-
-  "GET /agencies/:arn/invitations/sent/invitationId" should {
-    "return an invitation" in {
-      val testStartTime = now().getMillis
-
-      val response = agencyGetSentInvitation(arn, "ABBBBBBBBBBCC")
-
-      response.status shouldBe 200
-      checkInvitation(response.json, testStartTime)
     }
   }
 
@@ -117,12 +75,4 @@ class SandboxAgencyInvitationsISpec
   def selfLink(obj: JsValue): String =
     (obj \ "_links" \ "self" \ "href").as[String]
 
-  def anEndpointWithAgencySentInvitationsLink(url: String): Unit =
-    "return a HAL response including an agency sent invitations link" in {
-      val response = new Resource(url, port).get()
-
-      response.status shouldBe 200
-      (response.json \ "_links" \ "self" \ "href").as[String] shouldBe externalUrl(url)
-      (response.json \ "_links" \ "sent" \ "href").as[String] shouldBe externalUrl(agencyGetInvitationsUrl(arn))
-    }
 }

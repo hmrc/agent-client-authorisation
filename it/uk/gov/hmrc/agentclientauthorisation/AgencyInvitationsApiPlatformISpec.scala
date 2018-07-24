@@ -33,22 +33,6 @@ import uk.gov.hmrc.play.test.UnitSpec
 //}
 
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
-  "GET /agencies" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agenciesResource)
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agenciesUrl)
-  }
-
-  "GET /agencies/:arn" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyResource(arn1))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyUrl(arn1))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyUrl(arn1))
-  }
-
-  "GET /agencies/:arn/invitations" should {
-    behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))
-    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(agencyInvitationsUrl(arn1))
-    behave like anEndpointThatPreventsAccessToAnotherAgenciesInvitations(agencyInvitationsUrl(arn1))
-  }
 
   "GET /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly(agencyGetSentInvitations(arn1))

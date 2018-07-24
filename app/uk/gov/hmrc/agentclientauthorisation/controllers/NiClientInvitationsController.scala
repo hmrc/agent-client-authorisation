@@ -40,10 +40,6 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   override val supportedService: Service = Service.PersonalIncomeRecord
 
-  def getDetailsForClient(nino: Nino): Action[AnyContent] = onlyForClients { implicit request => implicit authNino =>
-    getDetailsForClient(ClientIdentifier(nino), request)
-  }
-
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
       acceptInvitation(ClientIdentifier(nino), invitationId)

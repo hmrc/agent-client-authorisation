@@ -55,36 +55,6 @@ class AgencyInvitesClientApiPlatformISpec
       given().agentAdmin(arn).isLoggedInAndIsSubscribed
       agencyFiltersByStatus(agency, "accepted")
     }
-
-    scenario("on cancelled status") {
-      val agency = new AgencyApi(this, arn, port)
-      val client = new ClientApi(this, nino, mtdItId1, port)
-      Given("An agent and a client are logged in")
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId().anMtdItRelationshipIsCreatedWith(arn)
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
-
-      When("the Agency sends several invitations to the Client")
-      agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
-
-      Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
-      clientsViewOfPendingInvitations(client)
-
-      When(s"the agency cancels the invitation")
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
-      agencyCancelsInvitation(agency)
-
-      Then(s"the Agency filters their sent invitations by status")
-      agencyFiltersByStatus(agency, "cancelled")
-    }
-  }
-
-  private def agencyCancelsInvitation(agency: AgencyApi) = {
-    val invitations = agency.sentInvitations()
-    agency.cancelInvitation(invitations.firstInvitation)
-    val refetchedInvitations = agency.sentInvitations()
-    refetchedInvitations.firstInvitation.status shouldBe "Cancelled"
-    refetchedInvitations.secondInvitation.status shouldBe "Pending"
   }
 
   private def agencyFiltersByStatus(agency: AgencyApi, status: String): Unit = {

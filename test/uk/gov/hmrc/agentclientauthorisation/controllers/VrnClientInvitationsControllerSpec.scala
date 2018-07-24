@@ -57,16 +57,6 @@ class VrnClientInvitationsControllerSpec
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
-  "getDetailsForClient" should {
-    "Return NoPermissionOnClient when given vrn does not match authVrn" in {
-      clientAuthStub(clientVrnEnrolments)
-
-      val response = await(controller.getDetailsForClient(Vrn("invalid"))(FakeRequest()))
-
-      response shouldBe NoPermissionOnClient
-    }
-  }
-
   "getInvitation" should {
     "Return NoPermissionOnClient when given vrn does not match authVrn" in {
       clientAuthStub(clientVrnEnrolments)

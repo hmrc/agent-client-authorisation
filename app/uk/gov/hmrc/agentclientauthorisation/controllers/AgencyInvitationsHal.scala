@@ -26,13 +26,6 @@ trait AgencyInvitationsHal {
 
   protected def agencyLink(invitation: Invitation): Option[String]
 
-  def toHalResource(arn: Arn, selfLinkHref: String): HalResource = {
-    val selfLink = Vector(HalLink("self", selfLinkHref))
-    val invitationsSentLink = Vector(
-      HalLink("sent", routes.AgencyInvitationsController.getSentInvitations(arn, None, None, None, None, None).url))
-    Hal.hal(Json.obj(), selfLink ++ invitationsSentLink, Vector())
-  }
-
   def toHalResource(
     invitations: List[Invitation],
     arn: Arn,
@@ -62,11 +55,6 @@ trait AgencyInvitationsHal {
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
-    if (invitation.status == Pending) {
-      links = links ++ HalLink(
-        "cancel",
-        routes.AgencyInvitationsController.cancelInvitation(invitation.arn, invitation.invitationId).url)
-    }
     HalResource(links, toJson(invitation).as[JsObject])
   }
 

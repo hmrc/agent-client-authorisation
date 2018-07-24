@@ -99,14 +99,4 @@ class NiClientInvitationsControllerSpec
     }
   }
 
-  "getDetailsForClient" should {
-    "Return NoPermissionOnClient when given nino does not match authNino" in {
-      clientAuthStub(clientNiEnrolments)
-
-      val response = await(controller.getDetailsForClient(Nino("AA000003C"))(FakeRequest()))
-
-      response shouldBe NoPermissionOnClient
-    }
-  }
-
 }

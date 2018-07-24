@@ -39,10 +39,6 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
 
   override val supportedService: Service = Service.Vat
 
-  def getDetailsForClient(vrn: Vrn): Action[AnyContent] = onlyForClients { implicit request => implicit authVrn =>
-    getDetailsForClient(ClientIdentifier(vrn), request)
-  }
-
   def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
       acceptInvitation(ClientIdentifier(vrn), invitationId)
