@@ -61,6 +61,21 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
+  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+      forThisAgency(givenArn) {
+        invitationsService.findInvitation(invitationId) flatMap {
+          case Some(i) if i.arn == givenArn =>
+            invitationsService.cancelInvitation(i) map {
+              case Right(_)                          => NoContent
+              case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
+            }
+          case None => Future successful InvitationNotFound
+          case _    => Future successful NoPermissionOnAgency
+        }
+      }
+  }
+
   private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
