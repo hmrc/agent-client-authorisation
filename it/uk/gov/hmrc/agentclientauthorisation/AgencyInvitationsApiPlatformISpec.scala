@@ -18,13 +18,14 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import java.time.LocalDate
 
+import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{Inside, Inspectors}
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -47,6 +48,12 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
   "POST /agencies/:arn/invitations/sent" should {
     behave like anEndpointAccessibleForMtdAgentsOnly {
       agencySendInvitation(arn1, validInvitation)
+    }
+  }
+
+  "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
+    behave like anEndpointAccessibleForMtdAgentsOnly {
+      agencyCancelInvitation(arn1, invitationId.value)
     }
   }
 
@@ -228,7 +235,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 404
     }
 
-    "return 502 when DES/ETMP is unavailble" in {
+    "return 502 when DES/ETMP is unavailable" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientVrn).failsVatCustomerDetails(503)
       agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 502
@@ -278,7 +285,7 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 404
     }
 
-    "return 404 when Citizen Detials returns more than one matching result" in {
+    "return 404 when Citizen Details returns more than one matching result" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       givenCitizenDetailsReturnsResponseFor(clientNino.value, 500)
       agentGetCheckIrvKnownFact(clientNino, dateOfBirth).status shouldBe 404
@@ -299,6 +306,8 @@ trait AgencyInvitationsISpec
   protected val validInvitation: AgencyInvitationRequest = AgencyInvitationRequest(MtdItService, "ni", nino.value, None)
   protected val validInvitationWithPostcode: AgencyInvitationRequest =
     AgencyInvitationRequest(MtdItService, "ni", nino.value, Some("AA1 1AA"))
+  protected val invitationId: InvitationId =
+    InvitationId.create(arn1.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
 
   //  "GET root resource" should {
   //    behave like anEndpointWithMeaningfulContentForAnAuthorisedAgent(baseUrl)

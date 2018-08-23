@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.LocalDate
+import org.joda.time.{DateTime, LocalDate}
 import org.joda.time.format.DateTimeFormat
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
@@ -119,6 +119,55 @@ class AgencyInvitationsControllerSpec
       val response = await(controller.createInvitation(new Arn("1234"))(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 403
+    }
+  }
+
+  "cancelInvitation" should {
+    "return 204 when successfully changing the status of an invitation to cancelled" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val inviteCreated = TestConstants.defaultInvitation
+        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+
+      val cancelledInvite =
+        inviteCreated.copy(
+          events = List(StatusChangeEvent(DateTime.now(), Pending), StatusChangeEvent(DateTime.now(), Cancelled)))
+
+      when(invitationsService.findInvitation(any())(any(), any(), any()))
+        .thenReturn(Future successful Some(inviteCreated))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any()))
+        .thenReturn(Future successful Right(cancelledInvite))
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
+
+      status(response) shouldBe 204
+    }
+
+    "return 403 when trying to cancel an already accepted invitation" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val inviteCreated = TestConstants.defaultInvitation
+        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+
+      when(invitationsService.findInvitation(any())(any(), any(), any()))
+        .thenReturn(Future successful Some(inviteCreated))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any()))
+        .thenReturn(Future successful Left(StatusUpdateFailure(Accepted, "already accepted")))
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
+
+      response shouldBe invalidInvitationStatus("already accepted")
+    }
+
+    "return 404 when trying to cancel a not found invitation" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(invitationsService.findInvitation(any())(any(), any(), any()))
+        .thenReturn(Future successful None)
+
+      val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
+
+      response shouldBe InvitationNotFound
     }
   }
 
