@@ -360,6 +360,24 @@ Example Response, 200 with Body:
 }
 ```
 
+### Cancel a client specific invitation
+Cancel a specific invitation by its invitationId
+
+```
+PUT   /agencies/:arn/invitations/sent/:invitationId/cancel 
+```
+
+Example Requests:
+```
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent/CPB6KM1NHT446/cancel
+```
+
+|Response|Description|
+|--------|---------|
+|204|Invitation is successfully cancelled|
+|403|This invitation cannot be cancelled because it's status is not Pending|
+|403|This user has no permissions|
+|404|Client is not authorised to view this invitation|
 
 ### Running the tests <a name="runningTests"></a>
 
