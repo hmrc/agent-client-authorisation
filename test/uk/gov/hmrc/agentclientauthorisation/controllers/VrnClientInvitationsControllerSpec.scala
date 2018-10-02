@@ -51,7 +51,6 @@ class VrnClientInvitationsControllerSpec
   val invitationDbId: String = BSONObjectID.generate.stringify
   val invitationId: InvitationId = InvitationId("CBBBBBBBBBBCC")
   val generator = new Generator()
-  val vrn: Vrn = vrn
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))

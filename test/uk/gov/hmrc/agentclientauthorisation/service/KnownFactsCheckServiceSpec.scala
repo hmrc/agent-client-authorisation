@@ -32,12 +32,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
+
   val desConnector: DesConnector = mock[DesConnector]
   val citizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
 
   val service = new KnownFactsCheckService(desConnector, citizenDetailsConnector)
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -73,7 +74,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       when(desConnector.getVatCustomerInformation(clientVrn))
         .thenReturn(Future successful Some(VatCustomerInfo(None)))
 
-      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe Some(false)
+      await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied)) shouldBe None
     }
 
     "return None if there is no VAT Customer Information in ETMP (client not subscribed)" in {
