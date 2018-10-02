@@ -36,8 +36,10 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
       case Some(VatCustomerInfo(Some(effectiveRegistrationDate)))
           if effectiveRegistrationDate == suppliedVatRegistrationDate =>
         Some(true)
-      case Some(VatCustomerInfo(_)) =>
+      case Some(VatCustomerInfo(Some(_))) =>
         Some(false)
+      case Some(VatCustomerInfo(None)) =>
+        None
       case None =>
         None
     }

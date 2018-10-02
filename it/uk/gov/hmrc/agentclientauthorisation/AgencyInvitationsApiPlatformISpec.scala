@@ -29,10 +29,6 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 
-//class AgencyInvitationsFrontendISpec extends AgencyInvitationsISpec {
-//  override val apiPlatform: Boolean = false
-//}
-
 class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
 
   "GET /agencies/:arn/invitations/sent" should {
@@ -217,16 +213,16 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       Json.parse(result.body) shouldBe expectedError
     }
 
-    "return 403 when customer VAT information in ETMP but effectiveRegistrationDate is not present" in {
+    "return 404 when customer VAT information in ETMP but effectiveRegistrationDate is not present" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientVrn).hasVatCustomerDetails(isEffectiveRegistrationDatePresent = false)
-      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 403
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 404
     }
 
-    "return 403 when ETMP returns json without any 'approvedInformation' present" in {
+    "return 404 when ETMP returns json without any 'approvedInformation' present" in {
       given().agentAdmin(arn1, agentCode1).isLoggedInAndIsSubscribed
       given().client(clientId = clientVrn).hasVatCustomerDetailsWithNoApprovedInformation
-      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 403
+      agentGetCheckVatKnownFact(clientVrn, effectiveRegistrationDate).status shouldBe 404
     }
 
     "return 404 when no customer VAT information is in ETMP" in {
