@@ -68,7 +68,6 @@ class ClientFiltersByStatusApiPlatformISpec
     }
 
     scenario(s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
-      val spacedNino = Nino(nino1.value.replaceAll(" ", "").replaceAll("(.{2})", "$1 "))
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino1, nino1, port)
 

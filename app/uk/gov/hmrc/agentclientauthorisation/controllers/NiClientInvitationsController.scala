@@ -47,7 +47,9 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
-      actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
+      forThisClient(ClientIdentifier(nino)) {
+        actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
+      }
   }
 
   def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
