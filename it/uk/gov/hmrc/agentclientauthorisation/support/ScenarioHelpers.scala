@@ -55,7 +55,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     def checkInvite(invitation: EmbeddedInvitation)(expectedClientId: ClientId, expectedService: String): Unit = {
       invitation.arn shouldBe arn
       invitation.clientIdType shouldBe expectedClientId.typeId
-      invitation.clientId shouldBe expectedClientId.value.replace(" ", "")
+      invitation.clientId shouldBe expectedClientId.value
       invitation.service shouldBe expectedService
       invitation.status shouldBe "Pending"
     }
@@ -92,6 +92,7 @@ trait ScenarioHelpers extends ApiRequests with Matchers with Eventually {
     i2.service shouldBe service
     i2.status shouldBe "Pending"
     val links = clientResponse.links
+    links.selfLink shouldBe s"/agent-client-authorisation/clients/$taxIdType/${taxId.value}/invitations/received"
     links.invitations shouldBe 'nonEmpty
     links.invitations.head shouldBe i1.links.selfLink
     links.invitations(1) shouldBe i2.links.selfLink

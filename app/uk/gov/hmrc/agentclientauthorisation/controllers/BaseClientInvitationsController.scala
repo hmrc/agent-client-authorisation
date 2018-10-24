@@ -98,7 +98,10 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
   protected def forThisClient(taxId: ClientIdentifier[T])(
     block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) =
-    if (authTaxId.value != taxId.value) Future successful NoPermissionOnClient else block
+    if (authTaxId.value.replaceAll("\\s", "") != taxId.value.replaceAll("\\s", ""))
+      Future successful NoPermissionOnClient
+    else
+      block
 
   private def matchClientIdentifiers(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean =
     if (invitationClientId == usersClientId) true

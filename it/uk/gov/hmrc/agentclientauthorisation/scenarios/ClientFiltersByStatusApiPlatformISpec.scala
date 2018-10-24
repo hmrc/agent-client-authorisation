@@ -85,7 +85,7 @@ class ClientFiltersByStatusApiPlatformISpec
         (client, PersonalIncomeRecordService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(spacedNino)
+      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)
       clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
 
       When(s"the Client accepts the first Agency invitation")

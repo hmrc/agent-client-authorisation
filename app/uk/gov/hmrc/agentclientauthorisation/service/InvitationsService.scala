@@ -165,9 +165,7 @@ class InvitationsService @Inject()(
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
-      val refactoredClientId =
-        if (Nino.isValid(clientId.value)) ClientIdentifier(Nino(clientId.value.replace(" ", ""))) else clientId
-      invitationsRepository.list(service, refactoredClientId, status)
+      invitationsRepository.list(service, clientId, status)
     }
 
   def agencySent(
