@@ -27,6 +27,7 @@ class PersonalIncomeRecordInvitationScenarios
 
   implicit val arn = RandomArn()
   val nino: Nino = nextNino
+  val ninoSpace: Nino = Nino(nino.value.replaceAll(" ", "").replaceAll("(.{2})", "$1 "))
 
   scenario("accept a PersonalIncomeRecord invitation") {
     val agency = new AgencyApi(this, arn, port)
@@ -44,7 +45,7 @@ class PersonalIncomeRecordInvitationScenarios
 
     And("Client accepts the first invitation")
 
-    given().client(clientId = nino).isLoggedInWithNiEnrolment(nino)
+    given().client(clientId = nino).isLoggedInWithNiEnrolment(ninoSpace)
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
     val refetchedInvitations = client.getInvitations()
@@ -67,7 +68,7 @@ class PersonalIncomeRecordInvitationScenarios
 
     And("Client rejects the first invitation")
 
-    given().client(clientId = nino).isLoggedInWithNiEnrolment(nino)
+    given().client(clientId = nino).isLoggedInWithNiEnrolment(ninoSpace)
     val invitations = client.getInvitations()
     client.rejectInvitation(invitations.firstInvitation)
     val refetchedInvitations = client.getInvitations()

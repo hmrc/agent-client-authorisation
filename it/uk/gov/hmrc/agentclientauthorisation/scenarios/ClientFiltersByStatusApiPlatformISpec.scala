@@ -68,6 +68,7 @@ class ClientFiltersByStatusApiPlatformISpec
     }
 
     scenario(s"on the status of invitations - ${Service.PersonalIncomeRecord.id}") {
+      val spacedNino = Nino(nino1.value.replaceAll(" ", "").replaceAll("(.{2})", "$1 "))
       val agency = new AgencyApi(this, arn, port)
       val client = new ClientApi(this, nino1, nino1, port)
 
@@ -84,7 +85,7 @@ class ClientFiltersByStatusApiPlatformISpec
         (client, PersonalIncomeRecordService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)
+      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(spacedNino)
       clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
 
       When(s"the Client accepts the first Agency invitation")

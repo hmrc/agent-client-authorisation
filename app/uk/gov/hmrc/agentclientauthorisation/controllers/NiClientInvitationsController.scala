@@ -42,14 +42,15 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
-      acceptInvitation(ClientIdentifier(nino), invitationId)
+      acceptInvitation(ClientIdentifier(checkAndRefactorNino(authNino, nino)), invitationId)
   }
 
   def rejectInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
-      forThisClient(ClientIdentifier(nino)) {
-        actionInvitation(ClientIdentifier(nino), invitationId, invitationsService.rejectInvitation)
-      }
+      actionInvitation(
+        ClientIdentifier(checkAndRefactorNino(authNino, nino)),
+        invitationId,
+        invitationsService.rejectInvitation)
   }
 
   def getInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
@@ -59,10 +60,14 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
-      getInvitations(ClientIdentifier(nino), status)
+      getInvitations(ClientIdentifier(checkAndRefactorNino(authNino, nino)), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.PersonalIncomeRecord, NinoType)(action)
+
+  def checkAndRefactorNino(authNino: ClientIdentifier[Nino], nino: Nino) =
+    if (authNino.value.contains(" ")) Nino(nino.value.replaceAll(" ", "").replaceAll("(.{2})", "$1 "))
+    else nino
 
 }

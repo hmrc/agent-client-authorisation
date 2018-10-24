@@ -92,7 +92,9 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations for PIR" in {
-      val invite = sendInvitationToClient(nino, service = PersonalIncomeRecord)
+      val invite = sendInvitationToClient(
+        Nino(nino.value.replaceAll(" ", "").replaceAll("(.{2})", "$1 ")),
+        service = PersonalIncomeRecord)
 
       val clientNino = nino1
       val client = new ClientApi(this, clientNino, clientNino, port)
