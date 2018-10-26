@@ -212,7 +212,7 @@ http://localhost:9432/agent-client-authorisation//known-facts/individuals/nino/A
 |Response|Description|
 |--------|---------|
 |204|There is a record found for given nino and postcode|
-|403|There is a record for given nino but with a different poatcode|
+|403|There is a record for given nino but with a different postcode|
 |404|There is no record found for given nino|
 
 #### GET Known Fact for IRV <a name="irvKnownFact"></a>
