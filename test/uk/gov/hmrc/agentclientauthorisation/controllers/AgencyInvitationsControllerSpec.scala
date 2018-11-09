@@ -17,19 +17,20 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, LocalDate}
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
-import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json._
+import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.repository.ReceivedMultiInvitation
+import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
@@ -45,6 +46,7 @@ class AgencyInvitationsControllerSpec
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
+  val multiInvitationsService: MultiInvitationsService = resettingMock[MultiInvitationsService]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
   val authConnector: AuthActions = resettingMock[AuthActions]
@@ -55,11 +57,15 @@ class AgencyInvitationsControllerSpec
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
-  val controller = new AgencyInvitationsController(postcodeService, invitationsService, kfcService)(
-    metrics,
-    microserviceAuthConnector) {
-    override val authConnector: PlayAuthConnector = mockPlayAuthConnector
-  }
+  val multiJsonBody =
+    Json.toJson(ReceivedMultiInvitation(arn, "£0.99 with Flake Ltd", "business", invitationIds))
+
+  val controller =
+    new AgencyInvitationsController(postcodeService, invitationsService, kfcService, multiInvitationsService)(
+      metrics,
+      microserviceAuthConnector) {
+      override val authConnector: PlayAuthConnector = mockPlayAuthConnector
+    }
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
@@ -119,6 +125,37 @@ class AgencyInvitationsControllerSpec
       val response = await(controller.createInvitation(new Arn("1234"))(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 403
+    }
+  }
+
+  "createMultiInvitationsAndConstructLink" should {
+    "create a multiple invitation entry in MultiInvitationsRepository and construct agent link" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(multiInvitationsService.create(any[Arn], any(), any(), any())(any())).thenReturn(Future successful 1)
+      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(multiJsonBody)))
+
+      val normalisedName = ReceivedMultiInvitation.normalizeAgentName("£0.99 with Flake Ltd")
+
+      status(response) shouldBe 201
+      val regex = s"\\/invitations\\/business\\/(.*)\\/$normalisedName"
+      response.header.headers.get("Location").map(link => link.matches(regex)) shouldBe Some(true)
+    }
+
+    "return 400 for invalid payload" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(jsonBody)))
+
+      status(response) shouldBe 400
+    }
+
+    "return 400 for invalid json" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withTextBody("")))
+
+      status(response) shouldBe 400
     }
   }
 
