@@ -33,12 +33,12 @@ import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 case class MultiInvitationRecord(
-  uid: String, //unique in index
+  uid: String,
   arn: Arn,
   invitationIds: Seq[InvitationId],
   clientType: String,
   createdDate: DateTime,
-  expiryDate: DateTime //10 days from creation date
+  expiryDate: DateTime
 )
 
 object MultiInvitationRecord {

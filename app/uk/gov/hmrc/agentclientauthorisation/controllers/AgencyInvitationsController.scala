@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.util.UUID
-
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import org.apache.commons.lang3.RandomStringUtils
@@ -36,7 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class AgencyInvitationsController @Inject()(

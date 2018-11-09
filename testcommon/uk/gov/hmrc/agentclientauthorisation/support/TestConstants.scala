@@ -50,13 +50,4 @@ object TestConstants {
     expiryDate = LocalDate.now().plusDays(10),
     events = List(StatusChangeEvent(DateTime.now(), Pending))
   )
-
-  val defaultMultiInvitation = MultiInvitationRecord(
-    uid = "12345678",
-    arn = Arn(arn),
-    invitationIds = invitationIds,
-    clientType = "personal",
-    createdDate = DateTime.parse("2010-01-01T01:00:23.456Z"),
-    expiryDate = DateTime.parse("2010-01-10T01:00:23.456Z")
-  )
 }
