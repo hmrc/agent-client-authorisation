@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import javax.inject._
+import java.util.UUID
 
 import com.kenshoo.play.metrics.Metrics
+import javax.inject._
+import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.LocalDate
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
@@ -26,20 +28,22 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, Microservic
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, KnownFactsCheckService, PostcodeService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.repository.ReceivedMultiInvitation
+import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 @Singleton
 class AgencyInvitationsController @Inject()(
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
-  knownFactsCheckService: KnownFactsCheckService)(
+  knownFactsCheckService: KnownFactsCheckService,
+  multiInvitationsService: MultiInvitationsService)(
   implicit
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector)
@@ -57,6 +61,22 @@ class AgencyInvitationsController @Inject()(
 
         },
         invitationJson.get
+      )
+    }
+  }
+
+  def createMultiInvitationLink(givenArn: Arn) = onlyForAgents { implicit request => implicit arn =>
+    forThisAgency(givenArn) {
+      val linkComponents: Option[JsValue] = request.body.asJson
+      localWithJsonBodyMulti(
+        { multiInvitation =>
+          val hash = RandomStringUtils.randomAlphanumeric(8)
+          val normalisedAgentName = ReceivedMultiInvitation.normalizeAgentName(multiInvitation.agentName)
+          multiInvitationsService.create(arn, hash, multiInvitation.invitationIds, multiInvitation.clientType)
+          val constructedLink = s"/invitations/${multiInvitation.clientType}/$hash/$normalisedAgentName"
+          Future successful Created.withHeaders(multiLocation(constructedLink))
+        },
+        linkComponents
       )
     }
   }
@@ -83,6 +103,19 @@ class AgencyInvitationsController @Inject()(
       case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
+  private def localWithJsonBodyMulti(
+    f: (ReceivedMultiInvitation) => Future[Result],
+    request: Option[JsValue]): Future[Result] =
+    request match {
+      case Some(jsValue) =>
+        Try(jsValue.validate[ReceivedMultiInvitation]) match {
+          case Success(JsSuccess(payload, _)) => f(payload)
+          case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
+          case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
+        }
+      case _ => Future successful BadRequest(s"No json body found")
+    }
+
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
@@ -101,6 +134,9 @@ class AgencyInvitationsController @Inject()(
 
   private def location(invitation: Invitation) =
     LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
+
+  private def multiLocation(constructedLink: String) =
+    LOCATION -> constructedLink
 
   def getSentInvitations(
     givenArn: Arn,

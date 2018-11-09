@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
@@ -34,6 +35,8 @@ object TestConstants {
 
   val arn = "ABCDEF123456"
 
+  val invitationIds = Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
+
   val agentCode = "12345"
 
   val MtdItService = "HMRC-MTD-IT"
@@ -46,5 +49,14 @@ object TestConstants {
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),
     expiryDate = LocalDate.now().plusDays(10),
     events = List(StatusChangeEvent(DateTime.now(), Pending))
+  )
+
+  val defaultMultiInvitation = MultiInvitationRecord(
+    uid = "12345678",
+    arn = Arn(arn),
+    invitationIds = invitationIds,
+    clientType = "personal",
+    createdDate = DateTime.parse("2010-01-01T01:00:23.456Z"),
+    expiryDate = DateTime.parse("2010-01-10T01:00:23.456Z")
   )
 }
