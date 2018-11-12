@@ -15,10 +15,11 @@
  */
 
 import java.net.URL
-import javax.inject.{Inject, Provider, Singleton}
 
+import javax.inject.{Inject, Provider, Singleton}
 import com.google.inject.AbstractModule
 import com.google.inject.name.{Named, Names}
+import com.typesafe.config.Config
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
@@ -142,7 +143,12 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 }
 
 @Singleton
-class HttpVerbs @Inject()(val auditConnector: AuditConnector, @Named("appName") val appName: String)
+class HttpVerbs @Inject()(
+  val auditConnector: AuditConnector,
+  @Named("appName") val appName: String,
+  val config: Configuration)
     extends HttpGet with HttpPost with HttpPut with HttpPatch with HttpDelete with WSHttp with HttpAuditing {
   override val hooks = Seq(AuditingHook)
+
+  override def configuration: Option[Config] = Some(config.underlying)
 }
