@@ -29,7 +29,6 @@ class ReceivedMultiInvitationSpec extends UnitSpec {
       val expiryDate = DateTime.now().plusDays(10)
 
       val receivedMultiInvitation = ReceivedMultiInvitation(
-        Arn("ABCDEF123456"),
         "personal",
         Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
       )
@@ -38,7 +37,6 @@ class ReceivedMultiInvitationSpec extends UnitSpec {
 
       val result = json.as[ReceivedMultiInvitation]
 
-      result.arn shouldBe receivedMultiInvitation.arn
       result.invitationIds shouldBe receivedMultiInvitation.invitationIds
       result.clientType shouldBe receivedMultiInvitation.clientType
     }

@@ -60,7 +60,7 @@ class AgencyInvitationsControllerSpec
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
   val multiJsonBody =
-    Json.toJson(ReceivedMultiInvitation(arn, "business", invitationIds))
+    Json.toJson(ReceivedMultiInvitation("business", invitationIds))
 
   val controller =
     new AgencyInvitationsController(

@@ -44,7 +44,7 @@ object MultiInvitationRecord {
   implicit val formats: Format[MultiInvitationRecord] = Json.format[MultiInvitationRecord]
 }
 
-case class ReceivedMultiInvitation(arn: Arn, clientType: String, invitationIds: Seq[InvitationId])
+case class ReceivedMultiInvitation(clientType: String, invitationIds: Seq[InvitationId])
 
 object ReceivedMultiInvitation {
   implicit val format = Json.format[ReceivedMultiInvitation]
