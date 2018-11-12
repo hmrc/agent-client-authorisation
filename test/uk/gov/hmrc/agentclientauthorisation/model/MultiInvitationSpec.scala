@@ -33,8 +33,7 @@ class MultiInvitationSpec extends UnitSpec {
         Arn("ABCDEF123456"),
         Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC")),
         "personal",
-        created,
-        expiryDate
+        created
       )
 
       val json = toJson(multiInvitation)
@@ -46,7 +45,6 @@ class MultiInvitationSpec extends UnitSpec {
       result.invitationIds shouldBe multiInvitation.invitationIds
       result.clientType shouldBe multiInvitation.clientType
       result.createdDate shouldBe multiInvitation.createdDate
-      result.expiryDate shouldBe multiInvitation.expiryDate
     }
   }
 }

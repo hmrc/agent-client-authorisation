@@ -45,7 +45,7 @@ class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with Before
     override def toJson: String = ""
   }
 
-  val service = new MultiInvitationsService(multiInvitationsRepository, auditService, "10 days", metrics)
+  val service = new MultiInvitationsService(multiInvitationsRepository, auditService, metrics)
 
   val ninoAsString: String = nino1.value
 
@@ -62,9 +62,9 @@ class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with Before
 
       when(multiInvitationsRepository.create(any[MultiInvitationRecord])(any())).thenReturn(Future successful 1)
 
-      val response = await(service.create(Arn(arn), "uid12345", invitationIds, "personal"))
+      val response = await(service.create(Arn(arn), invitationIds, "personal"))
 
-      response shouldBe 1
+      response should have length (8)
     }
   }
 }

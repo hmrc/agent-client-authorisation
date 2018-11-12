@@ -58,7 +58,7 @@ class MultiInvitationsRepositoryISpec
 
     "create a new MultiInvitationRecord and find it" in {
       val multiInvitationRecord =
-        MultiInvitationRecord("uid", Arn(arn), invitationIds, "personal", now, now.plusDays(10))
+        MultiInvitationRecord("uid", Arn(arn), invitationIds, "personal", now)
 
       await(repository.create(multiInvitationRecord)) shouldBe 1
 

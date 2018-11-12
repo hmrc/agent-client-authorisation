@@ -20,9 +20,10 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.LocalDate
+import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -41,7 +42,8 @@ class AgencyInvitationsController @Inject()(
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService,
-  multiInvitationsService: MultiInvitationsService)(
+  multiInvitationsService: MultiInvitationsService,
+  agentServicesAccountConnector: AgentServicesAccountConnector)(
   implicit
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector)
@@ -68,11 +70,15 @@ class AgencyInvitationsController @Inject()(
       val linkComponents: Option[JsValue] = request.body.asJson
       localWithJsonBodyMulti(
         { multiInvitation =>
-          val hash = RandomStringUtils.randomAlphanumeric(8)
-          val normalisedAgentName = ReceivedMultiInvitation.normalizeAgentName(multiInvitation.agentName)
-          multiInvitationsService.create(arn, hash, multiInvitation.invitationIds, multiInvitation.clientType)
-          val constructedLink = s"/invitations/${multiInvitation.clientType}/$hash/$normalisedAgentName"
-          Future successful Created.withHeaders(multiLocation(constructedLink))
+          for {
+            normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name =>
+                                    normaliseAgentName(name.get))
+            result <- multiInvitationsService
+                       .create(arn, multiInvitation.invitationIds, multiInvitation.clientType)
+                       .map(uid =>
+                         Created.withHeaders(
+                           HeaderNames.LOCATION -> s"/invitations/${multiInvitation.clientType}/$uid/$normalisedAgentName"))
+          } yield result
         },
         linkComponents
       )
@@ -133,9 +139,6 @@ class AgencyInvitationsController @Inject()(
   private def location(invitation: Invitation) =
     LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
 
-  private def multiLocation(constructedLink: String) =
-    LOCATION -> constructedLink
-
   def getSentInvitations(
     givenArn: Arn,
     service: Option[String],
@@ -191,6 +194,9 @@ class AgencyInvitationsController @Inject()(
         case None        => NotFound
       }
   }
+
+  def normaliseAgentName(agentName: String) =
+    agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
 
   override protected def agencyLink(invitation: Invitation) = None
 }

@@ -110,6 +110,32 @@ Example Body of IRV:
 
 Note: The link returned from a successful create invitation response is "GET a Specific Agent's Sent Invitation"
 
+#### Create Multi-Invitation Link <a name="createMultiInvitationLink"></a>
+Create a link to represent multi-invitation
+
+```
+POST  /agencies/:arn/multi-invitations/
+```
+
+Request:
+```
+http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/multi-invitations/
+
+```
+Example Body:
+```json
+{
+  "clientType": "personal",
+  "invitationIds": ["FOO123BAR"]
+}
+```
+
+|Response|Description|
+|--------|---------|
+|201|Successfully created invitation link. (In Headers) Location → "/invitations/:clientType/:uid/:normalisedAgencyName"|
+|400|Received Valid Json but incorrect data|
+|400|Received Invalid Json|
+
 
 #### GET a Specific Agent's Sent Invitation <a name="agentSpecificInvitation"></a>
 Retrieves a specific invitation by its InvitationId

@@ -37,27 +37,22 @@ case class MultiInvitationRecord(
   arn: Arn,
   invitationIds: Seq[InvitationId],
   clientType: String,
-  createdDate: DateTime,
-  expiryDate: DateTime
+  createdDate: DateTime
 )
 
 object MultiInvitationRecord {
   implicit val formats: Format[MultiInvitationRecord] = Json.format[MultiInvitationRecord]
 }
 
-case class ReceivedMultiInvitation(arn: Arn, agentName: String, clientType: String, invitationIds: Seq[InvitationId])
+case class ReceivedMultiInvitation(clientType: String, invitationIds: Seq[InvitationId])
 
 object ReceivedMultiInvitation {
   implicit val format = Json.format[ReceivedMultiInvitation]
-
-  def normalizeAgentName(agentName: String) =
-    agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
 }
 
 trait MultiInvitationRecordRepository {
   def create(multiInvitationRecord: MultiInvitationRecord)(implicit ec: ExecutionContext): Future[Int]
   def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[MultiInvitationRecord]]
-  //update and remove??
 }
 
 @Singleton
@@ -71,7 +66,7 @@ class MultiInvitationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   override def indexes: Seq[Index] =
     Seq(
-      Index(Seq("uuid" -> IndexType.Ascending), unique = true)
+      Index(Seq("uid" -> IndexType.Ascending), unique = true)
     )
 
   def create(multiInvitationRecord: MultiInvitationRecord)(implicit ec: ExecutionContext): Future[Int] =
