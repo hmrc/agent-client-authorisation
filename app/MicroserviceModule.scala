@@ -52,6 +52,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
     bindBaseUrl("afi-relationships")
+    bindBaseUrl("agent-services-account")
     bindBaseUrl("des")
     bindBaseUrl("citizen-details")
     bindProperty2param("des.environment", "des.environment")

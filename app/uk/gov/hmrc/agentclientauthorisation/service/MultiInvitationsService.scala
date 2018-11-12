@@ -19,37 +19,46 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named}
+import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.Logger
+import reactivemongo.core.errors.DatabaseException
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.repository.{Monitor, MultiInvitationRecord, MultiInvitationRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration
 
 class MultiInvitationsService @Inject()(
   multiInvitationsRecordRepository: MultiInvitationRepository,
   auditService: AuditService,
-  @Named("invitation.expiryDuration")
-  invitationExpiryDurationValue: String,
   metrics: Metrics)
     extends Monitor {
 
+  val codetable = "ABCDEFGJHKLMNPQRSTUWXYZ0123456789"
+
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
-
-  def create(arn: Arn, uid: String, invitationIds: Seq[InvitationId], clientType: String)(
-    implicit ec: ExecutionContext): Future[Int] = {
+  def create(arn: Arn, invitationIds: Seq[InvitationId], clientType: String)(
+    implicit ec: ExecutionContext): Future[String] = {
     val startDate = DateTime.now(DateTimeZone.UTC)
-    val expiryDate = startDate.plus(invitationExpiryDuration.toMillis)
-    val multiInvitationRecord = MultiInvitationRecord(uid, arn, invitationIds, clientType, startDate, expiryDate)
+    val uid = RandomStringUtils.random(8, codetable)
+    val multiInvitationRecord = MultiInvitationRecord(uid, arn, invitationIds, clientType, startDate)
     monitor(s"Repository-Create-Multi-Invitation") {
-      multiInvitationsRecordRepository.create(multiInvitationRecord).map { result =>
-        Logger info s"""Created multi invitation record with uid: $uid"""
-        result
-      }
+      multiInvitationsRecordRepository
+        .create(multiInvitationRecord)
+        .map { result =>
+          if (result == 1) {
+            Logger.info(s"""Created multi invitation record with uid: $uid""")
+            uid
+          } else
+            throw new Exception("Unexpected failure of multi-invitation db record creation")
+        }
+        .recoverWith {
+          case e: DatabaseException if e.code.contains(11000) =>
+            Logger.error(s"""Duplicate uid happened $uid, will try again""")
+            create(arn, invitationIds, clientType)
+        }
     }
   }
 }

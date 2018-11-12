@@ -30,7 +30,6 @@ class ReceivedMultiInvitationSpec extends UnitSpec {
 
       val receivedMultiInvitation = ReceivedMultiInvitation(
         Arn("ABCDEF123456"),
-        "My agent name",
         "personal",
         Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
       )
@@ -40,14 +39,8 @@ class ReceivedMultiInvitationSpec extends UnitSpec {
       val result = json.as[ReceivedMultiInvitation]
 
       result.arn shouldBe receivedMultiInvitation.arn
-      result.agentName shouldBe receivedMultiInvitation.agentName
       result.invitationIds shouldBe receivedMultiInvitation.invitationIds
       result.clientType shouldBe receivedMultiInvitation.clientType
-    }
-
-    "normalise agencyName" in {
-      ReceivedMultiInvitation.normalizeAgentName("My age%*&nt name") shouldBe "my-agent-name"
-      ReceivedMultiInvitation.normalizeAgentName("Paul  Tan 8 ()^£$???") shouldBe "paul-tan-8-"
     }
   }
 }

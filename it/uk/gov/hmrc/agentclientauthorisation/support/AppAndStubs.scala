@@ -47,21 +47,23 @@ trait AppAndStubs
 
   protected def additionalConfiguration: Map[String, Any] =
     Map(
-      "microservice.services.auth.host"              -> wiremockHost,
-      "microservice.services.auth.port"              -> wiremockPort,
-      "microservice.services.agencies-fake.host"     -> wiremockHost,
-      "microservice.services.agencies-fake.port"     -> wiremockPort,
-      "microservice.services.relationships.host"     -> wiremockHost,
-      "microservice.services.relationships.port"     -> wiremockPort,
-      "microservice.services.afi-relationships.host" -> wiremockHost,
-      "microservice.services.afi-relationships.port" -> wiremockPort,
-      "microservice.services.citizen-details.host"   -> wiremockHost,
-      "microservice.services.citizen-details.port"   -> wiremockPort,
-      "microservice.services.des.host"               -> wiremockHost,
-      "microservice.services.des.port"               -> wiremockPort,
-      "auditing.enabled"                             -> true,
-      "auditing.consumer.baseUri.host"               -> wiremockHost,
-      "auditing.consumer.baseUri.port"               -> wiremockPort
+      "microservice.services.auth.host"                   -> wiremockHost,
+      "microservice.services.auth.port"                   -> wiremockPort,
+      "microservice.services.agencies-fake.host"          -> wiremockHost,
+      "microservice.services.agencies-fake.port"          -> wiremockPort,
+      "microservice.services.relationships.host"          -> wiremockHost,
+      "microservice.services.relationships.port"          -> wiremockPort,
+      "microservice.services.afi-relationships.host"      -> wiremockHost,
+      "microservice.services.afi-relationships.port"      -> wiremockPort,
+      "microservice.services.citizen-details.host"        -> wiremockHost,
+      "microservice.services.citizen-details.port"        -> wiremockPort,
+      "microservice.services.agent-services-account.host" -> wiremockHost,
+      "microservice.services.agent-services-account.port" -> wiremockPort,
+      "microservice.services.des.host"                    -> wiremockHost,
+      "microservice.services.des.port"                    -> wiremockPort,
+      "auditing.enabled"                                  -> true,
+      "auditing.consumer.baseUri.host"                    -> wiremockHost,
+      "auditing.consumer.baseUri.port"                    -> wiremockPort
     )
 
   override def commonStubs(): Unit = {

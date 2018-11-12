@@ -26,7 +26,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.ReceivedMultiInvitation
@@ -37,6 +37,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,6 +48,7 @@ class AgencyInvitationsControllerSpec
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val multiInvitationsService: MultiInvitationsService = resettingMock[MultiInvitationsService]
+  val agentServicesaccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
   val authConnector: AuthActions = resettingMock[AuthActions]
@@ -58,12 +60,15 @@ class AgencyInvitationsControllerSpec
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
   val multiJsonBody =
-    Json.toJson(ReceivedMultiInvitation(arn, "£0.99 with Flake Ltd", "business", invitationIds))
+    Json.toJson(ReceivedMultiInvitation(arn, "business", invitationIds))
 
   val controller =
-    new AgencyInvitationsController(postcodeService, invitationsService, kfcService, multiInvitationsService)(
-      metrics,
-      microserviceAuthConnector) {
+    new AgencyInvitationsController(
+      postcodeService,
+      invitationsService,
+      kfcService,
+      multiInvitationsService,
+      agentServicesaccountConnector)(metrics, microserviceAuthConnector) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -132,10 +137,13 @@ class AgencyInvitationsControllerSpec
     "create a multiple invitation entry in MultiInvitationsRepository and construct agent link" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(multiInvitationsService.create(any[Arn], any(), any(), any())(any())).thenReturn(Future successful 1)
+      when(agentServicesaccountConnector.getAgencyNameAgent(any[HeaderCarrier](), any[ExecutionContext]()))
+        .thenReturn(Future successful Some("£0.99 with Flake Ltd"))
+
+      when(multiInvitationsService.create(any[Arn], any(), any())(any())).thenReturn(Future successful "uid")
       val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(multiJsonBody)))
 
-      val normalisedName = ReceivedMultiInvitation.normalizeAgentName("£0.99 with Flake Ltd")
+      val normalisedName = controller.normaliseAgentName("£0.99 with Flake Ltd")
 
       status(response) shouldBe 201
       val regex = s"\\/invitations\\/business\\/(.*)\\/$normalisedName"
@@ -376,6 +384,11 @@ class AgencyInvitationsControllerSpec
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
     }
+  }
+
+  "normalise agencyName" in {
+    controller.normaliseAgentName("My age%*&nt name") shouldBe "my-agent-name"
+    controller.normaliseAgentName("Paul  Tan 8 ()^£$???") shouldBe "paul-tan-8-"
   }
 
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
