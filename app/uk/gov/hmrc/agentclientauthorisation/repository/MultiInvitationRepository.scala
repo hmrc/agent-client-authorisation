@@ -37,6 +37,7 @@ case class MultiInvitationRecord(
   arn: Arn,
   invitationIds: Seq[InvitationId],
   clientType: String,
+  normalisedAgentName: String,
   createdDate: DateTime
 )
 
