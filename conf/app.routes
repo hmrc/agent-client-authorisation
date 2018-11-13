@@ -29,6 +29,8 @@ GET         /clients/MTDITID/:mtdItId/invitations/received                      
 GET         /clients/NI/:nino/invitations/received                                            @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.getInvitations(nino: uk.gov.hmrc.domain.Nino, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 GET         /clients/VRN/:vrn/invitations/received                                            @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.getInvitations(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
+GET         /:uid/multi-invitation                                                    @uk.gov.hmrc.agentclientauthorisation.controllers.MultiInvitationController.getMultiInvitationRecord(uid: String)
+
 # Whitelist
 # --------------------------------
 GET         /forbidden                                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden

@@ -62,4 +62,7 @@ class MultiInvitationsService @Inject()(
         }
     }
   }
+
+  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[MultiInvitationRecord]] =
+    multiInvitationsRecordRepository.findBy(uid)
 }
