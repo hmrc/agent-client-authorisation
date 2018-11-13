@@ -62,7 +62,7 @@ class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with Before
 
       when(multiInvitationsRepository.create(any[MultiInvitationRecord])(any())).thenReturn(Future successful 1)
 
-      val response = await(service.create(Arn(arn), invitationIds, "personal"))
+      val response = await(service.create(Arn(arn), invitationIds, "personal", "stan-lee"))
 
       response should have length (8)
     }

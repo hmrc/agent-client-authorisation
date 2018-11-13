@@ -35,15 +35,16 @@ class MultiInvitationsService @Inject()(
   metrics: Metrics)
     extends Monitor {
 
-  val codetable = "ABCDEFGJHKLMNPQRSTUWXYZ0123456789"
+  val codetable = "ABCDEFGHJKLMNOPRSTUWXYZ123456789"
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def create(arn: Arn, invitationIds: Seq[InvitationId], clientType: String)(
+  def create(arn: Arn, invitationIds: Seq[InvitationId], clientType: String, normalisedAgentName: String)(
     implicit ec: ExecutionContext): Future[String] = {
     val startDate = DateTime.now(DateTimeZone.UTC)
     val uid = RandomStringUtils.random(8, codetable)
-    val multiInvitationRecord = MultiInvitationRecord(uid, arn, invitationIds, clientType, startDate)
+    val multiInvitationRecord =
+      MultiInvitationRecord(uid, arn, invitationIds, clientType, normalisedAgentName, startDate)
     monitor(s"Repository-Create-Multi-Invitation") {
       multiInvitationsRecordRepository
         .create(multiInvitationRecord)
@@ -57,7 +58,7 @@ class MultiInvitationsService @Inject()(
         .recoverWith {
           case e: DatabaseException if e.code.contains(11000) =>
             Logger.error(s"""Duplicate uid happened $uid, will try again""")
-            create(arn, invitationIds, clientType)
+            create(arn, invitationIds, clientType, normalisedAgentName)
         }
     }
   }

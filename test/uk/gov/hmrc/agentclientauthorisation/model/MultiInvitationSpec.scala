@@ -33,6 +33,7 @@ class MultiInvitationSpec extends UnitSpec {
         Arn("ABCDEF123456"),
         Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC")),
         "personal",
+        "stan-lee",
         created
       )
 
