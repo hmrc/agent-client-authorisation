@@ -67,4 +67,15 @@ class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with Before
       response should have length (8)
     }
   }
+
+  "findBy" should {
+    "find a multi invitation record using a uid" in {
+      val now = DateTime.now()
+      val record = MultiInvitationRecord("ABCDEFGH", Arn(arn), invitationIds, "personal", "my-agent-name", now)
+      when(multiInvitationsRepository.findBy(any())(any())).thenReturn(Future successful Some(record))
+
+      val response = await(service.findBy("ABCDEFGH"))
+      response shouldBe Some(record)
+    }
+  }
 }

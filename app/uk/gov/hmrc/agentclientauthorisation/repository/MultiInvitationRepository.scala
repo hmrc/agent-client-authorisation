@@ -42,6 +42,7 @@ case class MultiInvitationRecord(
 )
 
 object MultiInvitationRecord {
+  import uk.gov.hmrc.http.controllers.RestFormats.dateTimeFormats
   implicit val formats: Format[MultiInvitationRecord] = Json.format[MultiInvitationRecord]
 }
 
