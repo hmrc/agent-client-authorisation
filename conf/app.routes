@@ -5,8 +5,8 @@ POST        /agencies/:arn/invitations/sent                                     
 GET         /agencies/:arn/invitations/sent/:invitationId                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
-GET         /agencies/references/:uid                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.MultiInvitationController.getMultiInvitationRecord(uid: String)
-POST        /agencies/references/:arn                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.createMultiInvitationLink(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
+POST        /agencies/references/arn/:arn/clientType/:clientType                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getAgentLink(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientType: String)
 
 GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
 GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)

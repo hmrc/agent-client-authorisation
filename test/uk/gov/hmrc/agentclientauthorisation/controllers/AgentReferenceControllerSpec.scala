@@ -17,63 +17,64 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito._
+import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
+import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.test.UnitSpec
-import org.mockito.Mockito._
-import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.service.MultiInvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 
 import scala.concurrent.Future
 
-class MultiInvitationControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
+class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
 
-  val mockMultiInvitationsRepository: AgentReferenceRepository = resettingMock[AgentReferenceRepository]
+  val mockAgentReferenceRepository: AgentReferenceRepository = resettingMock[AgentReferenceRepository]
   val metrics: Metrics = resettingMock[Metrics]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val mockAgentServicesAccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
 
-  val mockMultiInvitationsService: MultiInvitationsService =
-    new MultiInvitationsService(mockMultiInvitationsRepository, auditService, metrics)
+  val mockAgentLinkService: AgentLinkService =
+    new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
 
-  val controller =
-    new MultiInvitationController(mockMultiInvitationsService)(metrics, mockPlayAuthConnector, auditService)
+  val agentReferenceController =
+    new AgentReferenceController(mockAgentReferenceRepository)(metrics, mockPlayAuthConnector, auditService)
 
-  "getMultiInvitationRecord" should {
+  "getAgentReferenceRecord" should {
 
-    "return a multi invitation record from a given uid" in {
-      val multiInvitationRecord: AgentReferenceRecord =
+    "return an agent reference record for a given uid" in {
+      val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      when(mockMultiInvitationsRepository.findBy(any())(any()))
-        .thenReturn(Future.successful(Some(multiInvitationRecord)))
+      when(mockAgentReferenceRepository.findBy(any())(any()))
+        .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-      val result = await(controller.getMultiInvitationRecord("ABCDEFGH")(FakeRequest()))
+      val result = await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
+
       status(result) shouldBe 200
-      jsonBodyOf(result).as[AgentReferenceRecord] shouldBe multiInvitationRecord
+      jsonBodyOf(result).as[AgentReferenceRecord] shouldBe agentReferenceRecord
     }
 
     "return none when the record is not found" in {
-      when(mockMultiInvitationsRepository.findBy(any())(any()))
+      when(mockAgentReferenceRepository.findBy(any())(any()))
         .thenReturn(Future.successful(None))
 
-      val result = await(controller.getMultiInvitationRecord("ABCDEFGH")(FakeRequest()))
+      val result = await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
+
       status(result) shouldBe 404
     }
 
     "return failure when unable to fetch record from mongo" in {
-      when(mockMultiInvitationsRepository.findBy(any())(any()))
+      when(mockAgentReferenceRepository.findBy(any())(any()))
         .thenReturn(Future.failed(new Exception("Error")))
 
       an[Exception] shouldBe thrownBy {
-        await(controller.getMultiInvitationRecord("ABCDEFGH")(FakeRequest()))
+        await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
       }
     }
   }

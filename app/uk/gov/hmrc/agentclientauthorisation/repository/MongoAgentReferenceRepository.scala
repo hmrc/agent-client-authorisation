@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import com.google.inject.ImplementedBy
 import javax.inject._
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
+import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord.formats
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -42,25 +43,21 @@ object AgentReferenceRecord {
   implicit val formats: Format[AgentReferenceRecord] = Json.format[AgentReferenceRecord]
 }
 
-case class ReceivedMultiInvitation(clientType: String, invitationIds: Seq[InvitationId])
-
-object ReceivedMultiInvitation {
-  implicit val format = Json.format[ReceivedMultiInvitation]
-}
-
-trait AgentReferenceRecordRepository {
+@ImplementedBy(classOf[MongoAgentReferenceRepository])
+trait AgentReferenceRepository {
   def create(multiInvitationRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int]
   def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
   def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
+  def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit]
 }
 
 @Singleton
-class AgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
+class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
     extends ReactiveRepository[AgentReferenceRecord, BSONObjectID](
       "multi-invitation-record",
       mongo.mongoConnector.db,
       formats,
-      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRecordRepository
+      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRepository
     with StrictlyEnsureIndexes[AgentReferenceRecord, BSONObjectID] {
 
   override def indexes: Seq[Index] =
@@ -85,5 +82,12 @@ class AgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
     find(
       "arn" -> arn.value
     ).map(_.headOption)
+
+  import ImplicitBSONHandlers._
+
+  def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit] =
+    collection
+      .update(Json.obj("uid" -> uid), Json.obj("$addToSet" -> Json.obj("normalisedAgentNames" -> newAgentName)))
+      .map(_ => ())
 
 }

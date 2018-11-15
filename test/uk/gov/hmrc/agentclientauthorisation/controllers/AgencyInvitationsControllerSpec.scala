@@ -29,7 +29,6 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.ReceivedMultiInvitation
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
@@ -37,7 +36,6 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,7 +45,7 @@ class AgencyInvitationsControllerSpec
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
-  val multiInvitationsService: MultiInvitationsService = resettingMock[MultiInvitationsService]
+  val multiInvitationsService: AgentLinkService = resettingMock[AgentLinkService]
   val agentServicesaccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
@@ -58,9 +56,6 @@ class AgencyInvitationsControllerSpec
 
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
-
-  val multiJsonBody =
-    Json.toJson(ReceivedMultiInvitation("business", invitationIds))
 
   val controller =
     new AgencyInvitationsController(
@@ -102,7 +97,7 @@ class AgencyInvitationsControllerSpec
         eqs(None))(any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
   }
 
-  "createInvitations" should {
+  "createInvitation" should {
     "create an invitation when given correct Arn" in {
 
       agentAuthStub(agentAffinityAndEnrolments)
@@ -133,37 +128,15 @@ class AgencyInvitationsControllerSpec
     }
   }
 
-  "createMultiInvitationsAndConstructLink" should {
-    "create a multiple invitation entry in MultiInvitationsRepository and construct agent link" in {
+  "getAgentLink" should {
+    "create a agent link and store it in the headers" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(agentServicesaccountConnector.getAgencyNameAgent(any[HeaderCarrier](), any[ExecutionContext]()))
-        .thenReturn(Future successful Some("£0.99 with Flake Ltd"))
-
-      when(multiInvitationsService.create(any[Arn], any())(any())).thenReturn(Future successful "uid")
-      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(multiJsonBody)))
-
-      val normalisedName = controller.normaliseAgentName("£0.99 with Flake Ltd")
+      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+      val response = await(controller.getAgentLink(arn, "personal")(FakeRequest()))
 
       status(response) shouldBe 201
-      val regex = s"\\/invitations\\/business\\/(.*)\\/$normalisedName"
-      response.header.headers.get("Location").map(link => link.matches(regex)) shouldBe Some(true)
-    }
-
-    "return 400 for invalid payload" in {
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(jsonBody)))
-
-      status(response) shouldBe 400
-    }
-
-    "return 400 for invalid json" in {
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withTextBody("")))
-
-      status(response) shouldBe 400
+      response.header.headers.get("Location") shouldBe Some("/foo")
     }
   }
 
