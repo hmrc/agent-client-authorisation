@@ -23,7 +23,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecordRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecordRepository
 import uk.gov.hmrc.agentclientauthorisation.service.MultiInvitationsService
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails

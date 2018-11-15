@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json.toJson
-import uk.gov.hmrc.agentclientauthorisation.repository.{MultiInvitationRecord, ReceivedMultiInvitation}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, ReceivedMultiInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.test.UnitSpec
 

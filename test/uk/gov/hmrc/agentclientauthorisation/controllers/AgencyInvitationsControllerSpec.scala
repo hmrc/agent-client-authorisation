@@ -140,7 +140,7 @@ class AgencyInvitationsControllerSpec
       when(agentServicesaccountConnector.getAgencyNameAgent(any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future successful Some("£0.99 with Flake Ltd"))
 
-      when(multiInvitationsService.create(any[Arn], any(), any(), any())(any())).thenReturn(Future successful "uid")
+      when(multiInvitationsService.create(any[Arn], any())(any())).thenReturn(Future successful "uid")
       val response = await(controller.createMultiInvitationLink(arn)(FakeRequest().withJsonBody(multiJsonBody)))
 
       val normalisedName = controller.normaliseAgentName("£0.99 with Flake Ltd")

@@ -24,13 +24,13 @@ import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.repository.{Monitor, MultiInvitationRecord, MultiInvitationRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MultiInvitationsService @Inject()(
-  multiInvitationsRecordRepository: MultiInvitationRepository,
+  multiInvitationsRecordRepository: AgentReferenceRepository,
   auditService: AuditService,
   metrics: Metrics)
     extends Monitor {
@@ -39,13 +39,16 @@ class MultiInvitationsService @Inject()(
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def create(arn: Arn, invitationIds: Seq[InvitationId], clientType: String, normalisedAgentName: String)(
-    implicit ec: ExecutionContext): Future[String] = {
+  def create(arn: Arn, normalisedAgentName: String)(implicit ec: ExecutionContext): Future[String] = {
     val startDate = DateTime.now(DateTimeZone.UTC)
     val uid = RandomStringUtils.random(8, codetable)
     val multiInvitationRecord =
-      MultiInvitationRecord(uid, arn, invitationIds, clientType, normalisedAgentName, startDate)
+      AgentReferenceRecord(uid, arn, Seq(normalisedAgentName))
     monitor(s"Repository-Create-Multi-Invitation") {
+      multiInvitationsRecordRepository.findByArn(arn).map {
+        case Some(record) =>
+        case None         =>
+      }
       multiInvitationsRecordRepository
         .create(multiInvitationRecord)
         .map { result =>
@@ -58,11 +61,11 @@ class MultiInvitationsService @Inject()(
         .recoverWith {
           case e: DatabaseException if e.code.contains(11000) =>
             Logger.error(s"""Duplicate uid happened $uid, will try again""")
-            create(arn, invitationIds, clientType, normalisedAgentName)
+            create(arn, normalisedAgentName)
         }
     }
   }
 
-  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[MultiInvitationRecord]] =
+  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]] =
     multiInvitationsRecordRepository.findBy(uid)
 }

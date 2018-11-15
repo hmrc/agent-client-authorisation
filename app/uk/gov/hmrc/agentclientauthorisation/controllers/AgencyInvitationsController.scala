@@ -74,7 +74,7 @@ class AgencyInvitationsController @Inject()(
             normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name =>
                                     normaliseAgentName(name.get))
             result <- multiInvitationsService
-                       .create(arn, multiInvitation.invitationIds, multiInvitation.clientType, normalisedAgentName)
+                       .create(arn, normalisedAgentName)
                        .map(uid =>
                          Created.withHeaders(
                            HeaderNames.LOCATION -> s"/invitations/${multiInvitation.clientType}/$uid/$normalisedAgentName"))

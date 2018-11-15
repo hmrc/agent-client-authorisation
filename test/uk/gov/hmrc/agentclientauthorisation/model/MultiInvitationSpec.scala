@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json.toJson
-import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecord
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -28,24 +28,19 @@ class MultiInvitationSpec extends UnitSpec {
       val created = DateTime.now()
       val expiryDate = DateTime.now().plusDays(10)
 
-      val multiInvitation = MultiInvitationRecord(
+      val multiInvitation = AgentReferenceRecord(
         "12345678",
         Arn("ABCDEF123456"),
-        Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC")),
-        "personal",
-        "stan-lee",
-        created
+        Seq("stan-lee")
       )
 
       val json = toJson(multiInvitation)
 
-      val result = json.as[MultiInvitationRecord]
+      val result = json.as[AgentReferenceRecord]
 
       result.uid shouldBe multiInvitation.uid
       result.arn shouldBe multiInvitation.arn
-      result.invitationIds shouldBe multiInvitation.invitationIds
-      result.clientType shouldBe multiInvitation.clientType
-      result.createdDate shouldBe multiInvitation.createdDate
+      result.normalisedAgentNames shouldBe multiInvitation.normalisedAgentNames
     }
   }
 }

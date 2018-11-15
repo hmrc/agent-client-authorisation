@@ -24,7 +24,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecord.formats
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord.formats
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -32,18 +32,14 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MultiInvitationRecord(
+case class AgentReferenceRecord(
   uid: String,
   arn: Arn,
-  invitationIds: Seq[InvitationId],
-  clientType: String,
-  normalisedAgentName: String,
-  createdDate: DateTime
+  normalisedAgentNames: Seq[String]
 )
 
-object MultiInvitationRecord {
-  import uk.gov.hmrc.http.controllers.RestFormats.dateTimeFormats
-  implicit val formats: Format[MultiInvitationRecord] = Json.format[MultiInvitationRecord]
+object AgentReferenceRecord {
+  implicit val formats: Format[AgentReferenceRecord] = Json.format[AgentReferenceRecord]
 }
 
 case class ReceivedMultiInvitation(clientType: String, invitationIds: Seq[InvitationId])
@@ -52,35 +48,42 @@ object ReceivedMultiInvitation {
   implicit val format = Json.format[ReceivedMultiInvitation]
 }
 
-trait MultiInvitationRecordRepository {
-  def create(multiInvitationRecord: MultiInvitationRecord)(implicit ec: ExecutionContext): Future[Int]
-  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[MultiInvitationRecord]]
+trait AgentReferenceRecordRepository {
+  def create(multiInvitationRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int]
+  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
+  def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
 }
 
 @Singleton
-class MultiInvitationRepository @Inject()(mongo: ReactiveMongoComponent)
-    extends ReactiveRepository[MultiInvitationRecord, BSONObjectID](
+class AgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
+    extends ReactiveRepository[AgentReferenceRecord, BSONObjectID](
       "multi-invitation-record",
       mongo.mongoConnector.db,
       formats,
-      ReactiveMongoFormats.objectIdFormats) with MultiInvitationRecordRepository
-    with StrictlyEnsureIndexes[MultiInvitationRecord, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRecordRepository
+    with StrictlyEnsureIndexes[AgentReferenceRecord, BSONObjectID] {
 
   override def indexes: Seq[Index] =
     Seq(
-      Index(Seq("uid" -> IndexType.Ascending), unique = true)
+      Index(Seq("uid" -> IndexType.Ascending), unique = true),
+      Index(Seq("arn" -> IndexType.Ascending), unique = true)
     )
 
-  def create(multiInvitationRecord: MultiInvitationRecord)(implicit ec: ExecutionContext): Future[Int] =
+  def create(multiInvitationRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
     insert(multiInvitationRecord).map { result =>
       result.writeErrors.foreach(error =>
         Logger(getClass).warn(s"Creating MultiInvitationRecord failed: ${error.errmsg}"))
       result.n
     }
 
-  def findBy(uid: String)(implicit ex: ExecutionContext): Future[Option[MultiInvitationRecord]] =
+  def findBy(uid: String)(implicit ex: ExecutionContext): Future[Option[AgentReferenceRecord]] =
     find(
       "uid" -> uid
+    ).map(_.headOption)
+
+  def findByArn(arn: Arn)(implicit ex: ExecutionContext): Future[Option[AgentReferenceRecord]] =
+    find(
+      "arn" -> arn.value
     ).map(_.headOption)
 
 }

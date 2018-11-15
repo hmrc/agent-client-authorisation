@@ -26,7 +26,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.repository.{MultiInvitationRecord, MultiInvitationRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -38,7 +38,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
-  val multiInvitationsRepository: MultiInvitationRepository = mock[MultiInvitationRepository]
+  val multiInvitationsRepository: AgentReferenceRepository = mock[AgentReferenceRepository]
   val auditService: AuditService = mock[AuditService]
   val metrics: Metrics = new Metrics {
     override def defaultRegistry: MetricRegistry = new MetricRegistry()
@@ -60,18 +60,18 @@ class MultiInvitationsServiceSpec extends UnitSpec with MockitoSugar with Before
   "create" should {
     "create a multi Invitation record in the repository" in {
 
-      when(multiInvitationsRepository.create(any[MultiInvitationRecord])(any())).thenReturn(Future successful 1)
+      when(multiInvitationsRepository.create(any[AgentReferenceRecord])(any())).thenReturn(Future successful 1)
 
-      val response = await(service.create(Arn(arn), invitationIds, "personal", "stan-lee"))
+      val response = await(service.create(Arn(arn), "stan-lee"))
 
-      response should have length (8)
+      response should have length 8
     }
   }
 
   "findBy" should {
     "find a multi invitation record using a uid" in {
       val now = DateTime.now()
-      val record = MultiInvitationRecord("ABCDEFGH", Arn(arn), invitationIds, "personal", "my-agent-name", now)
+      val record = AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("my-agent-name"))
       when(multiInvitationsRepository.findBy(any())(any())).thenReturn(Future successful Some(record))
 
       val response = await(service.findBy("ABCDEFGH"))

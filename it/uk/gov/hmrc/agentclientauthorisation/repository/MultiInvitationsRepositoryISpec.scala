@@ -52,17 +52,19 @@ class MultiInvitationsRepositoryISpec
 
   val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
-  private def repository = new MultiInvitationRepository(mockReactiveMongoComponent)
+  private def repository = new AgentReferenceRepository(mockReactiveMongoComponent)
 
-  "create then findBy" should {
+  "create then findBy uid and findByArn" should {
 
     "create a new MultiInvitationRecord and find it" in {
       val multiInvitationRecord =
-        MultiInvitationRecord("uid", Arn(arn), invitationIds, "personal", "stan-lee", now)
+        AgentReferenceRecord("uid", Arn(arn), Seq("stan-lee"))
 
       await(repository.create(multiInvitationRecord)) shouldBe 1
 
       await(repository.findBy("uid")) shouldBe Some(multiInvitationRecord)
+
+      await(repository.findBy(arn)) shouldBe Some(multiInvitationRecord)
     }
   }
 }

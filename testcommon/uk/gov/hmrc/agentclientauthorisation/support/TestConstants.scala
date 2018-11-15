@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecord
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
