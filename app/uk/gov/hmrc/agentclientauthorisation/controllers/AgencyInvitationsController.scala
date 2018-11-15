@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
-import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.LocalDate
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
@@ -27,7 +26,6 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConn
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.ReceivedMultiInvitation
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.domain.Nino
@@ -42,7 +40,7 @@ class AgencyInvitationsController @Inject()(
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService,
-  multiInvitationsService: MultiInvitationsService,
+  agentLinkService: AgentLinkService,
   agentServicesAccountConnector: AgentServicesAccountConnector)(
   implicit
   metrics: Metrics,
@@ -65,23 +63,13 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def createMultiInvitationLink(givenArn: Arn) = onlyForAgents { implicit request => implicit arn =>
+  def getAgentLink(givenArn: Arn, clientType: String) = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
-      val linkComponents: Option[JsValue] = request.body.asJson
-      localWithJsonBodyMulti(
-        { multiInvitation =>
-          for {
-            normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name =>
-                                    normaliseAgentName(name.get))
-            result <- multiInvitationsService
-                       .create(arn, multiInvitation.invitationIds, multiInvitation.clientType, normalisedAgentName)
-                       .map(uid =>
-                         Created.withHeaders(
-                           HeaderNames.LOCATION -> s"/invitations/${multiInvitation.clientType}/$uid/$normalisedAgentName"))
-          } yield result
-        },
-        linkComponents
-      )
+      for {
+        result <- agentLinkService
+                   .getAgentLink(arn, clientType)
+                   .map(link => Created.withHeaders(HeaderNames.LOCATION -> link))
+      } yield result
     }
   }
 
@@ -105,19 +93,6 @@ class AgencyInvitationsController @Inject()(
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
       case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
-    }
-
-  private def localWithJsonBodyMulti(
-    f: (ReceivedMultiInvitation) => Future[Result],
-    request: Option[JsValue]): Future[Result] =
-    request match {
-      case Some(jsValue) =>
-        Try(jsValue.validate[ReceivedMultiInvitation]) match {
-          case Success(JsSuccess(payload, _)) => f(payload)
-          case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
-          case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
-        }
-      case _ => Future successful BadRequest(s"No json body found")
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {

@@ -23,27 +23,26 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.repository.MultiInvitationRecordRepository
-import uk.gov.hmrc.agentclientauthorisation.service.MultiInvitationsService
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-class MultiInvitationController @Inject()(multiInvitationsService: MultiInvitationsService)(
+class AgentReferenceController @Inject()(agentReferenceRecordRepository: AgentReferenceRepository)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
   auditService: AuditService)
     extends AuthActions(metrics, authConnector) {
 
-  def getMultiInvitationRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
-    multiInvitationsService
+  def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
+    agentReferenceRecordRepository
       .findBy(uid)
       .map {
         case Some(multiInvitationRecord) => Ok(Json.toJson(multiInvitationRecord))
         case None =>
-          Logger(getClass).warn(s"Multi Invitation Record not found for: $uid")
+          Logger(getClass).warn(s"Agent Reference Record not found for: $uid")
           NotFound
       }
       .recoverWith {
