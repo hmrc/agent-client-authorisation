@@ -54,7 +54,7 @@ trait AgentReferenceRepository {
 @Singleton
 class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
     extends ReactiveRepository[AgentReferenceRecord, BSONObjectID](
-      "multi-invitation-record",
+      "agent-reference",
       mongo.mongoConnector.db,
       formats,
       ReactiveMongoFormats.objectIdFormats) with AgentReferenceRepository
