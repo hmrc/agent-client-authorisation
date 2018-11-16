@@ -54,7 +54,9 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
         sparse = true),
       Index(Seq("arn"      -> IndexType.Ascending)),
       Index(Seq("clientId" -> IndexType.Ascending)),
-      Index(Seq("service"  -> IndexType.Ascending))
+      Index(Seq("service"  -> IndexType.Ascending)),
+      Index(Seq(InvitationRecordFormat.arnClientStateKey  -> IndexType.Ascending))
+
     )
 
   def create(
