@@ -22,7 +22,7 @@ import org.mockito.Mockito._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.auth.core.PlayAuthConnector
@@ -33,6 +33,7 @@ import scala.concurrent.Future
 class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
 
   val mockAgentReferenceRepository: AgentReferenceRepository = resettingMock[AgentReferenceRepository]
+  val mockInvitationsRepository: InvitationsRepository = resettingMock[InvitationsRepository]
   val metrics: Metrics = resettingMock[Metrics]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockAgentServicesAccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
@@ -43,7 +44,10 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
     new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
 
   val agentReferenceController =
-    new AgentReferenceController(mockAgentReferenceRepository)(metrics, mockPlayAuthConnector, auditService)
+    new AgentReferenceController(mockAgentReferenceRepository, mockInvitationsRepository)(
+      metrics,
+      mockPlayAuthConnector,
+      auditService)
 
   "getAgentReferenceRecord" should {
 

@@ -35,6 +35,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import play.modules.reactivemongo.ReactiveMongoComponent
 
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -313,6 +314,28 @@ class InvitationsMongoRepositoryISpec
 
       list.size shouldBe 1
       list.head.status shouldBe Pending
+    }
+
+    "findAllInvitationIds" in {
+
+      val invitations: Seq[model.Invitation] = for (i <- 1 to 10)
+        yield
+          Invitation
+            .createNew(
+              Arn(arn),
+              Service.MtdIt,
+              MtdItId(s"AB${i}23456B"),
+              MtdItId(s"AB${i}23456A"),
+              now,
+              now.plusDays(10).toLocalDate)
+
+      await(Future.sequence(invitations.map(repository.insert)))
+
+      val result1 = await(repository.findAllInvitationIds(Arn(arn), Seq("MTDITID" -> "AB523456A"), Some(Pending)))
+      result1 shouldBe Seq(invitations(4).invitationId)
+
+      val result2 = await(repository.findAllInvitationIds(Arn(arn), Seq("MTDITID" -> "AB523456B"), Some(Pending)))
+      result2 shouldBe Seq(invitations(4).invitationId)
     }
   }
 

@@ -17,11 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
-import javax.inject._
 
+import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import play.api.Logger
+import play.api.mvc.Results.Redirect
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation._
@@ -34,10 +35,11 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
 import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
@@ -89,6 +91,19 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
           GenericUnauthorized
       }
   }
+
+  protected def withMultiEnrolledClient[A](body: Seq[(String, String)] => Future[Result])(
+    implicit hc: HeaderCarrier): Future[Result] =
+    authorised(
+      AuthProviders(GovernmentGateway) and ConfidenceLevel.L200 and (AffinityGroup.Individual or AffinityGroup.Organisation))
+      .retrieve(allEnrolments) { enrols =>
+        val clientIdTypePlusIds = enrols.enrolments.map { enrolment =>
+          (enrolment.identifiers.head.key, enrolment.identifiers.head.value)
+        }.toSeq
+
+        body(clientIdTypePlusIds)
+
+      }
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
     enrolls.find(_.key == enrolKey).flatMap(_.getIdentifier(enrolId)).map(_.value)

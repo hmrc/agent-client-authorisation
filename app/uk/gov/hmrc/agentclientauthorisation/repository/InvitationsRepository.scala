@@ -41,7 +41,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     extends ReactiveRepository[Invitation, BSONObjectID](
       "invitations",
       mongo.mongoConnector.db,
-      DomainFormat.mongoFormat,
+      InvitationRecordFormat.mongoFormat,
       ReactiveMongoFormats.objectIdFormats) with AtomicUpdate[Invitation]
     with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
@@ -72,7 +72,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def findSorted(sortBy: JsObject, query: (String, JsValueWrapper)*)(
     implicit ec: ExecutionContext): Future[List[Invitation]] = {
     import ImplicitBSONHandlers._
-    implicit val domainFormatImplicit: Format[Invitation] = DomainFormat.mongoFormat
+    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
 
     collection
@@ -99,6 +99,24 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
     findSorted(Json.obj("events.0.time" -> JsNumber(-1)), searchOptions: _*)
+  }
+
+  def findAllInvitationIds(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationId]] = {
+    import ImplicitBSONHandlers._
+    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
+    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
+    val keys = clientIds.map {
+      case (clientIdType, clientIdValue) =>
+        InvitationRecordFormat
+          .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.getOrElse("").toString)
+    }
+    val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
+    collection
+      .find(query, Json.obj("invitationId" -> 1))
+      .cursor[JsObject](ReadPreference.primaryPreferred)
+      .collect[List](100, Cursor.FailOnError())
+      .map(_.map(x => (x \ "invitationId").as[InvitationId]))
   }
 
   def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
@@ -129,73 +147,4 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
 
   override def isInsertion(newRecordId: BSONObjectID, oldRecord: Invitation): Boolean =
     newRecordId != oldRecord.id
-}
-
-object DomainFormat {
-
-  import play.api.libs.functional.syntax._
-  import play.api.libs.json.{JsPath, Reads}
-
-  implicit val serviceFormat = Service.format
-  implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
-
-  def read(
-    id: BSONObjectID,
-    invitationId: InvitationId,
-    arn: Arn,
-    service: Service,
-    clientId: String,
-    clientIdTypeOp: Option[String],
-    suppliedClientId: String,
-    suppliedClientIdType: String,
-    expiryDateOp: Option[LocalDate],
-    events: List[StatusChangeEvent]): Invitation = {
-
-    val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(10).toLocalDate)
-
-    val clientIdType = clientIdTypeOp.getOrElse {
-      if (Nino.isValid(clientId)) NinoType.id else MtdItIdType.id
-    }
-
-    Invitation(
-      id,
-      invitationId,
-      arn,
-      service,
-      ClientIdentifier(clientId, clientIdType),
-      ClientIdentifier(suppliedClientId, suppliedClientIdType),
-      expiryDate,
-      events
-    )
-  }
-
-  val reads: Reads[Invitation] = ((JsPath \ "id").read[BSONObjectID] and
-    (JsPath \ "invitationId").read[InvitationId] and
-    (JsPath \ "arn").read[Arn] and
-    (JsPath \ "service").read[Service] and
-    (JsPath \ "clientId").read[String] and
-    (JsPath \ "clientIdType").readNullable[String] and
-    (JsPath \ "suppliedClientId").read[String] and
-    (JsPath \ "suppliedClientIdType").read[String] and
-    (JsPath \ "expiryDate").readNullable[LocalDate] and
-    (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
-
-  val writes = new Writes[Invitation] {
-    def writes(invitation: Invitation) =
-      Json.obj(
-        "id"                   -> invitation.id,
-        "invitationId"         -> invitation.invitationId,
-        "arn"                  -> invitation.arn.value,
-        "service"              -> invitation.service.id,
-        "clientId"             -> invitation.clientId.value,
-        "clientIdType"         -> invitation.clientId.typeId,
-        "suppliedClientId"     -> invitation.suppliedClientId.value,
-        "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-        "events"               -> invitation.events,
-        "expiryDate"           -> invitation.expiryDate
-      )
-  }
-
-  val mongoFormat = ReactiveMongoFormats.mongoEntity(Format(reads, writes))
 }

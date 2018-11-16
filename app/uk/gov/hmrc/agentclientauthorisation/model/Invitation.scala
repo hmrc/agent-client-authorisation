@@ -148,23 +148,25 @@ object Invitation {
 
   implicit val dateWrites = RestFormats.dateTimeWrite
   implicit val dateReads = RestFormats.dateTimeRead
-  implicit val jsonWrites = new Writes[Invitation] {
-    def writes(invitation: Invitation) =
-      Json.obj(
-        "service"              -> invitation.service.id,
-        "clientIdType"         -> invitation.clientId.typeId,
-        "clientId"             -> invitation.clientId.value,
-        "arn"                  -> invitation.arn.value,
-        "suppliedClientId"     -> invitation.suppliedClientId.value,
-        "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-        "created"              -> invitation.firstEvent().time,
-        "lastUpdated"          -> invitation.mostRecentEvent().time,
-        "expiryDate"           -> invitation.expiryDate,
-        "status"               -> invitation.status,
-        "invitationId"         -> invitation.invitationId.value
-      )
-  }
 
+  object external {
+    implicit val writes: Writes[Invitation] = new Writes[Invitation] {
+      def writes(invitation: Invitation) =
+        Json.obj(
+          "service"              -> invitation.service.id,
+          "clientIdType"         -> invitation.clientId.typeId,
+          "clientId"             -> invitation.clientId.value,
+          "arn"                  -> invitation.arn.value,
+          "suppliedClientId"     -> invitation.suppliedClientId.value,
+          "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
+          "created"              -> invitation.firstEvent().time,
+          "lastUpdated"          -> invitation.mostRecentEvent().time,
+          "expiryDate"           -> invitation.expiryDate,
+          "status"               -> invitation.status,
+          "invitationId"         -> invitation.invitationId.value
+        )
+    }
+  }
 }
 
 /** Information provided by the agent to offer representation to HMRC */
