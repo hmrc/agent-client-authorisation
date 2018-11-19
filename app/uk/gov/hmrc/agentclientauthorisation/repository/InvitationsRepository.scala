@@ -135,11 +135,16 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
     find()
 
-  def update(id: BSONObjectID, status: InvitationStatus, updateDate: DateTime)(
+  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] = {
+    val updateKey = InvitationRecordFormat
+      .toArnClientStateKey(invitation.arn.value, invitation.clientId.typeId, invitation.clientId.value, status.toString)
     val update = atomicUpdate(
-      BSONDocument("_id"   -> id),
-      BSONDocument("$push" -> BSONDocument("events" -> bsonJson(StatusChangeEvent(updateDate, status)))))
+      BSONDocument("_id" -> invitation.id),
+      BSONDocument(
+        "$set"  -> BSONDocument("_arnClientStateKey" -> bsonJson(Seq(updateKey))),
+        "$push" -> BSONDocument("events"             -> bsonJson(StatusChangeEvent(updateDate, status))))
+    )
     update.map(_.map(_.updateType.savedValue).get)
   }
 
