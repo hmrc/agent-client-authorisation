@@ -190,7 +190,7 @@ class InvitationsService @Inject()(
     invitation.status match {
       case Pending =>
         monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
-          invitationsRepository.update(invitation.id, status, timestamp) map { invitation =>
+          invitationsRepository.update(invitation, status, timestamp) map { invitation =>
             Logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
             Right(invitation)
           }

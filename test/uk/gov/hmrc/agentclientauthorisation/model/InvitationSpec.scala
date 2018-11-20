@@ -22,6 +22,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.play.test.UnitSpec
+import Invitation.external._
 
 class InvitationSpec extends UnitSpec {
   "Dates in the serialised JSON" should {

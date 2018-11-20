@@ -23,13 +23,16 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
-import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRepository
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-class AgentReferenceController @Inject()(agentReferenceRecordRepository: AgentReferenceRepository)(
+class AgentReferenceController @Inject()(
+  agentReferenceRecordRepository: AgentReferenceRepository,
+  invitationsRepository: InvitationsRepository)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -48,6 +51,22 @@ class AgentReferenceController @Inject()(agentReferenceRecordRepository: AgentRe
       .recoverWith {
         case e =>
           Future failed (throw new Exception(s"Something has gone wrong for: $uid. Error found: ${e.getMessage}"))
+      }
+  }
+
+  def getAgentInvitationIds(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
+    implicit request =>
+      withMultiEnrolledClient { implicit clientIds =>
+        for {
+          recordOpt <- agentReferenceRecordRepository.findBy(uid)
+          result <- recordOpt match {
+                     case Some(record) =>
+                       invitationsRepository
+                         .findAllInvitationIds(record.arn, clientIds, status)
+                         .map(list => Ok(Json.toJson(list)))
+                     case _ => Future successful NotFound
+                   }
+        } yield result
       }
   }
 }

@@ -68,7 +68,7 @@ trait ClientInvitationsHal {
       links = links ++ HalLink("reject", rejectLink.url)
     }
 
-    HalResource(links, toJson(invitation).as[JsObject])
+    HalResource(links, toJson(invitation)(Invitation.external.writes).as[JsObject])
   }
 
   private def invitationLinks(invitations: Seq[Invitation]): Vector[HalLink] =

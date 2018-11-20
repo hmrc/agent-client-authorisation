@@ -55,7 +55,7 @@ trait AgencyInvitationsHal {
 
     agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
-    HalResource(links, toJson(invitation).as[JsObject])
+    HalResource(links, toJson(invitation)(Invitation.external.writes).as[JsObject])
   }
 
 }
