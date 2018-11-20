@@ -52,11 +52,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
         name = Some("invitationIdIndex"),
         unique = true,
         sparse = true),
-      Index(Seq("arn"      -> IndexType.Ascending)),
-      Index(Seq("clientId" -> IndexType.Ascending)),
-      Index(Seq("service"  -> IndexType.Ascending)),
-      Index(Seq(InvitationRecordFormat.arnClientStateKey  -> IndexType.Ascending))
-
+      Index(Seq("arn"                                    -> IndexType.Ascending)),
+      Index(Seq("clientId"                               -> IndexType.Ascending)),
+      Index(Seq("service"                                -> IndexType.Ascending)),
+      Index(Seq(InvitationRecordFormat.arnClientStateKey -> IndexType.Ascending))
     )
 
   def create(
@@ -141,11 +140,18 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     implicit ec: ExecutionContext): Future[Invitation] = {
     val updateKey = InvitationRecordFormat
       .toArnClientStateKey(invitation.arn.value, invitation.clientId.typeId, invitation.clientId.value, status.toString)
+    val updateSuppliedKey = InvitationRecordFormat
+      .toArnClientStateKey(
+        invitation.arn.value,
+        invitation.suppliedClientId.typeId,
+        invitation.suppliedClientId.value,
+        status.toString)
     val update = atomicUpdate(
       BSONDocument("_id" -> invitation.id),
       BSONDocument(
-        "$set"  -> BSONDocument("_arnClientStateKey" -> bsonJson(Seq(updateKey))),
-        "$push" -> BSONDocument("events"             -> bsonJson(StatusChangeEvent(updateDate, status))))
+        "$set"  -> BSONDocument("_arnClientStateKey" -> bsonJson(Seq(updateKey, updateSuppliedKey))),
+        "$push" -> BSONDocument("events"             -> bsonJson(StatusChangeEvent(updateDate, status)))
+      )
     )
     update.map(_.map(_.updateType.savedValue).get)
   }

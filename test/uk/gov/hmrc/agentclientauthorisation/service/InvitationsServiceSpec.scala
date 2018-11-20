@@ -85,7 +85,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
       }
 
     }
@@ -100,7 +100,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
       }
     }
 
@@ -125,7 +125,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
         response shouldBe Right(acceptedTestInvitation)
 
-        verify(invitationsRepository, times(1)).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
       }
 
     }
@@ -177,7 +177,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         await(service.acceptInvitation(invitation))
       }
 
-      verify(invitationsRepository, never()).update(any[BSONObjectID], any[InvitationStatus], any[DateTime])(any())
+      verify(invitationsRepository, never()).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
     }
   }
 
@@ -300,7 +300,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
+      when(invitationsRepository.update(any[Invitation], eqs(Expired), any[DateTime])(any()))
         .thenReturn(testInvitationWithStatus(Expired))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
@@ -312,7 +312,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       def elevenDaysAgo() = now().minusDays(11)
       val invitation = testInvitationWithDate(elevenDaysAgo)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(eqs(invitation.id), eqs(Expired), any[DateTime])(any()))
+      when(invitationsRepository.update(any[Invitation], eqs(Expired), any[DateTime])(any()))
         .thenReturn(testInvitationWithStatus(Expired))
 
       val serviceWithUnderscoreInDuration = new InvitationsService(
@@ -492,7 +492,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     )
 
   private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] =
-    when(invitationsRepository.update(any[BSONObjectID], eqs(status), any[DateTime])(any()))
+    when(invitationsRepository.update(any[Invitation], eqs(status), any[DateTime])(any()))
 
   private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
     when(relationshipsConnector.createMtdItRelationship(invitation))
