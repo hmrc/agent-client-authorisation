@@ -157,7 +157,8 @@ class InvitationsService @Inject()(
         if (invitationResult.isEmpty) Future successful None
         else {
           val invitation = invitationResult.get
-          if (isInvitationExpired(invitation)) updateStatusToExpired(invitation).map(Some(_))
+          if (isInvitationExpired(invitation) && invitation.status != Expired)
+            updateStatusToExpired(invitation).map(Some(_))
           else Future successful invitationResult
         }
       }

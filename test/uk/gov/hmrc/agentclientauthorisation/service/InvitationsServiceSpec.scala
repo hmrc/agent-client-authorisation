@@ -327,6 +327,13 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
       verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
     }
+
+    "return some invitation with status Expired when the invitation had a status of expired in the first place" in {
+      val invitation = testInvitationWithStatus(Expired)
+      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
+
+      await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
+    }
   }
 
   "translateToMtdItId" should {
