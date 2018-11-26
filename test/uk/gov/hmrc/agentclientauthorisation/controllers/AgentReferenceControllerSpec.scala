@@ -22,6 +22,7 @@ import org.mockito.Mockito._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
+import uk.gov.hmrc.agentclientauthorisation.model.Pending
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}

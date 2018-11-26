@@ -81,8 +81,8 @@ class InvitationsMongoRepositoryISpec
         await(addInvitation(now, invitationITSA))
 
       val id: BSONObjectID = invitation.id
-      val stringifiedId: String = id.stringify
-      val reconstructedId: BSONObjectID = parse(stringifiedId).get
+      val stringifieldId: String = id.stringify
+      val reconstructedId: BSONObjectID = parse(stringifieldId).get
       val foundInvitation: model.Invitation = await(repository.findById(reconstructedId)).head
 
       id shouldBe foundInvitation.id
@@ -331,12 +331,9 @@ class InvitationsMongoRepositoryISpec
       list.head.status shouldBe Pending
     }
 
-    "findAllInvitationIds" in {
+    "findAllInvitationIdAndExpiryDate" in {
 
-      val invitations: Seq[model.Invitation] = for (i <- 1 to 10)
-        yield
-          Invitation
-            .createNew(
+      val invitations: Seq[Invitation] = for (i <- 1 to 10) yield Invitation.createNew(
               Arn(arn),
               Service.MtdIt,
               MtdItId(s"AB${i}23456B"),
@@ -346,11 +343,11 @@ class InvitationsMongoRepositoryISpec
 
       await(Future.sequence(invitations.map(repository.insert)))
 
-      val result1 = await(repository.findAllInvitationIds(Arn(arn), Seq("MTDITID" -> "AB523456A"), Some(Pending)))
-      result1 shouldBe Seq(invitations(4).invitationId)
+      val result1: Seq[InvitationIdAndExpiryDate] = await(repository.findAllInvitationIdAndExpiryDate(Arn(arn), Seq("MTDITID" -> "AB523456A"), Some(Pending)))
+      result1 shouldBe Seq(invitations.map(invitation => InvitationIdAndExpiryDate(invitation.invitationId, invitation.expiryDate)).apply(4))
 
-      val result2 = await(repository.findAllInvitationIds(Arn(arn), Seq("MTDITID" -> "AB523456B"), Some(Pending)))
-      result2 shouldBe Seq(invitations(4).invitationId)
+      val result2: Seq[InvitationIdAndExpiryDate] = await(repository.findAllInvitationIdAndExpiryDate(Arn(arn), Seq("MTDITID" -> "AB523456B"), Some(Pending)))
+      result2 shouldBe Seq(invitations.map(invitation => InvitationIdAndExpiryDate(invitation.invitationId, invitation.expiryDate)).apply(4))
     }
   }
 

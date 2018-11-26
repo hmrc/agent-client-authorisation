@@ -102,8 +102,8 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     findSorted(Json.obj("events.0.time" -> JsNumber(-1)), searchOptions: _*)
   }
 
-  def findAllInvitationIds(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationId]] = {
+  def findAllInvitationIdAndExpiryDate(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationIdAndExpiryDate]] = {
     import ImplicitBSONHandlers._
     implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
@@ -114,10 +114,11 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     }
     val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
     collection
-      .find(query, Json.obj("invitationId" -> 1))
+      .find(query, Json.obj("invitationId" -> 1, "expiryDate" -> 1))
       .cursor[JsObject](ReadPreference.primaryPreferred)
       .collect[List](100)
-      .map(_.map(x => (x \ "invitationId").as[InvitationId]))
+      .map(_.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate"))
+        .map(lookResults => InvitationIdAndExpiryDate(lookResults._1.as[InvitationId], lookResults._2.as[LocalDate])))
   }
 
   def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
