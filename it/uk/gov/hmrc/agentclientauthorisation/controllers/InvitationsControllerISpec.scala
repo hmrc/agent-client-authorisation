@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs {
 
-  val repo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
 
   "GET /invitations/:id" should {
     "return 200 OK with the invitation if found" in {

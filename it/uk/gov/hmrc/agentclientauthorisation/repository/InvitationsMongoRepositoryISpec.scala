@@ -57,9 +57,9 @@ class InvitationsMongoRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
 
-  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+  lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
-  private def repository = new InvitationsRepository(mockReactiveMongoComponent) {
+  lazy val repository = new InvitationsRepository(mockReactiveMongoComponent) {
     override def withCurrentTime[A](f: DateTime => A): A = f(now)
   }
 

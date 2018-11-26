@@ -116,7 +116,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     collection
       .find(query, Json.obj("invitationId" -> 1))
       .cursor[JsObject](ReadPreference.primaryPreferred)
-      .collect[List](100, Cursor.FailOnError())
+      .collect[List](100)
       .map(_.map(x => (x \ "invitationId").as[InvitationId]))
   }
 
