@@ -5,6 +5,7 @@ POST        /agencies/:arn/invitations/sent                                     
 GET         /agencies/:arn/invitations/sent/:invitationId                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getSentInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
+
 GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
 POST        /agencies/references/arn/:arn/clientType/:clientType                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getAgentLink(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientType: String)
 
@@ -33,6 +34,12 @@ GET         /clients/VRN/:vrn/invitations/received                              
 
 GET         /clients/invitations/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentInvitationIds(uid: String, status:  Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
+# Invitations
+# --------------------------------
+GET         /invitations/:invitationId                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationById(invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
+
 # Whitelist
 # --------------------------------
 GET         /forbidden                                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
+
+
