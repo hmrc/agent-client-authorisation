@@ -54,7 +54,7 @@ class AgentReferenceController @Inject()(
       }
   }
 
-  def getAgentInvitationIds(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
+  def getInvitationsInfo(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
     implicit request =>
       withMultiEnrolledClient { implicit clientIds =>
         for {
@@ -62,7 +62,7 @@ class AgentReferenceController @Inject()(
           result <- recordOpt match {
                      case Some(record) =>
                        invitationsRepository
-                         .findAllInvitationIds(record.arn, clientIds, status)
+                         .findAllInvitationIdAndExpiryDate(record.arn, clientIds, status)
                          .map(list => Ok(Json.toJson(list)))
                      case _ => Future successful NotFound
                    }
