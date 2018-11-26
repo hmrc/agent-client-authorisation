@@ -35,14 +35,14 @@ trait AppAndStubs
     with Matchers {
   me: Suite with TestSuite =>
 
-  implicit val hc = HeaderCarrier()
-  implicit val portNum: Int = port
-
-  override implicit lazy val app: Application = appBuilder.build()
-
   override lazy val port: Int = Port.randomAvailable
 
-  implicit lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
+  implicit val hc = HeaderCarrier()
+  implicit lazy val portNum: Int = port
+
+  override lazy val app: Application = appBuilder.build()
+
+  lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
 
   protected def additionalConfiguration: Map[String, Any] =
@@ -78,7 +78,7 @@ trait AppAndStubs
 trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
-  implicit val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
+  lazy val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

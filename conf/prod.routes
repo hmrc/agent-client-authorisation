@@ -1,6 +1,4 @@
 # Add all the application routes to the app.routes file
 ->         /agent-client-authorisation    app.Routes
-->         /agent-client-authorisation/sandbox    sandbox.Routes
 ->         /                              health.Routes
-->         /                              definition.Routes
 GET        /admin/metrics                 com.kenshoo.play.metrics.MetricsController.metrics

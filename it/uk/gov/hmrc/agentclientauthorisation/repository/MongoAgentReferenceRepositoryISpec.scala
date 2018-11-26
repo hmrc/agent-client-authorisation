@@ -34,16 +34,16 @@ class MongoAgentReferenceRepositoryISpec
 
   private val now = DateTime.now()
 
-  implicit lazy val app: Application = appBuilder
+  lazy val app: Application = appBuilder
     .build()
 
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
 
-  val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+  lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
-  private def repository = new MongoAgentReferenceRepository(mockReactiveMongoComponent)
+  lazy val repository = new MongoAgentReferenceRepository(mockReactiveMongoComponent)
 
   "AgentReferenceRepository" when {
     val multiInvitationRecord =
