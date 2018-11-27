@@ -140,11 +140,15 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] = {
     val updateKey = InvitationRecordFormat
-      .toArnClientStateKey(invitation.arn.value, invitation.clientId.typeId, invitation.clientId.value, status.toString)
+      .toArnClientStateKey(
+        invitation.arn.value,
+        invitation.clientId.enrolmentId,
+        invitation.clientId.value,
+        status.toString)
     val updateSuppliedKey = InvitationRecordFormat
       .toArnClientStateKey(
         invitation.arn.value,
-        invitation.suppliedClientId.typeId,
+        invitation.suppliedClientId.enrolmentId,
         invitation.suppliedClientId.value,
         status.toString)
     val update = atomicUpdate(
