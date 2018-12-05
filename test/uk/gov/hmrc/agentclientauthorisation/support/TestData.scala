@@ -23,7 +23,8 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, confidenceLevel}
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 
 import scala.concurrent.Future
 
@@ -82,6 +83,7 @@ trait TestData {
       state = "",
       delegatedAuthRule = None))
 
+  //Singular Client
   val clientMtdItEnrolment = Set(
     Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
 
@@ -99,6 +101,49 @@ trait TestData {
 
   val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
 
+  //Multi Client
+//  private val affinityGroupConfidenceAllEnrols
+//  : Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel,Enrolments]]] = affinityGroup and (confidenceLevel and allEnrolments)
+
+  val clientMtdItIrvVat = Set(
+    Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None),
+    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None),
+    Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None)
+  )
+
+  val clientMtdItIrv = Set(
+    Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None),
+    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None)
+  )
+
+  val clientMtdVat = Set(
+    Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
+
+  val clientMtdIrvVatEnrolmentsIndividual: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+    Future.successful(
+      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
+        Some(AffinityGroup.Individual),
+        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdItIrvVat))))
+
+  val clientMtdIrvEnrolmentsIndividual: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+    Future.successful(
+      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
+        Some(AffinityGroup.Individual),
+        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdItIrv))))
+
+  val clientVatEnrolmentsOrganisation: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+    Future.successful(
+      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
+        Some(AffinityGroup.Organisation),
+        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdVat))))
+
+  val agentAffinityConfidenceAndEnrolment: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+    Future.successful(
+      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
+        Some(AffinityGroup.Agent),
+        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L50, Enrolments(agentEnrolment))))
+
+  //Agent
   val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
     Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(agentEnrolment))
 

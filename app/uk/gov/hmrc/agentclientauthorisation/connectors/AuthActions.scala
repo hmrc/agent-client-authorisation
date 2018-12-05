@@ -33,7 +33,7 @@ import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments}
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments, confidenceLevel}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
@@ -55,6 +55,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
 
   private val affinityGroupAllEnrolls
     : Retrieval[~[Option[AffinityGroup], core.Enrolments]] = affinityGroup and allEnrolments
+  private val affinityGroupConfidenceAllEnrols
+    : Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] = affinityGroup and (confidenceLevel and allEnrolments)
   private val AuthProvider: AuthProviders = AuthProviders(GovernmentGateway)
   private val agentEnrol = "HMRC-AS-AGENT"
   private val agentEnrolId = "AgentReferenceNumber"
@@ -92,17 +94,23 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       }
   }
 
+  private def extractAffinityGroup(affinityGroup: AffinityGroup): String =
+    (affinityGroup.toJson \ "affinityGroup").as[String]
+
   protected def withMultiEnrolledClient[A](body: Seq[(String, String)] => Future[Result])(
     implicit hc: HeaderCarrier): Future[Result] =
-    authorised(
-      AuthProviders(GovernmentGateway) and ConfidenceLevel.L200 and (AffinityGroup.Individual or AffinityGroup.Organisation))
-      .retrieve(allEnrolments) { enrols =>
-        val clientIdTypePlusIds = enrols.enrolments.map { enrolment =>
-          (enrolment.identifiers.head.key, enrolment.identifiers.head.value)
-        }.toSeq
-
-        body(clientIdTypePlusIds)
-
+    authorised(AuthProviders(GovernmentGateway) and (AffinityGroup.Individual or AffinityGroup.Organisation))
+      .retrieve(affinityGroupConfidenceAllEnrols) {
+        case Some(affinity) ~ (confidence ~ enrols) =>
+          val clientIdTypePlusIds: Seq[(String, String)] = enrols.enrolments.map { enrolment =>
+            (enrolment.identifiers.head.key, enrolment.identifiers.head.value.replaceAll(" ", ""))
+          }.toSeq
+          (affinity, confidence) match {
+            case (AffinityGroup.Individual, ConfidenceLevel.L200) => body(clientIdTypePlusIds)
+            case (AffinityGroup.Organisation, _)                  => body(clientIdTypePlusIds)
+            case _                                                => Future successful GenericUnauthorized
+          }
+        case _ => Future successful GenericUnauthorized
       }
 
   private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =

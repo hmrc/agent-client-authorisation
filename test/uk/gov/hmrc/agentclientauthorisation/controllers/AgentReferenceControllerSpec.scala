@@ -17,19 +17,24 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import org.mockito.stubbing.OngoingStubbing
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
-import uk.gov.hmrc.agentclientauthorisation.model.Pending
+import uk.gov.hmrc.agentclientauthorisation.model.{InvitationIdAndExpiryDate, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
-import uk.gov.hmrc.auth.core.PlayAuthConnector
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
 
@@ -49,6 +54,14 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       metrics,
       mockPlayAuthConnector,
       auditService)
+
+  private def clientAuthStub(returnValue: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]])
+    : OngoingStubbing[Future[Option[AffinityGroup] ~ (ConfidenceLevel ~ Enrolments)]] =
+    when(
+      mockPlayAuthConnector.authorise(
+        any(),
+        any[Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]]]())(any(), any[ExecutionContext]))
+      .thenReturn(returnValue)
 
   "getAgentReferenceRecord" should {
 
@@ -81,6 +94,127 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       an[Exception] shouldBe thrownBy {
         await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
       }
+    }
+  }
+
+  "getInvitationsInfo" should {
+    "return invitationIds and dates" when {
+      "authorised for user: Individual" in {
+        clientAuthStub(clientMtdIrvVatEnrolmentsIndividual)
+
+        val agentReferenceRecord: AgentReferenceRecord =
+          AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+        val expiryDate = LocalDate.now()
+
+        val invitationIdAndExpiryDate1 = InvitationIdAndExpiryDate(InvitationId("ABERULMHCKKW3"), expiryDate)
+        val invitationIdAndExpiryDate2 = InvitationIdAndExpiryDate(InvitationId("B9SCS2T4NZBAX"), expiryDate)
+        val invitationIdAndExpiryDate3 = InvitationIdAndExpiryDate(InvitationId("CZTW1KY6RTAAT"), expiryDate)
+
+        val listOfInvitations = List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+          .thenReturn(
+            Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        status(result) shouldBe 200
+        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe listOfInvitations
+      }
+
+      "authorised for user: Organisation" in {
+        clientAuthStub(clientVatEnrolmentsOrganisation)
+
+        val agentReferenceRecord: AgentReferenceRecord =
+          AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+        val expiryDate = LocalDate.now()
+
+        val invitationIdAndExpiryDate3 = InvitationIdAndExpiryDate(InvitationId("CZTW1KY6RTAAT"), expiryDate)
+
+        val listOfInvitations = List(invitationIdAndExpiryDate3)
+
+        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+          .thenReturn(Future successful listOfInvitations)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        status(result) shouldBe 200
+        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe listOfInvitations
+      }
+    }
+
+    "return nothing if no invitations found" when {
+      "no agent-reference-record is found for authorised user: Individual" in {
+        clientAuthStub(clientMtdIrvVatEnrolmentsIndividual)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(None))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+
+        status(result) shouldBe 404
+      }
+
+      "no agent-reference-record is found for authorised user: Organisation" in {
+        clientAuthStub(clientVatEnrolmentsOrganisation)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(None))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+
+        status(result) shouldBe 404
+      }
+
+      "invitation-store returned nothing for authorised user: Individual" in {
+        clientAuthStub(clientMtdIrvVatEnrolmentsIndividual)
+
+        val agentReferenceRecord: AgentReferenceRecord =
+          AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+          .thenReturn(Future successful List.empty)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+
+        status(result) shouldBe 200
+        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe List.empty
+      }
+
+      "invitation-store returned nothing for authorised user: Organisation" in {
+        clientAuthStub(clientVatEnrolmentsOrganisation)
+
+        val agentReferenceRecord: AgentReferenceRecord =
+          AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+          .thenReturn(Future successful List.empty)
+
+        when(mockAgentReferenceRepository.findBy(any())(any()))
+          .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+
+        status(result) shouldBe 200
+        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe List.empty
+      }
+    }
+
+    "return unauthorised for user: Agent" in {
+      clientAuthStub(agentAffinityConfidenceAndEnrolment)
+
+      val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+      status(result) shouldBe 401
+      result shouldBe GenericUnauthorized
     }
   }
 }
