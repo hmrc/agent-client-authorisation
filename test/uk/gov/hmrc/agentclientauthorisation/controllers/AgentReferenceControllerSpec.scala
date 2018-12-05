@@ -55,12 +55,12 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       mockPlayAuthConnector,
       auditService)
 
-  private def clientAuthStub(returnValue: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]])
-    : OngoingStubbing[Future[Option[AffinityGroup] ~ (ConfidenceLevel ~ Enrolments)]] =
+  private def clientAuthStub(returnValue: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments])
+    : OngoingStubbing[Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]] =
     when(
-      mockPlayAuthConnector.authorise(
+      mockPlayAuthConnector.authorise(any(), any[Retrieval[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]]())(
         any(),
-        any[Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]]]())(any(), any[ExecutionContext]))
+        any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "getAgentReferenceRecord" should {

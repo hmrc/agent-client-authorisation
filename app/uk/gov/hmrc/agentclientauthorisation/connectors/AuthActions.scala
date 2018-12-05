@@ -56,7 +56,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
   private val affinityGroupAllEnrolls
     : Retrieval[~[Option[AffinityGroup], core.Enrolments]] = affinityGroup and allEnrolments
   private val affinityGroupConfidenceAllEnrols
-    : Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] = affinityGroup and (confidenceLevel and allEnrolments)
+    : Retrieval[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] = affinityGroup and confidenceLevel and allEnrolments
   private val AuthProvider: AuthProviders = AuthProviders(GovernmentGateway)
   private val agentEnrol = "HMRC-AS-AGENT"
   private val agentEnrolId = "AgentReferenceNumber"
@@ -101,7 +101,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     implicit hc: HeaderCarrier): Future[Result] =
     authorised(AuthProviders(GovernmentGateway) and (AffinityGroup.Individual or AffinityGroup.Organisation))
       .retrieve(affinityGroupConfidenceAllEnrols) {
-        case Some(affinity) ~ (confidence ~ enrols) =>
+        case Some(affinity) ~ confidence ~ enrols =>
           val clientIdTypePlusIds: Seq[(String, String)] = enrols.enrolments.map { enrolment =>
             (enrolment.identifiers.head.key, enrolment.identifiers.head.value.replaceAll(" ", ""))
           }.toSeq

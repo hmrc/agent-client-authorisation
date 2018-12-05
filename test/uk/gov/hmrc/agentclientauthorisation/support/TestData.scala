@@ -101,10 +101,6 @@ trait TestData {
 
   val clientNoEnrolments: Future[Enrolments] = Future successful Enrolments(Set.empty[Enrolment])
 
-  //Multi Client
-//  private val affinityGroupConfidenceAllEnrols
-//  : Retrieval[~[Option[AffinityGroup], ~[ConfidenceLevel,Enrolments]]] = affinityGroup and (confidenceLevel and allEnrolments)
-
   val clientMtdItIrvVat = Set(
     Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None),
     Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None),
@@ -119,29 +115,23 @@ trait TestData {
   val clientMtdVat = Set(
     Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
 
-  val clientMtdIrvVatEnrolmentsIndividual: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+  val clientMtdIrvVatEnrolmentsIndividual: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
     Future.successful(
-      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
-        Some(AffinityGroup.Individual),
-        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdItIrvVat))))
+      new ~(new ~(Some(AffinityGroup.Individual), ConfidenceLevel.L200), Enrolments(clientMtdItIrvVat))
+    )
 
-  val clientMtdIrvEnrolmentsIndividual: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+  val clientMtdIrvEnrolmentsIndividual: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
     Future.successful(
-      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
-        Some(AffinityGroup.Individual),
-        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdItIrv))))
+      new ~(new ~(Some(AffinityGroup.Individual), ConfidenceLevel.L200), Enrolments(clientMtdItIrv))
+    )
 
-  val clientVatEnrolmentsOrganisation: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
+  val clientVatEnrolmentsOrganisation: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
     Future.successful(
-      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
-        Some(AffinityGroup.Organisation),
-        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L200, Enrolments(clientMtdVat))))
+      new ~(new ~(Some(AffinityGroup.Organisation), ConfidenceLevel.L50), Enrolments(clientMtdVat))
+    )
 
-  val agentAffinityConfidenceAndEnrolment: Future[~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]]] =
-    Future.successful(
-      new ~[Option[AffinityGroup], ~[ConfidenceLevel, Enrolments]](
-        Some(AffinityGroup.Agent),
-        new ~[ConfidenceLevel, Enrolments](ConfidenceLevel.L50, Enrolments(agentEnrolment))))
+  val agentAffinityConfidenceAndEnrolment: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
+    Future.successful(new ~(new ~(Some(AffinityGroup.Agent), ConfidenceLevel.L50), Enrolments(agentEnrolment)))
 
   //Agent
   val agentAffinityAndEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
