@@ -472,6 +472,57 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
+  "findAllInvitationIdAndExpiryDate" should {
+
+    "return a list of invitation Ids with expiry dates filtering out pending invitations that are actually expired" in {
+      when(
+        invitationsRepository
+          .findAllInvitationIdAndExpiryDate(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Pending)))(any()))
+        .thenReturn(Future successful List(
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01")),
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("9999-01-01"))
+        ))
+
+      val result = service.findAllInvitationIdAndExpiryDate(Arn(arn), Seq("nino" -> nino.value), Some(Pending))
+
+      await(result) shouldBe List(
+        InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("9999-01-01"))
+      )
+    }
+
+    "return an empty list when all invitations have a status of Pending but are actually expired" in {
+      when(
+        invitationsRepository
+          .findAllInvitationIdAndExpiryDate(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Pending)))(any()))
+        .thenReturn(Future successful List(
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01")),
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2017-01-01"))
+        ))
+
+      val result = service.findAllInvitationIdAndExpiryDate(Arn(arn), Seq("nino" -> nino.value), Some(Pending))
+
+      await(result) shouldBe List.empty
+    }
+
+    "return a list of invitation Ids with expiry dates when status is not pending" in {
+      when(
+        invitationsRepository
+          .findAllInvitationIdAndExpiryDate(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Expired)))(any()))
+        .thenReturn(Future successful List(
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01")),
+          InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2017-01-01"))
+        ))
+
+      val result = service.findAllInvitationIdAndExpiryDate(Arn(arn), Seq("nino" -> nino.value), Some(Expired))
+
+      await(result) shouldBe List(
+        InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01")),
+        InvitationIdAndExpiryDate(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2017-01-01"))
+      )
+
+    }
+  }
+
   private def testInvitationWithStatus(status: InvitationStatus) =
     Invitation(
       generate,
@@ -505,7 +556,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     when(relationshipsConnector.createMtdItRelationship(invitation))
 
   private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
-    when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any()))
+    when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any(), any()))
 
   private def whenDesBusinessPartnerRecordExistsFor(
     nino: Nino,

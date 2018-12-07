@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.Provider
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.mvc.Results.Ok
@@ -30,9 +31,8 @@ import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class NiClientInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
@@ -41,9 +41,12 @@ class NiClientInvitationsControllerSpec
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockHalResource: ClientInvitationsHal = resettingMock[ClientInvitationsHal]
+  val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
+    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
+  }
 
   val controller =
-    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService) {
+    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService, ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 

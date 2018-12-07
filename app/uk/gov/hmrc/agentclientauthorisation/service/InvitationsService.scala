@@ -18,21 +18,23 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import java.util.concurrent.TimeUnit.DAYS
 
-import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.{Inject, _}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logger
-import play.api.mvc.Request
+import play.api.mvc.{Action, AnyContent, Request}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.collection.Seq
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.util.Success
@@ -112,9 +114,23 @@ class InvitationsService @Inject()(
     }
   }
 
+  def findAllInvitationIdAndExpiryDate(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationIdAndExpiryDate]] =
+    invitationsRepository
+      .findAllInvitationIdAndExpiryDate(arn, clientIds, status)
+      .map(_.filter(i =>
+        status match {
+          case Some(Pending) => if (i.expiryDate.isBefore(currentTime().toLocalDate)) false else true
+          case _             => true
+      }))
+
   private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = currentTime) = {
     val createTime = invitation.firstEvent().time
-    val fromTime = if (invitationExpiryUnits == DAYS) createTime.millisOfDay().withMinimumValue() else createTime
+    hasExpired(createTime, currentDateTime)
+  }
+
+  private[service] def hasExpired(time: DateTime, currentDateTime: () => DateTime = currentTime) = {
+    val fromTime = if (invitationExpiryUnits == DAYS) time.millisOfDay().withMinimumValue() else time
     val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
     elapsedTime gt invitationExpiryDuration
   }

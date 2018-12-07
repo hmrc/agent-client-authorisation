@@ -17,27 +17,30 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.Inject
+import javax.inject.{Inject, Provider}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRepository
+import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgentReferenceController @Inject()(
   agentReferenceRecordRepository: AgentReferenceRepository,
-  invitationsRepository: InvitationsRepository)(
+  invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
-  auditService: AuditService)
+  auditService: AuditService,
+  ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, authConnector) {
+
+  implicit val ec: ExecutionContext = ecp.get
 
   def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
     agentReferenceRecordRepository
@@ -61,7 +64,7 @@ class AgentReferenceController @Inject()(
           recordOpt <- agentReferenceRecordRepository.findBy(uid)
           result <- recordOpt match {
                      case Some(record) =>
-                       invitationsRepository
+                       invitationsService
                          .findAllInvitationIdAndExpiryDate(record.arn, clientIds, status)
                          .map(list => Ok(Json.toJson(list)))
                      case _ => Future successful NotFound

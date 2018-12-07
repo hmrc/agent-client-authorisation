@@ -25,15 +25,19 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 @Singleton
 class InvitationsController @Inject()(
   invitationsService: InvitationsService,
   microserviceAuthConnector: MicroserviceAuthConnector,
-  metrics: Metrics)
+  metrics: Metrics,
+  ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, microserviceAuthConnector) with HalWriter with AgentInvitationValidation
     with AgencyInvitationsHal {
+
+  implicit val ec: ExecutionContext = ecp.get
 
   def getInvitationById(invitationId: InvitationId): Action[AnyContent] = Action.async { implicit request =>
     authorised() {

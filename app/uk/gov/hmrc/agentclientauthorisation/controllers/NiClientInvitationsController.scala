@@ -16,28 +16,27 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import javax.inject.Inject
-
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.{Inject, Provider}
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, InvitationStatus, NinoType, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class NiClientInvitationsController @Inject()(invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
-  auditService: AuditService)
+  auditService: AuditService,
+  ecp: Provider[ExecutionContextExecutor])
     extends BaseClientInvitationsController[Nino](invitationsService, metrics, authConnector, auditService) {
 
+  implicit val ec: ExecutionContext = ecp.get
   override val supportedService: Service = Service.PersonalIncomeRecord
 
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {

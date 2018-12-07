@@ -30,9 +30,8 @@ import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -44,9 +43,12 @@ class AgencyInvitationsController @Inject()(
   agentServicesAccountConnector: AgentServicesAccountConnector)(
   implicit
   metrics: Metrics,
-  microserviceAuthConnector: MicroserviceAuthConnector)
+  microserviceAuthConnector: MicroserviceAuthConnector,
+  ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, microserviceAuthConnector) with HalWriter with AgentInvitationValidation
     with AgencyInvitationsHal {
+
+  implicit val ec: ExecutionContext = ecp.get
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
