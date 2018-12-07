@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.Provider
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
@@ -37,7 +38,7 @@ import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgencyInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation
@@ -53,6 +54,9 @@ class AgencyInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
+    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
+  }
 
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
@@ -63,7 +67,7 @@ class AgencyInvitationsControllerSpec
       invitationsService,
       kfcService,
       multiInvitationsService,
-      agentServicesaccountConnector)(metrics, microserviceAuthConnector) {
+      agentServicesaccountConnector)(metrics, microserviceAuthConnector, ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 

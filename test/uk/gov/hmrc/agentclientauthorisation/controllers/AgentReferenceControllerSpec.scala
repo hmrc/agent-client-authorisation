@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.Provider
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -26,7 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationIdAndExpiryDate, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
-import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
+import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
@@ -34,26 +35,31 @@ import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
 
   val mockAgentReferenceRepository: AgentReferenceRepository = resettingMock[AgentReferenceRepository]
   val mockInvitationsRepository: InvitationsRepository = resettingMock[InvitationsRepository]
+  val mockInvitationsService: InvitationsService = resettingMock[InvitationsService]
   val metrics: Metrics = resettingMock[Metrics]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockAgentServicesAccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
+  val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
+    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
+  }
 
   val mockAgentLinkService: AgentLinkService =
     new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
 
   val agentReferenceController =
-    new AgentReferenceController(mockAgentReferenceRepository, mockInvitationsRepository)(
+    new AgentReferenceController(mockAgentReferenceRepository, mockInvitationsService)(
       metrics,
       mockPlayAuthConnector,
-      auditService)
+      auditService,
+      ecp)
 
   private def clientAuthStub(returnValue: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments])
     : OngoingStubbing[Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]] =
@@ -116,7 +122,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(mockAgentReferenceRepository.findBy(any())(any()))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
           .thenReturn(
             Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
@@ -137,7 +143,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
-        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
           .thenReturn(Future successful listOfInvitations)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
@@ -178,7 +184,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val agentReferenceRecord: AgentReferenceRecord =
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
@@ -196,7 +202,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val agentReferenceRecord: AgentReferenceRecord =
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-        when(mockInvitationsRepository.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))

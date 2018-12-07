@@ -16,28 +16,27 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import javax.inject._
-
 import com.kenshoo.play.metrics.Metrics
+import javax.inject._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, InvitationStatus, MtdItIdType, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 @Singleton
 class MtdItClientInvitationsController @Inject()(invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
-  auditService: AuditService)
+  auditService: AuditService,
+  ecp: Provider[ExecutionContextExecutor])
     extends BaseClientInvitationsController[MtdItId](invitationsService, metrics, authConnector, auditService) {
 
+  implicit val ec: ExecutionContext = ecp.get
   override val supportedService: Service = Service.MtdIt
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
