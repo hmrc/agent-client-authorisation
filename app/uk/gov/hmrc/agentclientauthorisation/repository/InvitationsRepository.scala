@@ -18,13 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
 import org.joda.time.{DateTime, LocalDate}
-import play.api.libs.json.Json.{JsValueWrapper, toJsFieldJsValueWrapper}
+import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, ReadPreference}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json.{BSONFormats, ImplicitBSONHandlers}
+import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -43,6 +43,9 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       ReactiveMongoFormats.objectIdFormats) with AtomicUpdate[Invitation]
     with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
+  import ImplicitBSONHandlers._
+  import play.api.libs.json.Json.JsValueWrapper
+
   override def indexes: Seq[Index] =
     Seq(
       Index(
@@ -50,10 +53,11 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
         name = Some("invitationIdIndex"),
         unique = true,
         sparse = true),
-      Index(Seq("arn"                                    -> IndexType.Ascending)),
-      Index(Seq("clientId"                               -> IndexType.Ascending)),
-      Index(Seq("service"                                -> IndexType.Ascending)),
-      Index(Seq(InvitationRecordFormat.arnClientStateKey -> IndexType.Ascending))
+      Index(Seq("arn"                                           -> IndexType.Ascending)),
+      Index(Seq("clientId"                                      -> IndexType.Ascending)),
+      Index(Seq("service"                                       -> IndexType.Ascending)),
+      Index(Seq(InvitationRecordFormat.arnClientStateKey        -> IndexType.Ascending)),
+      Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending))
     )
 
   def create(
@@ -87,17 +91,15 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     clientId: Option[String],
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    val key = InvitationRecordFormat.toArnClientServiceStateKey(Some(arn), clientId, service, status)
     val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
-      "arn"      -> Some(JsString(arn.value)),
-      "clientId" -> clientId.map(JsString.apply),
-      "service"  -> service.map(s => JsString(s.id)),
-      "$where"   -> status.map(s => JsString(s"this.events[this.events.length - 1].status === '$s'")),
-      "events.0.time" -> createdOnOrAfter.map(date =>
+      InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key)),
+      InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
         Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
     ).filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
-    findSorted(Json.obj("events.0.time" -> JsNumber(-1)), searchOptions: _*)
+    findSorted(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)), searchOptions: _*)
   }
 
   def findAllInvitationIdAndExpiryDate(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
@@ -121,46 +123,41 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val searchOptions =
-      Seq("service" -> Some(service.id), "clientId" -> Some(clientId.value), statusSearchOption(status))
-        .filter(_._2.isDefined)
-        .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
-
+    val key = InvitationRecordFormat.toArnClientServiceStateKey(None, Some(clientId.value), Some(service), status)
+    val searchOptions = Seq(InvitationRecordFormat.arnClientServiceStateKey -> toJsFieldJsValueWrapper(JsString(key)))
     find(searchOptions: _*)
   }
-
-  private def statusSearchOption(status: Option[InvitationStatus]): (String, Option[String]) =
-    "$where" -> status.map(s => s"this.events[this.events.length - 1].status === '$s'")
 
   def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
     find()
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
-    implicit ec: ExecutionContext): Future[Invitation] = {
-    val updateKey = InvitationRecordFormat
-      .toArnClientStateKey(
-        invitation.arn.value,
-        invitation.clientId.enrolmentId,
-        invitation.clientId.value,
-        status.toString)
-    val updateSuppliedKey = InvitationRecordFormat
-      .toArnClientStateKey(
-        invitation.arn.value,
-        invitation.suppliedClientId.enrolmentId,
-        invitation.suppliedClientId.value,
-        status.toString)
-    val update = atomicUpdate(
-      BSONDocument("_id" -> invitation.id),
-      BSONDocument(
-        "$set"  -> BSONDocument("_arnClientStateKey" -> bsonJson(Seq(updateKey, updateSuppliedKey))),
-        "$push" -> BSONDocument("events"             -> bsonJson(StatusChangeEvent(updateDate, status)))
-      )
-    )
-    update.map(_.map(_.updateType.savedValue).get)
-  }
+    implicit ec: ExecutionContext): Future[Invitation] =
+    for {
+      invitations <- collection.find(BSONDocument("_id" -> invitation.id)).cursor[Invitation].collect[List]()
+      modified = invitations.head.copy(events = invitations.head.events :+ StatusChangeEvent(updateDate, status))
+      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(modified))
+      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
+    } yield saved
 
-  private def bsonJson[T](entity: T)(implicit writes: Writes[T]) = BSONFormats.toBSON(Json.toJson(entity)).get
+  private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
+    BSONDocumentFormat.reads(writes.writes(entity)).get
 
   override def isInsertion(newRecordId: BSONObjectID, oldRecord: Invitation): Boolean =
     newRecordId != oldRecord.id
+
+  def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit] =
+    for {
+      ids <- collection
+              .find(Json.obj(), Json.obj())
+              .cursor[JsObject]()
+              .collect[List]()
+      _ <- Future.sequence(ids.map(json => (json \ "_id").as[BSONObjectID]).map(refreshInvitation))
+    } yield ()
+
+  def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit] =
+    for {
+      invitation <- collection.find(BSONDocument("_id" -> id)).one[Invitation]
+      _          <- atomicUpdate(BSONDocument("_id" -> id), bsonJson(invitation))
+    } yield ()
 }

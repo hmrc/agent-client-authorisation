@@ -23,6 +23,7 @@ import com.typesafe.config.Config
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.service.RepositoryMigrationService
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -59,6 +60,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindProperty2param("des.environment", "des.environment")
     bindProperty2param("des.authorizationToken", "des.authorization-token")
     bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")
+
+    bind(classOf[RepositoryMigrationService]).asEagerSingleton()
   }
 
   private def bindBaseUrl(serviceName: String) =

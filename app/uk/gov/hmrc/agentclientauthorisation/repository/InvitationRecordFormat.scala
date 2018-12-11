@@ -74,6 +74,9 @@ object InvitationRecordFormat {
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
   val arnClientStateKey = "_arnClientStateKey"
+  val arnClientServiceStateKey = "_arnClientServiceStateKey"
+  val statusKey = "_status"
+  val createdKey = "_created"
 
   val writes = new Writes[Invitation] {
     def writes(invitation: Invitation) =
@@ -88,6 +91,8 @@ object InvitationRecordFormat {
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
         "events"               -> invitation.events,
         "expiryDate"           -> invitation.expiryDate,
+        createdKey             -> invitation.firstEvent().time,
+        statusKey              -> invitation.mostRecentEvent().status.toString,
         arnClientStateKey -> Seq(
           toArnClientStateKey(
             invitation.arn.value,
@@ -99,12 +104,54 @@ object InvitationRecordFormat {
             invitation.suppliedClientId.enrolmentId,
             invitation.suppliedClientId.value,
             invitation.mostRecentEvent().status.toString)
-        )
+        ),
+        arnClientServiceStateKey -> createArnClientServiceStateKeys(invitation)
       )
   }
 
   def toArnClientStateKey(arn: String, clientIdType: String, clientIdValue: String, status: String): String =
     s"${arn.toLowerCase}~${clientIdType.toLowerCase}~${clientIdValue.toLowerCase.replaceAll(" ", "")}~${status.toLowerCase}"
 
+  def createArnClientServiceStateKeys(inv: Invitation): Seq[String] =
+    variants(inv.arn, inv.clientId.value, inv.service, inv.mostRecentEvent().status)(toArnClientServiceStateKey) ++
+      (if (inv.clientId != inv.suppliedClientId)
+         variants(inv.arn, inv.suppliedClientId.value, inv.service, inv.mostRecentEvent().status)(
+           toArnClientServiceStateKey)
+       else Seq.empty)
+
+  def toArnClientServiceStateKey(
+    arn: Option[Arn],
+    clientId: Option[String],
+    service: Option[Service],
+    status: Option[InvitationStatus]): String =
+    Seq(
+      arn.map(_.value.toLowerCase),
+      clientId.map(_.toLowerCase.replaceAll(" ", "")),
+      service.map(_.id.toLowerCase),
+      status.map(_.toString.toLowerCase)
+    ).collect { case Some(x) => x }
+      .mkString("~")
+
   val mongoFormat = ReactiveMongoFormats.mongoEntity(Format(reads, writes))
+
+  private def variants[A, B, C, D, T](a: A, b: B, c: C, d: D)(
+    fx: (Option[A], Option[B], Option[C], Option[D]) => T): Seq[T] =
+    Seq(
+      fx(Some(a), Some(b), Some(c), Some(d)),
+      fx(Some(a), Some(b), None, Some(d)),
+      fx(Some(a), None, Some(c), Some(d)),
+      fx(Some(a), None, None, Some(d)),
+      fx(None, Some(b), Some(c), Some(d)),
+      fx(None, Some(b), None, Some(d)),
+      fx(None, None, Some(c), Some(d)),
+      fx(None, None, None, Some(d)),
+      fx(Some(a), Some(b), Some(c), None),
+      fx(Some(a), Some(b), None, None),
+      fx(Some(a), None, Some(c), None),
+      fx(Some(a), None, None, None),
+      fx(None, Some(b), Some(c), None),
+      fx(None, Some(b), None, None),
+      fx(None, None, Some(c), None)
+    )
+
 }

@@ -420,6 +420,36 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
+  "refreshAllInvitations" should {
+    "refresh all invitations" in {
+
+      val itsaInvitation = Invitation.createNew(
+        Arn(arn),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        MtdItId("ABCD123456C"),
+        now,
+        now.plusDays(10).toLocalDate)
+
+      val pirInvitation = Invitation.createNew(
+        Arn(arn),
+        Service.PersonalIncomeRecord,
+        Nino("AB123456B"),
+        Nino("AB123456A"),
+        now,
+        now.plusDays(10).toLocalDate)
+
+      val vatInvitation = Invitation
+        .createNew(Arn(arn), Service.Vat, Vrn("442820662"), Vrn("442820662"), now, now.plusDays(10).toLocalDate)
+
+      await(repository.insert(itsaInvitation))
+      await(repository.insert(pirInvitation))
+      await(repository.insert(vatInvitation))
+
+      await(repository.refreshAllInvitations)
+    }
+  }
+
   private def addInvitations(startDate: DateTime, invitations: Invitation*) =
     await(Future sequence invitations.map {
       case Invitation(_, _, arnValue, service, clientId, suppliedClientId, _, _) =>
