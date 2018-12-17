@@ -458,7 +458,7 @@ class InvitationsMongoRepositoryISpec
 
   private def addInvitation(startDate: DateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
 
-  private def listByArn(arn: Arn) = await(repository.list(arn, None, None, None, None))
+  private def listByArn(arn: Arn) = await(repository.findInvitationsBy(Some(arn), None, None, None, None))
 
   private def listByArn(
     arn: Arn,
@@ -466,10 +466,10 @@ class InvitationsMongoRepositoryISpec
     clientId: Option[String],
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate]) =
-    await(repository.list(arn, service, clientId, status, createdOnOrAfter))
+    await(repository.findInvitationsBy(Some(arn), service, clientId, status, createdOnOrAfter))
 
   private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
-    await(repository.list(service, clientId, status))
+    await(repository.findInvitationsBy(service = Some(service), clientId = Some(clientId.value), status = status))
 
   private def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime) =
     await(repository.update(invitation, status, updateDate))

@@ -57,7 +57,11 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       Index(Seq("clientId"                                      -> IndexType.Ascending)),
       Index(Seq("service"                                       -> IndexType.Ascending)),
       Index(Seq(InvitationRecordFormat.arnClientStateKey        -> IndexType.Ascending)),
-      Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending))
+      Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending)),
+      Index(
+        Seq(
+          InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending,
+          InvitationRecordFormat.createdKey               -> IndexType.Ascending))
     )
 
   def create(
@@ -85,13 +89,13 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       .collect[List](100, Cursor.FailOnError[List[Invitation]]())
   }
 
-  def list(
-    arn: Arn,
-    service: Option[Service],
-    clientId: Option[String],
-    status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val key = InvitationRecordFormat.toArnClientServiceStateKey(Some(arn), clientId, service, status)
+  def findInvitationsBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    val key = InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, service, status)
     val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
       InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key)),
       InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
@@ -119,13 +123,6 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       .collect[List](100)
       .map(_.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate"))
         .map(lookResults => InvitationIdAndExpiryDate(lookResults._1.as[InvitationId], lookResults._2.as[LocalDate])))
-  }
-
-  def list(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val key = InvitationRecordFormat.toArnClientServiceStateKey(None, Some(clientId.value), Some(service), status)
-    val searchOptions = Seq(InvitationRecordFormat.arnClientServiceStateKey -> toJsFieldJsValueWrapper(JsString(key)))
-    find(searchOptions: _*)
   }
 
   def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
