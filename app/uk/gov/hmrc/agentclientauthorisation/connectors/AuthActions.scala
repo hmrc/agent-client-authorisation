@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
+import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
@@ -93,6 +94,23 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
           GenericUnauthorized
       }
   }
+
+  def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(
+    implicit request: Request[AnyContent]): Future[Result] =
+    authorised(AuthProvider and (Individual or Organisation))
+      .retrieve(allEnrolments) { allEnrols =>
+        val identifiers: Seq[(Service, String)] = Service.all
+          .map { service =>
+            allEnrols.enrolments
+              .find(_.key == service.enrolmentKey)
+              .flatMap(_.identifiers.headOption)
+              .map(i => (service, i.value))
+          }
+          .collect {
+            case Some(x) => x
+          }
+        action(identifiers)
+      }
 
   private def extractAffinityGroup(affinityGroup: AffinityGroup): String =
     (affinityGroup.toJson \ "affinityGroup").as[String]

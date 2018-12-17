@@ -125,6 +125,9 @@ case class Invitation(
     events.last
 
   def status = mostRecentEvent().status
+
+  def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
+
 }
 
 object Invitation {
@@ -185,8 +188,11 @@ object AgentInvitation {
   def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
 }
 
-case class InvitationIdAndExpiryDate(invitationId: InvitationId, expiryDate: LocalDate)
+case class InvitationInfo(invitationId: InvitationId, expiryDate: LocalDate, status: InvitationStatus) {
 
-object InvitationIdAndExpiryDate {
-  implicit val format = Json.format[InvitationIdAndExpiryDate]
+  def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
+}
+
+object InvitationInfo {
+  implicit val format = Json.format[InvitationInfo]
 }

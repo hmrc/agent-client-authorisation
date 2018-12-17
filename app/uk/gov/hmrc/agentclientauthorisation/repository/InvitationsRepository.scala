@@ -76,18 +76,14 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
-  def findSorted(sortBy: JsObject, query: (String, JsValueWrapper)*)(
-    implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    import ImplicitBSONHandlers._
-    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
-    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
-
-    collection
-      .find(Json.obj(query: _*))
-      .sort(sortBy)
-      .cursor[Invitation](ReadPreference.primaryPreferred)
-      .collect[List](100, Cursor.FailOnError[List[Invitation]]())
-  }
+  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
+    implicit ec: ExecutionContext): Future[Invitation] =
+    for {
+      invitations <- collection.find(BSONDocument("_id" -> invitation.id)).cursor[Invitation].collect[List]()
+      modified = invitations.head.copy(events = invitations.head.events :+ StatusChangeEvent(updateDate, status))
+      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(modified))
+      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
+    } yield saved
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
@@ -103,39 +99,66 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     ).filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
-    findSorted(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)), searchOptions: _*)
-  }
-
-  def findAllInvitationIdAndExpiryDate(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationIdAndExpiryDate]] = {
-    import ImplicitBSONHandlers._
     implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
-    val keys = clientIds.map {
+
+    collection
+      .find(Json.obj(searchOptions: _*))
+      .sort(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)))
+      .cursor[Invitation](ReadPreference.primaryPreferred)
+      .collect[List](1000, Cursor.FailOnError[List[Invitation]]())
+  }
+
+  def findInvitationInfoBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+
+    val key = InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, service, status)
+    val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
+      InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key)),
+      InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
+        Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
+    ).filter(_._2.isDefined)
+      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
+    val query = Json.obj(searchOptions: _*)
+
+    findInvitationInfoBy(query)
+  }
+
+  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+
+    val keys = clientIdTypeAndValues.map {
       case (clientIdType, clientIdValue) =>
         InvitationRecordFormat
           .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.getOrElse("").toString)
     }
     val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
-    collection
-      .find(query, Json.obj("invitationId" -> 1, "expiryDate" -> 1))
-      .cursor[JsObject](ReadPreference.primaryPreferred)
-      .collect[List](100)
-      .map(_.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate"))
-        .map(lookResults => InvitationIdAndExpiryDate(lookResults._1.as[InvitationId], lookResults._2.as[LocalDate])))
+
+    findInvitationInfoBy(query)
   }
 
-  def findRegimeID(clientId: String)(implicit ec: ExecutionContext): Future[List[Invitation]] =
-    find()
+  private def findInvitationInfoBy(query: JsObject)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
 
-  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
-    implicit ec: ExecutionContext): Future[Invitation] =
-    for {
-      invitations <- collection.find(BSONDocument("_id" -> invitation.id)).cursor[Invitation].collect[List]()
-      modified = invitations.head.copy(events = invitations.head.events :+ StatusChangeEvent(updateDate, status))
-      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(modified))
-      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
-    } yield saved
+    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
+    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
+
+    collection
+      .find(query, Json.obj("invitationId" -> 1, "expiryDate" -> 1, InvitationRecordFormat.statusKey -> 1))
+      .cursor[JsObject](ReadPreference.primaryPreferred)
+      .collect[List](1000)
+      .map(
+        _.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate", x \ InvitationRecordFormat.statusKey))
+          .map(
+            properties =>
+              InvitationInfo(
+                properties._1.as[InvitationId],
+                properties._2.as[LocalDate],
+                properties._3.as[InvitationStatus])))
+  }
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
     BSONDocumentFormat.reads(writes.writes(entity)).get

@@ -34,6 +34,10 @@ GET         /clients/VRN/:vrn/invitations/received                              
 
 GET         /clients/invitations/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getInvitationsInfo(uid: String, status:  Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
+# BTA status
+# --------------------------------
+GET         /status                                                                           @uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.getStatus
+
 # Invitations
 # --------------------------------
 GET         /invitations/:invitationId                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationById(invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)

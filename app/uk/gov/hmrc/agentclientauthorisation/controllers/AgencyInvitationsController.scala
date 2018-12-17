@@ -125,7 +125,7 @@ class AgencyInvitationsController @Inject()(
     createdOnOrAfter: Option[LocalDate]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       invitationsService
-        .agencySent(arn, service.map(Service(_)), clientIdType, clientId, status, createdOnOrAfter)
+        .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
         .map { invitations =>
           Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
         }
