@@ -182,7 +182,7 @@ class InvitationsService @Inject()(
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.list(service, clientId, status)
+      invitationsRepository.findInvitationsBy(service = Some(service), clientId = Some(clientId.value), status = status)
     }
 
   def agencySent(
@@ -195,7 +195,7 @@ class InvitationsService @Inject()(
     if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
       monitor(
         s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-        invitationsRepository.list(arn, service, clientId, status, createdOnOrAfter)
+        invitationsRepository.findInvitationsBy(Some(arn), service, clientId, status, createdOnOrAfter)
       } else Future successful List.empty
 
   private def changeInvitationStatus(
