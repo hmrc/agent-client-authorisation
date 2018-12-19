@@ -114,10 +114,10 @@ class InvitationsService @Inject()(
     }
   }
 
-  def findAllInvitationIdAndExpiryDate(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationIdAndExpiryDate]] =
+  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository
-      .findAllInvitationIdAndExpiryDate(arn, clientIds, status)
+      .findInvitationInfoBy(arn, clientIds, status)
       .map(_.filter(i =>
         status match {
           case Some(Pending) => if (i.expiryDate.isBefore(currentTime().toLocalDate)) false else true
@@ -185,18 +185,28 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationsBy(service = Some(service), clientId = Some(clientId.value), status = status)
     }
 
-  def agencySent(
-    arn: Arn,
-    service: Option[Service],
-    clientIdType: Option[String],
-    clientId: Option[String],
-    status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] =
-    if (clientIdType.getOrElse(NinoType.id) == NinoType.id)
-      monitor(
-        s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-        invitationsRepository.findInvitationsBy(Some(arn), service, clientId, status, createdOnOrAfter)
-      } else Future successful List.empty
+  def findInvitationsBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] =
+    monitor(
+      s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
+      invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
+    }
+
+  def findInvitationsInfoBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
+    monitor(s"Repository-List-InvitationInfo${service
+      .map(s => s"-${s.id}")
+      .getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
+      invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
+    }
 
   private def changeInvitationStatus(
     invitation: Invitation,

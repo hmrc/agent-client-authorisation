@@ -63,7 +63,9 @@ trait AppAndStubs
       "microservice.services.des.port"                    -> wiremockPort,
       "auditing.enabled"                                  -> true,
       "auditing.consumer.baseUri.host"                    -> wiremockHost,
-      "auditing.consumer.baseUri.port"                    -> wiremockPort
+      "auditing.consumer.baseUri.port"                    -> wiremockPort,
+      "Prod.auditing.consumer.baseUri.host"               -> wiremockHost,
+      "Prod.auditing.consumer.baseUri.port"               -> wiremockPort
     )
 
   override def commonStubs(): Unit = {

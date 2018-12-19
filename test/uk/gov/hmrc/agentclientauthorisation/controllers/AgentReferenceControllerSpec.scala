@@ -25,7 +25,7 @@ import org.mockito.stubbing.OngoingStubbing
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
-import uk.gov.hmrc.agentclientauthorisation.model.{InvitationIdAndExpiryDate, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{InvitationInfo, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
@@ -113,22 +113,22 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val expiryDate = LocalDate.now()
 
-        val invitationIdAndExpiryDate1 = InvitationIdAndExpiryDate(InvitationId("ABERULMHCKKW3"), expiryDate)
-        val invitationIdAndExpiryDate2 = InvitationIdAndExpiryDate(InvitationId("B9SCS2T4NZBAX"), expiryDate)
-        val invitationIdAndExpiryDate3 = InvitationIdAndExpiryDate(InvitationId("CZTW1KY6RTAAT"), expiryDate)
+        val invitationIdAndExpiryDate1 = InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending)
+        val invitationIdAndExpiryDate2 = InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending)
+        val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
 
         val listOfInvitations = List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
           .thenReturn(
             Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe listOfInvitations
+        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
       }
 
       "authorised for user: Organisation" in {
@@ -139,11 +139,11 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val expiryDate = LocalDate.now()
 
-        val invitationIdAndExpiryDate3 = InvitationIdAndExpiryDate(InvitationId("CZTW1KY6RTAAT"), expiryDate)
+        val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
-        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
           .thenReturn(Future successful listOfInvitations)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
@@ -151,7 +151,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe listOfInvitations
+        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
       }
     }
 
@@ -184,7 +184,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val agentReferenceRecord: AgentReferenceRecord =
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
@@ -193,7 +193,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
 
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe List.empty
+        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe List.empty
       }
 
       "invitation-store returned nothing for authorised user: Organisation" in {
@@ -202,7 +202,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val agentReferenceRecord: AgentReferenceRecord =
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-        when(mockInvitationsService.findAllInvitationIdAndExpiryDate(any[Arn], any(), any())(any()))
+        when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any())(any()))
@@ -211,7 +211,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
 
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationIdAndExpiryDate]] shouldBe List.empty
+        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe List.empty
       }
     }
 

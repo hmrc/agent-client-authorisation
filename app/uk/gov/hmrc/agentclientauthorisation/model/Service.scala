@@ -53,6 +53,8 @@ object Service {
   val reads = new SimpleObjectReads[Service]("id", Service.apply)
   val writes = new SimpleObjectWrites[Service](_.id)
   val format = Format(reads, writes)
+
+  val all = Seq(MtdIt, Vat, PersonalIncomeRecord)
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](
