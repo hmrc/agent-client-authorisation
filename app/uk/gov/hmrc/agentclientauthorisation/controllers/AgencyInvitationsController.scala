@@ -108,7 +108,7 @@ class AgencyInvitationsController @Inject()(
         Future successful ClientRegistrationNotFound
       case Some(taxId) =>
         invitationsService
-          .create(arn, agentInvitation.getService, taxId, suppliedClientId)
+          .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId)
           .map(invitation => Created.withHeaders(location(invitation)))
     }
   }
@@ -118,6 +118,7 @@ class AgencyInvitationsController @Inject()(
 
   def getSentInvitations(
     givenArn: Arn,
+    clientType: Option[String],
     service: Option[String],
     clientIdType: Option[String],
     clientId: Option[String],
@@ -127,7 +128,7 @@ class AgencyInvitationsController @Inject()(
       invitationsService
         .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
         .map { invitations =>
-          Ok(toHalResource(invitations, arn, service, clientIdType, clientId, status))
+          Ok(toHalResource(invitations, arn, clientType, service, clientIdType, clientId, status))
         }
     }
   }

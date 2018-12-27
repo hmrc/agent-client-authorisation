@@ -71,14 +71,15 @@ class InvitationsService @Inject()(
       case _ => Future successful None
     }
 
-  def create(arn: Arn, service: Service, clientId: ClientId, suppliedClientId: ClientId)(
+  def create(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId)(
     implicit ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, service, clientId, suppliedClientId, startDate, expiryDate).map { invitation =>
-        Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
-        invitation
+      invitationsRepository.create(arn, clientType, service, clientId, suppliedClientId, startDate, expiryDate).map {
+        invitation =>
+          Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
+          invitation
       }
     }
   }

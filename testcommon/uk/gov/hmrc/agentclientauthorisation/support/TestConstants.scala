@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
@@ -44,6 +43,7 @@ object TestConstants {
   val defaultInvitation = Invitation(
     invitationId = InvitationId("ABBBBBBBBBBCC"),
     arn = Arn("98765"),
+    clientType = Some("personal"),
     service = Service.MtdIt,
     clientId = ClientIdentifier(Nino("AA123456A")),
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),

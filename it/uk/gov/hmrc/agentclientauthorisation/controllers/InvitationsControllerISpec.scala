@@ -39,11 +39,13 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         DateTime.now,
-        LocalDate.now)
+        LocalDate.now
+      )
 
       await(repo.insert(invitation))
 

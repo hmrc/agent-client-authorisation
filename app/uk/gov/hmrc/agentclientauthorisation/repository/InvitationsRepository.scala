@@ -66,13 +66,13 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def create(
     arn: Arn,
+    clientType: Option[String],
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
     startDate: DateTime,
     expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] = {
-
-    val invitation = Invitation.createNew(arn, service, clientId, suppliedClientId, startDate, expiryDate)
+    val invitation = Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, startDate, expiryDate)
     insert(invitation).map(_ => invitation)
   }
 

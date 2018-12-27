@@ -112,7 +112,7 @@ class AgencyInvitationsControllerSpec
         .thenReturn(Future successful None)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any()))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
-      when(invitationsService.create(any[Arn](), any[Service](), any(), any())(any()))
+      when(invitationsService.create(any[Arn](), any(), any[Service](), any(), any())(any()))
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
@@ -198,7 +198,7 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -214,7 +214,7 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      val response = await(controller.getSentInvitations(arn, None, None, None, None, None)(FakeRequest()))
+      val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
@@ -230,19 +230,21 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
+      val clientType = Some("personal")
       val service = Some("HMRC-MTD-IT")
       val clientIdType = Some("ni")
       val clientId = Some("AA123456A")
       val invitationStatus = Some(Accepted)
       val response = await(
-        controller.getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)(FakeRequest()))
+        controller.getSentInvitations(arn, clientType, service, clientIdType, clientId, invitationStatus, None)(
+          FakeRequest()))
 
       status(response) shouldBe 200
       val jsonBody = jsonBodyOf(response)
 
       (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
         routes.AgencyInvitationsController
-          .getSentInvitations(arn, service, clientIdType, clientId, invitationStatus, None)
+          .getSentInvitations(arn, clientType, service, clientIdType, clientId, invitationStatus, None)
           .url
     }
 
