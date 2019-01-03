@@ -39,11 +39,13 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         DateTime.now,
-        LocalDate.now)
+        LocalDate.now
+      )
 
       await(repo.insert(invitation))
 
@@ -53,6 +55,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val json = response.json
       (json \ "arn").as[String] shouldBe "TARN0000001"
+      (json \ "clientType").as[String] shouldBe "personal"
       (json \ "service").as[String] shouldBe "PERSONAL-INCOME-RECORD"
       (json \ "clientId").as[String] shouldBe "AB835673D"
       (json \ "clientIdType").as[String] shouldBe "ni"

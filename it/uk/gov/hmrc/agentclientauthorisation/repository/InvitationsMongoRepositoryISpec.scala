@@ -48,6 +48,7 @@ class InvitationsMongoRepositoryISpec
     BSONObjectID.generate(),
     InvitationId("ABERULMHCKKW3"),
     Arn(arn),
+    Some("personal"),
     Service.MtdIt,
     mtdItId1,
     nino1,
@@ -57,6 +58,7 @@ class InvitationsMongoRepositoryISpec
     BSONObjectID.generate(),
     InvitationId("B9SCS2T4NZBAX"),
     Arn(arn),
+    Some("personal"),
     Service.PersonalIncomeRecord,
     nino1,
     nino1,
@@ -66,6 +68,7 @@ class InvitationsMongoRepositoryISpec
     BSONObjectID.generate(),
     InvitationId("CZTW1KY6RTAAT"),
     Arn(arn),
+    Some("business"),
     Service.Vat,
     vrn,
     vrn,
@@ -89,7 +92,7 @@ class InvitationsMongoRepositoryISpec
 
   "create" should {
     "create a new StatusChangedEvent of Pending" in inside(addInvitation(now, invitationITSA)) {
-      case Invitation(_, _, arnValue, service, clientId, _, _, events) =>
+      case Invitation(_, _, arnValue, _, service, clientId, _, _, events) =>
         arnValue shouldBe Arn(arn)
         clientId shouldBe ClientIdentifier(mtdItId1)
         service shouldBe Service.MtdIt
@@ -117,7 +120,7 @@ class InvitationsMongoRepositoryISpec
       val updated = update(created, Accepted, now)
 
       inside(updated) {
-        case Invitation(created.id, _, _, _, _, _, _, events) =>
+        case Invitation(created.id, _, _, _, _, _, _, _, events) =>
           events shouldBe List(StatusChangeEvent(now, Pending), StatusChangeEvent(now, Accepted))
       }
     }
@@ -138,6 +141,7 @@ class InvitationsMongoRepositoryISpec
             _,
             _,
             Arn(`arn`),
+            _,
             Service.PersonalIncomeRecord,
             _,
             _,
@@ -149,7 +153,7 @@ class InvitationsMongoRepositoryISpec
       }
 
       inside(list(1)) {
-        case Invitation(_, _, Arn(`arn`), Service.MtdIt, _, _, _, List(StatusChangeEvent(date1, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), _, Service.MtdIt, _, _, _, List(StatusChangeEvent(date1, Pending))) =>
           date1 shouldBe now
       }
     }
@@ -166,6 +170,7 @@ class InvitationsMongoRepositoryISpec
             _,
             _,
             Arn(`arn`),
+            _,
             Service.MtdIt,
             ClientIdentifier(`mtdItId1`),
             _,
@@ -296,7 +301,7 @@ class InvitationsMongoRepositoryISpec
       addInvitation(now, invitationITSA)
 
       inside(listByClientId(service, mtdItId1).loneElement) {
-        case Invitation(_, _, Arn(`arn`), `service`, mtdItId, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), _, `service`, mtdItId, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
     }
@@ -319,12 +324,12 @@ class InvitationsMongoRepositoryISpec
       requests.size shouldBe 2
 
       inside(requests.head) {
-        case Invitation(_, _, `firstAgent`, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, `firstAgent`, _, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(_, _, `secondAgent`, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, `secondAgent`, _, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
     }
@@ -347,6 +352,7 @@ class InvitationsMongoRepositoryISpec
         yield
           Invitation.createNew(
             Arn(arn),
+            Some("personal"),
             Service.MtdIt,
             MtdItId(s"AB${i}23456B"),
             MtdItId(s"AB${i}23456A"),
@@ -374,6 +380,7 @@ class InvitationsMongoRepositoryISpec
 
       val itsaInvitation = Invitation.createNew(
         Arn(arn),
+        Some("personal"),
         Service.MtdIt,
         MtdItId("ABCD123456C"),
         MtdItId("ABCD123456C"),
@@ -382,6 +389,7 @@ class InvitationsMongoRepositoryISpec
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         Nino("AB123456B"),
         Nino("AB123456A"),
@@ -389,7 +397,14 @@ class InvitationsMongoRepositoryISpec
         now.plusDays(10).toLocalDate)
 
       val vatInvitation = Invitation
-        .createNew(Arn(arn), Service.Vat, Vrn("442820662"), Vrn("442820662"), now, now.plusDays(10).toLocalDate)
+        .createNew(
+          Arn(arn),
+          Some("personal"),
+          Service.Vat,
+          Vrn("442820662"),
+          Vrn("442820662"),
+          now,
+          now.plusDays(10).toLocalDate)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
@@ -430,6 +445,7 @@ class InvitationsMongoRepositoryISpec
 
       val itsaInvitation = Invitation.createNew(
         Arn(arn),
+        Some("personal"),
         Service.MtdIt,
         MtdItId("ABCD123456C"),
         MtdItId("ABCD123456C"),
@@ -438,6 +454,7 @@ class InvitationsMongoRepositoryISpec
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         Nino("AB123456B"),
         Nino("AB123456A"),
@@ -445,7 +462,14 @@ class InvitationsMongoRepositoryISpec
         now.plusDays(10).toLocalDate)
 
       val vatInvitation = Invitation
-        .createNew(Arn(arn), Service.Vat, Vrn("442820662"), Vrn("442820662"), now, now.plusDays(10).toLocalDate)
+        .createNew(
+          Arn(arn),
+          Some("personal"),
+          Service.Vat,
+          Vrn("442820662"),
+          Vrn("442820662"),
+          now,
+          now.plusDays(10).toLocalDate)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
@@ -457,8 +481,15 @@ class InvitationsMongoRepositoryISpec
 
   private def addInvitations(startDate: DateTime, invitations: Invitation*) =
     await(Future sequence invitations.map {
-      case Invitation(_, _, arnValue, service, clientId, suppliedClientId, _, _) =>
-        repository.create(arnValue, service, clientId, suppliedClientId, startDate, startDate.plusDays(20).toLocalDate)
+      case Invitation(_, _, arnValue, clientType, service, clientId, suppliedClientId, _, _) =>
+        repository.create(
+          arnValue,
+          clientType,
+          service,
+          clientId,
+          suppliedClientId,
+          startDate,
+          startDate.plusDays(20).toLocalDate)
     })
 
   private def addInvitation(startDate: DateTime, invitations: Invitation) = addInvitations(startDate, invitations).head

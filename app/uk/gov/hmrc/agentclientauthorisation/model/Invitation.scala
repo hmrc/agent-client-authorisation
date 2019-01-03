@@ -112,6 +112,7 @@ case class Invitation(
   id: BSONObjectID = BSONObjectID.generate(),
   invitationId: InvitationId,
   arn: Arn,
+  clientType: Option[String],
   service: Service,
   clientId: ClientId,
   suppliedClientId: ClientId,
@@ -134,6 +135,7 @@ object Invitation {
 
   def createNew(
     arn: Arn,
+    clientType: Option[String],
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
@@ -142,6 +144,7 @@ object Invitation {
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
+      clientType = clientType,
       service = service,
       clientId = clientId,
       suppliedClientId = suppliedClientId,
@@ -156,6 +159,7 @@ object Invitation {
     implicit val writes: Writes[Invitation] = new Writes[Invitation] {
       def writes(invitation: Invitation) =
         Json.obj(
+          "clientType"           -> invitation.clientType,
           "service"              -> invitation.service.id,
           "clientIdType"         -> invitation.clientId.typeId,
           "clientId"             -> invitation.clientId.value,
@@ -173,7 +177,7 @@ object Invitation {
 }
 
 /** Information provided by the agent to offer representation to HMRC */
-case class AgentInvitation(service: String, clientIdType: String, clientId: String) {
+case class AgentInvitation(service: String, clientType: Option[String], clientIdType: String, clientId: String) {
 
   lazy val getService = Service.forId(service)
 }

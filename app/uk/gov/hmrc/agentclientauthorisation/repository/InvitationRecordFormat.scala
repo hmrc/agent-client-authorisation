@@ -36,6 +36,7 @@ object InvitationRecordFormat {
     id: BSONObjectID,
     invitationId: InvitationId,
     arn: Arn,
+    clientType: Option[String],
     service: Service,
     clientId: String,
     clientIdTypeOp: Option[String],
@@ -54,6 +55,7 @@ object InvitationRecordFormat {
       id,
       invitationId,
       arn,
+      clientType,
       service,
       ClientIdentifier(clientId, clientIdType),
       ClientIdentifier(suppliedClientId, suppliedClientIdType),
@@ -65,6 +67,7 @@ object InvitationRecordFormat {
   val reads: Reads[Invitation] = ((JsPath \ "id").read[BSONObjectID] and
     (JsPath \ "invitationId").read[InvitationId] and
     (JsPath \ "arn").read[Arn] and
+    (JsPath \ "clientType").readNullable[String] and
     (JsPath \ "service").read[Service] and
     (JsPath \ "clientId").read[String] and
     (JsPath \ "clientIdType").readNullable[String] and
@@ -84,6 +87,7 @@ object InvitationRecordFormat {
         "id"                   -> invitation.id,
         "invitationId"         -> invitation.invitationId,
         "arn"                  -> invitation.arn.value,
+        "clientType"           -> invitation.clientType,
         "service"              -> invitation.service.id,
         "clientId"             -> invitation.clientId.value,
         "clientIdType"         -> invitation.clientId.typeId,

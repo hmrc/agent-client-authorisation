@@ -45,6 +45,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation1 = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
@@ -55,6 +56,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.MtdIt,
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
@@ -65,6 +67,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation3 = Invitation.createNew(
         Arn("TARN0000002"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
@@ -93,6 +96,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation1 = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
@@ -103,6 +107,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.MtdIt,
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
@@ -132,6 +137,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673C")),
         ClientIdentifier(Nino("AB835673C")),
@@ -161,6 +167,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation1 = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
@@ -171,6 +178,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000002"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
@@ -201,6 +209,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val invitation = Invitation.createNew(
         Arn("TARN0000001"),
+        Some("personal"),
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
