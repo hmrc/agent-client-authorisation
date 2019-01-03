@@ -55,6 +55,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       val json = response.json
       (json \ "arn").as[String] shouldBe "TARN0000001"
+      (json \ "clientType").as[String] shouldBe "personal"
       (json \ "service").as[String] shouldBe "PERSONAL-INCOME-RECORD"
       (json \ "clientId").as[String] shouldBe "AB835673D"
       (json \ "clientIdType").as[String] shouldBe "ni"
