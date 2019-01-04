@@ -40,6 +40,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class MtdItClientInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
+
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Pending, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
@@ -36,6 +36,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
     "return 200 OK indicating client has pending invitations if she has one for PIR" in {
 
       givenAuditConnector()
+      givenClientHasNoActiveRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -83,11 +84,13 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe true
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe true
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
     "return 200 OK indicating client has pending invitations if she has one for ITSA" in {
 
       givenAuditConnector()
+      givenClientHasNoActiveRelationships
 
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
         .withStatus(200)
@@ -123,11 +126,13 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe true
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
     "return 200 OK indicating client has no pending invitations when none exist" in {
 
       givenAuditConnector()
+      givenClientHasNoActiveRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -153,11 +158,13 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe false
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
     "return 200 OK indicating client has no pending invitations when existing ones has expired" in {
 
       givenAuditConnector()
+      givenClientHasNoActiveRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -195,11 +202,13 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe false
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe true
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
     "return 200 OK indicating client has no pending invitations when client has no expected enrolment(s)" in {
 
       givenAuditConnector()
+      givenClientHasNoActiveRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -226,7 +235,45 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe false
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
+    "return 200 OK indicating client has active relationships " in {
+      givenAuditConnector()
+      givenClientHasActiveRelationshipsWith(Arn("TARN0000001"))
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe true
     }
 
   }
+
+  def givenClientHasNoActiveRelationships =
+    stubFor(
+      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody("{}")))
+
+  def givenClientHasActiveRelationshipsWith(arn: Arn) =
+    stubFor(
+      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(s"""{
+                       | "HMRC-MTD-IT": ["${arn.value}"],
+                       | "HMRC-MTD-VAT": ["${arn.value}"]
+                       |}""".stripMargin)))
 }
