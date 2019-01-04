@@ -16,14 +16,18 @@
 
 import java.net.URL
 
-import javax.inject.{Inject, Provider, Singleton}
+import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
 import com.google.inject.name.{Named, Names}
+import com.kenshoo.play.metrics.Metrics
 import com.typesafe.config.Config
+import javax.inject.{Inject, Provider, Singleton}
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
-import uk.gov.hmrc.agentclientauthorisation.service.RepositoryMigrationService
+import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusCache
+import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
+import uk.gov.hmrc.agentclientauthorisation.service.{KenshooCacheMetrics, LocalCaffeineCache, RepositoryMigrationService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -50,6 +54,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[HttpGet]).to(classOf[HttpVerbs])
     bind(classOf[HttpPut]).to(classOf[HttpVerbs])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
+    bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
+
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
     bindBaseUrl("relationships")
@@ -154,4 +160,22 @@ class HttpVerbs @Inject()(
   override val hooks = Seq(AuditingHook)
 
   override def configuration: Option[Config] = Some(config.underlying)
+}
+
+@Singleton
+class ClientStatusCacheProvider @Inject()(val environment: Environment, configuration: Configuration, metrics: Metrics)
+    extends Provider[ClientStatusCache] with ServicesConfig {
+
+  override val runModeConfiguration: Configuration = configuration
+  override def mode = environment.mode
+
+  import scala.concurrent.duration._
+
+  override val get: ClientStatusCache = new LocalCaffeineCache[ClientStatus](
+    "ClientStatus",
+    configuration.underlying.getInt("clientStatus.cache.size"),
+    Duration.create(configuration.underlying.getString("clientStatus.cache.expires"))
+  ) with ClientStatusCache with KenshooCacheMetrics {
+    override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
+  }
 }

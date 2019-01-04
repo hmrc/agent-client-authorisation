@@ -67,6 +67,12 @@ class RelationshipsConnector @Inject()(
       http.GET[Map[String, Seq[Arn]]](url)
     }
 
+  def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[JsObject]] =
+    monitor(s"ConsumedAPI-AgentFiRelationship-GetActive-GET") {
+      val url = s"$afiBaseUrl/agent-fi-relationship/relationships/active"
+      http.GET[Seq[JsObject]](url)
+    }
+
   private def mtdItRelationshipUrl(invitation: Invitation): URL =
     new URL(
       baseUrl,

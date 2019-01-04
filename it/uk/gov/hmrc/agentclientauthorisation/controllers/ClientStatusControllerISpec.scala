@@ -37,6 +37,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       givenAuditConnector()
       givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -91,6 +92,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       givenAuditConnector()
       givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
 
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
         .withStatus(200)
@@ -133,6 +135,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       givenAuditConnector()
       givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -165,6 +168,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       givenAuditConnector()
       givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -209,6 +213,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
       givenAuditConnector()
       givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -241,6 +246,28 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
     "return 200 OK indicating client has active relationships " in {
       givenAuditConnector()
       givenClientHasActiveRelationshipsWith(Arn("TARN0000001"))
+      givenClientHasNoActiveAfiRelationships
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe true
+    }
+
+    "return 200 OK indicating client has active fi relationship " in {
+      givenAuditConnector()
+      givenClientHasNoActiveRelationships
+      givenClientHasActiveAfiRelationshipsWith(Arn("TARN0000001"))
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -267,6 +294,13 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
           .withStatus(200)
           .withBody("{}")))
 
+  def givenClientHasNoActiveAfiRelationships =
+    stubFor(
+      get(urlPathEqualTo("/agent-fi-relationship/relationships/active")).willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody("[]")))
+
   def givenClientHasActiveRelationshipsWith(arn: Arn) =
     stubFor(
       get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(
@@ -276,4 +310,18 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
                        | "HMRC-MTD-IT": ["${arn.value}"],
                        | "HMRC-MTD-VAT": ["${arn.value}"]
                        |}""".stripMargin)))
+
+  def givenClientHasActiveAfiRelationshipsWith(arn: Arn) =
+    stubFor(
+      get(urlPathEqualTo("/agent-fi-relationship/relationships/active")).willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(s"""[
+                       |  {
+                       |    "arn": "${arn.value}",
+                       |    "service": "service123",
+                       |    "clientId": "clientId123",
+                       |    "relationshipStatus": "Active"
+                       |  }
+                       |]""".stripMargin)))
 }
