@@ -26,7 +26,8 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
-import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPut, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class RelationshipsConnector @Inject()(
   @Named("relationships-baseUrl") baseUrl: URL,
   @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
-  httpPut: HttpPut,
+  http: HttpPut with HttpGet,
   metrics: Metrics)
     extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
@@ -43,12 +44,12 @@ class RelationshipsConnector @Inject()(
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      httpPut.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      httpPut.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => Unit)
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
@@ -56,9 +57,15 @@ class RelationshipsConnector @Inject()(
     ec: ExecutionContext): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      httpPut.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
     }
   }
+
+  def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
+      val url = s"$baseUrl/agent-client-relationships/relationships/active"
+      http.GET[Map[String, Seq[Arn]]](url)
+    }
 
   private def mtdItRelationshipUrl(invitation: Invitation): URL =
     new URL(

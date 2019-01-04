@@ -381,7 +381,7 @@ Example Response, 200 with Body:
    "status" : "Pending",
    "expiryDate" : "2018-05-14",
    "suppliedClientIdType" : "vrn",
-   "clientIdType" : "vrn"
+   "clientIdType" : "vrn",
    "clientId" : "101747696"
 }
 ```
@@ -404,6 +404,31 @@ http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitation
 |403|This invitation cannot be cancelled because it's status is not Pending|
 |403|This user has no permissions|
 |404|Client is not authorised to view this invitation|
+
+### Get client status
+Returns status of an authorised client's with regard to authorisations of agents.
+
+```
+GET /status
+```
+
+|Response|Description|
+|--------|---------|
+|200|application/json content|
+|401|Missing or expired authorisation token|
+|403|This user has no permissions|
+
+```
+ { 
+   "hasPendingInvitations": true|false, 
+   "hasInvitationsHistory": true|false, 
+   "hasExistingRelationships": true|false 
+ }
+```
+
+* hasPendingInvitations - there are pending authorisations requests from Agent(s) for this client
+* hasInvitationsHistory - there were other authorisations requests in the past, which can be accepted, rejected or expired
+* hasExistingRelationships - there exist active client's authorisations for HMRC-MTD-IT, HMRC-MTD-VAT, PERSONAL-INCOME-RECORD or any other supported service
 
 ### Running the tests <a name="runningTests"></a>
 

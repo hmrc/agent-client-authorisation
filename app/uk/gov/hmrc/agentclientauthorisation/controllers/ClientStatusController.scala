@@ -22,7 +22,7 @@ import org.joda.time.LocalDate
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
@@ -31,7 +31,9 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 @Singleton
-class ClientStatusController @Inject()(invitationsService: InvitationsService)(
+class ClientStatusController @Inject()(
+  invitationsService: InvitationsService,
+  relationshipsConnector: RelationshipsConnector)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -52,7 +54,8 @@ class ClientStatusController @Inject()(invitationsService: InvitationsService)(
                               })
         hasPendingInvitations = invitationsInfoList.map(_.exists(_.isPendingOn(now))).foldLeft(false)(_ || _)
         hasInvitationsHistory = invitationsInfoList.map(_.exists(i => !i.isPendingOn(now))).foldLeft(false)(_ || _)
-      } yield Ok(Json.toJson(ClientStatus(hasPendingInvitations, hasInvitationsHistory)))
+        hasExistingRelationships <- relationshipsConnector.getActiveRelationships.map(_.nonEmpty)
+      } yield Ok(Json.toJson(ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)))
     }
   }
 
@@ -60,7 +63,10 @@ class ClientStatusController @Inject()(invitationsService: InvitationsService)(
 
 object ClientStatusController {
 
-  case class ClientStatus(hasPendingInvitations: Boolean, hasInvitationsHistory: Boolean)
+  case class ClientStatus(
+    hasPendingInvitations: Boolean,
+    hasInvitationsHistory: Boolean,
+    hasExistingRelationships: Boolean)
 
   object ClientStatus {
     implicit val formats: OFormat[ClientStatus] = Json.format[ClientStatus]
