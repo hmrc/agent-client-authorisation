@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.Service
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.service.{Cache, InvitationsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -33,7 +33,8 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 @Singleton
 class ClientStatusController @Inject()(
   invitationsService: InvitationsService,
-  relationshipsConnector: RelationshipsConnector)(
+  relationshipsConnector: RelationshipsConnector,
+  clientStatusCache: ClientStatusCache)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -45,17 +46,31 @@ class ClientStatusController @Inject()(
 
   val getStatus: Action[AnyContent] = Action.async { implicit request =>
     withClientIdentifiedBy { identifiers: Seq[(Service, String)] =>
-      val now = LocalDate.now
       for {
-        invitationsInfoList <- Future.sequence(identifiers.map {
-                                case (service, clientId) =>
-                                  invitationsService
-                                    .findInvitationsInfoBy(service = Some(service), clientId = Some(clientId))
-                              })
-        hasPendingInvitations = invitationsInfoList.map(_.exists(_.isPendingOn(now))).foldLeft(false)(_ || _)
-        hasInvitationsHistory = invitationsInfoList.map(_.exists(i => !i.isPendingOn(now))).foldLeft(false)(_ || _)
-        hasExistingRelationships <- relationshipsConnector.getActiveRelationships.map(_.nonEmpty)
-      } yield Ok(Json.toJson(ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)))
+        status <- if (identifiers.isEmpty) ClientStatusController.defaultClientStatus
+                 else
+                   clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
+                     val now = LocalDate.now
+                     for {
+                       invitationsInfoList <- Future.sequence(identifiers.map {
+                                               case (service, clientId) =>
+                                                 invitationsService
+                                                   .findInvitationsInfoBy(
+                                                     service = Some(service),
+                                                     clientId = Some(clientId))
+                                             })
+                       hasPendingInvitations = invitationsInfoList
+                         .map(_.exists(_.isPendingOn(now)))
+                         .foldLeft(false)(_ || _)
+                       hasInvitationsHistory = invitationsInfoList
+                         .map(_.exists(i => !i.isPendingOn(now)))
+                         .foldLeft(false)(_ || _)
+                       hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships.map(_.nonEmpty)
+                       hasExistingRelationships <- if (hasExistingAfiRelationships) Future.successful(true)
+                                                  else relationshipsConnector.getActiveRelationships.map(_.nonEmpty)
+                     } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
+                   }
+      } yield Ok(Json.toJson(status))
     }
   }
 
@@ -72,4 +87,14 @@ object ClientStatusController {
     implicit val formats: OFormat[ClientStatus] = Json.format[ClientStatus]
   }
 
+  def toCacheKey(identifiers: Seq[(Service, String)]): String =
+    identifiers
+      .sortBy(_._1.enrolmentKey)
+      .map(i => s"${i._1}__${i._2}".toLowerCase.replaceAllLiterally(" ", ""))
+      .mkString(",")
+
+  val defaultClientStatus = Future.successful(ClientStatus(false, false, false))
+
 }
+
+trait ClientStatusCache extends Cache[ClientStatus]

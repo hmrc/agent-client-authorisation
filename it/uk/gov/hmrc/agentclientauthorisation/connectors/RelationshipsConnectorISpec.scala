@@ -75,4 +75,25 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
       result.get("HMRC-MTD-VAT") shouldBe None
     }
   }
+
+  "getActiveAfiRelationships" should {
+
+    "return the list of active relationships" in {
+      stubFor(
+        get(urlEqualTo(s"/agent-fi-relationship/relationships/active"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(s"""[
+                           |  {
+                           |    "service": "service123",
+                           |    "clientId": "clientId123",
+                           |    "relationshipStatus": "Active"
+                           |  }
+                           |]""".stripMargin)))
+
+      val result = await(connector.getActiveAfiRelationships)
+      result should not be empty
+    }
+  }
 }
