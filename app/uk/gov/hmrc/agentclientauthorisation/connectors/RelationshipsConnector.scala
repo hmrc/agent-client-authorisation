@@ -27,7 +27,7 @@ import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPut, HttpResponse}
+import uk.gov.hmrc.http._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,7 +70,9 @@ class RelationshipsConnector @Inject()(
   def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[JsObject]] =
     monitor(s"ConsumedAPI-AgentFiRelationship-GetActive-GET") {
       val url = s"$afiBaseUrl/agent-fi-relationship/relationships/active"
-      http.GET[Seq[JsObject]](url)
+      http.GET[Seq[JsObject]](url).recover {
+        case _: NotFoundException => Seq()
+      }
     }
 
   private def mtdItRelationshipUrl(invitation: Invitation): URL =
