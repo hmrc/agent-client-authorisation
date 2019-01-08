@@ -5,7 +5,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.play.OneServerPerSuite
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, ScheduleRepository}
-import uk.gov.hmrc.agentclientauthorisation.support.{InvitationsStatusUpdateScheduler, MongoApp, MongoAppAndStubs}
+import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
@@ -43,6 +43,7 @@ class InvitationsStatusUpdateSchedulerISpec
         yield
           Invitation.createNew(
             arn,
+            None,
             Service.MtdIt,
             MtdItId(s"AB${i}23456B"),
             MtdItId(s"AB${i}23456A"),
@@ -54,6 +55,7 @@ class InvitationsStatusUpdateSchedulerISpec
         yield
           Invitation.createNew(
             arn,
+            None,
             Service.MtdIt,
             MtdItId(s"AB${i}23456B"),
             MtdItId(s"AB${i}23456A"),

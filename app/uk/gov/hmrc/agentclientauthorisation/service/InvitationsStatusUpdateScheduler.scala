@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.support
+package uk.gov.hmrc.agentclientauthorisation.service
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import javax.inject.{Inject, Named, Singleton}
-import org.joda.time.{DateTime, Interval, LocalDate, PeriodType}
+import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
 import play.api.libs.concurrent.ExecutionContextProvider
-import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Pending}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, ScheduleRecord, ScheduleRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 @Singleton
 class InvitationsStatusUpdateScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
-  invitationsRepository: InvitationsRepository,
+  invitationsService: InvitationsService,
   actorSystem: ActorSystem,
   @Named("invitation-status-update-scheduler.interval") interval: Int,
   @Named("invitation-status-update-scheduler.enabled") enabled: Boolean,
@@ -48,10 +47,9 @@ class InvitationsStatusUpdateScheduler @Inject()(
     val taskActor: ActorRef = actorSystem.actorOf(Props {
       new TaskActor(
         scheduleRepository,
-        invitationsRepository,
+        invitationsService,
         executionContextProvider,
-        interval,
-        updateInvitations()
+        interval
       )
     })
     actorSystem.scheduler.scheduleOnce(
@@ -62,24 +60,13 @@ class InvitationsStatusUpdateScheduler @Inject()(
   } else
     Logger(getClass).warn("invitation status update scheduler is not enabled.")
 
-  private def updateInvitations(): Future[Unit] =
-    invitationsRepository
-      .findInvitationsBy(status = Some(Pending))
-      .map { invitations =>
-        invitations.foreach { invitation =>
-          if (invitation.expiryDate.isBefore(LocalDate.now())) {
-            invitationsRepository.update(invitation, Expired, DateTime.now())
-          }
-        }
-      }
 }
 
 class TaskActor(
   scheduleRepository: ScheduleRepository,
-  invitationsRepository: InvitationsRepository,
+  invitationsService: InvitationsService,
   executionContextProvider: ExecutionContextProvider,
-  repeatInterval: Int,
-  updateInvitations: => Future[Unit])
+  repeatInterval: Int)
     extends Actor {
 
   implicit val ec: ExecutionContext = executionContextProvider.get()
@@ -98,7 +85,7 @@ class TaskActor(
                   .scheduleOnce(delay(nextRunAt), self, newUid)
                 Logger(getClass)
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
-                updateInvitations
+                invitationsService.findAndUpdateExpiredInvitations()
               })
           } else {
             context.system.scheduler.scheduleOnce(delay(runAt), self, recordUid)
