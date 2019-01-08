@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation.service
+package uk.gov.hmrc.agentclientauthorisation.support
 
 import java.util.UUID
 
