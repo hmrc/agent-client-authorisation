@@ -81,6 +81,9 @@ class InvitationsMongoRepositoryISpec
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
+      .configure(
+        "invitation-status-update-scheduler.enabled" -> false
+      )
 
   lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 

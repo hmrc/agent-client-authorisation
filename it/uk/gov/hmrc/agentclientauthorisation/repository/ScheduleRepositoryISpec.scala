@@ -3,28 +3,26 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import java.util.UUID
 
 import org.joda.time.DateTime
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatest.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.agentclientauthorisation.support.MongoApp
+import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
+import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ScheduleRepositoryISpec
-    extends UnitSpec
-    with MongoApp
-    with OneAppPerSuite {
+    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp {
 
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
-        "features.invitation-status-update-scheduler.enabled" -> false,
-        "features.invitation-status-update-scheduler.interval" -> 30
+        "invitation-status-update-scheduler.enabled" -> false
       )
       .configure(mongoConfiguration)
 
-  override implicit lazy val app: Application = appBuilder.build()
+  lazy val app: Application = appBuilder.build()
 
   private lazy val repo = app.injector.instanceOf[MongoScheduleRepository]
 
