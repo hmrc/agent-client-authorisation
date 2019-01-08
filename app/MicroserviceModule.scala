@@ -71,8 +71,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindProperty2param("des.authorizationToken", "des.authorization-token")
     bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")
 
-    bindIntegerProperty("features.invitation-status-update-scheduler.interval")
-    bindBooleanProperty("features.invitation-status-update-scheduler.enabled")
+    bindIntegerProperty("invitation-status-update-scheduler.interval")
+    bindBooleanProperty("invitation-status-update-scheduler.enabled")
 
     bind(classOf[RepositoryMigrationService]).asEagerSingleton()
   }

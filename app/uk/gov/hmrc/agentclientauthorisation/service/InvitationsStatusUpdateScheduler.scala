@@ -36,8 +36,8 @@ class InvitationsStatusUpdateScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
   invitationsRepository: InvitationsRepository,
   actorSystem: ActorSystem,
-  @Named("features.invitation-status-update-scheduler.interval") interval: Int,
-  @Named("features.invitation-status-update-scheduler.enabled") enabled: Boolean,
+  @Named("invitation-status-update-scheduler.interval") interval: Int,
+  @Named("invitation-status-update-scheduler.enabled") enabled: Boolean,
   executionContextProvider: ExecutionContextProvider
 ) {
 
