@@ -18,13 +18,12 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
-import org.joda.time.LocalDate
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.Service
+import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{Cache, InvitationsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 
@@ -50,7 +49,6 @@ class ClientStatusController @Inject()(
         status <- if (identifiers.isEmpty) ClientStatusController.defaultClientStatus
                  else
                    clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
-                     val now = LocalDate.now
                      for {
                        invitationsInfoList <- Future.sequence(identifiers.map {
                                                case (service, clientId) =>
@@ -59,12 +57,9 @@ class ClientStatusController @Inject()(
                                                      service = Some(service),
                                                      clientId = Some(clientId))
                                              })
-                       hasPendingInvitations = invitationsInfoList
-                         .map(_.exists(_.isPendingOn(now)))
-                         .foldLeft(false)(_ || _)
-                       hasInvitationsHistory = invitationsInfoList
-                         .map(_.exists(i => !i.isPendingOn(now)))
-                         .foldLeft(false)(_ || _)
+                       hasPendingInvitations = invitationsInfoList.exists(_.exists(_.status == Pending))
+                       hasInvitationsHistory = invitationsInfoList.exists(_.exists(_.status != Pending))
+
                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships.map(_.nonEmpty)
                        hasExistingRelationships <- if (hasExistingAfiRelationships) Future.successful(true)
                                                   else relationshipsConnector.getActiveRelationships.map(_.nonEmpty)

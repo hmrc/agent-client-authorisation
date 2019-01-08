@@ -67,7 +67,9 @@ trait AppAndStubs
       "Prod.auditing.consumer.baseUri.host"               -> wiremockHost,
       "Prod.auditing.consumer.baseUri.port"               -> wiremockPort,
       "clientStatus.cache.size"                           -> 1,
-      "clientStatus.cache.expires"                        -> "1 millis"
+      "clientStatus.cache.expires"                        -> "1 millis",
+      "invitation-status-update-scheduler.enabled" -> true,
+      "invitation-status-update-scheduler.interval" -> 5
     )
 
   override def commonStubs(): Unit = {

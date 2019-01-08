@@ -27,7 +27,8 @@ import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusCache
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.service.{KenshooCacheMetrics, LocalCaffeineCache, RepositoryMigrationService}
+import uk.gov.hmrc.agentclientauthorisation.repository.{MongoScheduleRepository, ScheduleRepository}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsStatusUpdateScheduler, KenshooCacheMetrics, LocalCaffeineCache, RepositoryMigrationService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -55,6 +56,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[HttpPut]).to(classOf[HttpVerbs])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
+    bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
+    bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()
 
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
@@ -66,6 +69,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindProperty2param("des.environment", "des.environment")
     bindProperty2param("des.authorizationToken", "des.authorization-token")
     bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")
+
+    bindIntegerProperty("invitation-status-update-scheduler.interval")
+    bindBooleanProperty("invitation-status-update-scheduler.enabled")
 
     bind(classOf[RepositoryMigrationService]).asEagerSingleton()
   }
@@ -147,6 +153,30 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
           override lazy val get = getConfBool(propertyName, false)
         }
       }
+  }
+
+  private def bindBooleanProperty(propertyName: String) =
+    bind(classOf[Boolean])
+      .annotatedWith(Names.named(propertyName))
+      .toProvider(new BooleanPropertyProvider(propertyName))
+
+  private class BooleanPropertyProvider(confKey: String) extends Provider[Boolean] {
+    def getBooleanFromRoot =
+      runModeConfiguration
+        .getBoolean(confKey)
+        .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
+    override lazy val get: Boolean = getConfBool(confKey, getBooleanFromRoot)
+  }
+
+  private def bindIntegerProperty(propertyName: String) =
+    bind(classOf[Int])
+      .annotatedWith(Names.named(propertyName))
+      .toProvider(new IntegerPropertyProvider(propertyName))
+
+  private class IntegerPropertyProvider(confKey: String) extends Provider[Int] {
+    override lazy val get: Int = configuration
+      .getInt(confKey)
+      .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 
 }

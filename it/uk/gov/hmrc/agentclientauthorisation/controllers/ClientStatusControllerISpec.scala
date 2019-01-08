@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
 import org.joda.time.{DateTime, LocalDate}
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Pending, Service}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
@@ -55,6 +55,8 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         LocalDate.now.plusDays(10)
       )
       await(repo.insert(invitation1))
+
+      await(repo.update(invitation1, Expired, DateTime.now()))
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000001"),
@@ -186,6 +188,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         LocalDate.now
       )
       await(repo.insert(invitation1))
+      await(repo.update(invitation1, Expired, DateTime.now()))
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000002"),
@@ -197,7 +200,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         LocalDate.now.minusDays(5)
       )
       await(repo.insert(invitation2))
-      await(repo.update(invitation2, Pending, DateTime.now.minusDays(4)))
+      await(repo.update(invitation2, Expired, DateTime.now()))
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port).get()
