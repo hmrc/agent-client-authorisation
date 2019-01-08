@@ -192,10 +192,7 @@ object AgentInvitation {
   def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
 }
 
-case class InvitationInfo(invitationId: InvitationId, expiryDate: LocalDate, status: InvitationStatus) {
-
-  def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
-}
+case class InvitationInfo(invitationId: InvitationId, expiryDate: LocalDate, status: InvitationStatus)
 
 object InvitationInfo {
   implicit val format = Json.format[InvitationInfo]
