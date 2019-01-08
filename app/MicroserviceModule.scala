@@ -57,7 +57,6 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
-    bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()
 
     bindBaseUrl("auth")
     bindBaseUrl("agencies-fake")
@@ -74,6 +73,10 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBooleanProperty("invitation-status-update-scheduler.enabled")
 
     bind(classOf[RepositoryMigrationService]).asEagerSingleton()
+
+    if (configuration.getBoolean("invitation-status-update-scheduler.enabled").getOrElse(false)) {
+      bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()
+    }
   }
 
   private def bindBaseUrl(serviceName: String) =
