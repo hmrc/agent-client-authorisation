@@ -101,7 +101,7 @@ Example Body of IRV:
 
 |Response|Description|
 |--------|---------|
-|204|Successfully created invitation. (In Headers) Location → "/agencies/:arn/invitations/sent/:invitationdId"|
+|201|Successfully created invitation. (In Headers) Location → "/agencies/:arn/invitations/sent/:invitationdId"|
 |400|Received Valid Json but incorrect data|
 |400|Received Invalid Json|
 |403|Client Registration Not Found|
