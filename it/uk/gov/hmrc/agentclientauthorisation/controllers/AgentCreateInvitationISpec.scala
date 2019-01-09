@@ -17,13 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentCreateInvitationISpec extends UnitSpec with MongoAppAndStubs with AuthStubs with DesStubs {
+class AgentCreateInvitationISpec
+    extends UnitSpec with MongoAppAndStubs with AuthStubs with DesStubs with HttpResponseUtils {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
@@ -52,6 +54,7 @@ class AgentCreateInvitationISpec extends UnitSpec with MongoAppAndStubs with Aut
                            |}
                """.stripMargin)
         response.status shouldBe 201
+        locationHeaderOf(response) should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/A\\w{12}")
       }
 
       "service is PIR" in {}
@@ -71,6 +74,7 @@ class AgentCreateInvitationISpec extends UnitSpec with MongoAppAndStubs with Aut
                            |}
                """.stripMargin)
         response.status shouldBe 201
+        locationHeaderOf(response) should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/C\\w{12}")
       }
 
       "service is NI-ORG" in {
@@ -87,6 +91,7 @@ class AgentCreateInvitationISpec extends UnitSpec with MongoAppAndStubs with Aut
                            |}
                """.stripMargin)
         response.status shouldBe 201
+        locationHeaderOf(response) should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/D\\w{12}")
 
       }
 
@@ -160,5 +165,12 @@ trait DesStubs {
                        |  ]
                        |}
                        |""".stripMargin)))
+
+}
+
+trait HttpResponseUtils {
+
+  def locationHeaderOf(response: HttpResponse): String =
+    response.header(HeaderNames.LOCATION).getOrElse(throw new IllegalStateException())
 
 }
