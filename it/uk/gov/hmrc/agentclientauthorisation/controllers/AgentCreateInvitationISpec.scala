@@ -186,6 +186,13 @@ trait AuthStubs {
         .withBody(
           s"""{"allEnrolments":[{"key":"HMRC-AS-AGENT","identifiers":[{"key":"AgentReferenceNumber","value":"$arn"}]}], "affinityGroup":"Agent"}""")))
 
+  def givenAuthorisedAsClient(service: String, identifierName: String, identifierValue: String) =
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          s"""{"allEnrolments":[{"key":"$service","identifiers":[{"key":"$identifierName","value":"$identifierValue"}]}], "affinityGroup":"Individual"}""")))
+
 }
 
 trait DesStubs {

@@ -91,7 +91,7 @@ case object UtrType extends ClientIdType(classOf[Utr], "utr", "UTR", Utr.apply) 
   override def isValid(value: String) = Utr.isValid(value)
 }
 
-case object EoriType extends ClientIdType(classOf[Eori], "eori", "EORI", Eori.apply) {
+case object EoriType extends ClientIdType(classOf[Eori], "eori", "NIEORI", Eori.apply) {
   override def isValid(value: String) = Eori.isValid(value)
 }
 

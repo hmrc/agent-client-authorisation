@@ -23,7 +23,7 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logger
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
@@ -94,6 +94,8 @@ class InvitationsService @Inject()(
           case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
           case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
+          case Service.NiOrgEnrolled | Service.NiOrgNotEnrolled =>
+            relationshipsConnector.createNiOrgRelationship(invitation)
         }
         future
           .flatMap(
