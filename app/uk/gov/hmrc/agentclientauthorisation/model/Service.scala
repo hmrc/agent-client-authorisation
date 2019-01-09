@@ -43,9 +43,11 @@ object Service {
 
   case object Vat extends Service("HMRC-MTD-VAT", 'C', "HMRC-MTD-VAT", VrnType, VrnType, false)
 
-  case object NiOrg extends Service("HMRC-NI-ORG", 'D', "HMRC-NI-ORG", UtrType, EoriType, true)
+  case object NiOrgEnrolled extends Service("HMRC-NI-ORG", 'D', "HMRC-NI-ORG", EoriType, EoriType, true)
 
-  val values = Seq(MtdIt, PersonalIncomeRecord, Vat, NiOrg)
+  case object NiOrgNotEnrolled extends Service("HMRC-NI-ORG-NOT-ENROLLED", 'E', "HMRC-NI-ORG", UtrType, UtrType, true)
+
+  val values = Seq(MtdIt, PersonalIncomeRecord, Vat, NiOrgEnrolled, NiOrgNotEnrolled)
   def findById(id: String): Option[Service] = values.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
 
@@ -56,7 +58,7 @@ object Service {
   val writes = new SimpleObjectWrites[Service](_.id)
   val format = Format(reads, writes)
 
-  val all = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrg)
+  val all = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrgEnrolled, NiOrgNotEnrolled)
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](
