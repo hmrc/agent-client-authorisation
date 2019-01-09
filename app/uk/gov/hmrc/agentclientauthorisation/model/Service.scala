@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Eori, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 
 sealed abstract class Service(
@@ -43,7 +43,9 @@ object Service {
 
   case object Vat extends Service("HMRC-MTD-VAT", 'C', "HMRC-MTD-VAT", VrnType, VrnType, false)
 
-  val values = Seq(MtdIt, PersonalIncomeRecord, Vat)
+  case object NiOrg extends Service("HMRC-NI-ORG", 'D', "HMRC-NI-ORG", UtrType, EoriType, true)
+
+  val values = Seq(MtdIt, PersonalIncomeRecord, Vat, NiOrg)
   def findById(id: String): Option[Service] = values.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
 
@@ -54,7 +56,7 @@ object Service {
   val writes = new SimpleObjectWrites[Service](_.id)
   val format = Format(reads, writes)
 
-  val all = Seq(MtdIt, Vat, PersonalIncomeRecord)
+  val all = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrg)
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](
@@ -66,7 +68,7 @@ sealed abstract class ClientIdType[T <: TaxIdentifier](
 }
 
 object ClientIdType {
-  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType)
+  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType, UtrType, EoriType)
   def forId(id: String) =
     supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
@@ -81,6 +83,14 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
 
 case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
   override def isValid(value: String) = Vrn.isValid(value)
+}
+
+case object UtrType extends ClientIdType(classOf[Utr], "utr", "UTR", Utr.apply) {
+  override def isValid(value: String) = Utr.isValid(value)
+}
+
+case object EoriType extends ClientIdType(classOf[Eori], "eori", "EORI", Eori.apply) {
+  override def isValid(value: String) = Eori.isValid(value)
 }
 
 case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
