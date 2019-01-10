@@ -47,8 +47,8 @@ class UtrClientInvitationsController @Inject()(invitationsService: InvitationsSe
           ClientIdentifier(utr),
           invitationId, { invitation =>
             for {
-              _ <- invitationsService.update(invitation.copy(clientId = eori))
-              result <- invitationsService.acceptInvitation(invitation).andThen {
+              updatedInvitation <- invitationsService.update(invitation.copy(clientId = eori))
+              result <- invitationsService.acceptInvitation(updatedInvitation).andThen {
                          case Success(Right(x)) =>
                            auditService
                              .sendAgentClientRelationshipCreated(invitationId.value, x.arn, eori, invitation.service)

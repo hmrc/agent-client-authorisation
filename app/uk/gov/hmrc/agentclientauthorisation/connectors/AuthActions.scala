@@ -99,7 +99,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     implicit request: Request[AnyContent]): Future[Result] =
     authorised(AuthProvider and (Individual or Organisation))
       .retrieve(allEnrolments) { allEnrols =>
-        val identifiers: Seq[(Service, String)] = Service.all
+        val identifiers: Seq[(Service, String)] = Service.supportedServices
           .map { service =>
             allEnrols.enrolments
               .find(_.key == service.enrolmentKey)
