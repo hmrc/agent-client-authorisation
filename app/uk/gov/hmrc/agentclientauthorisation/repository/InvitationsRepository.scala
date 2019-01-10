@@ -76,6 +76,13 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
+  def update(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
+    for {
+      _      <- collection.find(BSONDocument("_id" -> invitation.id)).one[Invitation]
+      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(invitation))
+      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
+    } yield saved
+
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] =
     for {

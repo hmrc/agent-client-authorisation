@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{Eori, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 
 sealed abstract class Service(
@@ -58,7 +58,10 @@ object Service {
   val writes = new SimpleObjectWrites[Service](_.id)
   val format = Format(reads, writes)
 
-  val all = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrgEnrolled, NiOrgNotEnrolled)
+  val all: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrgEnrolled, NiOrgNotEnrolled)
+
+  def forInvitationId(invitationId: InvitationId): Option[Service] =
+    all.find(_.invitationIdPrefix == invitationId.value.head)
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](

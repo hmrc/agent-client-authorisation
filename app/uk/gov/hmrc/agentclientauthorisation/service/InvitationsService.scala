@@ -31,7 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
@@ -56,7 +56,6 @@ class InvitationsService @Inject()(
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
-  private val invitationExpiryUnits = invitationExpiryDuration.unit
 
   def translateToMtdItId(clientId: String, clientIdType: String)(
     implicit hc: HeaderCarrier,
@@ -121,34 +120,15 @@ class InvitationsService @Inject()(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository
       .findInvitationInfoBy(arn, clientIds, status)
-      .map(_.filter(i =>
-        status match {
-          case Some(Pending) => if (i.expiryDate.isBefore(currentTime().toLocalDate)) false else true
-          case _             => true
-      }))
 
-  private[service] def isInvitationExpired(invitation: Invitation, currentDateTime: () => DateTime = currentTime) = {
-    val createTime = invitation.firstEvent().time
-    hasExpired(createTime, currentDateTime)
-  }
-
-  private[service] def hasExpired(time: DateTime, currentDateTime: () => DateTime = currentTime) = {
-    val fromTime = if (invitationExpiryUnits == DAYS) time.millisOfDay().withMinimumValue() else time
-    val elapsedTime = Duration.create(currentDateTime().getMillis - fromTime.getMillis, duration.MILLISECONDS)
-    elapsedTime gt invitationExpiryDuration
-  }
-
-  private def updateStatusToExpired(invitation: Invitation)(
-    implicit
+  def updateClientId[T <: TaxIdentifier](invitationId: InvitationId, clientIdentifier: ClientIdentifier[T])(
+    implicit hc: HeaderCarrier,
     ec: ExecutionContext,
-    hc: HeaderCarrier,
-    request: Request[Any]): Future[Invitation] =
-    changeInvitationStatus(invitation, Expired).map { a =>
-      if (a.isLeft) throw new Exception("Failed to transition invitation state to Expired")
-      auditService.sendInvitationExpired(invitation)
-      a.right.get
-    } andThen {
-      case Success(_) => reportHistogramValue("Duration-Invitation-Expired", durationOf(invitation))
+    request: Request[Any]): Future[Option[Invitation]] =
+    findInvitation(invitationId).flatMap {
+      case Some(invitation) =>
+        invitationsRepository.update(invitation.copy(clientId = clientIdentifier)).map(Some.apply)
+      case None => Future.successful(None)
     }
 
   def cancelInvitation(invitation: Invitation)(
@@ -172,15 +152,6 @@ class InvitationsService @Inject()(
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
       invitationsRepository.find("invitationId" -> invitationId)
     }.map(_.headOption)
-      .flatMap { invitationResult =>
-        if (invitationResult.isEmpty) Future successful None
-        else {
-          val invitation = invitationResult.get
-          if (isInvitationExpired(invitation) && invitation.status != Expired)
-            updateStatusToExpired(invitation).map(Some(_))
-          else Future successful invitationResult
-        }
-      }
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
