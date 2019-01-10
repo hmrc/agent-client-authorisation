@@ -297,38 +297,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
     }
 
-    "return some invitation with status Expired when invitation is older than expiryDuration" in {
-      def elevenDaysAgo() = now().minusDays(11)
-      val invitation = testInvitationWithDate(elevenDaysAgo)
-      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(any[Invitation], eqs(Expired), any[DateTime])(any()))
-        .thenReturn(testInvitationWithStatus(Expired))
-
-      await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
-
-      verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
-    }
-
-    "return some invitation with status Expired when invitation is older than expiryDuration - duration has underscore" in {
-      def elevenDaysAgo() = now().minusDays(11)
-      val invitation = testInvitationWithDate(elevenDaysAgo)
-      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
-      when(invitationsRepository.update(any[Invitation], eqs(Expired), any[DateTime])(any()))
-        .thenReturn(testInvitationWithStatus(Expired))
-
-      val serviceWithUnderscoreInDuration = new InvitationsService(
-        invitationsRepository,
-        relationshipsConnector,
-        desConnector,
-        auditService,
-        "10_days",
-        metrics)
-
-      await(serviceWithUnderscoreInDuration.findInvitation(invitation.invitationId)).get.status shouldBe Expired
-
-      verify(auditService).sendInvitationExpired(eqs(invitation))(any(), any())
-    }
-
     "return some invitation with status Expired when the invitation had a status of expired in the first place" in {
       val invitation = testInvitationWithStatus(Expired)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
@@ -379,36 +347,6 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       metrics)
 
   "findInvitationsInfoBy" should {
-
-    "return a list of invitation Ids with expiry dates filtering out pending invitations that are actually expired" in {
-      when(
-        invitationsRepository
-          .findInvitationInfoBy(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Pending)))(any()))
-        .thenReturn(Future successful List(
-          InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01"), Pending),
-          InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("9999-01-01"), Pending)
-        ))
-
-      val result = service.findInvitationsInfoBy(Arn(arn), Seq("nino" -> nino.value), Some(Pending))
-
-      await(result) shouldBe List(
-        InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("9999-01-01"), Pending)
-      )
-    }
-
-    "return an empty list when all invitations have a status of Pending but are actually expired" in {
-      when(
-        invitationsRepository
-          .findInvitationInfoBy(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Pending)))(any()))
-        .thenReturn(Future successful List(
-          InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01"), Pending),
-          InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2017-01-01"), Pending)
-        ))
-
-      val result = service.findInvitationsInfoBy(Arn(arn), Seq("nino" -> nino.value), Some(Pending))
-
-      await(result) shouldBe List.empty
-    }
 
     "return a list of invitation Ids with expiry dates when status is not pending" in {
       when(
