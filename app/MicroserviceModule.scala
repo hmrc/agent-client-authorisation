@@ -54,6 +54,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
     bind(classOf[HttpGet]).to(classOf[HttpVerbs])
     bind(classOf[HttpPut]).to(classOf[HttpVerbs])
+    bind(classOf[HttpPost]).to(classOf[HttpVerbs])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
@@ -65,6 +66,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBaseUrl("agent-services-account")
     bindBaseUrl("des")
     bindBaseUrl("citizen-details")
+    bindBaseUrl("ni-exemption-registration")
     bindProperty2param("des.environment", "des.environment")
     bindProperty2param("des.authorizationToken", "des.authorization-token")
     bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")

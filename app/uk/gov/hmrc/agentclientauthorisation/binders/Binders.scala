@@ -20,7 +20,7 @@ import org.joda.time.LocalDate
 import org.joda.time.format.ISODateTimeFormat
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 
 import scala.util.control.NonFatal
@@ -31,6 +31,8 @@ object Binders {
   implicit object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
+  implicit object UtrBinder extends SimpleObjectBinder[Utr](Utr.apply, _.value)
+  implicit object EoriBinder extends SimpleObjectBinder[Eori](Eori.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
   implicit object LocalDateBinder
       extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)

@@ -22,12 +22,12 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Eori, InvitationId}
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class VatClientInvitationsController @Inject()(invitationsService: InvitationsService)(
+class EoriClientInvitationsController @Inject()(invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -37,29 +37,29 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
 
   implicit val ec: ExecutionContext = ecp.get
 
-  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+  def acceptInvitation(eori: Eori, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      acceptInvitation(ClientIdentifier(vrn), invitationId)
+      acceptInvitation(ClientIdentifier(eori), invitationId)
   }
 
-  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+  def rejectInvitation(eori: Eori, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      forThisClient(ClientIdentifier(vrn)) {
-        actionInvitation(ClientIdentifier(vrn), invitationId, invitationsService.rejectInvitation)
+      forThisClient(ClientIdentifier(eori)) {
+        actionInvitation(ClientIdentifier(eori), invitationId, invitationsService.rejectInvitation)
       }
   }
 
-  def getInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
+  def getInvitation(eori: Eori, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      getInvitation(ClientIdentifier(vrn), invitationId)
+      getInvitation(ClientIdentifier(eori), invitationId)
   }
 
-  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
+  def getInvitations(eori: Eori, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      getInvitations(Service.Vat, ClientIdentifier(vrn), status)
+      getInvitations(Service.NiOrgEnrolled, ClientIdentifier(eori), status)
   }
 
-  def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =
-    super.onlyForClients(Service.Vat, VrnType)(action)
+  def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Eori] => Future[Result]): Action[AnyContent] =
+    super.onlyForClients(Service.NiOrgEnrolled, EoriType)(action)
 
 }

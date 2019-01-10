@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, SimpleObjectReads, SimpleObjectWrites, TaxIdentifier}
 
 sealed abstract class Service(
@@ -43,9 +43,16 @@ object Service {
 
   case object Vat extends Service("HMRC-MTD-VAT", 'C', "HMRC-MTD-VAT", VrnType, VrnType, false)
 
-  val values = Seq(MtdIt, PersonalIncomeRecord, Vat)
-  def findById(id: String): Option[Service] = values.find(_.id == id)
+  case object NiOrgEnrolled extends Service("HMRC-NI-ORG", 'D', "HMRC-NI-ORG", EoriType, EoriType, true)
+
+  case object NiOrgNotEnrolled extends Service("HMRC-NI-ORG-NOT-ENROLLED", 'E', "HMRC-NI-ORG", UtrType, UtrType, true)
+
+  val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, NiOrgEnrolled, NiOrgNotEnrolled)
+
+  def findById(id: String): Option[Service] = supportedServices.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
+  def forInvitationId(invitationId: InvitationId): Option[Service] =
+    supportedServices.find(_.invitationIdPrefix == invitationId.value.head)
 
   def apply(id: String) = forId(id)
   def unapply(service: Service): Option[String] = Some(service.id)
@@ -54,7 +61,6 @@ object Service {
   val writes = new SimpleObjectWrites[Service](_.id)
   val format = Format(reads, writes)
 
-  val all = Seq(MtdIt, Vat, PersonalIncomeRecord)
 }
 
 sealed abstract class ClientIdType[T <: TaxIdentifier](
@@ -66,7 +72,7 @@ sealed abstract class ClientIdType[T <: TaxIdentifier](
 }
 
 object ClientIdType {
-  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType)
+  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType, UtrType, EoriType)
   def forId(id: String) =
     supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
@@ -81,6 +87,14 @@ case object MtdItIdType extends ClientIdType(classOf[MtdItId], "MTDITID", "MTDIT
 
 case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) {
   override def isValid(value: String) = Vrn.isValid(value)
+}
+
+case object UtrType extends ClientIdType(classOf[Utr], "utr", "UTR", Utr.apply) {
+  override def isValid(value: String) = Utr.isValid(value)
+}
+
+case object EoriType extends ClientIdType(classOf[Eori], "eori", "NIEORI", Eori.apply) {
+  override def isValid(value: String) = Eori.isValid(value)
 }
 
 case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
