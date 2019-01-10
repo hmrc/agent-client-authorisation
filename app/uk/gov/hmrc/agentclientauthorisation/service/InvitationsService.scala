@@ -121,15 +121,10 @@ class InvitationsService @Inject()(
     invitationsRepository
       .findInvitationInfoBy(arn, clientIds, status)
 
-  def updateClientId[T <: TaxIdentifier](invitationId: InvitationId, clientIdentifier: ClientIdentifier[T])(
+  def update(invitation: Invitation)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext,
-    request: Request[Any]): Future[Option[Invitation]] =
-    findInvitation(invitationId).flatMap {
-      case Some(invitation) =>
-        invitationsRepository.update(invitation.copy(clientId = clientIdentifier)).map(Some.apply)
-      case None => Future.successful(None)
-    }
+    request: Request[Any]): Future[Invitation] = invitationsRepository.update(invitation)
 
   def cancelInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =

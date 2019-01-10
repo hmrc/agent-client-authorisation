@@ -32,20 +32,18 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-abstract class BaseClientInvitationsController[T <: TaxIdentifier](
+abstract class BaseClientInvitationsController(
   invitationsService: InvitationsService,
   metrics: Metrics,
   authConnector: AuthConnector,
   auditService: AuditService)
     extends AuthActions(metrics, authConnector) with HalWriter with ClientInvitationsHal {
 
-  val supportedService: Service
-
-  protected def acceptInvitation(clientId: ClientIdentifier[T], invitationId: InvitationId)(
+  protected def acceptInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
     request: Request[Any],
-    authTaxId: ClientIdentifier[T]) =
+    authTaxId: ClientIdentifier[T]): Future[Result] =
     forThisClient(clientId) {
       actionInvitation(
         clientId,
@@ -58,11 +56,11 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
       )
     }
 
-  protected def getInvitation(clientId: ClientIdentifier[T], invitationId: InvitationId)(
+  protected def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
     request: Request[Any],
-    authTaxId: ClientIdentifier[T]) =
+    authTaxId: ClientIdentifier[T]): Future[Result] =
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
         case Some(x) if matchClientIdentifiers(x.clientId, clientId) => Ok(toHalResource(x))
@@ -70,20 +68,22 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
         case _                                                       => NoPermissionOnClient
       }
     }
-  protected def getInvitations(taxId: ClientIdentifier[T], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext,
-    authTaxId: ClientIdentifier[T]) = forThisClient(taxId) {
-    invitationsService.clientsReceived(supportedService, taxId, status) map (results =>
-      Ok(toHalResource(results, taxId, status)))
-  }
+  protected def getInvitations[T <: TaxIdentifier](
+    supportedService: Service,
+    taxId: ClientIdentifier[T],
+    status: Option[InvitationStatus])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]): Future[Result] =
+    forThisClient(taxId) {
+      invitationsService.clientsReceived(supportedService, taxId, status) map (results =>
+        Ok(toHalResource(results, taxId, status)))
+    }
 
-  protected def actionInvitation(
+  protected def actionInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
     action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    request: Request[Any]) =
+    request: Request[Any]): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation) map {
@@ -96,14 +96,16 @@ abstract class BaseClientInvitationsController[T <: TaxIdentifier](
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 
-  protected def forThisClient(taxId: ClientIdentifier[T])(
+  protected def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(
     block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]) =
     if (authTaxId.value.replaceAll("\\s", "") != taxId.value.replaceAll("\\s", ""))
       Future successful NoPermissionOnClient
     else
       block
 
-  private def matchClientIdentifiers(invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean =
+  protected def matchClientIdentifiers[T <: TaxIdentifier](
+    invitationClientId: ClientId,
+    usersClientId: ClientIdentifier[T]): Boolean =
     if (invitationClientId == usersClientId) true
     else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
 }

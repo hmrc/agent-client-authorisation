@@ -34,10 +34,9 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends BaseClientInvitationsController[MtdItId](invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
-  override val supportedService: Service = Service.MtdIt
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authMtdItId =>
@@ -58,7 +57,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
 
   def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authMtdItId =>
-      getInvitations(ClientIdentifier(mtdItId), status)
+      getInvitations(Service.MtdIt, ClientIdentifier(mtdItId), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[MtdItId] => Future[Result]): Action[AnyContent] =

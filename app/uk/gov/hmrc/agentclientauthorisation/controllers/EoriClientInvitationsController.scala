@@ -33,10 +33,9 @@ class EoriClientInvitationsController @Inject()(invitationsService: InvitationsS
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends BaseClientInvitationsController[Eori](invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
-  override val supportedService: Service = Service.NiOrgEnrolled
 
   def acceptInvitation(eori: Eori, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
@@ -57,7 +56,7 @@ class EoriClientInvitationsController @Inject()(invitationsService: InvitationsS
 
   def getInvitations(eori: Eori, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      getInvitations(ClientIdentifier(eori), status)
+      getInvitations(Service.NiOrgEnrolled, ClientIdentifier(eori), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Eori] => Future[Result]): Action[AnyContent] =

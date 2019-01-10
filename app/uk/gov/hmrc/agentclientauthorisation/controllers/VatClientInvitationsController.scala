@@ -33,10 +33,9 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends BaseClientInvitationsController[Vrn](invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
-  override val supportedService: Service = Service.Vat
 
   def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
@@ -57,7 +56,7 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
 
   def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>
-      getInvitations(ClientIdentifier(vrn), status)
+      getInvitations(Service.Vat, ClientIdentifier(vrn), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =

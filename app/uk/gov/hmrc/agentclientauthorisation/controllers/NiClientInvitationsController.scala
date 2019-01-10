@@ -34,10 +34,9 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends BaseClientInvitationsController[Nino](invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
-  override val supportedService: Service = Service.PersonalIncomeRecord
 
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
@@ -58,7 +57,7 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
-      getInvitations(ClientIdentifier(nino), status)
+      getInvitations(Service.PersonalIncomeRecord, ClientIdentifier(nino), status)
   }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =
