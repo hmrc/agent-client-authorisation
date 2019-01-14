@@ -75,32 +75,28 @@ class TaskActor(
     case uid: String =>
       scheduleRepository.read.flatMap {
         case ScheduleRecord(recordUid, runAt) =>
+          val now = DateTime.now()
           if (uid == recordUid) {
             val newUid = UUID.randomUUID().toString
-            val nextRunAt = runAt.plusSeconds(repeatInterval)
+            val nextRunAt = (if (runAt.isBefore(now)) now else runAt)
+              .plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
+            val delay = new Interval(now, nextRunAt).toPeriod(PeriodType.seconds()).getValue(0).seconds
             scheduleRepository
               .write(newUid, nextRunAt)
               .map(_ => {
                 context.system.scheduler
-                  .scheduleOnce(delay(nextRunAt), self, newUid)
+                  .scheduleOnce(delay, self, newUid)
                 Logger(getClass)
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
                 invitationsService.findAndUpdateExpiredInvitations()
               })
           } else {
-            context.system.scheduler.scheduleOnce(delay(runAt), self, recordUid)
+            val dateTime = if (runAt.isBefore(now)) now else runAt
+            val delay = (new Interval(now, dateTime).toPeriod(PeriodType.seconds()).getValue(0) + Random.nextInt(
+              Math.min(60, repeatInterval))).seconds
+            context.system.scheduler.scheduleOnce(delay, self, recordUid)
             toFuture(())
           }
       }
-  }
-
-  private def delay(runAt: DateTime) = {
-    val now = DateTime.now()
-    (if (runAt.isBefore(now)) repeatInterval
-     else
-       new Interval(DateTime.now(), runAt)
-         .toPeriod(PeriodType.seconds())
-         .getValue(0) + Random
-         .nextInt(Math.min(60, repeatInterval))).seconds
   }
 }
