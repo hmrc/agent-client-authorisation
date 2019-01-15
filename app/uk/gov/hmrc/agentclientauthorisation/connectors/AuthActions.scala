@@ -38,7 +38,6 @@ import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments, 
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -63,31 +62,16 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
 
-  def onlyForAgents(action: AgentAuthAction): Action[AnyContent] = Action.async { implicit request ⇒
-    authorised(AuthProvider).retrieve(affinityGroupAllEnrolls) {
-      case Some(affinityG) ~ allEnrols ⇒
-        (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
-          case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
-          case (_, None)                => Future successful AgentNotSubscribed
-          case _                        => Future successful GenericUnauthorized
-        }
-      case _ => Future successful GenericUnauthorized
-    } recover {
-      case e: AuthorisationException =>
-        Logger.error("Failed to auth", e)
-        GenericUnauthorized
-    }
-  }
-
-  private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
-
-  def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(
-    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result]): Action[AnyContent] = Action.async {
-    implicit request =>
-      authorised(AuthProvider).retrieve(allEnrolments) { allEnrols =>
-        val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
-        if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
-        else Future successful ClientNinoNotFound
+  def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
+    implicit request ⇒
+      authorised(AuthProvider).retrieve(affinityGroupAllEnrolls) {
+        case Some(affinityG) ~ allEnrols ⇒
+          (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
+            case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
+            case (_, None)                => Future successful AgentNotSubscribed
+            case _                        => Future successful GenericUnauthorized
+          }
+        case _ => Future successful GenericUnauthorized
       } recover {
         case e: AuthorisationException =>
           Logger.error("Failed to auth", e)
@@ -95,8 +79,25 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       }
   }
 
+  private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
+
+  def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(
+    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result])(
+    implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
+    authorised(AuthProvider).retrieve(allEnrolments) { allEnrols =>
+      val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
+      if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
+      else Future successful ClientNinoNotFound
+    } recover {
+      case e: AuthorisationException =>
+        Logger.error("Failed to auth", e)
+        GenericUnauthorized
+    }
+  }
+
   def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(
-    implicit request: Request[AnyContent]): Future[Result] =
+    implicit request: Request[AnyContent],
+    ec: ExecutionContext): Future[Result] =
     authorised(AuthProvider and (Individual or Organisation))
       .retrieve(allEnrolments) { allEnrols =>
         val identifiers: Seq[(Service, String)] = Service.supportedServices
@@ -115,8 +116,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
   private def extractAffinityGroup(affinityGroup: AffinityGroup): String =
     (affinityGroup.toJson \ "affinityGroup").as[String]
 
-  protected def withMultiEnrolledClient[A](body: Seq[(String, String)] => Future[Result])(
-    implicit hc: HeaderCarrier): Future[Result] =
+  protected def withMultiEnrolledClient[A](
+    body: Seq[(String, String)] => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     authorised(AuthProviders(GovernmentGateway) and (AffinityGroup.Individual or AffinityGroup.Organisation))
       .retrieve(affinityGroupConfidenceAllEnrols) {
         case Some(affinity) ~ confidence ~ enrols =>

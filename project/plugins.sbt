@@ -23,3 +23,5 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.15")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-artifactory" % "0.14.0")
+
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")

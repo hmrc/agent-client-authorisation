@@ -46,13 +46,16 @@ class AuditSpec extends UnitSpec with MockitoSugar with Eventually {
         sessionId = Some(SessionId("dummy session id")),
         requestId = Some(RequestId("dummy request id")))
 
+      val ec = concurrent.ExecutionContext.Implicits.global
+
       val arn: Arn = Arn("HX2345")
       val invitationId: String = "ABBBBBBBBBBCC"
 
       await(
         service.sendAgentClientRelationshipCreated(invitationId, arn, ClientIdentifier(mtdItId1), Service.MtdIt)(
           hc,
-          FakeRequest("GET", "/path")))
+          FakeRequest("GET", "/path"),
+          ec))
 
       eventually {
         val captor = ArgumentCaptor.forClass(classOf[DataEvent])

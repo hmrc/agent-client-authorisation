@@ -16,6 +16,7 @@
 
 import java.net.URL
 
+import akka.actor.ActorSystem
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
 import com.google.inject.name.{Named, Names}
@@ -190,7 +191,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 class HttpVerbs @Inject()(
   val auditConnector: AuditConnector,
   @Named("appName") val appName: String,
-  val config: Configuration)
+  val config: Configuration,
+  val actorSystem: ActorSystem)
     extends HttpGet with HttpPost with HttpPut with HttpPatch with HttpDelete with WSHttp with HttpAuditing {
   override val hooks = Seq(AuditingHook)
 
