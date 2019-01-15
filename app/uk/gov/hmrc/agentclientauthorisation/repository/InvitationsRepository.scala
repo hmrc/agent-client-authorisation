@@ -85,7 +85,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] =
     for {
-      invitations <- collection.find(BSONDocument("_id" -> invitation.id)).cursor[Invitation].collect[List]()
+      invitations <- collection
+                      .find(BSONDocument("_id" -> invitation.id))
+                      .cursor[Invitation](ReadPreference.primaryPreferred)
+                      .collect[List](100, Cursor.FailOnError[List[Invitation]]())
       modified = invitations.head.copy(events = invitations.head.events :+ StatusChangeEvent(updateDate, status))
       update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(modified))
       saved  <- Future.successful(update.map(_.updateType.savedValue).get)
@@ -155,7 +158,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     collection
       .find(query, Json.obj("invitationId" -> 1, "expiryDate" -> 1, InvitationRecordFormat.statusKey -> 1))
       .cursor[JsObject](ReadPreference.primaryPreferred)
-      .collect[List](1000)
+      .collect[List](1000, Cursor.FailOnError[List[JsObject]]())
       .map(
         _.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate", x \ InvitationRecordFormat.statusKey))
           .map(
@@ -177,7 +180,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       ids <- collection
               .find(Json.obj(), Json.obj())
               .cursor[JsObject]()
-              .collect[List]()
+              .collect[List](100, Cursor.FailOnError[List[JsObject]]())
       _ <- Future.sequence(ids.map(json => (json \ "_id").as[BSONObjectID]).map(refreshInvitation))
     } yield ()
 

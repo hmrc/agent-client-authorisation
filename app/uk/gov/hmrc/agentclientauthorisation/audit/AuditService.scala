@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.audit
 
 import javax.inject.{Inject, Singleton}
-
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
@@ -28,9 +27,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object AgentClientInvitationEvent extends Enumeration {
@@ -43,7 +41,8 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
 
   def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)(
     implicit hc: HeaderCarrier,
-    request: Request[Any]): Unit =
+    request: Request[Any],
+    ec: ExecutionContext): Unit =
     auditEvent(
       AgentClientInvitationEvent.AgentClientRelationshipCreated,
       "agent-client-relationship-created",
@@ -56,7 +55,8 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       )
     )
 
-  def sendInvitationExpired(invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any]): Unit =
+  def sendInvitationExpired(
+    invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Unit =
     auditEvent(
       AgentClientInvitationEvent.AgentClientInvitationResponse,
       "Client responded to agent invitation",
@@ -79,7 +79,10 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
   private[audit] def auditEvent(
     event: AgentClientInvitationEvent,
     transactionName: String,
-    details: Seq[(String, Any)] = Seq.empty)(implicit hc: HeaderCarrier, request: Request[Any]): Future[Unit] =
+    details: Seq[(String, Any)] = Seq.empty)(
+    implicit hc: HeaderCarrier,
+    request: Request[Any],
+    ec: ExecutionContext): Future[Unit] =
     send(createEvent(event, transactionName, details: _*))
 
   private def createEvent(event: AgentClientInvitationEvent, transactionName: String, details: (String, Any)*)(
@@ -91,7 +94,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     DataEvent(auditSource = "agent-client-authorisation", auditType = event.toString, tags = tags, detail = detail)
   }
 
-  private def send(events: DataEvent*)(implicit hc: HeaderCarrier): Future[Unit] =
+  private def send(events: DataEvent*)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     Future {
       events.foreach { event =>
         Try(auditConnector.sendEvent(event))
