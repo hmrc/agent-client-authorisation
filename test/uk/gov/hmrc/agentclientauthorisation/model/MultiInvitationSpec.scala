@@ -26,7 +26,7 @@ class MultiInvitationSpec extends UnitSpec {
   "MultiInvitationRecord" should {
     "serialize and deserialize from and to json" in {
       val created = DateTime.now()
-      val expiryDate = DateTime.now().plusDays(10)
+      val expiryDate = DateTime.now().plusDays(14)
 
       val multiInvitation = AgentReferenceRecord(
         "12345678",

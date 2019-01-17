@@ -360,7 +360,7 @@ class InvitationsMongoRepositoryISpec
             MtdItId(s"AB${i}23456B"),
             MtdItId(s"AB${i}23456A"),
             now,
-            now.plusDays(10).toLocalDate)
+            now.plusDays(14).toLocalDate)
 
       await(Future.sequence(invitations.map(repository.insert)))
 
@@ -388,7 +388,7 @@ class InvitationsMongoRepositoryISpec
         MtdItId("ABCD123456C"),
         MtdItId("ABCD123456C"),
         now,
-        now.plusDays(10).toLocalDate)
+        now.plusDays(14).toLocalDate)
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
@@ -397,7 +397,7 @@ class InvitationsMongoRepositoryISpec
         Nino("AB123456B"),
         Nino("AB123456A"),
         now,
-        now.plusDays(10).toLocalDate)
+        now.plusDays(14).toLocalDate)
 
       val vatInvitation = Invitation
         .createNew(
@@ -407,7 +407,7 @@ class InvitationsMongoRepositoryISpec
           Vrn("442820662"),
           Vrn("442820662"),
           now,
-          now.plusDays(10).toLocalDate)
+          now.plusDays(14).toLocalDate)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
@@ -453,7 +453,7 @@ class InvitationsMongoRepositoryISpec
         MtdItId("ABCD123456C"),
         MtdItId("ABCD123456C"),
         now,
-        now.plusDays(10).toLocalDate)
+        now.plusDays(14).toLocalDate)
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
@@ -462,7 +462,7 @@ class InvitationsMongoRepositoryISpec
         Nino("AB123456B"),
         Nino("AB123456A"),
         now,
-        now.plusDays(10).toLocalDate)
+        now.plusDays(14).toLocalDate)
 
       val vatInvitation = Invitation
         .createNew(
@@ -472,7 +472,7 @@ class InvitationsMongoRepositoryISpec
           Vrn("442820662"),
           Vrn("442820662"),
           now,
-          now.plusDays(10).toLocalDate)
+          now.plusDays(14).toLocalDate)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
