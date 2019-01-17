@@ -61,7 +61,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     relationshipsConnector,
     desConnector,
     auditService,
-    "10 days",
+    "14 days",
     metrics)
 
   val ninoAsString: String = nino1.value
@@ -114,7 +114,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           Service.PersonalIncomeRecord,
           ClientIdentifier(nino1),
           ClientIdentifier(nino1),
-          now().toLocalDate.plusDays(10),
+          now().toLocalDate.plusDays(14),
           List(StatusChangeEvent(now(), Pending))
         )
 
@@ -376,7 +376,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       Service.MtdIt,
       mtdItId1,
       ClientIdentifier(nino1),
-      LocalDate.now().plusDays(10),
+      LocalDate.now().plusDays(14),
       List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
     )
 
@@ -391,7 +391,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       Service.MtdIt,
       ClientIdentifier(mtdItId1),
       ClientIdentifier(nino1),
-      LocalDate.now().plusDays(10),
+      LocalDate.now().plusDays(14),
       List(StatusChangeEvent(creationDate(), Pending))
     )
 
