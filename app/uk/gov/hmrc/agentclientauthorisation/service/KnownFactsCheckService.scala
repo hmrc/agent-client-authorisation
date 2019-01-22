@@ -58,7 +58,8 @@ class KnownFactsCheckService @Inject()(
 
   def checkPostcodeMatchesForNiOrg(utr: Utr, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     niExemptionRegistrationConnector.getEori(utr, postcode).map {
-      case Some(GetEoriResponse(niBusiness)) => NiBusinessCheckResult(true, niBusiness.subscription.eori)
-      case None                              => NiBusinessCheckResult(false, None)
+      case Some(GetEoriResponse(niBusiness)) =>
+        NiBusinessCheckResult(true, Some(niBusiness.name), niBusiness.subscription.eori)
+      case None => NiBusinessCheckResult(false, None, None)
     }
 }

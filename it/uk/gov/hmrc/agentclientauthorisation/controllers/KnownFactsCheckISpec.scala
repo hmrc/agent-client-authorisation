@@ -29,6 +29,7 @@ class KnownFactsCheckISpec extends UnitSpec with MongoAppAndStubs with AuthStubs
 
       (response.json \ "postcodeMatches").as[Boolean] shouldBe true
       (response.json \ "eori").as[String] shouldBe eori
+      (response.json \ "businessName").as[String] shouldBe name
 
     }
 
@@ -46,7 +47,7 @@ class KnownFactsCheckISpec extends UnitSpec with MongoAppAndStubs with AuthStubs
 
       (response.json \ "postcodeMatches").as[Boolean] shouldBe true
       (response.json \ "eori").asOpt[String] shouldBe None
-
+      (response.json \ "businessName").as[String] shouldBe name
     }
 
     "return 200 and NiBusinessCheckResult when postcode does not matches" in {
@@ -63,7 +64,7 @@ class KnownFactsCheckISpec extends UnitSpec with MongoAppAndStubs with AuthStubs
 
       (response.json \ "postcodeMatches").as[Boolean] shouldBe false
       (response.json \ "eori").asOpt[String] shouldBe None
-
+      (response.json \ "businessName").asOpt[String] shouldBe None
     }
 
   }
