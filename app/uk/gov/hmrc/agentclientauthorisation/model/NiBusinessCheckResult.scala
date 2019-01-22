@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.Eori
 
-case class NiBusinessCheckResult(postcodeMatches: Boolean, eori: Option[Eori])
+case class NiBusinessCheckResult(postcodeMatches: Boolean, businessName: Option[String], eori: Option[Eori])
 
 object NiBusinessCheckResult {
   implicit val format: Format[NiBusinessCheckResult] = Json.format[NiBusinessCheckResult]
