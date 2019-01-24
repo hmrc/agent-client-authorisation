@@ -109,12 +109,14 @@ class AgencyInvitationsController @Inject()(
       case Some(taxId) =>
         invitationsService
           .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId)
-          .map(invitation => Created.withHeaders(location(invitation)))
+          .map(invitation => Created.withHeaders(location(invitation): _*))
     }
   }
 
-  private def location(invitation: Invitation) =
-    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
+  private def location(invitation: Invitation) = Seq(
+    LOCATION       -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url,
+    "InvitationId" -> invitation.invitationId.value
+  )
 
   def getSentInvitations(
     givenArn: Arn,
