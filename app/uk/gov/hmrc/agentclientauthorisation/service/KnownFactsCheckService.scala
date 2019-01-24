@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Singleton}
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.model.NiBusinessCheckResult
 import uk.gov.hmrc.agentmtdidentifiers.model.{Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,8 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class KnownFactsCheckService @Inject()(
   desConnector: DesConnector,
-  citizenDetailsConnector: CitizenDetailsConnector,
-  niExemptionRegistrationConnector: NiExemptionRegistrationConnector) {
+  citizenDetailsConnector: CitizenDetailsConnector) {
 
   def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
@@ -54,12 +52,5 @@ class KnownFactsCheckService @Inject()(
       case Some(CitizenDateOfBirth(Some(clientDob))) if clientDob == suppliedDob => Some(true)
       case Some(CitizenDateOfBirth(_))                                           => Some(false)
       case None                                                                  => None
-    }
-
-  def checkPostcodeMatchesForNiOrg(utr: Utr, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
-    niExemptionRegistrationConnector.getEori(utr, postcode).map {
-      case Some(GetEoriResponse(niBusiness)) =>
-        NiBusinessCheckResult(true, Some(niBusiness.name), niBusiness.subscription.eori)
-      case None => NiBusinessCheckResult(false, None, None)
     }
 }

@@ -173,11 +173,6 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
-  def checkKnownFactEori(utr: Utr, postcode: String): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
-      knownFactsCheckService.checkPostcodeMatchesForNiOrg(utr, postcode).map(r => Ok(Json.toJson(r)))
-  }
-
   def normaliseAgentName(agentName: String) =
     agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
 

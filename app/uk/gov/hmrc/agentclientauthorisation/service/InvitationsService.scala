@@ -93,8 +93,6 @@ class InvitationsService @Inject()(
           case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
           case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
-          case Service.NiOrgEnrolled | Service.NiOrgNotEnrolled =>
-            relationshipsConnector.createNiOrgRelationship(invitation)
         }
         future
           .flatMap(
