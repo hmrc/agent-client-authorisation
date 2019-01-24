@@ -35,8 +35,6 @@ class AgentCreateInvitationISpec
   val mtdItId = "YNIZ22082177289"
   val nino = "AB123456A"
   val vrn = "660304567"
-  val utr = "9246624558"
-  val eori = "AQ886940109600"
 
   "POST /agencies/:arn/invitations/sent" should {
     "return 204 with invitation response if invitation creation is successful" when {
@@ -71,7 +69,32 @@ class AgentCreateInvitationISpec
       }
 
       "service is PIR" in {
-        //TODO
+
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+
+        val response: HttpResponse =
+          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
+            .postAsJson(s"""
+                           |{
+                           |  "service": "PERSONAL-INCOME-RECORD",
+                           |  "clientIdType": "ni",
+                           |  "clientId": "$nino"
+                           |}
+               """.stripMargin)
+
+        response.status shouldBe 201
+        val invitationUrl = locationHeaderOf(response)
+        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/B\\w{12}")
+
+        val invitationResponse = new Resource(invitationUrl, port).get
+
+        invitationResponse.status shouldBe 200
+        val invitationJson = invitationResponse.json.as[JsObject]
+
+        (invitationJson \ "arn").as[String] shouldBe arn
+        (invitationJson \ "clientId").as[String] shouldBe nino
+        (invitationJson \ "suppliedClientId").as[String] shouldBe nino
       }
 
       "service is VAT" in {
@@ -100,64 +123,6 @@ class AgentCreateInvitationISpec
         (invitationJson \ "arn").as[String] shouldBe arn
         (invitationJson \ "clientId").as[String] shouldBe vrn
         (invitationJson \ "suppliedClientId").as[String] shouldBe vrn
-      }
-
-      "service is NI-ORG and User is enrolled" in {
-        givenAuditConnector()
-        givenAuthorisedAsAgent(arn)
-
-        val response: HttpResponse =
-          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
-            .postAsJson(s"""
-                           |{
-                           |  "service": "HMRC-NI-ORG",
-                           |  "clientIdType": "eori",
-                           |  "clientId": "$eori"
-                           |}
-               """.stripMargin)
-        response.status shouldBe 201
-
-        val invitationUrl = locationHeaderOf(response)
-        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/D\\w{12}")
-
-        val invitationResponse = new Resource(invitationUrl, port).get
-
-        invitationResponse.status shouldBe 200
-        val invitationJson = invitationResponse.json.as[JsObject]
-
-        (invitationJson \ "arn").as[String] shouldBe arn
-        (invitationJson \ "clientId").as[String] shouldBe eori
-        (invitationJson \ "suppliedClientId").as[String] shouldBe eori
-
-      }
-
-      "service is NI-ORG and User is NOT enrolled" in {
-        givenAuditConnector()
-        givenAuthorisedAsAgent(arn)
-
-        val response: HttpResponse =
-          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
-            .postAsJson(s"""
-                           |{
-                           |  "service": "HMRC-NI-ORG-NOT-ENROLLED",
-                           |  "clientIdType": "utr",
-                           |  "clientId": "$utr"
-                           |}
-               """.stripMargin)
-        response.status shouldBe 201
-
-        val invitationUrl = locationHeaderOf(response)
-        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/E\\w{12}")
-
-        val invitationResponse = new Resource(invitationUrl, port).get
-
-        invitationResponse.status shouldBe 200
-        val invitationJson = invitationResponse.json.as[JsObject]
-
-        (invitationJson \ "arn").as[String] shouldBe arn
-        (invitationJson \ "clientId").as[String] shouldBe utr
-        (invitationJson \ "suppliedClientId").as[String] shouldBe utr
-
       }
 
     }

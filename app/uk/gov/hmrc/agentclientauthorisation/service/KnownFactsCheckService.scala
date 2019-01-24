@@ -17,18 +17,17 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.{Inject, Singleton}
+
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class KnownFactsCheckService @Inject()(
-  desConnector: DesConnector,
-  citizenDetailsConnector: CitizenDetailsConnector) {
+class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetailsConnector: CitizenDetailsConnector) {
 
   def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
