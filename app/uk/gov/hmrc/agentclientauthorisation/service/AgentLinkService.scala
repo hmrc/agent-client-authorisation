@@ -43,19 +43,8 @@ class AgentLinkService @Inject()(
 
   def getAgentLink(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
-      normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
-      recordOpt           <- multiInvitationsRecordRepository.findByArn(arn)
-      record: AgentReferenceRecord <- recordOpt match {
-
-                                       case Some(record) =>
-                                         if (record.normalisedAgentNames.contains(normalisedAgentName))
-                                           Future.successful(record)
-                                         else
-                                           multiInvitationsRecordRepository
-                                             .updateAgentName(record.uid, normalisedAgentName)
-                                             .map(_ => record)
-                                       case None => create(arn, normalisedAgentName, clientType)
-                                     }
+      normalisedAgentName          <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
+      record: AgentReferenceRecord <- create(arn, normalisedAgentName, clientType)
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
   private def create(arn: Arn, normalisedAgentName: String, clientType: String)(
@@ -63,20 +52,38 @@ class AgentLinkService @Inject()(
     val uid = RandomStringUtils.random(8, codetable)
     val newRecord =
       AgentReferenceRecord(uid, arn, Seq(normalisedAgentName))
-    multiInvitationsRecordRepository
-      .create(newRecord)
-      .map { result =>
-        if (result == 1) {
-          Logger.info(s"""Created multi invitation record with uid: $uid""")
-          newRecord
-        } else
-          throw new Exception("Unexpected failure of multi-invitation db record creation")
-      }
-      .recoverWith {
-        case e: DatabaseException if e.code.contains(11000) =>
-          Logger.error(s"""Duplicate uid happened $uid, will try again""")
-          create(arn, normalisedAgentName, clientType)
-      }
+
+    for {
+      existingRecord: Option[AgentReferenceRecord] <- multiInvitationsRecordRepository.findByArn(arn)
+      agentRefRecord: AgentReferenceRecord <- existingRecord match {
+                                               case Some(record) =>
+                                                 if (record.normalisedAgentNames.contains(normalisedAgentName)) {
+                                                   Logger.warn(
+                                                     s"AgentRefRecord already exists for given arn using $uid")
+                                                   Future successful record
+                                                 } else
+                                                   multiInvitationsRecordRepository
+                                                     .updateAgentName(record.uid, normalisedAgentName)
+                                                     .map(_ => record)
+                                               case None =>
+                                                 multiInvitationsRecordRepository
+                                                   .create(newRecord)
+                                                   .map { result =>
+                                                     if (result == 1) {
+                                                       Logger.info(
+                                                         s"""Created multi invitation record with uid: $uid""")
+                                                       newRecord
+                                                     } else
+                                                       throw new Exception(
+                                                         "Unexpected failure of multi-invitation db record creation")
+                                                   }
+                                                   .recoverWith {
+                                                     case e: DatabaseException if e.code.contains(11000) =>
+                                                       Logger.error(s"""Duplicate uid happened $uid, will try again""")
+                                                       create(arn, normalisedAgentName, clientType)
+                                                   }
+                                             }
+    } yield agentRefRecord
 
   }
 
