@@ -10,6 +10,5 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 # Add all the application routes to the prod.routes file
-GET         /agencies/test-only/references/arn/:arn                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.test.TestOnlyController.getAgentReferenceRecordByArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 
 ->         /                          prod.Routes
