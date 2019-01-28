@@ -109,7 +109,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("mari-anne", "anne-mari"))
 
-      val testOnlyAgentRefRecord: SimplifiedAgentRefRecord =
+      val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
       when(mockAgentReferenceRepository.findByArn(any())(any()))
@@ -118,7 +118,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val result = await(agentReferenceController.getAgentReferenceRecordByArn(arn)(FakeRequest()))
 
       status(result) shouldBe 200
-      jsonBodyOf(result).as[SimplifiedAgentRefRecord] shouldBe testOnlyAgentRefRecord
+      jsonBodyOf(result).as[SimplifiedAgentRefRecord] shouldBe simplifiedAgentRefRecord
     }
   }
 
