@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 class AgentLinkService @Inject()(
-  multiInvitationsRecordRepository: AgentReferenceRepository,
+  agentReferenceRecordRepository: AgentReferenceRepository,
   agentServicesAccountConnector: AgentServicesAccountConnector,
   auditService: AuditService,
   metrics: Metrics)
@@ -44,26 +44,26 @@ class AgentLinkService @Inject()(
   def getAgentLink(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
       normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
-      recordOpt           <- multiInvitationsRecordRepository.findByArn(arn)
+      recordOpt           <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
 
                                        case Some(record) =>
                                          if (record.normalisedAgentNames.contains(normalisedAgentName))
                                            Future.successful(record)
                                          else
-                                           multiInvitationsRecordRepository
+                                           agentReferenceRecordRepository
                                              .updateAgentName(record.uid, normalisedAgentName)
                                              .map(_ => record)
                                        case None => create(arn, normalisedAgentName, clientType)
                                      }
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
-  private def create(arn: Arn, normalisedAgentName: String, clientType: String)(
+  private def create(arn: Arn, normalisedAgentName: String, clientType: String, counter: Int = 1)(
     implicit ec: ExecutionContext): Future[AgentReferenceRecord] = {
     val uid = RandomStringUtils.random(8, codetable)
     val newRecord =
       AgentReferenceRecord(uid, arn, Seq(normalisedAgentName))
-    multiInvitationsRecordRepository
+    agentReferenceRecordRepository
       .create(newRecord)
       .map { result =>
         if (result == 1) {
@@ -74,8 +74,11 @@ class AgentLinkService @Inject()(
       }
       .recoverWith {
         case e: DatabaseException if e.code.contains(11000) =>
-          Logger.error(s"""Duplicate uid happened $uid, will try again""")
-          create(arn, normalisedAgentName, clientType)
+          if (counter > 3 || e.getMessage().contains("UniqueArn")) Future.failed(e)
+          else {
+            Logger.error(s"""Duplicate uid happened $uid, will try again""")
+            create(arn, normalisedAgentName, clientType, counter + 1)
+          }
       }
 
   }

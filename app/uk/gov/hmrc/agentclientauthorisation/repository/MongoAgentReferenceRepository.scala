@@ -45,7 +45,7 @@ object AgentReferenceRecord {
 
 @ImplementedBy(classOf[MongoAgentReferenceRepository])
 trait AgentReferenceRepository {
-  def create(multiInvitationRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int]
+  def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int]
   def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
   def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
   def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit]
@@ -62,12 +62,12 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
 
   override def indexes: Seq[Index] =
     Seq(
-      Index(Seq("uid" -> IndexType.Ascending), unique = true),
-      Index(Seq("arn" -> IndexType.Ascending), unique = true)
+      Index(Seq("uid" -> IndexType.Ascending), name = Some("UniqueUid"), unique = true),
+      Index(Seq("arn" -> IndexType.Ascending), name = Some("UniqueArn"), unique = true)
     )
 
-  def create(multiInvitationRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
-    insert(multiInvitationRecord).map { result =>
+  def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
+    insert(agentReferenceRecord).map { result =>
       result.writeErrors.foreach(error =>
         Logger(getClass).warn(s"Creating MultiInvitationRecord failed: ${error.errmsg}"))
       result.n
