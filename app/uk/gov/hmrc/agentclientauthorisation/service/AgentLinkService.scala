@@ -54,7 +54,8 @@ class AgentLinkService @Inject()(
                                            agentReferenceRecordRepository
                                              .updateAgentName(record.uid, normalisedAgentName)
                                              .map(_ => record)
-                                       case None => create(arn, normalisedAgentName, clientType)
+                                       case None =>
+                                         create(arn, normalisedAgentName, clientType)
                                      }
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
@@ -74,11 +75,16 @@ class AgentLinkService @Inject()(
       }
       .recoverWith {
         case e: DatabaseException if e.code.contains(11000) =>
-          if (counter > 3 || e.getMessage().contains("UniqueArn")) Future.failed(e)
-          else {
+          if (e.getMessage().contains("arn"))
+            agentReferenceRecordRepository
+              .findByArn(arn)
+              .map(_.getOrElse(
+                throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
+          else if (counter <= 3) {
             Logger.error(s"""Duplicate uid happened $uid, will try again""")
             create(arn, normalisedAgentName, clientType, counter + 1)
-          }
+          } else
+            Future.failed(e)
       }
 
   }

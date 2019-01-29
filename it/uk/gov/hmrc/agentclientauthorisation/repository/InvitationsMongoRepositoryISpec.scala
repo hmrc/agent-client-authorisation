@@ -91,6 +91,11 @@ class InvitationsMongoRepositoryISpec
     override def withCurrentTime[A](f: DateTime => A): A = f(now)
   }
 
+  override def beforeEach() {
+    super.beforeEach()
+    await(repository.ensureIndexes)
+  }
+
   val ninoValue = nino1.value
 
   "create" should {

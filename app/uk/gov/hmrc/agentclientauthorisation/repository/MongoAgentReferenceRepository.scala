@@ -62,8 +62,8 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
 
   override def indexes: Seq[Index] =
     Seq(
-      Index(Seq("uid" -> IndexType.Ascending), name = Some("UniqueUid"), unique = true),
-      Index(Seq("arn" -> IndexType.Ascending), name = Some("UniqueArn"), unique = true)
+      Index(Seq("uid" -> IndexType.Ascending), unique = true),
+      Index(Seq("arn" -> IndexType.Ascending), unique = true)
     )
 
   def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
