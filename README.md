@@ -151,6 +151,7 @@ http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitation
 |Response|Description|
 |--------|---------|
 |200|Returns an invitation in json|
+|403|The specified invitation is not accessible for this ARN.|
 |404|The specified invitation was not found.|
 
 Example Response: 200 with Body:
