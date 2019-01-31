@@ -71,7 +71,7 @@ class AgentLinkService @Inject()(
           Logger.info(s"""Created multi invitation record with uid: $uid""")
           newRecord
         } else
-          throw new Exception("Unexpected failure of multi-invitation db record creation")
+          throw new Exception("Unexpected failure of agent-reference db record creation")
       }
       .recoverWith {
         case e: DatabaseException if e.code.contains(11000) =>
