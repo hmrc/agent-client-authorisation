@@ -77,7 +77,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
       modifierBson = BSONDocument(
         "$set" -> BSONDocument("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
     ).map(update =>
-      update.writeResult.errMsg.foreach(error =>
+      update.writeResult.errmsg.foreach(error =>
         Logger(getClass).warn(s"Updating uid and runAt failed with error: $error")))
 
   override def isInsertion(newRecordId: BSONObjectID, oldRecord: ScheduleRecord): Boolean = false

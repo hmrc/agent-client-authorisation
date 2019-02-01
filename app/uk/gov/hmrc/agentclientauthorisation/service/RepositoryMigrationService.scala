@@ -27,10 +27,9 @@ import scala.util.Random
 @Singleton
 class RepositoryMigrationService @Inject()(
   invitationsRepository: InvitationsRepository,
-  migrationsRepository: MigrationsRepository,
-  ecp: Provider[ExecutionContext]) {
+  migrationsRepository: MigrationsRepository)(implicit ec: ExecutionContext) {
 
-  implicit val ec: ExecutionContext = ecp.get
+  Logger(getClass).info("Repository migration service is enabled.")
 
   val migrationId = "re-index all invitations"
 

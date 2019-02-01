@@ -22,7 +22,6 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import javax.inject.{Inject, Named, Singleton}
 import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
-import play.api.libs.concurrent.ExecutionContextProvider
 import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
@@ -36,11 +35,8 @@ class InvitationsStatusUpdateScheduler @Inject()(
   invitationsService: InvitationsService,
   actorSystem: ActorSystem,
   @Named("invitation-status-update-scheduler.interval") interval: Int,
-  @Named("invitation-status-update-scheduler.enabled") enabled: Boolean,
-  executionContextProvider: ExecutionContextProvider
-) {
-
-  implicit val ec: ExecutionContext = executionContextProvider.get()
+  @Named("invitation-status-update-scheduler.enabled") enabled: Boolean
+)(implicit ec: ExecutionContext) {
 
   if (enabled) {
     Logger(getClass).info("invitation status update scheduler is enabled.")
@@ -48,7 +44,6 @@ class InvitationsStatusUpdateScheduler @Inject()(
       new TaskActor(
         scheduleRepository,
         invitationsService,
-        executionContextProvider,
         interval
       )
     })
@@ -62,14 +57,9 @@ class InvitationsStatusUpdateScheduler @Inject()(
 
 }
 
-class TaskActor(
-  scheduleRepository: ScheduleRepository,
-  invitationsService: InvitationsService,
-  executionContextProvider: ExecutionContextProvider,
-  repeatInterval: Int)
+class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
+  implicit ec: ExecutionContext)
     extends Actor {
-
-  implicit val ec: ExecutionContext = executionContextProvider.get()
 
   def receive = {
     case uid: String =>
