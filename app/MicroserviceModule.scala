@@ -75,7 +75,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindIntegerProperty("invitation-status-update-scheduler.interval")
     bindBooleanProperty("invitation-status-update-scheduler.enabled")
 
-    bind(classOf[RepositoryMigrationService]).asEagerSingleton()
+    if (configuration.getBoolean("mongodb-migration.enabled").getOrElse(false)) {
+      bind(classOf[RepositoryMigrationService]).asEagerSingleton()
+    }
 
     if (configuration.getBoolean("invitation-status-update-scheduler.enabled").getOrElse(false)) {
       bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()

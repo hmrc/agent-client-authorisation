@@ -1,6 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import org.joda.time.{DateTime, DateTimeZone}
+import akka.actor.ActorSystem
+import org.joda.time.DateTime
 import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.play.OneServerPerSuite
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
@@ -15,17 +16,18 @@ import scala.concurrent.Future
 import scala.util.Random
 
 class InvitationsStatusUpdateSchedulerISpec
-    extends UnitSpec
-    with MongoAppAndStubs
-    with MongoApp
-    with OneServerPerSuite {
+    extends UnitSpec with MongoAppAndStubs with MongoApp with OneServerPerSuite {
 
-  lazy val scheduler =
-    app.injector.instanceOf(classOf[InvitationsStatusUpdateScheduler])
-
-  private lazy val scheduleRepo = app.injector.instanceOf[ScheduleRepository]
   private lazy val invitationsRepo =
     app.injector.instanceOf[InvitationsRepository]
+
+  val scheduler = new InvitationsStatusUpdateScheduler(
+    app.injector.instanceOf[ScheduleRepository],
+    app.injector.instanceOf[InvitationsService],
+    app.injector.instanceOf[ActorSystem],
+    5,
+    true
+  )
 
   override implicit val patienceConfig =
     PatienceConfig(scaled(Span(30, Seconds)), scaled(Span(2, Seconds)))
