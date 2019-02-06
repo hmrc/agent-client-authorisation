@@ -120,6 +120,9 @@ class AgencyInvitationsControllerSpec
       status(response) shouldBe 201
       response.header.headers.get("Location") shouldBe Some(
         s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
+      response.header.headers.get("InvitationId") shouldBe Some(
+        mtdSaPendingInvitationId.value
+      )
     }
 
     "not create an invitation when given arn is incorrect" in {

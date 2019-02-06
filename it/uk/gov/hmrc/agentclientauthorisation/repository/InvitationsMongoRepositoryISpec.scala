@@ -82,13 +82,19 @@ class InvitationsMongoRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
       .configure(
-        "invitation-status-update-scheduler.enabled" -> false
+        "invitation-status-update-scheduler.enabled" -> false,
+        "mongodb-migration.enabled"                  -> false
       )
 
   lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
   lazy val repository = new InvitationsRepository(mockReactiveMongoComponent) {
     override def withCurrentTime[A](f: DateTime => A): A = f(now)
+  }
+
+  override def beforeEach() {
+    super.beforeEach()
+    await(repository.ensureIndexes)
   }
 
   val ninoValue = nino1.value

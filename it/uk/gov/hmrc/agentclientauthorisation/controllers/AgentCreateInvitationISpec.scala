@@ -151,6 +151,13 @@ trait AuthStubs {
         .withBody(
           s"""{"allEnrolments":[{"key":"HMRC-AS-AGENT","identifiers":[{"key":"AgentReferenceNumber","value":"$arn"}]}], "affinityGroup":"Agent"}""")))
 
+  def givenNotAuthorised() =
+    stubFor(
+      post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+        aResponse()
+          .withStatus(401)
+          .withHeader("WWW-Authenticate", s"""MDTP detail="FOO"""")))
+
   def givenAuthorisedAsClient(service: String, identifierName: String, identifierValue: String) =
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()

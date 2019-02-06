@@ -21,7 +21,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.MongoSpecSupport
@@ -41,46 +41,71 @@ class MongoAgentReferenceRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
       .configure(
-        "invitation-status-update-scheduler.enabled" -> false
+        "invitation-status-update-scheduler.enabled" -> false,
+        "mongodb-migration.enabled"                  -> false
       )
 
   lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
   lazy val repository = new MongoAgentReferenceRepository(mockReactiveMongoComponent)
 
+  override def beforeEach() {
+    super.beforeEach()
+    await(repository.ensureIndexes)
+  }
+
   "AgentReferenceRepository" when {
-    val multiInvitationRecord =
-      AgentReferenceRecord("uid", Arn(arn), Seq("stan-lee"))
+    def agentReferenceRecord(uid: String, arn: String) = AgentReferenceRecord(uid, Arn(arn), Seq("stan-lee"))
 
     "create" should {
       "successfully create a record in the repository" in {
-        await(repository.create(multiInvitationRecord)) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
+      }
+
+      "throw an error if ARN is duplicated" in {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
+        an[DatabaseException] shouldBe thrownBy {
+          await(repository.create(agentReferenceRecord("SCX39TGE", "VARN0590057")))
+        }
+      }
+
+      "throw an error if UID is duplicated" in {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
+        an[DatabaseException] shouldBe thrownBy {
+          await(repository.create(agentReferenceRecord("SCX39TGB", "AARN5286261")))
+        }
       }
     }
 
     "findBy" should {
       "successfully find a created record by its uid" in {
-        await(repository.create(multiInvitationRecord))
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004")))
 
-        await(repository.findBy("uid")) shouldBe Some(multiInvitationRecord)
+        await(repository.findBy("SCX39TGT")) shouldBe Some(agentReferenceRecord("SCX39TGT", "LARN7404004"))
       }
     }
 
     "findByArn" should {
       "successfully find a created record by its arn" in {
-        await(repository.create(multiInvitationRecord))
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004")))
 
-        await(repository.findByArn(Arn(arn))) shouldBe Some(multiInvitationRecord)
+        await(repository.findByArn(Arn("LARN7404004"))) shouldBe Some(agentReferenceRecord("SCX39TGT", "LARN7404004"))
       }
     }
 
     "updateAgentName" should {
       "successfully update a created records agency name list" in {
-        await(repository.create(multiInvitationRecord))
-        await(repository.updateAgentName("uid", "chandler-bing"))
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004")))
+        await(repository.updateAgentName("SCX39TGT", "chandler-bing"))
 
-        await(repository.findByArn(Arn(arn))) shouldBe Some(
-          multiInvitationRecord.copy(normalisedAgentNames = Seq("stan-lee", "chandler-bing")))
+        await(repository.findByArn(Arn("LARN7404004"))) shouldBe Some(
+          agentReferenceRecord("SCX39TGT", "LARN7404004").copy(normalisedAgentNames = Seq("stan-lee", "chandler-bing")))
       }
     }
   }

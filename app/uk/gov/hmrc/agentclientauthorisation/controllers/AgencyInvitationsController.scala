@@ -91,7 +91,7 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
-  private def localWithJsonBody(f: (AgentInvitation) => Future[Result], request: JsValue): Future[Result] =
+  private def localWithJsonBody(f: AgentInvitation => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
@@ -110,12 +110,14 @@ class AgencyInvitationsController @Inject()(
       case Some(taxId) =>
         invitationsService
           .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId)
-          .map(invitation => Created.withHeaders(location(invitation)))
+          .map(invitation => Created.withHeaders(location(invitation): _*))
     }
   }
 
-  private def location(invitation: Invitation) =
-    LOCATION -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url
+  private def location(invitation: Invitation) = Seq(
+    LOCATION       -> routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url,
+    "InvitationId" -> invitation.invitationId.value
+  )
 
   def getSentInvitations(
     givenArn: Arn,
@@ -129,7 +131,15 @@ class AgencyInvitationsController @Inject()(
       invitationsService
         .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
         .map { invitations =>
-          Ok(toHalResource(invitations, arn, clientType, service, clientIdType, clientId, status))
+          Ok(
+            toHalResource(
+              invitations.filter(_.arn == givenArn),
+              arn,
+              clientType,
+              service,
+              clientIdType,
+              clientId,
+              status))
         }
     }
   }
@@ -138,7 +148,7 @@ class AgencyInvitationsController @Inject()(
     implicit request => implicit arn =>
       forThisAgency(givenArn) {
         invitationsService.findInvitation(invitationId).map {
-          _.map(invitation => Ok(toHalResource(invitation))) getOrElse InvitationNotFound
+          _.map(invitation => if (invitation.arn == givenArn) Ok(toHalResource(invitation)) else Forbidden) getOrElse InvitationNotFound
         }
       }
   }

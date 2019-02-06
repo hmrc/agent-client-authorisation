@@ -19,16 +19,27 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Provider}
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
-import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+
+case class SimplifiedAgentRefRecord(uid: String, arn: Arn, normalisedAgentName: String)
+
+object SimplifiedAgentRefRecord {
+
+  def apply(arg: AgentReferenceRecord): SimplifiedAgentRefRecord =
+    SimplifiedAgentRefRecord(arg.uid, arg.arn, arg.normalisedAgentNames.last)
+
+  implicit val format: OFormat[SimplifiedAgentRefRecord] = Json.format[SimplifiedAgentRefRecord]
+}
 
 class AgentReferenceController @Inject()(
   agentReferenceRecordRepository: AgentReferenceRepository,
@@ -54,6 +65,23 @@ class AgentReferenceController @Inject()(
       .recoverWith {
         case e =>
           Future failed (throw new Exception(s"Something has gone wrong for: $uid. Error found: ${e.getMessage}"))
+      }
+  }
+
+  def getAgentReferenceRecordByArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
+    agentReferenceRecordRepository
+      .findByArn(arn)
+      .map {
+        case Some(multiInvitationRecord) =>
+          Ok(Json.toJson(SimplifiedAgentRefRecord(multiInvitationRecord)))
+        case None =>
+          Logger(getClass).warn(s"Agent Reference Record not found for: ${arn.value}")
+          NotFound
+      }
+      .recoverWith {
+        case e =>
+          Future failed (throw new Exception(
+            s"Something has gone wrong for: ${arn.value}. Error found: ${e.getMessage}"))
       }
   }
 

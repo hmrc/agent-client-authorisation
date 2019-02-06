@@ -103,6 +103,25 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
     }
   }
 
+  "getAgentReferenceRecord via ARN" should {
+
+    "return an agent reference record for a given uid" in {
+      val agentReferenceRecord: AgentReferenceRecord =
+        AgentReferenceRecord("ABCDEFGH", arn, Seq("mari-anne", "anne-mari"))
+
+      val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
+        SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
+
+      when(mockAgentReferenceRepository.findByArn(any())(any()))
+        .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+      val result = await(agentReferenceController.getAgentReferenceRecordByArn(arn)(FakeRequest()))
+
+      status(result) shouldBe 200
+      jsonBodyOf(result).as[SimplifiedAgentRefRecord] shouldBe simplifiedAgentRefRecord
+    }
+  }
+
   "getInvitationsInfo" should {
     "return invitationIds and dates" when {
       "authorised for user: Individual" in {

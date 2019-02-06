@@ -7,6 +7,7 @@ PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                
 
 
 GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
+GET         /agencies/references/arn/:arn                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecordByArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 POST        /agencies/references/arn/:arn/clientType/:clientType                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getAgentLink(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientType: String)
 
 GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
