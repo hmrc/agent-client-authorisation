@@ -22,7 +22,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Eori, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -38,8 +38,6 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.getInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.getInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
-      case Service.NiOrgEnrolled =>
-        routes.EoriClientInvitationsController.getInvitation(Eori(invitation.clientId.value), invitation.invitationId)
     }
     var links = HalLinks(Vector(HalLink("self", link.url)))
 
@@ -53,9 +51,6 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.acceptInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.acceptInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
-      case Service.NiOrgEnrolled =>
-        routes.EoriClientInvitationsController
-          .acceptInvitation(Eori(invitation.clientId.value), invitation.invitationId)
     }
     val rejectLink = invitation.service match {
       case Service.MtdIt =>
@@ -65,10 +60,6 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.rejectInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.rejectInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
-      case Service.NiOrgEnrolled =>
-        routes.EoriClientInvitationsController
-          .rejectInvitation(Eori(invitation.clientId.value), invitation.invitationId)
-
     }
 
     if (invitation.status == Pending) {
@@ -87,8 +78,6 @@ trait ClientInvitationsHal {
         case Service.PersonalIncomeRecord =>
           routes.NiClientInvitationsController.getInvitation(Nino(i.clientId.value), i.invitationId)
         case Service.Vat => routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
-        case Service.NiOrgEnrolled =>
-          routes.EoriClientInvitationsController.getInvitation(Eori(i.clientId.value), i.invitationId)
 
       }
       HalLink("invitations", link.toString)
@@ -104,8 +93,6 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
       case clientId @ ClientIdentifier(Vrn(_)) =>
         routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
-      case clientId @ ClientIdentifier(Eori(_)) =>
-        routes.EoriClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Eori], None)
     }
 
     val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)

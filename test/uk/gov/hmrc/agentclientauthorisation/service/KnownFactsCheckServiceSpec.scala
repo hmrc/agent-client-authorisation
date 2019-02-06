@@ -35,9 +35,8 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
 
   val desConnector: DesConnector = mock[DesConnector]
   val citizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
-  val niExemptionRegistrationConnector: NiExemptionRegistrationConnector = mock[NiExemptionRegistrationConnector]
 
-  val service = new KnownFactsCheckService(desConnector, citizenDetailsConnector, niExemptionRegistrationConnector)
+  val service = new KnownFactsCheckService(desConnector, citizenDetailsConnector)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
