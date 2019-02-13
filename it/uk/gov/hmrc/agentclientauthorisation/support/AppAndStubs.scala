@@ -21,10 +21,10 @@ import org.scalatestplus.play.OneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeApplication
-import reactivemongo.api.DB
+import reactivemongo.api.{DB, FailoverStrategy}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.mongo.{MongoSpecSupport, Awaiting => MongoAwaiting}
+import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport, Awaiting => MongoAwaiting}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.it.Port
 
@@ -86,6 +86,9 @@ trait AppAndStubs
 
 trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
+
+  override implicit lazy val mongoConnectorForTest: MongoConnector =
+    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
 
   lazy val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
 
