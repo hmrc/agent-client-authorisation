@@ -70,7 +70,7 @@ class VatInvitationScenarios
     val refetchedInvitations = client.getInvitations()
     refetchedInvitations.firstInvitation.status shouldBe "Rejected"
 
-    //verifyNoCallsToCreateMtdVatRelationship
+    verifyNoCallsToCreateMtdVatRelationship(arn, vrn)
   }
 
 }
