@@ -16,12 +16,10 @@
 
 import java.net.URL
 
-import akka.actor.ActorSystem
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
-import com.google.inject.name.{Named, Names}
+import com.google.inject.name.Names
 import com.kenshoo.play.metrics.Metrics
-import com.typesafe.config.Config
 import javax.inject.{Inject, Provider, Singleton}
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
@@ -32,10 +30,8 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{MongoScheduleRepository,
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsStatusUpdateScheduler, KenshooCacheMetrics, LocalCaffeineCache, RepositoryMigrationService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.ws.WSHttp
 
 class MicroserviceModule(val environment: Environment, val configuration: Configuration)
     extends AbstractModule with ServicesConfig {
@@ -53,9 +49,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
     bindProperty("appName")
 
-    bind(classOf[HttpGet]).to(classOf[HttpVerbs])
-    bind(classOf[HttpPut]).to(classOf[HttpVerbs])
-    bind(classOf[HttpPost]).to(classOf[HttpVerbs])
+    bind(classOf[HttpGet]).to(classOf[DefaultHttpClient])
+    bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
+    bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
@@ -187,18 +183,6 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 
-}
-
-@Singleton
-class HttpVerbs @Inject()(
-  val auditConnector: AuditConnector,
-  @Named("appName") val appName: String,
-  val config: Configuration,
-  val actorSystem: ActorSystem)
-    extends HttpGet with HttpPost with HttpPut with HttpPatch with HttpDelete with WSHttp with HttpAuditing {
-  override val hooks = Seq(AuditingHook)
-
-  override def configuration: Option[Config] = Some(config.underlying)
 }
 
 @Singleton
