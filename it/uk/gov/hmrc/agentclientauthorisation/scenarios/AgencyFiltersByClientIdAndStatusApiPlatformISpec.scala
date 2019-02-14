@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class AgencyFiltersByClientIdAndStatusApiPlatformISpec
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with RelationshipStubs with MongoAppAndStubs with Inspectors
     with Inside with Eventually {
 
   implicit val arn = RandomArn()
@@ -43,10 +43,10 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec
       Given("An agent is logged in")
       given()
         .client(mtdItId1, nino)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-        .anMtdItRelationshipIsCreatedWith(arn)
-      given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+        .hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+      anMtdItRelationshipIsCreatedWith(arn, mtdItId1)
+      given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(nino2, mtdItId2)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
@@ -55,11 +55,11 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec
       agency sendInvitation (nino2, MtdItService)
 
       And("Client 1 accepts the first invitation")
-      given().client(mtdItId1, nino).isLoggedInWithMtdEnrolment
+      given().client(mtdItId1, nino).givenClientMtdItId(mtdItId1)
       clientAcceptsFirstInvitation(client)
 
       Then("The agent filters by Client 1 and Pending")
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
       agencyFiltersByClient1Pending(mtdItId1, agency)
 
       Then("The agent filters by Client 2 and Accepted")

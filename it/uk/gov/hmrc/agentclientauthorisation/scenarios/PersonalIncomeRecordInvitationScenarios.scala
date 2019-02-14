@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.Nino
 
 class PersonalIncomeRecordInvitationScenarios
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with RelationshipStubs with Inspectors
     with Inside with Eventually {
 
   implicit val arn = RandomArn()
@@ -35,16 +35,16 @@ class PersonalIncomeRecordInvitationScenarios
     Given("An agent is logged in")
     given()
       .client(clientId = nino)
-      .hasABusinessPartnerRecord()
-      .anAfiRelationshipIsCreatedWith(arn, nino)
-    given().agentAdmin(arn).isLoggedInAndIsSubscribed
+      .hasABusinessPartnerRecord(nino)
+    anAfiRelationshipIsCreatedWith(arn, nino)
+    given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
 
     When("An agent sends invitations to Client")
     agency sendInvitation (nino, PersonalIncomeRecordService)
 
     And("Client accepts the first invitation")
 
-    given().client(clientId = nino).isLoggedInWithNiEnrolment(nino)
+    given().client(clientId = nino).givenClientNi(nino)
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
     val refetchedInvitations = client.getInvitations()
@@ -58,16 +58,16 @@ class PersonalIncomeRecordInvitationScenarios
     Given("An agent is logged in")
     given()
       .client(clientId = nino)
-      .hasABusinessPartnerRecord()
-      .anAfiRelationshipIsCreatedWith(arn, nino)
-    given().agentAdmin(arn).isLoggedInAndIsSubscribed
+      .hasABusinessPartnerRecord(nino)
+    anAfiRelationshipIsCreatedWith(arn, nino)
+    given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
 
     When("An agent sends invitations to Client")
     agency sendInvitation (nino, PersonalIncomeRecordService)
 
     And("Client rejects the first invitation")
 
-    given().client(clientId = nino).isLoggedInWithNiEnrolment(nino)
+    given().client(clientId = nino).givenClientNi(nino)
     val invitations = client.getInvitations()
     client.rejectInvitation(invitations.firstInvitation)
     val refetchedInvitations = client.getInvitations()

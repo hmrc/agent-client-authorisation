@@ -48,8 +48,14 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
     implicit hc: HeaderCarrier,
     ec: ExecutionContext) =
     citizenDetailsConnector.getCitizenDateOfBirth(clientNino).map {
-      case Some(CitizenDateOfBirth(Some(clientDob))) if clientDob == suppliedDob => Some(true)
-      case Some(CitizenDateOfBirth(_))                                           => Some(false)
-      case None                                                                  => None
+      case Some(CitizenDateOfBirth(Some(clientDob))) if clientDob == suppliedDob => {
+        Some(true)
+      }
+      case Some(CitizenDateOfBirth(_)) => {
+        Some(false)
+      }
+      case None => {
+        None
+      }
     }
 }

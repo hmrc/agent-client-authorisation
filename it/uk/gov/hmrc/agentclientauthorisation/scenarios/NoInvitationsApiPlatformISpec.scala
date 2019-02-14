@@ -34,8 +34,8 @@ class NoInvitationsApiPlatformISpec
     val agency = new AgencyApi(this, arn, port)
     val client = new ClientApi(this, nino, mtdItId1, port)
 
-    given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-    given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
+    given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+    given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn)
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()
@@ -44,7 +44,7 @@ class NoInvitationsApiPlatformISpec
     agencyResponse.links.selfLink shouldBe s"/agent-client-authorisation/agencies/${arn.value}/invitations/sent"
     agencyResponse.embedded.isEmpty shouldBe true
 
-    given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+    given().client(clientId = nino, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
 
     info("the Clients received invitations should be empty")
     val clientResponse = client.getInvitations()

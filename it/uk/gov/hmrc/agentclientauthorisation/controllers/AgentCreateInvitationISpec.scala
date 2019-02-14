@@ -16,205 +16,154 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.libs.json.JsObject
-import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import play.api.libs.json.Json
+import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.play.test.UnitSpec
 
-class AgentCreateInvitationISpec
-    extends UnitSpec with MongoAppAndStubs with AuthStubs with DesStubs with HttpResponseUtils {
+class AgentCreateInvitationISpec extends BaseISpec {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
-  val arn = "TARN0000001"
-  val mtdItId = "YNIZ22082177289"
-  val nino = "AB123456A"
-  val vrn = "660304567"
-
   "POST /agencies/:arn/invitations/sent" should {
-    "return 204 with invitation response if invitation creation is successful" when {
-      "service is ITSA" in {
+    val request = FakeRequest("POST", "/agencies/:arn/invitations/sent")
 
+    "return 201 Created with link to invitation in headers" when {
+      "service is ITSA" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenBusinessPartnerRecordWithMtdItId(mtdItId, nino)
+        hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
 
-        val response: HttpResponse =
-          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
-            .postAsJson(s"""
-                           |{
-                           |  "service": "HMRC-MTD-IT",
-                           |  "clientIdType": "ni",
-                           |  "clientId": "$nino"
-                           |}
-               """.stripMargin)
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-MTD-IT",
+            |  "clientIdType": "ni",
+            |  "clientId": "AB123456A"
+            |}""".stripMargin)
 
-        response.status shouldBe 201
-        val invitationUrl = locationHeaderOf(response)
-        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/A\\w{12}")
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
-        val invitationResponse = new Resource(invitationUrl, port).get
-
-        invitationResponse.status shouldBe 200
-        val invitationJson = invitationResponse.json.as[JsObject]
-
-        (invitationJson \ "arn").as[String] shouldBe arn
-        (invitationJson \ "clientId").as[String] shouldBe mtdItId
-        (invitationJson \ "suppliedClientId").as[String] shouldBe nino
+        status(response) shouldBe 201
       }
 
       "service is PIR" in {
-
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
 
-        val response: HttpResponse =
-          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
-            .postAsJson(s"""
-                           |{
-                           |  "service": "PERSONAL-INCOME-RECORD",
-                           |  "clientIdType": "ni",
-                           |  "clientId": "$nino"
-                           |}
-               """.stripMargin)
+        val
+        requestBody = Json.parse(
+          """{
+            |  "service": "PERSONAL-INCOME-RECORD",
+            |  "clientIdType": "ni",
+            |  "clientId": "AB123456A"
+            |}""".stripMargin)
 
-        response.status shouldBe 201
-        val invitationUrl = locationHeaderOf(response)
-        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/B\\w{12}")
+        val
 
-        val invitationResponse = new Resource(invitationUrl, port).get
+        response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
-        invitationResponse.status shouldBe 200
-        val invitationJson = invitationResponse.json.as[JsObject]
-
-        (invitationJson \ "arn").as[String] shouldBe arn
-        (invitationJson \ "clientId").as[String] shouldBe nino
-        (invitationJson \ "suppliedClientId").as[String] shouldBe nino
+        status(response) shouldBe 201
       }
-
       "service is VAT" in {
-
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
 
-        val response: HttpResponse =
-          new Resource(s"/agent-client-authorisation/agencies/$arn/invitations/sent", port)
-            .postAsJson(s"""
-                           |{
-                           |  "service": "HMRC-MTD-VAT",
-                           |  "clientIdType": "vrn",
-                           |  "clientId": "$vrn"
-                           |}
-               """.stripMargin)
-        response.status shouldBe 201
-        val invitationUrl = locationHeaderOf(response)
-        invitationUrl should (fullyMatch regex s"/agent-client-authorisation/agencies/$arn/invitations/sent/C\\w{12}")
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-MTD-VAT",
+            |  "clientIdType": "vrn",
+            |  "clientId": "101747696"
+            |}""".stripMargin)
 
-        val invitationResponse = new Resource(invitationUrl, port).get
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
-        invitationResponse.status shouldBe 200
-        val invitationJson = invitationResponse.json.as[JsObject]
-
-        (invitationJson \ "arn").as[String] shouldBe arn
-        (invitationJson \ "clientId").as[String] shouldBe vrn
-        (invitationJson \ "suppliedClientId").as[String] shouldBe vrn
+        status(response) shouldBe 201
       }
-
     }
 
-    "return 400 when JSON data is incorrect" in {}
+    "return BadRequest when the payload is invalid" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
 
-    "return 400 when JSON is invalid" in {}
+      val requestBody = Json.parse(
+        """{
+          |  "foo": "HMRC-MTD-VAT",
+          |  "bar": "vrn",
+          |  "daa": "101747696"
+          |}""".
+          stripMargin)
 
-    "return 403 when client registration is not found" in {}
+      val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+      status(response) shouldBe 400
+    }
+
+    "return 403 when arn is not of current agent" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn2)
+
+      val requestBody = Json.parse(
+        """{
+          |  "service": "HMRC-MTD-IT",
+          |  "clientIdType": "ni",
+          |  "clientId": "AB123456A"
+          |}""".stripMargin)
+
+      val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+      status(response) shouldBe 403
+    }
+
+    "return 401 when agent is not authorised" in {
+      givenAuditConnector()
+      givenClientMtdItId(mtdItId)
+
+      val requestBody = Json.parse(
+        """{
+          |  "service": "HMRC-MTD-IT",
+          |  "clientIdType": "ni",
+          |  "clientId": "AB123456A"
+          |}""".stripMargin)
+
+      val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+      status(response) shouldBe 401
+    }
+
+    "return 403 when client registration is not found" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasNoBusinessPartnerRecord(nino)
+
+      val
+      requestBody = Json.parse(
+        """{
+          |  "service": "HMRC-MTD-IT",
+          |  "clientIdType": "ni",
+          |  "clientId": "AB123456A"
+          |}""".stripMargin)
+
+      val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+      status(response) shouldBe 403
+    }
 
     "return 403 when post code does not match" in {}
 
-    "return 501 when service is unsupported" in {}
+    "return 501 when service is unsupported" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
 
-    "return 401 when user is not an agent" in {}
+      val requestBody = Json.parse(
+        """{
+          |  "service": "FOO",
+          |  "clientIdType": "ni",
+          |  "clientId": "AB123456A"
+          |}""".stripMargin)
 
+      val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+      status(response) shouldBe 501
+    }
   }
-}
-
-trait AuthStubs {
-
-  def givenAuthorisedAsAgent(arn: String) =
-    stubFor(
-      post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
-        .withStatus(200)
-        .withBody(
-          s"""{"allEnrolments":[{"key":"HMRC-AS-AGENT","identifiers":[{"key":"AgentReferenceNumber","value":"$arn"}]}], "affinityGroup":"Agent"}""")))
-
-  def givenNotAuthorised() =
-    stubFor(
-      post(urlPathEqualTo(s"/auth/authorise")).willReturn(
-        aResponse()
-          .withStatus(401)
-          .withHeader("WWW-Authenticate", s"""MDTP detail="FOO"""")))
-
-  def givenAuthorisedAsClient(service: String, identifierName: String, identifierValue: String) =
-    stubFor(
-      post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
-        .withStatus(200)
-        .withBody(
-          s"""{"allEnrolments":[{"key":"$service","identifiers":[{"key":"$identifierName","value":"$identifierValue"}]}], "affinityGroup":"Individual"}""")))
-
-}
-
-trait DesStubs {
-
-  def givenBusinessPartnerRecordWithMtdItId(mtdItId: String, nino: String) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(nino)}"))
-        .withHeader("authorization", equalTo("Bearer secret"))
-        .withHeader("environment", equalTo("test"))
-        .willReturn(aResponse()
-          .withStatus(200)
-          .withBody(s"""
-                       |  {
-                       |  "safeId": "XV0000100093327",
-                       |  "nino": "ZR987654C",
-                       |  "mtdbsa": "$mtdItId",
-                       |  "propertyIncome": false,
-                       |  "businessData": [
-                       |    {
-                       |      "incomeSourceId": "XWIS00000000219",
-                       |      "accountingPeriodStartDate": "2017-05-06",
-                       |      "accountingPeriodEndDate": "2018-05-05",
-                       |      "tradingName": "Surname DADTN",
-                       |      "businessAddressDetails": {
-                       |        "addressLine1": "100 Sutton Street",
-                       |        "addressLine2": "Wokingham",
-                       |        "addressLine3": "Surrey",
-                       |        "addressLine4": "London",
-                       |        "postalCode": "AA11AA",
-                       |        "countryCode": "GB"
-                       |      },
-                       |      "businessContactDetails": {
-                       |        "phoneNumber": "01111222333",
-                       |        "mobileNumber": "04444555666",
-                       |        "faxNumber": "07777888999",
-                       |        "emailAddress": "aaa@aaa.com"
-                       |      },
-                       |      "tradingStartDate": "2016-05-06",
-                       |      "cashOrAccruals": "cash",
-                       |      "seasonal": true
-                       |    }
-                       |  ]
-                       |}
-                       |""".stripMargin)))
-
-}
-
-trait HttpResponseUtils {
-
-  def locationHeaderOf(response: HttpResponse): String =
-    response.header(HeaderNames.LOCATION).getOrElse(throw new IllegalStateException())
-
 }

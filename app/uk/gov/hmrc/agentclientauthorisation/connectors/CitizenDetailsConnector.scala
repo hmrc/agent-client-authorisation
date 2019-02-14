@@ -57,7 +57,9 @@ class CitizenDetailsConnector @Inject()(
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
       http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
-        case _ => None
+        case _ => {
+          None
+        }
       }
     }
 }

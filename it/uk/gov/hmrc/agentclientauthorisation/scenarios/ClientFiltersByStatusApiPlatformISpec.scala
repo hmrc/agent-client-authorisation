@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.domain.{AgentCode, Nino}
 
 class ClientFiltersByStatusApiPlatformISpec
-    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with Inspectors
+    extends FeatureSpec with ScenarioHelpers with GivenWhenThen with Matchers with MongoAppAndStubs with RelationshipStubs with Inspectors
     with Inside with Eventually {
 
   implicit val arn = RandomArn()
@@ -38,17 +38,16 @@ class ClientFiltersByStatusApiPlatformISpec
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       Given("An agent and a client are logged in")
-      given()
-        .client(clientId = nino, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-        .anMtdItRelationshipIsCreatedWith(arn)
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+      given().client(clientId = nino, canonicalClientId = mtdItId1)
+        .hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+      anMtdItRelationshipIsCreatedWith(arn, mtdItId1)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino, canonicalClientId = mtdItId1).isLoggedInWithMtdEnrolment
+      given().client(clientId = nino, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
       clientsViewOfPendingInvitations(client)
 
       When(s"the Client accepts the first Agency invitation")
@@ -74,9 +73,9 @@ class ClientFiltersByStatusApiPlatformISpec
       Given("An agent and a client are logged in")
       given()
         .client(clientId = nino1, canonicalClientId = mtdItId1)
-        .hasABusinessPartnerRecord()
-        .anAfiRelationshipIsCreatedWith(arn, nino1)
-      given().agentAdmin(arn).isLoggedInAndIsSubscribed
+        .hasABusinessPartnerRecord(nino)
+      anAfiRelationshipIsCreatedWith(arn, nino1)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(
@@ -84,7 +83,7 @@ class ClientFiltersByStatusApiPlatformISpec
         (client, PersonalIncomeRecordService))
 
       Then(s"the Client should see 2 pending invitations from the Agency $arn")
-      given().client(clientId = nino1, canonicalClientId = nino1).isLoggedInWithNiEnrolment(nino1)
+      given().client(clientId = nino1, canonicalClientId = nino1).givenClientNi(nino1)
       clientsViewOfPendingInvitations(client, PersonalIncomeRecordService, "NI", nino1)
 
       When(s"the Client accepts the first Agency invitation")

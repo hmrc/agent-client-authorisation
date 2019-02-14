@@ -69,7 +69,7 @@ POST  /agencies/:arn/invitations/sent
 
 Request:
 ```
-http://localhost:9432/agent-client-authorisation/agenices/TARN0000001/invitations/sent
+http://localhost:9432/agent-client-authorisation/agencies/TARN0000001/invitations/sent
 
 ```
 Example Body of ITSA:
@@ -105,7 +105,6 @@ Example Body of IRV:
 |400|Received Valid Json but incorrect data|
 |400|Received Invalid Json|
 |403|Client Registration Not Found|
-|403|(HMRC-MTD-IT Only) Post Code does not match|
 |501|Unsupported Service|
 
 Note: The link returned from a successful create invitation response is "GET a Specific Agent's Sent Invitation"
