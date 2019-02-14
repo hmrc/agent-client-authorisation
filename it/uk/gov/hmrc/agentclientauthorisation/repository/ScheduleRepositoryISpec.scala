@@ -6,14 +6,18 @@ import org.joda.time.DateTime
 import org.scalatest.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import reactivemongo.api.FailoverStrategy
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
-import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ScheduleRepositoryISpec
     extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp {
+
+  override implicit lazy val mongoConnectorForTest: MongoConnector =
+    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
 
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
