@@ -37,6 +37,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.http.Upstream4xxResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -325,6 +326,16 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentNoEnrolments)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe AgentNotSubscribed
+    }
+
+    "return Locked if downstream service is in the middle of migration" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+        .thenReturn(Future failed Upstream4xxResponse("MIGRATION", 403, 423))
+
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe Locked
+
     }
   }
 
