@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -46,6 +46,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class InvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
+  agentReferenceRepository: AgentReferenceRepository,
   relationshipsConnector: RelationshipsConnector,
   desConnector: DesConnector,
   auditService: AuditService,
@@ -143,8 +144,21 @@ class InvitationsService @Inject()(
     hc: HeaderCarrier,
     request: Request[Any]): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
-      invitationsRepository.find("invitationId" -> invitationId)
-    }.map(_.headOption)
+      for {
+        invitation <- invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
+        invitationWithLink <- invitation match {
+                               case Some(invite) if invite.clientType.nonEmpty =>
+                                 agentReferenceRepository.findByArn(invite.arn).map {
+                                   case Some(record) =>
+                                     Some(invite.copy(clientActionUrl = Some(s"/${invite.clientType
+                                       .getOrElse("")}/${record.uid}/${record.normalisedAgentNames.last}")))
+                                   case _ =>
+                                     Some(invite.copy(clientActionUrl = Some(s"/${invite.invitationId.value}")))
+                                 }
+                               case _ => Future successful None
+                             }
+      } yield invitationWithLink
+    }
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
@@ -160,7 +174,23 @@ class InvitationsService @Inject()(
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] =
     monitor(
       s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
+      for {
+        invitations <- invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
+        invitationsWithLink <- Future.traverse(invitations) { invites =>
+                                invites.clientType match {
+                                  case Some(clientType) =>
+                                    agentReferenceRepository.findByArn(invites.arn).map {
+                                      case Some(record) =>
+                                        invites.copy(clientActionUrl =
+                                          Some(s"/$clientType/${record.uid}/${record.normalisedAgentNames.last}"))
+                                      case _ => invites
+                                    }
+                                  case _ =>
+                                    Future successful invites.copy(
+                                      clientActionUrl = Some(s"/${invites.invitationId.value}"))
+                                }
+                              }
+      } yield invitationsWithLink
     }
 
   def findInvitationsInfoBy(
