@@ -16,22 +16,16 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import java.net.URL
-
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.domain.Nino
 
-trait DesStubs[A] {
-  me: A with WiremockAware =>
+trait DesStubs {
 
-  def clientId: ClientId
-
-  def hasABusinessPartnerRecord(postcode: String = "AA11AA", countryCode: String = "GB"): A = {
+  def hasABusinessPartnerRecord(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -71,9 +65,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasABusinessPartnerRecordWithMtdItId(mtdItId: MtdItId = mtdItId1): A = {
+  def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -81,7 +75,7 @@ trait DesStubs[A] {
           .withBody(s"""
                        |  {
                        |  "safeId": "XV0000100093327",
-                       |  "nino": "ZR987654C",
+                       |  "nino": "${nino.value}",
                        |  "mtdbsa": "${mtdItId.value}",
                        |  "propertyIncome": false,
                        |  "businessData": [
@@ -114,9 +108,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasBusinessPartnerRecordWithEmptyBusinessData(mtdItId: MtdItId = mtdItId1): A = {
+  def hasBusinessPartnerRecordWithEmptyBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -133,9 +127,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasNoBusinessPartnerRecord: A = {
+  def hasNoBusinessPartnerRecord(nino: Nino) = {
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${encodePathSegment(clientId.value)}"))
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -144,9 +138,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasVatCustomerDetails(isEffectiveRegistrationDatePresent: Boolean): A = {
+  def hasVatCustomerDetails(vrn: Vrn, vatRegDate: String, isEffectiveRegistrationDatePresent: Boolean) = {
     stubFor(
-      get(urlEqualTo(s"/vat/customer/vrn/${encodePathSegment(clientId.value)}/information"))
+      get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -159,7 +153,7 @@ trait DesStubs[A] {
                        |         "businessStartDate" : "2017-04-02",
                        |         "registrationReason" : "0013"
                        |         ${if (isEffectiveRegistrationDatePresent)
-                         ""","effectiveRegistrationDate" : "2017-04-01""""
+                         s""","effectiveRegistrationDate" : "${vatRegDate}""""
                        else ""}
                        |      },
                        |      "bankDetails" : {
@@ -208,9 +202,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasVatCustomerDetailsWithNoApprovedInformation: A = {
+  def hasVatCustomerDetailsWithNoApprovedInformation(vrn: Vrn) = {
     stubFor(
-      get(urlEqualTo(s"/vat/customer/vrn/${encodePathSegment(clientId.value)}/information"))
+      get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -220,9 +214,9 @@ trait DesStubs[A] {
     this
   }
 
-  def hasNoVatCustomerDetails: A = {
+  def hasNoVatCustomerDetails(vrn: Vrn) = {
     stubFor(
-      get(urlEqualTo(s"/vat/customer/vrn/${encodePathSegment(clientId.value)}/information"))
+      get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -231,9 +225,9 @@ trait DesStubs[A] {
     this
   }
 
-  def failsVatCustomerDetails(withStatus: Int): A = {
+  def failsVatCustomerDetails(vrn: Vrn, withStatus: Int) = {
     stubFor(
-      get(urlEqualTo(s"/vat/customer/vrn/${encodePathSegment(clientId.value)}/information"))
+      get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse()
           .withStatus(withStatus)))
 

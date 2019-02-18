@@ -95,7 +95,8 @@ class AgencyInvitationsController @Inject()(
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
-      case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
+      //Marianne 8/2/2019: Is this Failure case even possible?
+      case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {

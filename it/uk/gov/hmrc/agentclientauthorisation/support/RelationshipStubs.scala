@@ -17,30 +17,27 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.TaxIdentifier
 
-trait RelationshipStubs[A] {
-  me: A with WiremockAware =>
-  def canonicalClientId: TaxIdentifier
+trait RelationshipStubs {
 
-  def anMtdItRelationshipIsCreatedWith(arn: Arn): A = {
+  def anMtdItRelationshipIsCreatedWith(arn: Arn, mtdItId: MtdItId) = {
     stubFor(put(urlEqualTo(
-      s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${canonicalClientId.value}"))
+      s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${mtdItId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
 
-  def anAfiRelationshipIsCreatedWith(arn: Arn, clientId: ClientId): A = {
+  def anAfiRelationshipIsCreatedWith(arn: Arn, clientId: ClientId) = {
     stubFor(put(urlEqualTo(
       s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
       .willReturn(aResponse().withStatus(201)))
     this
   }
 
-  def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier): A = {
+  def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier) = {
     stubFor(
       put(
         urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}"))
@@ -55,8 +52,8 @@ trait RelationshipStubs[A] {
         urlPathEqualTo(
           s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
 
-  val verifyNoCallsToCreateMtdVatRelationship =
+  def verifyNoCallsToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) =
     verify(
       0,
-      putRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/[^/]+/service/[^/]+/client/[^/]+/[^/]+")))
+      putRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
 }
