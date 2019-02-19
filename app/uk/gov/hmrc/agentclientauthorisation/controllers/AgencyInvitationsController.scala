@@ -17,9 +17,9 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import javax.inject._
-
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
+import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, AnyContent, Result}
@@ -95,7 +95,8 @@ class AgencyInvitationsController @Inject()(
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
-      case Failure(e)                     => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
+      //Marianne 8/2/2019: Is this Failure case even possible?
+      case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
@@ -168,11 +169,19 @@ class AgencyInvitationsController @Inject()(
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents {
     implicit request => implicit arn =>
-      knownFactsCheckService.clientVatRegistrationDateMatches(vrn, vatRegistrationDate).map {
-        case Some(true)  => NoContent
-        case Some(false) => VatRegistrationDateDoesNotMatch
-        case None        => NotFound
-      }
+      knownFactsCheckService
+        .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
+        .map {
+          case Some(true)  => NoContent
+          case Some(false) => VatRegistrationDateDoesNotMatch
+          case None        => NotFound
+        }
+        .recover {
+          case e if e.getMessage.contains("MIGRATION") => {
+            Logger(getClass).warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
+            Locked
+          }
+        }
   }
 
   def checkKnownFactIrv(nino: Nino, dateOfBirth: LocalDate): Action[AnyContent] = onlyForAgents {

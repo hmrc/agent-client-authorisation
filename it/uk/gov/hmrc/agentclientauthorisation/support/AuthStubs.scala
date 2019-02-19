@@ -17,28 +17,24 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.{Nino, SaAgentReference, TaxIdentifier}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
 }
 
-trait BasicUserAuthStubs[A] {
-  me: A with WiremockAware =>
+trait BasicUserAuthStubs {
 
-  def isNotLoggedIn: A = {
+  def isNotLoggedIn = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
     this
   }
 }
 
-trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
-  me: A with WiremockAware =>
+trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
-  def canonicalClientId: TaxIdentifier
-
-  def isLoggedInWithMtdEnrolment: A = {
+  def givenClientMtdItId(mtdItId: MtdItId) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
@@ -47,7 +43,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
                                                                                                         |      "identifiers": [
                                                                                                         |        {
                                                                                                         |          "key": "MTDITID",
-                                                                                                        |          "value": "${canonicalClientId.value}"
+                                                                                                        |          "value": "${mtdItId.value}"
                                                                                                         |        }
                                                                                                         |      ],
                                                                                                         |      "state": "Activated"
@@ -59,7 +55,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     this
   }
 
-  def isLoggedInWithNiEnrolment(nino: Nino): A = {
+  def givenClientNi(nino: Nino) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
@@ -80,7 +76,7 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
     this
   }
 
-  def isLoggedInWithVATEnrolment(vrn: Vrn): A = {
+  def givenClientVat(vrn: Vrn) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "allEnrolments": [
@@ -102,14 +98,11 @@ trait ClientUserAuthStubs[A] extends BasicUserAuthStubs[A] {
   }
 }
 
-trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
-  me: A with WiremockAware =>
-
-  def arn: String
+trait AgentAuthStubs extends BasicUserAuthStubs {
 
   protected var saAgentReference: Option[SaAgentReference] = None
 
-  def isLoggedInAndIsSubscribed: A = {
+  def givenAuthorisedAsAgent(arn: Arn) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "affinityGroup": "Agent",
@@ -119,7 +112,7 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
                                                                                                         |      "identifiers": [
                                                                                                         |        {
                                                                                                         |          "key": "AgentReferenceNumber",
-                                                                                                        |          "value": "$arn"
+                                                                                                        |          "value": "${arn.value}"
                                                                                                         |        }
                                                                                                         |      ],
                                                                                                         |      "state": "Activated"
@@ -154,7 +147,7 @@ trait AgentAuthStubs[A] extends BasicUserAuthStubs[A] {
     this
   }
 
-  def isLoggedInAndNotSubscribed: A = {
+  def givenAgentNotSubscribed = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
                                                                                                         |  "affinityGroup": "Agent",

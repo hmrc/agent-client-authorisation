@@ -21,10 +21,11 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.FailoverStrategy
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,7 +33,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class MongoAgentReferenceRepositoryISpec
     extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp {
 
-  private val now = DateTime.now()
+  override implicit lazy val mongoConnectorForTest: MongoConnector =
+    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
 
   lazy val app: Application = appBuilder
     .build()

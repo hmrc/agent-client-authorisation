@@ -44,9 +44,9 @@ class AgencyFilteringByClientIdIApiPlatformISpec
       val client2 = new ClientApi(this, nino2, mtdItId2, port)
 
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).isLoggedInAndIsSubscribed
-      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(mtdItId1)
-      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(mtdItId2)
+      given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn)
+      given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+      given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(nino2, mtdItId2)
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)((client1, MtdItService), (client2, MtdItService))
