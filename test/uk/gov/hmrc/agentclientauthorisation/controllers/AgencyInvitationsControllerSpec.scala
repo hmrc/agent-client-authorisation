@@ -81,15 +81,17 @@ class AgencyInvitationsControllerSpec
   override protected def beforeEach(): Unit = {
     super.beforeEach()
 
-    when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(None), eqs(None))(any()))
+    when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(None), eqs(None))(any(), any()))
       .thenReturn(Future successful allInvitations)
 
     when(
-      invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(
-        any())).thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
+      invitationsService
+        .findInvitationsBy(eqs(Some(arn)), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any(), any()))
+      .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
-      invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any()))
+      invitationsService
+        .findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any(), any()))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(
@@ -98,7 +100,7 @@ class AgencyInvitationsControllerSpec
         eqs(Some(Service.MtdIt)),
         any[Option[String]],
         eqs(Some(Accepted)),
-        eqs(None))(any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
+        eqs(None))(any(), any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
   }
 
   "createInvitation" should {

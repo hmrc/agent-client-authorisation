@@ -49,6 +49,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     "return 204 when an invitation is successfully cancelled" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
 
       val invitation = await(
         invitationsRepo.create(
@@ -77,6 +78,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     "return NoPermissionOnAgency when the logged in arn doesn't not match the invitation" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn2)
+      givenGetAgencyNameAgentStub
 
       val invitation = await(
         invitationsRepo.create(

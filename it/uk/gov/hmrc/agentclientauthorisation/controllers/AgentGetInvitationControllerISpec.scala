@@ -51,6 +51,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     "return 200 with an invitation entity for an authorised agent with no query parameters" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
 
       val invitation = await(
         invitationsRepo.create(
@@ -81,6 +82,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     "return 200 with an invitation entity for an authorised agent with query parameters" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
 
       val invitation = await(
         invitationsRepo.create(
@@ -202,6 +204,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     "return 200 with an invitation entity" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
 
       val invitation = await(
         invitationsRepo.create(

@@ -46,7 +46,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class InvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
-  agentReferenceRepository: AgentReferenceRepository,
+  agentLinkService: AgentLinkService,
   relationshipsConnector: RelationshipsConnector,
   desConnector: DesConnector,
   auditService: AuditService,
@@ -147,13 +147,16 @@ class InvitationsService @Inject()(
       for {
         invitation <- invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
         invitationWithLink <- invitation match {
-                               case Some(invite) if invite.clientType.nonEmpty =>
-                                 agentReferenceRepository.findByArn(invite.arn).map {
-                                   case Some(record) =>
-                                     Some(invite.copy(clientActionUrl = Some(s"/${invite.clientType
-                                       .getOrElse("")}/${record.uid}/${record.normalisedAgentNames.last}")))
+                               case Some(invite) =>
+                                 invite.clientType match {
+                                   case Some(clientType) =>
+                                     agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
+                                       Some(invite.copy(clientActionUrl = Some(link)))
+                                     }
                                    case _ =>
-                                     Some(invite.copy(clientActionUrl = Some(s"/${invite.invitationId.value}")))
+                                     Future successful Some(
+                                       invite.copy(clientActionUrl = Some(s"/${invite.invitationId.value}")))
+
                                  }
                                case _ => Future successful None
                              }
@@ -171,7 +174,9 @@ class InvitationsService @Inject()(
     service: Option[Service] = None,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] =
+    createdOnOrAfter: Option[LocalDate] = None)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[List[Invitation]] =
     monitor(
       s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
       for {
@@ -179,11 +184,8 @@ class InvitationsService @Inject()(
         invitationsWithLink <- Future.traverse(invitations) { invites =>
                                 invites.clientType match {
                                   case Some(clientType) =>
-                                    agentReferenceRepository.findByArn(invites.arn).map {
-                                      case Some(record) =>
-                                        invites.copy(clientActionUrl =
-                                          Some(s"/$clientType/${record.uid}/${record.normalisedAgentNames.last}"))
-                                      case _ => invites
+                                    agentLinkService.getAgentLink(invites.arn, clientType).map { link =>
+                                      invites.copy(clientActionUrl = Some(link))
                                     }
                                   case _ =>
                                     Future successful invites.copy(

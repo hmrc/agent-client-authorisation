@@ -48,6 +48,7 @@ import scala.concurrent.Future
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository: InvitationsRepository = mock[InvitationsRepository]
+  val agentLinkService: AgentLinkService = mock[AgentLinkService]
   val relationshipsConnector: RelationshipsConnector = mock[RelationshipsConnector]
   val auditService: AuditService = mock[AuditService]
   val desConnector: DesConnector = mock[DesConnector]
@@ -58,6 +59,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   val service = new InvitationsService(
     invitationsRepository,
+    agentLinkService,
     relationshipsConnector,
     desConnector,
     auditService,
@@ -115,6 +117,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           ClientIdentifier(nino1),
           ClientIdentifier(nino1),
           now().toLocalDate.plusDays(14),
+          None,
           List(StatusChangeEvent(now(), Pending))
         )
 
@@ -293,6 +296,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       val invitation = testInvitation
       val query = ("invitationId" -> invitation.invitationId)
       when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
+      when(agentLinkService.getAgentLink(any(), any())(any(), any())).thenReturn(Future.successful("/invitations"))
 
       await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
     }
@@ -340,6 +344,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   def serviceWithDurationAndCurrentDate(invitationExpiryDuration: String): InvitationsService =
     new InvitationsService(
       invitationsRepository,
+      agentLinkService,
       relationshipsConnector,
       desConnector,
       auditService,
@@ -377,6 +382,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       mtdItId1,
       ClientIdentifier(nino1),
       LocalDate.now().plusDays(14),
+      None,
       List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
     )
 
@@ -392,6 +398,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       ClientIdentifier(mtdItId1),
       ClientIdentifier(nino1),
       LocalDate.now().plusDays(14),
+      Some("/invitations"),
       List(StatusChangeEvent(creationDate(), Pending))
     )
 
