@@ -27,16 +27,14 @@ import scala.util.Random
 @Singleton
 class RepositoryMigrationService @Inject()(
   invitationsRepository: InvitationsRepository,
-  migrationsRepository: MigrationsRepository)(implicit ec: ExecutionContext) {
+  migrationsRepository: MigrationsRepository,
+  @Named("mongodb-migration.enabled") enabled: Boolean)(implicit ec: ExecutionContext) {
 
   Logger(getClass).info("Repository migration service is enabled.")
 
   val migrationId = "re-index all invitations"
 
-  def run(): Future[Unit] = {
-
-    Thread.sleep(Random.nextInt(15000) + 1000)
-
+  def run: Future[Unit] =
     (for {
       _ <- migrationsRepository.tryLock(migrationId)
       _ = Logger(getClass).info("Starting invitations repository migration ...")
@@ -48,13 +46,12 @@ class RepositoryMigrationService @Inject()(
       case e: DatabaseException if e.code.contains(11000) => Logger(getClass).error(s"Migration already done.")
       case e                                              => Logger(getClass).error("Migration has failed", e)
     }
-  }
 
   def migrate: String => Future[Unit] = {
     case "re-index all invitations" => invitationsRepository.refreshAllInvitations
     case id                         => Future.failed(new Exception(s"Unknown migration id = $id"))
   }
 
-  run()
+  if (enabled) Future { Thread.sleep(Random.nextInt(5000) + 1000) }.flatMap(_ => run)
 
 }
