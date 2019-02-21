@@ -172,7 +172,8 @@ object Invitation {
           "lastUpdated"          -> invitation.mostRecentEvent().time,
           "expiryDate"           -> invitation.expiryDate,
           "status"               -> invitation.status,
-          "invitationId"         -> invitation.invitationId.value
+          "invitationId"         -> invitation.invitationId.value,
+          "clientActionUrl"      -> invitation.clientActionUrl
         )
     }
   }

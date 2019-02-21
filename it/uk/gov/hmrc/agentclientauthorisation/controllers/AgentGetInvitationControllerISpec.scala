@@ -77,6 +77,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "clientIdType").as[String] shouldBe "MTDITID"
       (json \ "suppliedClientId").as[String] shouldBe "FOO"
       (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
+      (json \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
     }
 
     "return 200 with an invitation entity for an authorised agent with query parameters" in {
@@ -131,6 +132,8 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (jsonInvitation \ "clientIdType").as[String] shouldBe "MTDITID"
       (jsonInvitation \ "suppliedClientId").as[String] shouldBe "FOO"
       (jsonInvitation \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
+      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+
     }
 
     "return 200 with empty invitation array when no invitations are found for this arn" in {
@@ -229,6 +232,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "clientIdType").as[String] shouldBe "MTDITID"
       (json \ "suppliedClientId").as[String] shouldBe "FOO"
       (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
+      (json \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
     }
 
     "return 403 when invitation is for another agent" in {
