@@ -21,6 +21,7 @@ import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.NoPermissionOnAgency
+import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -42,11 +43,13 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     await(invitationsRepo.ensureIndexes)
   }
 
+  val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)
+
   "GET /agencies/:arn/invitations/sent" should {
 
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
     val clientIdentifier = ClientIdentifier("FOO", MtdItIdType.id)
-    val clientIdentifier2 = ClientIdentifier("BAR", MtdItIdType.id)
+    val clientIdentifierIrv = ClientIdentifier("AA000003D", NinoType.id)
 
     "return 200 with an invitation entity for an authorised agent with no query parameters" in {
       givenAuditConnector()
@@ -159,6 +162,128 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       json shouldBe empty
     }
 
+    "return 200 with ITSA invitation without client type and add clientActionUrl" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.MtdIt,
+          clientIdentifier,
+          clientIdentifier,
+          DateTime.now(),
+          LocalDate.now()))
+
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+
+      status(response) shouldBe 200
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonInvitations = (jsonResponse \ "_embedded" \ "invitations").as[Seq[JsObject]]
+
+      jsonInvitations.value.size shouldBe 1
+      val jsonInvitation = (jsonResponse \ "_embedded" \ "invitations" \ 0).as[JsObject]
+      (jsonInvitation \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (jsonInvitation \ "arn").as[String] shouldBe arn.value
+      (jsonInvitation \ "clientType").asOpt[String] shouldBe None
+      (jsonInvitation \ "status").as[String] shouldBe "Pending"
+      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+    }
+
+    "return 200 with IRV invitation without client type and add clientActionUrl" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.PersonalIncomeRecord,
+          clientIdentifierIrv,
+          clientIdentifierIrv,
+          DateTime.now(),
+          LocalDate.now()))
+
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+
+      status(response) shouldBe 200
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonInvitations = (jsonResponse \ "_embedded" \ "invitations").as[Seq[JsObject]]
+
+      jsonInvitations.value.size shouldBe 1
+      val jsonInvitation = (jsonResponse \ "_embedded" \ "invitations" \ 0).as[JsObject]
+      (jsonInvitation \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (jsonInvitation \ "arn").as[String] shouldBe arn.value
+      (jsonInvitation \ "clientType").asOpt[String] shouldBe None
+      (jsonInvitation \ "status").as[String] shouldBe "Pending"
+      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+    }
+
+    "return 200 with VAT invitation without client type and add clientActionUrl" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.Vat,
+          clientIdentifierVat,
+          clientIdentifierVat,
+          DateTime.now(),
+          LocalDate.now()))
+
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+
+      status(response) shouldBe 200
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonInvitations = (jsonResponse \ "_embedded" \ "invitations").as[Seq[JsObject]]
+
+      jsonInvitations.value.size shouldBe 1
+      val jsonInvitation = (jsonResponse \ "_embedded" \ "invitations" \ 0).as[JsObject]
+      (jsonInvitation \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (jsonInvitation \ "arn").as[String] shouldBe arn.value
+      (jsonInvitation \ "clientType").asOpt[String] shouldBe None
+      (jsonInvitation \ "status").as[String] shouldBe "Pending"
+      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/business\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+    }
+
+    "return 200 with Accepted VAT invitation without client type" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.Vat,
+          clientIdentifierVat,
+          clientIdentifierVat,
+          DateTime.now(),
+          LocalDate.now()))
+
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+
+      status(response) shouldBe 200
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonInvitations = (jsonResponse \ "_embedded" \ "invitations").as[Seq[JsObject]]
+
+      jsonInvitations.value.size shouldBe 1
+      val jsonInvitation = (jsonResponse \ "_embedded" \ "invitations" \ 0).as[JsObject]
+      (jsonInvitation \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (jsonInvitation \ "arn").as[String] shouldBe arn.value
+      (jsonInvitation \ "clientType").asOpt[String] shouldBe None
+      (jsonInvitation \ "status").as[String] shouldBe "Accepted"
+      (jsonInvitation \ "clientActionUrl").asOpt[String] shouldBe None
+    }
+
     "return 403 when arn is not of current agent" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
@@ -233,6 +358,62 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "suppliedClientId").as[String] shouldBe "FOO"
       (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
       (json \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+    }
+
+    "return 200 with Accepted VAT invitation without client type and skip providing action url" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.Vat,
+          clientIdentifierVat,
+          clientIdentifierVat,
+          DateTime.now(),
+          LocalDate.now()))
+
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
+
+      status(response) shouldBe 200
+
+      val json = jsonBodyOf(response).as[JsObject]
+      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (json \ "clientType").asOpt[String] shouldBe None
+      (json \ "status").as[String] shouldBe "Accepted"
+      (json \ "clientActionUrl").asOpt[String] shouldBe None
+    }
+
+    "return 200 with Accepted ITSA invitation without client type and skip providing action url" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          None,
+          Service.MtdIt,
+          clientIdentifier,
+          clientIdentifier,
+          DateTime.now(),
+          LocalDate.now()))
+
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
+
+      status(response) shouldBe 200
+
+      val json = jsonBodyOf(response).as[JsObject]
+      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (json \ "clientType").asOpt[String] shouldBe None
+      (json \ "status").as[String] shouldBe "Accepted"
+      (json \ "clientActionUrl").asOpt[String] shouldBe None
     }
 
     "return 403 when invitation is for another agent" in {

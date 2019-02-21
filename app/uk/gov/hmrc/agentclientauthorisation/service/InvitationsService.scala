@@ -143,13 +143,13 @@ class InvitationsService @Inject()(
     invitation.service match {
       case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
         agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
-          invitation.copy(clientActionUrl = Some(link))
+          Some(invitation.copy(clientActionUrl = Some(link)))
         }
       case Service.Vat =>
         agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
-          invitation.copy(clientActionUrl = Some(link))
+          Some(invitation.copy(clientActionUrl = Some(link)))
         }
-      case _ => throw new IllegalStateException("No Invitation Found")
+      case _ => Future.successful(None)
     }
 
   def findInvitation(invitationId: InvitationId)(
@@ -166,7 +166,7 @@ class InvitationsService @Inject()(
                                      agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
                                        Some(invite.copy(clientActionUrl = Some(link)))
                                      }
-                                   case (_, Pending) => addLinkToInvitation(invite).map(Some(_))
+                                   case (_, Pending) => addLinkToInvitation(invite)
                                    case _            => Future.successful(Some(invite))
                                  }
                                case _ => Future successful None
@@ -199,6 +199,7 @@ class InvitationsService @Inject()(
                                       invites.copy(clientActionUrl = Some(link))
                                     }
                                   case (_, Pending) => addLinkToInvitation(invites)
+                                    .map(_.getOrElse(throw new IllegalStateException("No Pending Invitation to Add Link")))
                                   case _            => Future.successful(invites)
                                 }
                               }
