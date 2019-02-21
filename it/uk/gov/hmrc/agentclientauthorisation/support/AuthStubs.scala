@@ -30,6 +30,14 @@ trait BasicUserAuthStubs {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
     this
   }
+
+  def givenGetAgentName(arn: Arn) = {
+    stubFor(get(urlPathEqualTo("/agent-services-account/agent/agency-name"))
+      .willReturn(aResponse().withStatus(200).withBody(
+        s"""{
+           |  "agencyName" : "My Agency"
+           |}""".stripMargin)))
+  }
 }
 
 trait ClientUserAuthStubs extends BasicUserAuthStubs {

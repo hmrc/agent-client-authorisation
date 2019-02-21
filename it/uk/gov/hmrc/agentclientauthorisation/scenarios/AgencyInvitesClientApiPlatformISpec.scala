@@ -39,7 +39,7 @@ class AgencyInvitesClientApiPlatformISpec
         .client(clientId = nino, canonicalClientId = mtdItId1)
         .hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
       anMtdItRelationshipIsCreatedWith(arn, mtdItId1)
-      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
       When("the Agency sends 2 invitations to the Client")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))

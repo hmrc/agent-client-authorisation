@@ -41,7 +41,7 @@ class ClientFiltersByStatusApiPlatformISpec
       given().client(clientId = nino, canonicalClientId = mtdItId1)
         .hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
       anMtdItRelationshipIsCreatedWith(arn, mtdItId1)
-      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))
@@ -75,7 +75,7 @@ class ClientFiltersByStatusApiPlatformISpec
         .client(clientId = nino1, canonicalClientId = mtdItId1)
         .hasABusinessPartnerRecord(nino)
       anAfiRelationshipIsCreatedWith(arn, nino1)
-      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
       When("An agent sends several invitations")
       agencySendsSeveralInvitations(agency)(

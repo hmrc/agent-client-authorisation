@@ -46,7 +46,7 @@ class AgencyFiltersByClientIdAndStatusApiPlatformISpec
         .hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
       anMtdItRelationshipIsCreatedWith(arn, mtdItId1)
       given().client(mtdItId2, nino2).hasABusinessPartnerRecordWithMtdItId(nino2, mtdItId2)
-      given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
       When("An agent sends invitations to Client 1")
       agencySendsSeveralInvitations(agency)((client, MtdItService), (client, MtdItService))

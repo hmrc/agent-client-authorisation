@@ -36,7 +36,7 @@ class AgencyFiltersByServiceApiPlatformISpec
     scenario("on the service of MtdIt invitations") {
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
       val client = new ClientApi(this, nino, mtdItId1, port)
 
@@ -53,7 +53,7 @@ class AgencyFiltersByServiceApiPlatformISpec
     scenario("on the service of PersonalIncomeRecord invitations") {
       val agency = new AgencyApi(this, arn, port)
       Given("An agent is logged in")
-      given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn)
+      given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
       given()
         .client(clientId = nino)
         .hasABusinessPartnerRecord(nino)

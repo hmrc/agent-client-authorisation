@@ -34,7 +34,7 @@ class VatInvitationScenarios
 
     Given("An agent is logged in")
     given().client(clientId = vrn)
-    given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+    given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")
     agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)
@@ -57,7 +57,7 @@ class VatInvitationScenarios
 
     Given("An agent is logged in")
     given().client(clientId = vrn)
-    given().agentAdmin(arn).givenAuthorisedAsAgent(arn)
+    given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")
     agency sendInvitation (clientId = vrn, service = "HMRC-MTD-VAT", clientIdType = "vrn", clientPostcode = None)

@@ -31,7 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.{HmrcMtdVat, Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
@@ -139,6 +139,19 @@ class InvitationsService @Inject()(
         case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
       }
 
+  private def addLinkToInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
+    invitation.service match {
+      case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
+        agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
+          invitation.copy(clientActionUrl = Some(link))
+        }
+      case Service.Vat =>
+        agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
+          invitation.copy(clientActionUrl = Some(link))
+        }
+      case _ => throw new IllegalStateException("No Invitation Found")
+    }
+
   def findInvitation(invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
@@ -148,15 +161,13 @@ class InvitationsService @Inject()(
         invitation <- invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
         invitationWithLink <- invitation match {
                                case Some(invite) =>
-                                 invite.clientType match {
-                                   case Some(clientType) =>
+                                 (invite.clientType, invite.status) match {
+                                   case (Some(clientType), Pending) =>
                                      agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
                                        Some(invite.copy(clientActionUrl = Some(link)))
                                      }
-                                   case _ =>
-                                     Future successful Some(
-                                       invite.copy(clientActionUrl = Some(s"/${invite.invitationId.value}")))
-
+                                   case (_, Pending) => addLinkToInvitation(invite).map(Some(_))
+                                   case _            => Future.successful(Some(invite))
                                  }
                                case _ => Future successful None
                              }
@@ -182,14 +193,13 @@ class InvitationsService @Inject()(
       for {
         invitations <- invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
         invitationsWithLink <- Future.traverse(invitations) { invites =>
-                                invites.clientType match {
-                                  case Some(clientType) =>
+                                (invites.clientType, invites.status) match {
+                                  case (Some(clientType), Pending) =>
                                     agentLinkService.getAgentLink(invites.arn, clientType).map { link =>
                                       invites.copy(clientActionUrl = Some(link))
                                     }
-                                  case _ =>
-                                    Future successful invites.copy(
-                                      clientActionUrl = Some(s"/${invites.invitationId.value}"))
+                                  case (_, Pending) => addLinkToInvitation(invites)
+                                  case _            => Future.successful(invites)
                                 }
                               }
       } yield invitationsWithLink
