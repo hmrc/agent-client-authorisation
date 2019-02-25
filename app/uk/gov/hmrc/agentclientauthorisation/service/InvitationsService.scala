@@ -139,39 +139,12 @@ class InvitationsService @Inject()(
         case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
       }
 
-  private def addLinkToInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
-    invitation.service match {
-      case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
-        agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(link)))
-        }
-      case Service.Vat =>
-        agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(link)))
-        }
-      case _ => Future.successful(None)
-    }
-
   def findInvitation(invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
     request: Request[Any]): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
-      for {
-        invitation <- invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
-        invitationWithLink <- invitation match {
-                               case Some(invite) =>
-                                 (invite.clientType, invite.status) match {
-                                   case (Some(clientType), Pending) =>
-                                     agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
-                                       Some(invite.copy(clientActionUrl = Some(link)))
-                                     }
-                                   case (_, Pending) => addLinkToInvitation(invite)
-                                   case _            => Future.successful(Some(invite))
-                                 }
-                               case _ => Future successful None
-                             }
-      } yield invitationWithLink
+      invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
     }
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
@@ -190,20 +163,7 @@ class InvitationsService @Inject()(
     ec: ExecutionContext): Future[List[Invitation]] =
     monitor(
       s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-      for {
-        invitations <- invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
-        invitationsWithLink <- Future.traverse(invitations) { invites =>
-                                (invites.clientType, invites.status) match {
-                                  case (Some(clientType), Pending) =>
-                                    agentLinkService.getAgentLink(invites.arn, clientType).map { link =>
-                                      invites.copy(clientActionUrl = Some(link))
-                                    }
-                                  case (_, Pending) => addLinkToInvitation(invites)
-                                    .map(_.getOrElse(throw new IllegalStateException("No Pending Invitation to Add Link")))
-                                  case _            => Future.successful(invites)
-                                }
-                              }
-      } yield invitationsWithLink
+      invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
   def findInvitationsInfoBy(

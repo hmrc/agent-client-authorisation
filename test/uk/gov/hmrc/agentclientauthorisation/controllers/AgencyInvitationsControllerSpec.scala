@@ -204,6 +204,8 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
+      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+
       val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 
       status(response) shouldBe 200
@@ -219,6 +221,8 @@ class AgencyInvitationsControllerSpec
     "include the invitation ID in invitations" in {
 
       agentAuthStub(agentAffinityAndEnrolments)
+
+      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
 
       val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 

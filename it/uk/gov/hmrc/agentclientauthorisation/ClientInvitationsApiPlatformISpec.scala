@@ -75,7 +75,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
       val invite = sendInvitationToClient(myNino)
 
       val client = new ClientApi(this, myNino, mtdItId1, port)
-      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1).givenGetAgentName(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
       response.status shouldBe 200
