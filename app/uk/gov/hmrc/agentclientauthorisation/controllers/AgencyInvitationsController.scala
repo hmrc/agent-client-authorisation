@@ -175,22 +175,6 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-//  for {
-//    invitation <- invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
-//    invitationWithLink <- invitation match {
-//      case Some(invite) =>
-//        (invite.clientType, invite.status) match {
-//          case (Some(clientType), Pending) =>
-//            agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
-//              Some(invite.copy(clientActionUrl = Some(link)))
-//            }
-//          case (_, Pending) => addLinkToInvitation(invite)
-//          case _            => Future.successful(Some(invite))
-//        }
-//      case _ => Future successful None
-//    }
-//  } yield invitationWithLink
-
   def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
     implicit request => implicit arn =>
       forThisAgency(givenArn) {
