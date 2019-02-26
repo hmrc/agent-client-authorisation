@@ -120,6 +120,19 @@ class AgencyInvitationsController @Inject()(
     "InvitationId" -> invitation.invitationId.value
   )
 
+  private def addLinkToInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
+    invitation.service match {
+      case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
+        agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
+          Some(invitation.copy(clientActionUrl = Some(link)))
+        }
+      case Service.Vat =>
+        agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
+          Some(invitation.copy(clientActionUrl = Some(link)))
+        }
+      case _ => Future.successful(None)
+    }
+
   def getSentInvitations(
     givenArn: Arn,
     clientType: Option[String],
@@ -129,26 +142,59 @@ class AgencyInvitationsController @Inject()(
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
-      invitationsService
-        .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
-        .map { invitations =>
-          Ok(
-            toHalResource(
-              invitations.filter(_.arn == givenArn),
-              arn,
-              clientType,
-              service,
-              clientIdType,
-              clientId,
-              status))
-        }
+      val invitationsWithOptLinks: Future[List[Invitation]] = for {
+        invitations <- invitationsService
+                        .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
+        invitationsWithLink <- Future.traverse(invitations) { invites =>
+                                (invites.clientType, invites.status) match {
+                                  case (Some(ct), Pending) =>
+                                    agentLinkService.getAgentLink(invites.arn, ct).map { link =>
+                                      invites.copy(clientActionUrl = Some(link))
+                                    }
+                                  case (_, Pending) =>
+                                    addLinkToInvitation(invites)
+                                      .map(
+                                        _.getOrElse(
+                                          throw new IllegalStateException("No Pending Invitation to Add Link")))
+                                  case _ => Future.successful(invites)
+                                }
+                              }
+      } yield invitationsWithLink
+
+      invitationsWithOptLinks.map { invitations =>
+        Ok(
+          toHalResource(
+            invitations.filter(_.arn == givenArn),
+            arn,
+            clientType,
+            service,
+            clientIdType,
+            clientId,
+            status))
+      }
     }
   }
 
   def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
     implicit request => implicit arn =>
       forThisAgency(givenArn) {
-        invitationsService.findInvitation(invitationId).map {
+        val invitationsWithOptLinks: Future[Option[Invitation]] = for {
+          invitation <- invitationsService.findInvitation(invitationId)
+          invitationWithLink <- invitation match {
+                                 case Some(invite) =>
+                                   (invite.clientType, invite.status) match {
+                                     case (Some(clientType), Pending) =>
+                                       agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
+                                         Some(invite.copy(clientActionUrl = Some(link)))
+                                       }
+                                     case (_, Pending) => addLinkToInvitation(invite)
+                                     case _            => Future.successful(Some(invite))
+                                   }
+                                 case _ => Future successful None
+                               }
+        } yield invitationWithLink
+
+        invitationsWithOptLinks.map {
           _.map(invitation => if (invitation.arn == givenArn) Ok(toHalResource(invitation)) else Forbidden) getOrElse InvitationNotFound
         }
       }

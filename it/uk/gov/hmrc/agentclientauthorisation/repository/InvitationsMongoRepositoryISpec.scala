@@ -57,6 +57,7 @@ class InvitationsMongoRepositoryISpec
     mtdItId1,
     nino1,
     date,
+    None,
     List.empty)
   val invitationIRV = Invitation(
     BSONObjectID.generate(),
@@ -67,6 +68,7 @@ class InvitationsMongoRepositoryISpec
     nino1,
     nino1,
     date,
+    None,
     List.empty)
   val invitationVAT = Invitation(
     BSONObjectID.generate(),
@@ -77,6 +79,7 @@ class InvitationsMongoRepositoryISpec
     vrn,
     vrn,
     date,
+    None,
     List.empty)
 
   implicit lazy val app: Application = appBuilder
@@ -105,7 +108,7 @@ class InvitationsMongoRepositoryISpec
 
   "create" should {
     "create a new StatusChangedEvent of Pending" in inside(addInvitation(now, invitationITSA)) {
-      case Invitation(_, _, arnValue, _, service, clientId, _, _, events) =>
+      case Invitation(_, _, arnValue, _, service, clientId, _, _, _, events) =>
         arnValue shouldBe Arn(arn)
         clientId shouldBe ClientIdentifier(mtdItId1)
         service shouldBe Service.MtdIt
@@ -133,7 +136,7 @@ class InvitationsMongoRepositoryISpec
       val updated = update(created, Accepted, now)
 
       inside(updated) {
-        case Invitation(created.id, _, _, _, _, _, _, _, events) =>
+        case Invitation(created.id, _, _, _, _, _, _, _, _, events) =>
           events shouldBe List(StatusChangeEvent(now, Pending), StatusChangeEvent(now, Accepted))
       }
     }
@@ -159,6 +162,7 @@ class InvitationsMongoRepositoryISpec
             _,
             _,
             _,
+            _,
             List(StatusChangeEvent(date1, Pending), StatusChangeEvent(date2, Accepted))) =>
           date1 shouldBe now
           date2 shouldBe now
@@ -166,7 +170,7 @@ class InvitationsMongoRepositoryISpec
       }
 
       inside(list(1)) {
-        case Invitation(_, _, Arn(`arn`), _, Service.MtdIt, _, _, _, List(StatusChangeEvent(date1, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), _, Service.MtdIt, _, _, _, _, List(StatusChangeEvent(date1, Pending))) =>
           date1 shouldBe now
       }
     }
@@ -186,6 +190,7 @@ class InvitationsMongoRepositoryISpec
             _,
             Service.MtdIt,
             ClientIdentifier(`mtdItId1`),
+            _,
             _,
             _,
             List(StatusChangeEvent(dateValue, Pending))) =>
@@ -314,7 +319,7 @@ class InvitationsMongoRepositoryISpec
       addInvitation(now, invitationITSA)
 
       inside(listByClientId(service, mtdItId1).loneElement) {
-        case Invitation(_, _, Arn(`arn`), _, `service`, mtdItId, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, Arn(`arn`), _, `service`, mtdItId, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
     }
@@ -337,12 +342,12 @@ class InvitationsMongoRepositoryISpec
       requests.size shouldBe 2
 
       inside(requests.head) {
-        case Invitation(_, _, `firstAgent`, _, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, `firstAgent`, _, `service`, _, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
 
       inside(requests(1)) {
-        case Invitation(_, _, `secondAgent`, _, `service`, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(_, _, `secondAgent`, _, `service`, _, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
     }
@@ -494,7 +499,7 @@ class InvitationsMongoRepositoryISpec
 
   private def addInvitations(startDate: DateTime, invitations: Invitation*) =
     await(Future sequence invitations.map {
-      case Invitation(_, _, arnValue, clientType, service, clientId, suppliedClientId, _, _) =>
+      case Invitation(_, _, arnValue, clientType, service, clientId, suppliedClientId, _, _, _) =>
         repository.create(
           arnValue,
           clientType,

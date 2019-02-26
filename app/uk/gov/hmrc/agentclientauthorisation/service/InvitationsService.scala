@@ -29,9 +29,9 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.{HmrcMtdVat, Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
@@ -46,6 +46,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class InvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
+  agentLinkService: AgentLinkService,
   relationshipsConnector: RelationshipsConnector,
   desConnector: DesConnector,
   auditService: AuditService,
@@ -143,8 +144,8 @@ class InvitationsService @Inject()(
     hc: HeaderCarrier,
     request: Request[Any]): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
-      invitationsRepository.find("invitationId" -> invitationId)
-    }.map(_.headOption)
+      invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
+    }
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
@@ -157,7 +158,9 @@ class InvitationsService @Inject()(
     service: Option[Service] = None,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] =
+    createdOnOrAfter: Option[LocalDate] = None)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[List[Invitation]] =
     monitor(
       s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
       invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)

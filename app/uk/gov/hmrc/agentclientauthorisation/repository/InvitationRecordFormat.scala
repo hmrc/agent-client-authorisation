@@ -43,6 +43,7 @@ object InvitationRecordFormat {
     suppliedClientId: String,
     suppliedClientIdType: String,
     expiryDateOp: Option[LocalDate],
+    clientActionUrl: Option[String],
     events: List[StatusChangeEvent]): Invitation = {
 
     val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(14).toLocalDate)
@@ -60,6 +61,7 @@ object InvitationRecordFormat {
       ClientIdentifier(clientId, clientIdType),
       ClientIdentifier(suppliedClientId, suppliedClientIdType),
       expiryDate,
+      None,
       events
     )
   }
@@ -74,6 +76,7 @@ object InvitationRecordFormat {
     (JsPath \ "suppliedClientId").read[String] and
     (JsPath \ "suppliedClientIdType").read[String] and
     (JsPath \ "expiryDate").readNullable[LocalDate] and
+    (JsPath \ "clientActionUrl").readNullable[String] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
   val arnClientStateKey = "_arnClientStateKey"
@@ -94,6 +97,7 @@ object InvitationRecordFormat {
         "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
         "events"               -> invitation.events,
+        "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
         createdKey             -> invitation.firstEvent().time,
         statusKey              -> invitation.mostRecentEvent().status.toString,

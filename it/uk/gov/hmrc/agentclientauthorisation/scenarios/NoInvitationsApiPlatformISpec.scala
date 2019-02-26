@@ -35,7 +35,7 @@ class NoInvitationsApiPlatformISpec
     val client = new ClientApi(this, nino, mtdItId1, port)
 
     given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
-    given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn)
+    given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     info("the Agency sent invitations should be empty")
     val agencyResponse = agency.sentInvitations()

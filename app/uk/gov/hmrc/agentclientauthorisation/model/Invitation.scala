@@ -117,6 +117,7 @@ case class Invitation(
   clientId: ClientId,
   suppliedClientId: ClientId,
   expiryDate: LocalDate,
+  clientActionUrl: Option[String],
   events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent =
@@ -149,6 +150,7 @@ object Invitation {
       clientId = clientId,
       suppliedClientId = suppliedClientId,
       expiryDate = expiryDate,
+      clientActionUrl = None,
       events = List(StatusChangeEvent(startDate, Pending))
     )
 
@@ -170,7 +172,8 @@ object Invitation {
           "lastUpdated"          -> invitation.mostRecentEvent().time,
           "expiryDate"           -> invitation.expiryDate,
           "status"               -> invitation.status,
-          "invitationId"         -> invitation.invitationId.value
+          "invitationId"         -> invitation.invitationId.value,
+          "clientActionUrl"      -> invitation.clientActionUrl
         )
     }
   }
