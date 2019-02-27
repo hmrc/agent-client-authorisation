@@ -64,6 +64,7 @@ class AgencyInvitationsControllerSpec
 
   val controller =
     new AgencyInvitationsController(
+      "http://localhost:9448",
       postcodeService,
       invitationsService,
       kfcService,

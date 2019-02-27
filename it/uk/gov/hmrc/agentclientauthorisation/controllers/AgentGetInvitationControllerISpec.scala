@@ -45,6 +45,9 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
   val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)
 
+  val invitationLinkRegex: String => String =
+    (clientType: String) => s"(http:\\/\\/localhost:9448\\/invitations\\/${clientType}\\/[A-Z0-9]{8}\\/my-agency)"
+
   "GET /agencies/:arn/invitations/sent" should {
 
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
@@ -80,7 +83,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "clientIdType").as[String] shouldBe "MTDITID"
       (json \ "suppliedClientId").as[String] shouldBe "FOO"
       (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
-      (json \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (json \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
     }
 
     "return 200 with an invitation entity for an authorised agent with query parameters" in {
@@ -135,7 +138,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (jsonInvitation \ "clientIdType").as[String] shouldBe "MTDITID"
       (jsonInvitation \ "suppliedClientId").as[String] shouldBe "FOO"
       (jsonInvitation \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
-      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (jsonInvitation \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
 
     }
 
@@ -189,7 +192,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (jsonInvitation \ "arn").as[String] shouldBe arn.value
       (jsonInvitation \ "clientType").asOpt[String] shouldBe None
       (jsonInvitation \ "status").as[String] shouldBe "Pending"
-      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (jsonInvitation \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
     }
 
     "return 200 with IRV invitation without client type and add clientActionUrl" in {
@@ -219,7 +222,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (jsonInvitation \ "arn").as[String] shouldBe arn.value
       (jsonInvitation \ "clientType").asOpt[String] shouldBe None
       (jsonInvitation \ "status").as[String] shouldBe "Pending"
-      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (jsonInvitation \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
     }
 
     "return 200 with VAT invitation without client type and add clientActionUrl" in {
@@ -249,7 +252,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (jsonInvitation \ "arn").as[String] shouldBe arn.value
       (jsonInvitation \ "clientType").asOpt[String] shouldBe None
       (jsonInvitation \ "status").as[String] shouldBe "Pending"
-      (jsonInvitation \ "clientActionUrl").as[String].matches("(\\/invitations\\/business\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (jsonInvitation \ "clientActionUrl").as[String].matches(invitationLinkRegex("business")) shouldBe true
     }
 
     "return 200 with Accepted VAT invitation without client type" in {
@@ -357,7 +360,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "clientIdType").as[String] shouldBe "MTDITID"
       (json \ "suppliedClientId").as[String] shouldBe "FOO"
       (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
-      (json \ "clientActionUrl").as[String].matches("(\\/invitations\\/personal\\/[A-Z0-9]{8}\\/my-agency)") shouldBe true
+      (json \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
     }
 
     "return 200 with Accepted VAT invitation without client type and skip providing action url" in {

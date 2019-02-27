@@ -37,6 +37,7 @@ import scala.util.{Failure, Success, Try}
 
 @Singleton
 class AgencyInvitationsController @Inject()(
+  @Named("agent-invitations-frontend.external-url") invitationsFrontendBaseUrl: String,
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService,
@@ -124,11 +125,11 @@ class AgencyInvitationsController @Inject()(
     invitation.service match {
       case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
         agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(link)))
+          Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
       case Service.Vat =>
         agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(link)))
+          Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
       case _ => Future.successful(None)
     }
@@ -149,7 +150,7 @@ class AgencyInvitationsController @Inject()(
                                 (invites.clientType, invites.status) match {
                                   case (Some(ct), Pending) =>
                                     agentLinkService.getAgentLink(invites.arn, ct).map { link =>
-                                      invites.copy(clientActionUrl = Some(link))
+                                      invites.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link"))
                                     }
                                   case (_, Pending) =>
                                     addLinkToInvitation(invites)
@@ -185,7 +186,7 @@ class AgencyInvitationsController @Inject()(
                                    (invite.clientType, invite.status) match {
                                      case (Some(clientType), Pending) =>
                                        agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
-                                         Some(invite.copy(clientActionUrl = Some(link)))
+                                         Some(invite.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
                                        }
                                      case (_, Pending) => addLinkToInvitation(invite)
                                      case _            => Future.successful(Some(invite))
