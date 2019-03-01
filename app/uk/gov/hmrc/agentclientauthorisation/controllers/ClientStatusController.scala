@@ -26,8 +26,10 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.C
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{Cache, InvitationsService}
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.http.Upstream4xxResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.control.NonFatal
 
 @Singleton
 class ClientStatusController @Inject()(
@@ -59,10 +61,18 @@ class ClientStatusController @Inject()(
                                              })
                        hasPendingInvitations = invitationsInfoList.exists(_.exists(_.status == Pending))
                        hasInvitationsHistory = invitationsInfoList.exists(_.exists(_.status != Pending))
-
-                       hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships.map(_.nonEmpty)
+                       hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
+                                                       .map(_.nonEmpty)
+                                                       .recover {
+                                                         case _: Upstream4xxResponse => false
+                                                       }
                        hasExistingRelationships <- if (hasExistingAfiRelationships) Future.successful(true)
-                                                  else relationshipsConnector.getActiveRelationships.map(_.nonEmpty)
+                                                  else
+                                                    relationshipsConnector.getActiveRelationships
+                                                      .map(_.nonEmpty)
+                                                      .recover {
+                                                        case _: Upstream4xxResponse => false
+                                                      }
                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
                    }
       } yield Ok(Json.toJson(status))
