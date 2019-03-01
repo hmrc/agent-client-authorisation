@@ -288,6 +288,48 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       (json \ "hasExistingRelationships").as[Boolean] shouldBe true
     }
 
+    "return 200 OK indicating client has no active relationships if afi returns 403" in {
+      givenAuditConnector()
+      givenClientHasNoActiveRelationships
+      givenClientHasActiveAfiRelationshipsFails(Arn("TARN0000001"), 403)
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
+    "return 200 OK indicating client has no active relationships if acr returns 403" in {
+      givenAuditConnector()
+      givenClientHasActiveRelationshipsFails(Arn("TARN0000001"), 403)
+      givenClientHasNoActiveAfiRelationships
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
   }
 
   def givenClientHasNoActiveRelationships =
@@ -312,6 +354,11 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
                        | "HMRC-MTD-VAT": ["${arn.value}"]
                        |}""".stripMargin)))
 
+  def givenClientHasActiveRelationshipsFails(arn: Arn, status: Int) =
+    stubFor(
+      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(aResponse()
+        .withStatus(status)))
+
   def givenClientHasActiveAfiRelationshipsWith(arn: Arn) =
     stubFor(
       get(urlPathEqualTo("/agent-fi-relationship/relationships/active")).willReturn(
@@ -325,4 +372,9 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
                        |    "relationshipStatus": "Active"
                        |  }
                        |]""".stripMargin)))
+
+  def givenClientHasActiveAfiRelationshipsFails(arn: Arn, status: Int) =
+    stubFor(
+      get(urlPathEqualTo("/agent-fi-relationship/relationships/active")).willReturn(aResponse()
+        .withStatus(status)))
 }
