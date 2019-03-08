@@ -25,7 +25,7 @@ class InvitationsStatusUpdateSchedulerISpec
     app.injector.instanceOf[ScheduleRepository],
     app.injector.instanceOf[InvitationsService],
     app.injector.instanceOf[ActorSystem],
-    5,
+    1,
     true
   )
 

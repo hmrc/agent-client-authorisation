@@ -40,11 +40,12 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       "invitations",
       mongo.mongoConnector.db,
       InvitationRecordFormat.mongoFormat,
-      ReactiveMongoFormats.objectIdFormats) with AtomicUpdate[Invitation]
-    with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
   import ImplicitBSONHandlers._
   import play.api.libs.json.Json.JsValueWrapper
+
+  final val ID = "_id"
 
   override def indexes: Seq[Index] =
     Seq(
@@ -76,23 +77,30 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
-  def update(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
-    for {
-      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(invitation))
-      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
-    } yield saved
+  def findInvitationById(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
+    collection
+      .find(BSONDocument(ID -> id))
+      .one[Invitation]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] =
     for {
-      invitations <- collection
-                      .find(BSONDocument("_id" -> invitation.id))
-                      .cursor[Invitation](ReadPreference.primaryPreferred)
-                      .collect[List](100, Cursor.FailOnError[List[Invitation]]())
-      modified = invitations.head.copy(events = invitations.head.events :+ StatusChangeEvent(updateDate, status))
-      update <- atomicUpdate(BSONDocument("_id" -> invitation.id), bsonJson(modified))
-      saved  <- Future.successful(update.map(_.updateType.savedValue).get)
-    } yield saved
+      invitationOpt <- findInvitationById(invitation.id)
+      modifiedOpt = invitationOpt.map(i => i.copy(events = i.events :+ StatusChangeEvent(updateDate, status)))
+      updated <- modifiedOpt match {
+                  case Some(modified) =>
+                    collection
+                      .update(BSONDocument(ID -> invitation.id), bsonJson(modified))
+                      .map { result =>
+                        if (result.ok) modified
+                        else
+                          throw new Exception(
+                            s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                      }
+                  case None =>
+                    throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
+                }
+    } yield updated
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
@@ -172,21 +180,21 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
     BSONDocumentFormat.reads(writes.writes(entity)).get
 
-  override def isInsertion(newRecordId: BSONObjectID, oldRecord: Invitation): Boolean =
-    newRecordId != oldRecord.id
-
   def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit] =
     for {
       ids <- collection
               .find(Json.obj(), Json.obj())
               .cursor[JsObject]()
               .collect[List](100, Cursor.FailOnError[List[JsObject]]())
-      _ <- Future.sequence(ids.map(json => (json \ "_id").as[BSONObjectID]).map(refreshInvitation))
+      _ <- Future.sequence(ids.map(json => (json \ ID).as[BSONObjectID]).map(refreshInvitation))
     } yield ()
 
   def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit] =
     for {
-      invitation <- collection.find(BSONDocument("_id" -> id)).one[Invitation]
-      _          <- atomicUpdate(BSONDocument("_id" -> id), bsonJson(invitation))
+      invitationOpt <- findInvitationById(id)
+      _ <- invitationOpt match {
+            case Some(invitation) => collection.update(BSONDocument(ID -> id), bsonJson(invitation)).map(_ => ())
+            case None             => Future.successful(())
+          }
     } yield ()
 }
