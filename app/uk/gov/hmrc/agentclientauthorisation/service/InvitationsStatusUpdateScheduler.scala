@@ -48,7 +48,7 @@ class InvitationsStatusUpdateScheduler @Inject()(
       )
     })
     actorSystem.scheduler.scheduleOnce(
-      5.seconds,
+      interval.seconds,
       taskActor,
       "<start invitation status update scheduler>"
     )
