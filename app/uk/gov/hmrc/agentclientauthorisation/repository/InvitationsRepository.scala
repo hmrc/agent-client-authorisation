@@ -28,8 +28,8 @@ import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -77,15 +77,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
-  def findInvitationById(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    collection
-      .find(BSONDocument(ID -> id))
-      .one[Invitation]
-
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation] =
     for {
-      invitationOpt <- findInvitationById(invitation.id)
+      invitationOpt <- findById(invitation.id)
       modifiedOpt = invitationOpt.map(i => i.copy(events = i.events :+ StatusChangeEvent(updateDate, status)))
       updated <- modifiedOpt match {
                   case Some(modified) =>
@@ -191,7 +186,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit] =
     for {
-      invitationOpt <- findInvitationById(id)
+      invitationOpt <- findById(id)
       _ <- invitationOpt match {
             case Some(invitation) => collection.update(BSONDocument(ID -> id), bsonJson(invitation)).map(_ => ())
             case None             => Future.successful(())
