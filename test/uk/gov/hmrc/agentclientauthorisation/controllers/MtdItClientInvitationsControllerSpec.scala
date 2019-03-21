@@ -21,6 +21,7 @@ import javax.inject.Provider
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier}
 import uk.gov.hmrc.auth.core.retrieve.~
 //import play.api.libs.functional._
 import play.api.libs.json.JsArray
@@ -203,6 +204,24 @@ class MtdItClientInvitationsControllerSpec
       Future.successful(retrievals)
     }
     "return 200 and an empty list when there are no invitations for the client" in {
+      clientAuthStubForStride(clientMtdItCorrect)
+      whenClientReceivedInvitation.thenReturn(Future successful Nil)
+
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
+    }
+
+    "return 200 and an empty list when there are no invitations for the client when stride user" in {
+      val strideEnrolment = Set(
+        Enrolment("Maintain Agent client relationships", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
+      val strideUser: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]] = {
+        val retrievals = new ~(
+          new ~(Enrolments(strideEnrolment), None),
+          Credentials("providerId", "PrivilegedApplication"))
+        Future.successful(retrievals)
+      }
       clientAuthStubForStride(clientMtdItCorrect)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
