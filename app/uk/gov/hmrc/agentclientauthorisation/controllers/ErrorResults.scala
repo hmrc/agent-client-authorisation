@@ -78,4 +78,7 @@ object ErrorResults {
   def postcodeRequired(service: String) =
     BadRequest(toJson(ErrorBody("POSTCODE_REQUIRED", s"Postcode is required for service $service")))
 
+  val NoPermissionToPerformOperation = Forbidden(
+    toJson(ErrorBody("NO_PERMISSION", "The logged in user is not permitted to perform the operation.")))
+
 }

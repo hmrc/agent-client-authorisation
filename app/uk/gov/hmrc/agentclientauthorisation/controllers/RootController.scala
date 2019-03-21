@@ -38,7 +38,7 @@ class RootController @Inject() extends BaseController with HalWriter {
   //  }
   //
   //  private def toHalResource(nino: Nino): HalResource = {
-  //    val invitationsReceivedLink = Vector(HalLink("received", routes.ClientInvitationsController.getInvitations(nino.value, None).url))
+  //    val invitationsReceivedLink = Vector(HalLink("received", routes.ClientInvitationsController.getInvitationsClient(nino.value, None).url))
   //    Hal.hal(Json.obj(), selfLink ++ invitationsReceivedLink, Vector())
   //  }
 }

@@ -43,12 +43,11 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   }
 
   "GET /clients/MTDITID/:mtdItId/invitations/received" should {
-    behave like anEndpointAccessibleForSaClientsOnly(nino)(clientGetReceivedInvitations(mtdItId1))
 
     "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
       given().client(clientId = nino, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
-      clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionOnClient)
+      clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionToPerformOperation)
     }
   }
 

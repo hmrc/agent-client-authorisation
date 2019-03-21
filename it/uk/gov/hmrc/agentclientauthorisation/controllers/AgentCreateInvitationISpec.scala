@@ -114,7 +114,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       status(response) shouldBe 403
     }
 
-    "return 401 when agent is not authorised" in {
+    "return 403 when agent is not authorised" in {
       givenAuditConnector()
       givenClientMtdItId(mtdItId)
 
@@ -127,7 +127,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
 
       val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
-      status(response) shouldBe 401
+      status(response) shouldBe 403
     }
 
     "return 403 when client registration is not found" in {

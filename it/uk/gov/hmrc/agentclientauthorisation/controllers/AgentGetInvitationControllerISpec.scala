@@ -307,7 +307,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       await(response) shouldBe NoPermissionOnAgency
     }
 
-    "return 401 when agent is not authorised" in {
+    "return 403 when agent is not authorised" in {
       givenAuditConnector()
       givenClientMtdItId(mtdItId)
 
@@ -323,7 +323,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val response = controller.getSentInvitations(arn2, None, None, None, None, None, None)(request)
 
-      status(response) shouldBe 401
+      status(response) shouldBe 403
     }
   }
 
@@ -457,7 +457,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       status(response) shouldBe 403
     }
 
-    "return 401 when agent is not authorised" in {
+    "return 403 when agent is not authorised" in {
       givenAuditConnector()
       givenClientMtdItId(mtdItId)
 
@@ -473,7 +473,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
-      status(response) shouldBe 401
+      status(response) shouldBe 403
     }
 
     "return 404 when invitation does not exist" in {
