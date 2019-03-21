@@ -96,15 +96,12 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
 
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
 
-  case class CurrentUser(enrolments: Enrolments, credentials: Credentials, affinityGroup: Option[AffinityGroup])
+  case class CurrentUser(enrolments: Enrolments, credentials: Credentials)
 
   def hasRequiredStrideRole(enrolments: Enrolments, strideRole: String): Boolean =
     enrolments.enrolments.exists(_.key.toUpperCase() == strideRole.toUpperCase())
 
-  def hasRequiredEnrolmentMatchingIdentifier(
-    enrolments: Enrolments,
-    affinity: Option[AffinityGroup],
-    clientId: TaxIdentifier): Boolean = {
+  def hasRequiredEnrolmentMatchingIdentifier(enrolments: Enrolments, clientId: TaxIdentifier): Boolean = {
     val trimmedEnrolments: Set[Enrolment] = enrolments.enrolments
       .map(
         enrolment =>
@@ -116,28 +113,22 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
             enrolment.delegatedAuthRule
         ))
 
-    affinity
-      .map {
-        case _ => clientId
-      }
-      .exists(
-        requiredIdentifier =>
-          TypeOfEnrolment(requiredIdentifier)
-            .extractIdentifierFrom(trimmedEnrolments)
-            .contains(requiredIdentifier))
+    TypeOfEnrolment(clientId)
+      .extractIdentifierFrom(trimmedEnrolments)
+      .contains(clientId)
   }
 
   def AuthorisedClientOrStrideUser[T](clientId: TaxIdentifier, strideRole: String)(body: RequestAndCurrentUser)(
     implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-      authorised().retrieve(allEnrolments and affinityGroup and credentials) {
-        case enrolments ~ affinity ~ creds =>
+      authorised().retrieve(allEnrolments and credentials) {
+        case enrolments ~ creds =>
           creds.providerType match {
-            case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, affinity, clientId) =>
-              body(request)(CurrentUser(enrolments, creds, affinity))
+            case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
+              body(request)(CurrentUser(enrolments, creds))
             case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRole) =>
-              body(request)(CurrentUser(enrolments, creds, None))
+              body(request)(CurrentUser(enrolments, creds))
             case _ =>
               Future successful NoPermissionToPerformOperation
           }

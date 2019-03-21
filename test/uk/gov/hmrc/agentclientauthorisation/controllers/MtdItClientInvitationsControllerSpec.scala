@@ -72,11 +72,10 @@ class MtdItClientInvitationsControllerSpec
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
-  private def clientAuthStubForStride(returnValue: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]]) =
+  private def clientAuthStubForStride(returnValue: Future[~[Enrolments, Credentials]]) =
     when(
-      mockPlayAuthConnector.authorise(any(), any[Retrieval[~[~[Enrolments, Option[AffinityGroup]], Credentials]]]())(
-        any(),
-        any[ExecutionContext]))
+      mockPlayAuthConnector
+        .authorise(any(), any[Retrieval[~[Enrolments, Credentials]]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "Accepting an invitation" should {
@@ -197,10 +196,8 @@ class MtdItClientInvitationsControllerSpec
   }
 
   "getInvitationsClient" should {
-    val clientMtdItCorrect: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]] = {
-      val retrievals = new ~(
-        new ~(Enrolments(clientMtdItEnrolment), Some(AffinityGroup.Individual)),
-        Credentials("providerId", "GovernmentGateway"))
+    val clientMtdItCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientMtdItEnrolment), Credentials("providerId", "GovernmentGateway"))
       Future.successful(retrievals)
     }
     "return 200 and an empty list when there are no invitations for the client" in {
