@@ -215,11 +215,14 @@ class MtdItClientInvitationsControllerSpec
 
     "return 200 and an empty list when there are no invitations for the client when stride user" in {
       val strideEnrolment = Set(
-        Enrolment("Maintain Agent client relationships", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
+        Enrolment(
+          "maintain agent relationships",
+          Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
+          state = "",
+          delegatedAuthRule = None))
       val strideUser: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]] = {
-        val retrievals = new ~(
-          new ~(Enrolments(strideEnrolment), None),
-          Credentials("providerId", "PrivilegedApplication"))
+        val retrievals =
+          new ~(new ~(Enrolments(strideEnrolment), None), Credentials("providerId", "PrivilegedApplication"))
         Future.successful(retrievals)
       }
       clientAuthStubForStride(clientMtdItCorrect)
