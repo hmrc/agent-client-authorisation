@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Provider}
+import javax.inject.{Inject, Named, Provider}
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -32,7 +32,8 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
   metrics: Metrics,
   authConnector: AuthConnector,
   auditService: AuditService,
-  ecp: Provider[ExecutionContextExecutor])
+  ecp: Provider[ExecutionContextExecutor],
+  @Named("auth.stride.enrolment") strideRole: String)
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
@@ -54,10 +55,14 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
       getInvitation(ClientIdentifier(vrn), invitationId)
   }
 
-  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(vrn, strideRole) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[Vrn]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(VrnType.createUnderlying(vrn.value)))
+        else None
       getInvitations(Service.Vat, ClientIdentifier(vrn), status)
-  }
+    }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.Vat, VrnType)(action)

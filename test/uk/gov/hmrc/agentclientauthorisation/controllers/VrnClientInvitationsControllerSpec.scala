@@ -42,7 +42,12 @@ class VrnClientInvitationsControllerSpec
   }
 
   val controller =
-    new VatClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService, ecp) {
+    new VatClientInvitationsController(invitationsService)(
+      metrics,
+      microserviceAuthConnector,
+      auditService,
+      ecp,
+      "strideId") {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 

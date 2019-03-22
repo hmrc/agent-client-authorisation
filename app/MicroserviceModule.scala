@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import java.net.URL
+import java.net.{URL, URLDecoder}
 
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.AbstractModule
@@ -48,7 +48,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
 
     bindProperty("appName")
-
+    bindPropertyWithFun("auth.stride.enrolment", URLDecoder.decode(_, "utf-8"))
     bind(classOf[HttpGet]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
@@ -102,6 +102,18 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
   private class PropertyProvider(confKey: String) extends Provider[String] {
     override lazy val get = configuration
       .getString(confKey)
+      .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
+  }
+
+  private def bindPropertyWithFun(propertyName: String, mapFx: String => String = identity) =
+    bind(classOf[String])
+      .annotatedWith(Names.named(propertyName))
+      .toProvider(new PropertyProviderWithFun(propertyName, mapFx))
+
+  private class PropertyProviderWithFun(confKey: String, mapFx: String => String) extends Provider[String] {
+    override lazy val get = configuration
+      .getString(confKey)
+      .map(mapFx)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 

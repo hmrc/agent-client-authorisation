@@ -22,11 +22,11 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, InvitationStatus, Service}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,8 +71,10 @@ abstract class BaseClientInvitationsController(
   protected def getInvitations[T <: TaxIdentifier](
     supportedService: Service,
     taxId: ClientIdentifier[T],
-    status: Option[InvitationStatus])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]): Future[Result] =
-    forThisClient(taxId) {
+    status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext,
+    authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+    forThisClientOrStride(taxId) {
       invitationsService.clientsReceived(supportedService, taxId, status) map (results =>
         Ok(toHalResource(results, taxId, status)))
     }
@@ -102,6 +104,16 @@ abstract class BaseClientInvitationsController(
       Future successful NoPermissionOnClient
     else
       block
+
+  protected def forThisClientOrStride[T <: TaxIdentifier](taxId: ClientIdentifier[T])(
+    block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: Option[ClientIdentifier[T]]) =
+    authTaxId match {
+      case None => block
+      case Some(authTaxIdentifier)
+          if authTaxIdentifier.value.replaceAll("\\s", "") == authTaxIdentifier.value.replaceAll("\\s", "") =>
+        block
+      case _ => Future successful NoPermissionOnClient
+    }
 
   protected def matchClientIdentifiers[T <: TaxIdentifier](
     invitationClientId: ClientId,

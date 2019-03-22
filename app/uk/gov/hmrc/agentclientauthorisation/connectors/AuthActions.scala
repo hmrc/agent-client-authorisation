@@ -18,25 +18,24 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
 
-import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import javax.inject._
 import play.api.Logger
-import play.api.mvc.Results.Redirect
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
-import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service, TypeOfEnrolment}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments, confidenceLevel}
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval, ~}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,6 +94,47 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     }
   }
 
+  protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
+
+  case class CurrentUser(enrolments: Enrolments, credentials: Credentials)
+
+  def hasRequiredStrideRole(enrolments: Enrolments, strideRole: String): Boolean =
+    enrolments.enrolments.exists(_.key.toUpperCase() == strideRole.toUpperCase())
+
+  def hasRequiredEnrolmentMatchingIdentifier(enrolments: Enrolments, clientId: TaxIdentifier): Boolean = {
+    val trimmedEnrolments: Set[Enrolment] = enrolments.enrolments
+      .map(
+        enrolment =>
+          Enrolment(
+            enrolment.key,
+            enrolment.identifiers.map(identifier =>
+              EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
+            enrolment.state,
+            enrolment.delegatedAuthRule
+        ))
+
+    TypeOfEnrolment(clientId)
+      .extractIdentifierFrom(trimmedEnrolments)
+      .contains(clientId)
+  }
+
+  def AuthorisedClientOrStrideUser[T](clientId: TaxIdentifier, strideRole: String)(body: RequestAndCurrentUser)(
+    implicit ec: ExecutionContext): Action[AnyContent] =
+    Action.async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+      authorised().retrieve(allEnrolments and credentials) {
+        case enrolments ~ creds =>
+          creds.providerType match {
+            case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
+              body(request)(CurrentUser(enrolments, creds))
+            case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRole) =>
+              body(request)(CurrentUser(enrolments, creds))
+            case _ =>
+              Future successful NoPermissionToPerformOperation
+          }
+      }
+    }
+
   def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(
     implicit request: Request[AnyContent],
     ec: ExecutionContext): Future[Result] =
@@ -132,6 +172,6 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         case _ => Future successful GenericUnauthorized
       }
 
-  private def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
+  def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
     enrolls.find(_.key == enrolKey).flatMap(_.getIdentifier(enrolId)).map(_.value)
 }

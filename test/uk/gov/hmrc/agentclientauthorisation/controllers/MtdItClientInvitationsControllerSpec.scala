@@ -21,6 +21,9 @@ import javax.inject.Provider
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier}
+import uk.gov.hmrc.auth.core.retrieve.~
+//import play.api.libs.functional._
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
 import play.api.test.FakeRequest
@@ -32,8 +35,10 @@ import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
-import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.AffinityGroup.Individual
+import uk.gov.hmrc.auth.core.retrieve.{CompositeRetrieval, Credentials, Retrieval}
+import uk.gov.hmrc.auth.core.retrieve.Retrievals._
+import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -49,7 +54,12 @@ class MtdItClientInvitationsControllerSpec
   }
 
   val controller =
-    new MtdItClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService, ecp) {
+    new MtdItClientInvitationsController(invitationsService)(
+      metrics,
+      microserviceAuthConnector,
+      auditService,
+      ecp,
+      "strideId") {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -60,6 +70,12 @@ class MtdItClientInvitationsControllerSpec
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
     when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any[ExecutionContext]))
+      .thenReturn(returnValue)
+
+  private def clientAuthStubForStride(returnValue: Future[~[Enrolments, Credentials]]) =
+    when(
+      mockPlayAuthConnector
+        .authorise(any(), any[Retrieval[~[Enrolments, Credentials]]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "Accepting an invitation" should {
@@ -179,9 +195,13 @@ class MtdItClientInvitationsControllerSpec
     }
   }
 
-  "getInvitations" should {
+  "getInvitationsClient" should {
+    val clientMtdItCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientMtdItEnrolment), Credentials("providerId", "GovernmentGateway"))
+      Future.successful(retrievals)
+    }
     "return 200 and an empty list when there are no invitations for the client" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
@@ -190,16 +210,37 @@ class MtdItClientInvitationsControllerSpec
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
-    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientMtdItEnrolments)
+    "return 200 and an empty list when there are no invitations for the client when stride user" in {
+      val strideEnrolment = Set(
+        Enrolment(
+          "maintain agent relationships",
+          Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
+          state = "",
+          delegatedAuthRule = None))
+      val strideUser: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]] = {
+        val retrievals =
+          new ~(new ~(Enrolments(strideEnrolment), None), Credentials("providerId", "PrivilegedApplication"))
+        Future.successful(retrievals)
+      }
+      clientAuthStubForStride(clientMtdItCorrect)
+      whenClientReceivedInvitation.thenReturn(Future successful Nil)
+
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
+    }
+
+    "Return NoPermissionToPerformOperation when given mtdItId does not match authMtdItId" in {
+      clientAuthStubForStride(clientMtdItCorrect)
 
       val response = await(controller.getInvitations(MtdItId("invalid"), None)(FakeRequest()))
 
-      response shouldBe NoPermissionOnClient
+      response shouldBe NoPermissionToPerformOperation
     }
 
     "include the invitation ID in invitations" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
       whenClientReceivedInvitation.thenReturn(
         Future successful List(
           TestConstants.defaultInvitation.copy(

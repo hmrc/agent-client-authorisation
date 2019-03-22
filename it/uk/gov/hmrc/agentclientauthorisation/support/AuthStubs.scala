@@ -37,6 +37,10 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
   def givenClientMtdItId(mtdItId: MtdItId) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
+                                                                                                        |  "credentials":{
+                                                                                                        |    "providerId": "12345",
+                                                                                                        |    "providerType": "GovernmentGateway"
+                                                                                                        |  },
                                                                                                         |  "allEnrolments": [
                                                                                                         |    {
                                                                                                         |      "key": "HMRC-MTD-IT",
@@ -79,6 +83,10 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
   def givenClientVat(vrn: Vrn) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
+                                                                                                        |  "credentials":{
+                                                                                                        |    "providerId": "12345",
+                                                                                                        |    "providerType": "GovernmentGateway"
+                                                                                                        |  },
                                                                                                         |  "allEnrolments": [
                                                                                                         |    {
                                                                                                         |      "key": "HMRC-MTD-VAT",

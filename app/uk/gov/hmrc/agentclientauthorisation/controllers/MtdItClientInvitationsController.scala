@@ -20,9 +20,9 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, InvitationStatus, MtdItIdType, Service}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -33,7 +33,8 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   metrics: Metrics,
   authConnector: AuthConnector,
   auditService: AuditService,
-  ecp: Provider[ExecutionContextExecutor])
+  ecp: Provider[ExecutionContextExecutor],
+  @Named("auth.stride.enrolment") strideRole: String)
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
@@ -55,10 +56,14 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
       getInvitation(ClientIdentifier(mtdItId), invitationId)
   }
 
-  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authMtdItId =>
+  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
+        else None
       getInvitations(Service.MtdIt, ClientIdentifier(mtdItId), status)
-  }
+    }
 
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[MtdItId] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.MtdIt, MtdItIdType)(action)
