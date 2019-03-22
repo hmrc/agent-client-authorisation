@@ -122,18 +122,20 @@ trait TestData {
     Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
 
   val clientMtdIrvVatEnrolmentsIndividual: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
-    Future.successful(
-      new ~(new ~(Some(AffinityGroup.Individual), ConfidenceLevel.L200), Enrolments(clientMtdItIrvVat))
-    )
+    client(AffinityGroup.Individual, ConfidenceLevel.L200, clientMtdItIrvVat)
 
   val clientMtdIrvEnrolmentsIndividual: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
-    Future.successful(
-      new ~(new ~(Some(AffinityGroup.Individual), ConfidenceLevel.L200), Enrolments(clientMtdItIrv))
-    )
+    client(AffinityGroup.Individual, ConfidenceLevel.L200, clientMtdItIrv)
 
   val clientVatEnrolmentsOrganisation: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
+    client(AffinityGroup.Organisation, ConfidenceLevel.L50, clientMtdVat)
+
+  def client(
+    affinityGroup: AffinityGroup,
+    confidenceLevel: ConfidenceLevel,
+    enrolments: Set[Enrolment]): Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
     Future.successful(
-      new ~(new ~(Some(AffinityGroup.Organisation), ConfidenceLevel.L50), Enrolments(clientMtdVat))
+      new ~(new ~(Some(affinityGroup), confidenceLevel), Enrolments(enrolments))
     )
 
   val agentAffinityConfidenceAndEnrolment: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
