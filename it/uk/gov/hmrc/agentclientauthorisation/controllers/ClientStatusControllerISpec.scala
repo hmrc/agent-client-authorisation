@@ -330,6 +330,39 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
+    "return 200 OK even if user is not Individual nor Organisation" in {
+      givenAuditConnector()
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(401)
+            .withHeader("WWW-Authenticate", "MDTP detail=\"UnsupportedAffinityGroup\"")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
+    "return 401 Unauthorized f user is not authenticated" in {
+      givenAuditConnector()
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(401)
+            .withHeader("WWW-Authenti cate", "MDTP detail=\"MissingBearerToken\"")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port).get()
+      response.status shouldBe 401
+    }
+
   }
 
   def givenClientHasNoActiveRelationships =
