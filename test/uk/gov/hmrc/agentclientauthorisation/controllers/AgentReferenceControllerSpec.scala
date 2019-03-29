@@ -124,30 +124,40 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
   "getInvitationsInfo" should {
     "return invitationIds and dates" when {
-      "authorised for user: Individual" in {
-        clientAuthStub(clientMtdIrvVatEnrolmentsIndividual)
+      "authorised for user: Individual" when {
+        "confidence level is 200" in testAuthorisedIndividual(ConfidenceLevel.L200)
 
-        val agentReferenceRecord: AgentReferenceRecord =
-          AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+        "confidence level is greater than 200" in testAuthorisedIndividual(ConfidenceLevel.L300)
 
-        val expiryDate = LocalDate.now()
+        def testAuthorisedIndividual(withThisConfidenceLevel: ConfidenceLevel) = {
+          clientAuthStub(client(AffinityGroup.Individual, withThisConfidenceLevel, clientMtdItIrvVat))
 
-        val invitationIdAndExpiryDate1 = InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending)
-        val invitationIdAndExpiryDate2 = InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending)
-        val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
+          val agentReferenceRecord: AgentReferenceRecord =
+            AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-        val listOfInvitations = List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
+          val expiryDate = LocalDate.now()
 
-        when(mockAgentReferenceRepository.findBy(any())(any()))
-          .thenReturn(Future.successful(Some(agentReferenceRecord)))
+          val invitationIdAndExpiryDate1 = InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending)
+          val invitationIdAndExpiryDate2 = InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending)
+          val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
 
-        when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
-          .thenReturn(
-            Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
+          val listOfInvitations =
+            List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
 
-        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
-        status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+          when(mockAgentReferenceRepository.findBy(any())(any()))
+            .thenReturn(Future.successful(Some(agentReferenceRecord)))
+
+          when(mockInvitationsService.findInvitationsInfoBy(any[Arn], any(), any())(any()))
+            .thenReturn(
+              Future successful List(
+                invitationIdAndExpiryDate1,
+                invitationIdAndExpiryDate2,
+                invitationIdAndExpiryDate3))
+
+          val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+          status(result) shouldBe 200
+          jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+        }
       }
 
       "authorised for user: Organisation" in {
@@ -234,12 +244,22 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       }
     }
 
-    "return unauthorised for user: Agent" in {
-      clientAuthStub(agentAffinityConfidenceAndEnrolment)
+    "return unauthorised" when {
+      "user: Agent" in {
+        clientAuthStub(agentAffinityConfidenceAndEnrolment)
 
-      val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
-      status(result) shouldBe 401
-      result shouldBe GenericUnauthorized
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        status(result) shouldBe 401
+        result shouldBe GenericUnauthorized
+      }
+
+      "user: Individual with confidence level less than 200" in {
+        clientAuthStub(client(AffinityGroup.Individual, ConfidenceLevel.L100, clientMtdItIrvVat))
+
+        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        status(result) shouldBe 401
+        result shouldBe GenericUnauthorized
+      }
     }
   }
 }

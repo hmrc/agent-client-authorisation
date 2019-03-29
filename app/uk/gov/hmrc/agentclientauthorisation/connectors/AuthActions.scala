@@ -165,9 +165,9 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
             (enrolment.identifiers.head.key, enrolment.identifiers.head.value.replaceAll(" ", ""))
           }.toSeq
           (affinity, confidence) match {
-            case (AffinityGroup.Individual, ConfidenceLevel.L200) => body(clientIdTypePlusIds)
-            case (AffinityGroup.Organisation, _)                  => body(clientIdTypePlusIds)
-            case _                                                => Future successful GenericUnauthorized
+            case (AffinityGroup.Individual, cl) if cl >= ConfidenceLevel.L200 => body(clientIdTypePlusIds)
+            case (AffinityGroup.Organisation, _)                              => body(clientIdTypePlusIds)
+            case _                                                            => Future successful GenericUnauthorized
           }
         case _ => Future successful GenericUnauthorized
       }
