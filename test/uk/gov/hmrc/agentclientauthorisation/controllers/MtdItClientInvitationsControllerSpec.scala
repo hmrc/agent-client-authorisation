@@ -79,8 +79,12 @@ class MtdItClientInvitationsControllerSpec
       .thenReturn(returnValue)
 
   "Accepting an invitation" should {
+    val clientMtdItCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientMtdItEnrolment), Credentials("providerId", "GovernmentGateway"))
+      Future.successful(retrievals)
+    }
     "Return no content" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -92,7 +96,7 @@ class MtdItClientInvitationsControllerSpec
     }
 
     "Return not found when the invitation doesn't exist" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -102,7 +106,7 @@ class MtdItClientInvitationsControllerSpec
     }
 
     "the invitation cannot be actioned" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsAccepted thenReturn (Future successful Left(StatusUpdateFailure(Accepted, "failure message")))
@@ -112,12 +116,12 @@ class MtdItClientInvitationsControllerSpec
       verifyNoAuditEventSent()
     }
 
-    "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientMtdItEnrolments)
+    "Return NoPermissionToPerformOperation when given mtdItId does not match authMtdItId" in {
+      clientAuthStubForStride(clientMtdItCorrect)
 
       val response = await(controller.acceptInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
-      response shouldBe NoPermissionOnClient
+      response shouldBe NoPermissionToPerformOperation
       verifyNoAuditEventSent()
     }
 
@@ -135,8 +139,12 @@ class MtdItClientInvitationsControllerSpec
   }
 
   "Rejecting an invitation" should {
+    val clientMtdItCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientMtdItEnrolment), Credentials("providerId", "GovernmentGateway"))
+      Future.successful(retrievals)
+    }
     "Return no content" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))
@@ -148,7 +156,7 @@ class MtdItClientInvitationsControllerSpec
     }
 
     "Return not found when the invitation doesn't exist" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       whenFindingAnInvitation thenReturn noInvitation
 
@@ -158,7 +166,7 @@ class MtdItClientInvitationsControllerSpec
     }
 
     "the invitation cannot be actioned" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       whenFindingAnInvitation thenReturn aFutureOptionInvitation()
       whenInvitationIsRejected thenReturn (Future successful Left(StatusUpdateFailure(Rejected, "failure message")))
@@ -169,11 +177,11 @@ class MtdItClientInvitationsControllerSpec
     }
 
     "Return NoPermissionOnClient when given mtdItId does not match authMtdItId" in {
-      clientAuthStub(clientMtdItEnrolments)
+      clientAuthStubForStride(clientMtdItCorrect)
 
       val response = await(controller.rejectInvitation(MtdItId("invalid"), invitationId)(FakeRequest()))
 
-      response shouldBe NoPermissionOnClient
+      response shouldBe NoPermissionToPerformOperation
     }
 
     "Return unauthorised when the user is not logged in to MDTP" in {

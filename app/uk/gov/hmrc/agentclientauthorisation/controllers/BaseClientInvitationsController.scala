@@ -43,8 +43,8 @@ abstract class BaseClientInvitationsController(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
     request: Request[Any],
-    authTaxId: ClientIdentifier[T]): Future[Result] =
-    forThisClient(clientId) {
+    authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+    forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
         invitationId,

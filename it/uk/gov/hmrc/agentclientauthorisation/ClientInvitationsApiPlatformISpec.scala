@@ -19,14 +19,14 @@ package uk.gov.hmrc.agentclientauthorisation
 import org.scalatest.Inside
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.EmbeddedInvitation
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.{AgentCode, Nino, TaxIdentifier}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 
 class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
   //  "GET /clients" should {
@@ -110,7 +110,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
         .givenClientMtdItId(MtdItId("otherMtdItId"))
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
-      response should matchErrorResult(NoPermissionOnClient)
+      response should matchErrorResult(NoPermissionToPerformOperation)
     }
   }
 }
