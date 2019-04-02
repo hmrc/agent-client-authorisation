@@ -38,17 +38,23 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
 
   implicit val ec: ExecutionContext = ecp.get
 
-  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
+  def acceptInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(vrn, strideRole) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[Vrn]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(VrnType.createUnderlying(vrn.value)))
+        else None
       acceptInvitation(ClientIdentifier(vrn), invitationId)
-  }
+    }
 
-  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authVrn =>
-      forThisClient(ClientIdentifier(vrn)) {
-        actionInvitation(ClientIdentifier(vrn), invitationId, invitationsService.rejectInvitation)
-      }
-  }
+  def rejectInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(vrn, strideRole) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[Vrn]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(VrnType.createUnderlying(vrn.value)))
+        else None
+      actionInvitation(ClientIdentifier(vrn), invitationId, invitationsService.rejectInvitation)
+    }
 
   def getInvitation(vrn: Vrn, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authVrn =>

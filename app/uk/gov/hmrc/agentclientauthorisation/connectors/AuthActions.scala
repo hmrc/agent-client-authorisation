@@ -132,6 +132,10 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
             case _ =>
               Future successful NoPermissionToPerformOperation
           }
+      } recover {
+        case e: AuthorisationException =>
+          Logger.error("Failed to auth", e)
+          GenericUnauthorized
       }
     }
 

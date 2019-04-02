@@ -40,6 +40,7 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
 
   def acceptInvitation(nino: Nino, invitationId: InvitationId): Action[AnyContent] = onlyForClients {
     implicit request => implicit authNino =>
+      implicit val authTaxId: Some[ClientIdentifier[Nino]] = Some(authNino)
       acceptInvitation(ClientIdentifier(nino), invitationId)
   }
 
