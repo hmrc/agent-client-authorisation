@@ -113,7 +113,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
-      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any(), any()))
+      when(mockAgentServicesAccountConnector.getAgencyNameViaClient(any())(any(), any()))
         .thenReturn(Future.successful(Some("anne-mari")))
 
       when(mockAgentReferenceRepository.findByArn(any())(any()))

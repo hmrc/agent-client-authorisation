@@ -71,7 +71,7 @@ class AgentReferenceController @Inject()(
 
   def getAgentReferenceRecordByArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     agentLinkService
-      .fetchOrCreateRecord(arn)
+      .getRecord(arn)
       .map { multiInvitationRecord =>
         Ok(Json.toJson(SimplifiedAgentRefRecord(multiInvitationRecord)))
       }

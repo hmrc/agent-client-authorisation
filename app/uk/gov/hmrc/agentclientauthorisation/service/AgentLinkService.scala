@@ -42,13 +42,24 @@ class AgentLinkService @Inject()(
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getAgentLink(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
-    fetchOrCreateRecord(arn).map(record =>
-      s"/invitations/$clientType/${record.uid}/${record.normalisedAgentNames.last}")
-
-  def fetchOrCreateRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
       normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
-      recordOpt           <- agentReferenceRecordRepository.findByArn(arn)
+      record              <- fetchOrCreateRecord(arn, normalisedAgentName)
+    } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
+
+  def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
+    for {
+      normalisedName <- agentServicesAccountConnector
+                         .getAgencyNameViaClient(arn)
+                         .map(name => normaliseAgentName(name.get))
+      record <- fetchOrCreateRecord(arn, normalisedName)
+    } yield record
+
+  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[AgentReferenceRecord] =
+    for {
+      recordOpt <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
                                        case Some(record) =>
                                          if (record.normalisedAgentNames.contains(normalisedAgentName))
