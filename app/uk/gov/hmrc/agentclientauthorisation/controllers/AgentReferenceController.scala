@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
 
@@ -42,6 +42,7 @@ object SimplifiedAgentRefRecord {
 }
 
 class AgentReferenceController @Inject()(
+  agentLinkService: AgentLinkService,
   agentReferenceRecordRepository: AgentReferenceRepository,
   invitationsService: InvitationsService)(
   implicit
@@ -69,14 +70,10 @@ class AgentReferenceController @Inject()(
   }
 
   def getAgentReferenceRecordByArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    agentReferenceRecordRepository
-      .findByArn(arn)
-      .map {
-        case Some(multiInvitationRecord) =>
-          Ok(Json.toJson(SimplifiedAgentRefRecord(multiInvitationRecord)))
-        case None =>
-          Logger(getClass).warn(s"Agent Reference Record not found for: ${arn.value}")
-          NotFound
+    agentLinkService
+      .fetchOrCreateRecord(arn)
+      .map { multiInvitationRecord =>
+        Ok(Json.toJson(SimplifiedAgentRefRecord(multiInvitationRecord)))
       }
       .recoverWith {
         case e =>
