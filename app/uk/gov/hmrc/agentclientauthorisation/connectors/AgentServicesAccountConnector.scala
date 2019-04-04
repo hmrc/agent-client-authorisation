@@ -52,4 +52,13 @@ class AgentServicesAccountConnector @Inject()(
     } recoverWith {
       case _: NotFoundException => Future failed AgencyNameNotFound()
     }
+
+  def getAgencyNameViaClient(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    monitor("") {
+      http
+        .GET[AgencyName](new URL(baseUrl, s"/agent-services-account/client/agency-name/${arn.value}").toString)
+        .map(_.name)
+    } recoverWith {
+      case _: NotFoundException => Future.failed(AgencyNameNotFound())
+    }
 }

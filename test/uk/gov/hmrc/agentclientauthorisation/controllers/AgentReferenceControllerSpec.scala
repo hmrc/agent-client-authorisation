@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Provider
 import org.joda.time.LocalDate
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq => eqs}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import play.api.test.FakeRequest
@@ -34,6 +34,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAu
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -55,7 +56,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
     new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
 
   val agentReferenceController =
-    new AgentReferenceController(mockAgentReferenceRepository, mockInvitationsService)(
+    new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService)(
       metrics,
       mockPlayAuthConnector,
       auditService,
@@ -105,12 +106,15 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
   "getAgentReferenceRecord via ARN" should {
 
-    "return an agent reference record for a given uid" in {
+    "return an agent reference record for a given arn" in {
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("mari-anne", "anne-mari"))
 
       val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
+
+      when(mockAgentServicesAccountConnector.getAgencyNameViaClient(any())(any(), any()))
+        .thenReturn(Future.successful(Some("anne-mari")))
 
       when(mockAgentReferenceRepository.findByArn(any())(any()))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))

@@ -44,22 +44,39 @@ class AgentLinkService @Inject()(
   def getAgentLink(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
       normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
-      recordOpt           <- agentReferenceRecordRepository.findByArn(arn)
-      record: AgentReferenceRecord <- recordOpt match {
+      record              <- fetchOrCreateRecord(arn, normalisedAgentName)
+    } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
+  def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
+    for {
+      normalisedName <- agentServicesAccountConnector
+                         .getAgencyNameViaClient(arn)
+                         .map(name => normaliseAgentName(name.get))
+      record <- fetchOrCreateRecord(arn, normalisedName)
+    } yield record
+
+  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[AgentReferenceRecord] =
+    for {
+      recordOpt <- agentReferenceRecordRepository.findByArn(arn)
+      record: AgentReferenceRecord <- recordOpt match {
                                        case Some(record) =>
                                          if (record.normalisedAgentNames.contains(normalisedAgentName))
                                            Future.successful(record)
                                          else
                                            agentReferenceRecordRepository
                                              .updateAgentName(record.uid, normalisedAgentName)
-                                             .map(_ => record)
+                                             .map(
+                                               _ =>
+                                                 record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(
+                                                   normalisedAgentName)))
                                        case None =>
-                                         create(arn, normalisedAgentName, clientType)
+                                         create(arn, normalisedAgentName)
                                      }
-    } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
+    } yield record
 
-  private def create(arn: Arn, normalisedAgentName: String, clientType: String, counter: Int = 1)(
+  private def create(arn: Arn, normalisedAgentName: String, counter: Int = 1)(
     implicit ec: ExecutionContext): Future[AgentReferenceRecord] = {
     val uid = RandomStringUtils.random(8, codetable)
     val newRecord =
@@ -82,7 +99,7 @@ class AgentLinkService @Inject()(
                 throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
           else if (counter <= 3) {
             Logger.error(s"""Duplicate uid happened $uid, will try again""")
-            create(arn, normalisedAgentName, clientType, counter + 1)
+            create(arn, normalisedAgentName, counter + 1)
           } else
             Future.failed(e)
       }
