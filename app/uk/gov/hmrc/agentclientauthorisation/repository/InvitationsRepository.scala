@@ -54,9 +54,6 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
         name = Some("invitationIdIndex"),
         unique = true,
         sparse = true),
-      Index(Seq("arn"                                           -> IndexType.Ascending)),
-      Index(Seq("clientId"                                      -> IndexType.Ascending)),
-      Index(Seq("service"                                       -> IndexType.Ascending)),
       Index(Seq(InvitationRecordFormat.arnClientStateKey        -> IndexType.Ascending)),
       Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending)),
       Index(
@@ -114,8 +111,10 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
 
+    val query = Json.obj(searchOptions: _*)
+
     collection
-      .find(Json.obj(searchOptions: _*))
+      .find[JsObject, JsObject](query, None)
       .sort(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)))
       .cursor[Invitation](ReadPreference.primaryPreferred)
       .collect[List](1000, Cursor.FailOnError[List[Invitation]]())
@@ -135,8 +134,8 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
         Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
     ).filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
-    val query = Json.obj(searchOptions: _*)
 
+    val query = Json.obj(searchOptions: _*)
     findInvitationInfoBy(query)
   }
 
@@ -149,7 +148,6 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
           .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.getOrElse("").toString)
     }
     val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
-
     findInvitationInfoBy(query)
   }
 
@@ -159,7 +157,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
 
     collection
-      .find(query, Json.obj("invitationId" -> 1, "expiryDate" -> 1, InvitationRecordFormat.statusKey -> 1))
+      .find(query, Some(Json.obj("invitationId" -> 1, "expiryDate" -> 1, InvitationRecordFormat.statusKey -> 1)))
       .cursor[JsObject](ReadPreference.primaryPreferred)
       .collect[List](1000, Cursor.FailOnError[List[JsObject]]())
       .map(
@@ -178,7 +176,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit] =
     for {
       ids <- collection
-              .find(Json.obj(), Json.obj())
+              .find[JsObject, JsObject](Json.obj(), None)
               .cursor[JsObject]()
               .collect[List](100, Cursor.FailOnError[List[JsObject]]())
       _ <- Future.sequence(ids.map(json => (json \ ID).as[BSONObjectID]).map(refreshInvitation))
