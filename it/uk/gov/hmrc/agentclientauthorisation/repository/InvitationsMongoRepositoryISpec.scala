@@ -24,7 +24,6 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.FailoverStrategy
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
@@ -319,7 +318,17 @@ class InvitationsMongoRepositoryISpec
       addInvitation(now, invitationITSA)
 
       inside(listByClientId(service, mtdItId1).loneElement) {
-        case Invitation(_, _, Arn(`arn`), _, `service`, mtdItId, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+        case Invitation(
+            _,
+            _,
+            Arn(`arn`),
+            _,
+            `service`,
+            mtdItId,
+            _,
+            _,
+            _,
+            List(StatusChangeEvent(dateValue, Pending))) =>
           dateValue shouldBe now
       }
     }
