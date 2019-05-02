@@ -17,7 +17,7 @@
 import java.net.{URL, URLDecoder}
 
 import com.codahale.metrics.MetricRegistry
-import com.google.inject.AbstractModule
+import com.google.inject.{AbstractModule, TypeLiteral}
 import com.google.inject.name.Names
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Provider, Singleton}
@@ -48,7 +48,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
 
     bindProperty("appName")
-    bindPropertyWithFun("auth.stride.enrolment", URLDecoder.decode(_, "utf-8"))
+    bindSeqStringProperty("auth.stride.enrolment")
     bind(classOf[HttpGet]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
@@ -115,6 +115,19 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
       .getString(confKey)
       .map(mapFx)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
+  }
+
+  private def bindSeqStringProperty(propertyName: String) =
+    bind(new TypeLiteral[Seq[String]]() {})
+      .annotatedWith(Names.named(propertyName))
+      .toProvider(new SeqStringPropertyProvider(propertyName))
+
+  private class SeqStringPropertyProvider(confKey: String) extends Provider[Seq[String]] {
+    override lazy val get: Seq[String] = configuration
+      .getStringSeq(confKey)
+      .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
+      .map(URLDecoder.decode(_, "utf-8"))
+
   }
 
   import com.google.inject.binder.ScopedBindingBuilder

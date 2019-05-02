@@ -34,13 +34,13 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
-  @Named("auth.stride.enrolment") strideRole: String)
+  @Named("auth.stride.enrolment") strideRoles: Seq[String])
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
@@ -49,7 +49,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     }
 
   def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
@@ -63,7 +63,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   }
 
   def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))

@@ -33,7 +33,7 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
-  @Named("auth.stride.enrolment") strideRole: String)
+  @Named("auth.stride.enrolment") strideRole: Seq[String])
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
