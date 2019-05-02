@@ -47,7 +47,8 @@ class VrnClientInvitationsControllerSpec
       microserviceAuthConnector,
       auditService,
       ecp,
-      Seq("strideId", "stride_Id")) {
+      "strideId",
+      "stride_Id") {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 

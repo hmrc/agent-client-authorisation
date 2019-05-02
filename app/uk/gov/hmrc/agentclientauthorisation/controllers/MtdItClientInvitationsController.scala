@@ -34,10 +34,13 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
-  @Named("auth.stride.enrolment") strideRoles: Seq[String])
+  @Named("old.auth.stride.enrolment") oldStrideRole: String,
+  @Named("new.auth.stride.enrolment") newStrideRole: String)
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
+
+  private val strideRoles = Seq(oldStrideRole, newStrideRole)
 
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
     AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>

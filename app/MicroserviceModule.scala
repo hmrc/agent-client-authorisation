@@ -48,7 +48,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
 
     bindProperty("appName")
-    bindSeqStringProperty("auth.stride.enrolment")
+    bindPropertyWithFun("old.auth.stride.enrolment", URLDecoder.decode(_, "utf-8"))
+    bindPropertyWithFun("new.auth.stride.enrolment", URLDecoder.decode(_, "utf-8"))
     bind(classOf[HttpGet]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])

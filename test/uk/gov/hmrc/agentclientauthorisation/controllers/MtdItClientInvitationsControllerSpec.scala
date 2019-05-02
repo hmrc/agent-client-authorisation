@@ -59,7 +59,8 @@ class MtdItClientInvitationsControllerSpec
       microserviceAuthConnector,
       auditService,
       ecp,
-      Seq("maintain agent relationships", "maintain_agent_relationships")) {
+      "maintain agent relationships",
+      "maintain_agent_relationships") {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
