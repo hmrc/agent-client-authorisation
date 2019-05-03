@@ -59,7 +59,8 @@ class MtdItClientInvitationsControllerSpec
       microserviceAuthConnector,
       auditService,
       ecp,
-      "strideId") {
+      "maintain agent relationships",
+      "maintain_agent_relationships") {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -218,19 +219,35 @@ class MtdItClientInvitationsControllerSpec
       (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
     }
 
+    //TODO Delete this Test / Change Later
     "return 200 and an empty list when there are no invitations for the client when stride user" in {
-      val strideEnrolment = Set(
-        Enrolment(
-          "maintain agent relationships",
-          Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)),
-          state = "",
-          delegatedAuthRule = None))
-      val strideUser: Future[~[~[Enrolments, Option[AffinityGroup]], Credentials]] = {
+      val strideEnrolment: Set[Enrolment] =
+        Set(Enrolment("maintain agent relationships", Seq.empty, state = "Activated", delegatedAuthRule = None))
+
+      val strideUser: Future[Enrolments ~ Credentials] = {
         val retrievals =
-          new ~(new ~(Enrolments(strideEnrolment), None), Credentials("providerId", "PrivilegedApplication"))
+          new ~(Enrolments(strideEnrolment), Credentials("providerId", "PrivilegedApplication"))
         Future.successful(retrievals)
       }
-      clientAuthStubForStride(clientMtdItCorrect)
+      clientAuthStubForStride(strideUser)
+      whenClientReceivedInvitation.thenReturn(Future successful Nil)
+
+      val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "_embedded" \ "invitations").get shouldBe JsArray()
+    }
+
+    "return 200 and an empty list when there are no invitations for the client when stride user (alternative format)" in {
+      val strideEnrolment: Set[Enrolment] =
+        Set(Enrolment("maintain_agent_relationships", Seq.empty, state = "Activated", delegatedAuthRule = None))
+
+      val strideUser: Future[Enrolments ~ Credentials] = {
+        val retrievals =
+          new ~(Enrolments(strideEnrolment), Credentials("providerId", "PrivilegedApplication"))
+        Future.successful(retrievals)
+      }
+      clientAuthStubForStride(strideUser)
       whenClientReceivedInvitation.thenReturn(Future successful Nil)
 
       val result: Result = await(controller.getInvitations(mtdItId1, None)(FakeRequest()))

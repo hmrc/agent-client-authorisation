@@ -98,8 +98,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
 
   case class CurrentUser(enrolments: Enrolments, credentials: Credentials)
 
-  def hasRequiredStrideRole(enrolments: Enrolments, strideRole: String): Boolean =
-    enrolments.enrolments.exists(_.key.toUpperCase() == strideRole.toUpperCase())
+  def hasRequiredStrideRole(enrolments: Enrolments, strideRoles: Seq[String]): Boolean =
+    strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
 
   def hasRequiredEnrolmentMatchingIdentifier(enrolments: Enrolments, clientId: TaxIdentifier): Boolean = {
     val trimmedEnrolments: Set[Enrolment] = enrolments.enrolments
@@ -118,7 +118,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .contains(clientId)
   }
 
-  def AuthorisedClientOrStrideUser[T](clientId: TaxIdentifier, strideRole: String)(body: RequestAndCurrentUser)(
+  def AuthorisedClientOrStrideUser[T](clientId: TaxIdentifier, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
     implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
@@ -127,7 +127,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
           creds.providerType match {
             case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
               body(request)(CurrentUser(enrolments, creds))
-            case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRole) =>
+            case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRoles) =>
               body(request)(CurrentUser(enrolments, creds))
             case _ =>
               Future successful NoPermissionToPerformOperation

@@ -34,13 +34,16 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
-  @Named("auth.stride.enrolment") strideRole: String)
+  @Named("old.auth.stride.enrolment") oldStrideRole: String,
+  @Named("new.auth.stride.enrolment") newStrideRole: String)
     extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
 
+  private val strideRoles = Seq(oldStrideRole, newStrideRole)
+
   def acceptInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
@@ -49,7 +52,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
     }
 
   def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
@@ -63,7 +66,7 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   }
 
   def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRole) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
