@@ -180,6 +180,7 @@ class InvitationsService @Inject()(
         .map { invitations =>
           invitations.foreach { invitation =>
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
+              //APB-3623 send an email to notify agent of expiration here
               invitationsRepository.update(invitation, Expired, DateTime.now())
             }
           }
