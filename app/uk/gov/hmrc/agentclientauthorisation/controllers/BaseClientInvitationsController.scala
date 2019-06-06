@@ -96,8 +96,6 @@ abstract class BaseClientInvitationsController(
       case _    => Future successful NoPermissionOnClient
     }
 
-  protected def emailStatusInvitation =
-
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 
   protected def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(
