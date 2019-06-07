@@ -63,6 +63,8 @@ trait AppAndStubs
       "microservice.services.des.port"                       -> wiremockPort,
       "microservice.services.ni-exemption-registration.host" -> wiremockHost,
       "microservice.services.ni-exemption-registration.port" -> wiremockPort,
+      "microservice.services.email.host" -> wiremockHost,
+      "microservice.services.email.port" -> wiremockPort,
       "auditing.enabled"                                     -> true,
       "auditing.consumer.baseUri.host"                       -> wiremockHost,
       "auditing.consumer.baseUri.port"                       -> wiremockPort,
