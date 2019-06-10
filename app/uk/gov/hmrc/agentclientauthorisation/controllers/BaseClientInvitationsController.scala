@@ -17,16 +17,18 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{Request, Result}
+import play.api.i18n.{Messages, MessagesApi}
+import play.api.i18n.I18nSupport
+import play.api.mvc.{Controller, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.{ClientNameService, InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,6 +38,9 @@ abstract class BaseClientInvitationsController(
   invitationsService: InvitationsService,
   metrics: Metrics,
   authConnector: AuthConnector,
+  emailConnector: EmailConnector,
+  asaConnector: AgentServicesAccountConnector,
+  clientNameService: ClientNameService,
   auditService: AuditService)
     extends AuthActions(metrics, authConnector) with HalWriter with ClientInvitationsHal {
 

@@ -46,7 +46,4 @@ GET         /invitations/:invitationId                                          
 # --------------------------------
 GET         /forbidden                                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
 
-POST        /email                                                                           @uk.gov.hmrc.agentclientauthorisation.controllers.EmailController.sendEmail
-
-
 

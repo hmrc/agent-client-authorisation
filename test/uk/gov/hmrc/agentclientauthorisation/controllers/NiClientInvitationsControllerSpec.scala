@@ -20,11 +20,13 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.Provider
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import play.api.i18n.MessagesApi
 import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.service.ClientNameService
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.ninoSpace
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
@@ -40,13 +42,23 @@ class NiClientInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val mockEmailConnector: EmailConnector = resettingMock[EmailConnector]
+  val mockAsaConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
+  val mockClientNameService: ClientNameService = resettingMock[ClientNameService]
   val mockHalResource: ClientInvitationsHal = resettingMock[ClientInvitationsHal]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
 
   val controller =
-    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService, ecp) {
+    new NiClientInvitationsController(invitationsService)(
+      metrics,
+      microserviceAuthConnector,
+      mockEmailConnector,
+      mockAsaConnector,
+      mockClientNameService,
+      auditService,
+      ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 

@@ -50,6 +50,7 @@ class InvitationsService @Inject()(
   relationshipsConnector: RelationshipsConnector,
   desConnector: DesConnector,
   auditService: AuditService,
+  emailService: EmailService,
   @Named("invitation.expiryDuration") invitationExpiryDurationValue: String,
   metrics: Metrics)
     extends Monitor {
@@ -90,27 +91,34 @@ class InvitationsService @Inject()(
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
-        val future = invitation.service match {
+        val createRelationship: Future[Unit] = invitation.service match {
           case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
           case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
           case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
         }
-        future
-          .flatMap(
-            _ =>
-              changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-                .andThen {
-                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
-              })
-          .recoverWith {
-            case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
-              Logger.warn(
-                s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
-              changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-                .andThen {
-                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
-                }
-          }
+
+        def changeInvitationStatusAndRecover =
+          changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+            .andThen {
+              case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+            }
+            .recoverWith {
+              case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
+                Logger.warn(
+                  s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
+                changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+                  .andThen {
+                    case Success(_) =>
+                      reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
+                  }
+            }
+
+        for {
+          _      <- createRelationship
+          result <- changeInvitationStatusAndRecover
+          _      <- emailService.sendAcceptedEmail(invitation)
+        } yield result
+
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
   }

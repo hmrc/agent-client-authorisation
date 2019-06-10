@@ -52,6 +52,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   val relationshipsConnector: RelationshipsConnector = mock[RelationshipsConnector]
   val auditService: AuditService = mock[AuditService]
   val desConnector: DesConnector = mock[DesConnector]
+  val mockEmailService: EmailService = mock[EmailService]
   val metrics: Metrics = new Metrics {
     override def defaultRegistry: MetricRegistry = new MetricRegistry()
     override def toJson: String = ""
@@ -63,6 +64,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     relationshipsConnector,
     desConnector,
     auditService,
+    mockEmailService,
     "14 days",
     metrics)
 
@@ -348,6 +350,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       relationshipsConnector,
       desConnector,
       auditService,
+      mockEmailService,
       invitationExpiryDuration,
       metrics)
 

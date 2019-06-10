@@ -20,8 +20,9 @@ import java.net.URL
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named}
+import play.api.Logger
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
-import uk.gov.hmrc.agentclientauthorisation.model.{EmailInformation}
+import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
 import play.api.mvc.Results.Accepted
 
@@ -35,6 +36,7 @@ class EmailConnector @Inject()(@Named("email-baseUrl") baseUrl: URL, http: HttpP
 
   def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     monitor(s"Send-Email-${emailInformation.templateId}") {
+      Logger.error(s"the email info sent is: $emailInformation")
       http.POST[EmailInformation, HttpResponse](url.toString, emailInformation).map(_ => Accepted("email sent"))
     }.recover {
       case e => throw new Exception(s"sending email failed: $e")

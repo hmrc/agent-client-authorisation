@@ -15,27 +15,28 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.model
+
 import play.api.libs.json.Json
-import Service._
-import play.api.i18n.{Lang, Messages, MessagesApi}
-import play.i18n.MessagesApi
-import play.api.i18n.I18nSupport
 
-case class EmailInformation(
-  to: Seq[String],
-  templateId: String,
-  parameters: Map[String, String],
-  force: Boolean = false,
-  eventUrl: Option[String] = None,
-  onSendUrl: Option[String] = None)
+case class CustomerDetails(
+  organisationName: Option[String],
+  individual: Option[Individual],
+  tradingName: Option[String])
 
-object EmailInformation {
-  implicit val formats = Json.format[EmailInformation]
+case class Individual(
+  title: Option[String],
+  firstName: Option[String],
+  middleName: Option[String],
+  lastName: Option[String]) {
 
-//  def getEmailTemplateService(service: Service): String =
-//    service.id match {
-//      case HMRCMTDIT  => Messages(s"service.$HMRCMTDIT")
-//      case HMRCPIR    => Messages(s"service.$HMRCPIR")
-//      case HMRCMTDVAT => Messages(s"service.$HMRCMTDVAT")
-//    }
+  def name: String =
+    Seq(title, firstName, middleName, lastName).flatten.map(_.trim).filter(_.nonEmpty).mkString(" ")
+}
+
+object Individual {
+  implicit val format = Json.format[Individual]
+}
+
+object CustomerDetails {
+  implicit val format = Json.format[CustomerDetails]
 }

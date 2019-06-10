@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
+import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{AgentNotSubscribed, DateOfBirthDoesNotMatch, VatRegistrationDateDoesNotMatch}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MongoAgentReferenceRepository}

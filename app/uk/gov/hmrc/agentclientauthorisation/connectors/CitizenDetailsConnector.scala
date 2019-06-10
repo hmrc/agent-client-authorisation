@@ -42,6 +42,23 @@ object CitizenDateOfBirth {
         case None      => CitizenDateOfBirth(None)
       }
 }
+case class Citizen(firstName: Option[String], lastName: Option[String], nino: Option[String] = None) {
+  lazy val name: Option[String] = {
+    val n = Seq(firstName, lastName).collect({ case Some(x) => x }).mkString(" ")
+    if (n.isEmpty) None else Some(n)
+  }
+}
+
+object Citizen {
+  implicit val reads: Reads[Citizen] = {
+    val current = JsPath \ "name" \ "current"
+    for {
+      fn <- (current \ "firstName").readNullable[String]
+      ln <- (current \ "lastName").readNullable[String]
+      n  <- (JsPath \ "ids" \ "nino").readNullable[String]
+    } yield Citizen(fn, ln, n)
+  }
+}
 
 @Singleton
 class CitizenDetailsConnector @Inject()(
@@ -58,6 +75,14 @@ class CitizenDetailsConnector @Inject()(
       val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
       http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
         case _ => None
+      }
+    }
+
+  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
+    monitor(s"ConsumedAPI-CitizenDetails-GET") {
+      val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
+      http.GET[Citizen](url.toString).recover {
+        case _: NotFoundException => Citizen(None, None, None)
       }
     }
 }

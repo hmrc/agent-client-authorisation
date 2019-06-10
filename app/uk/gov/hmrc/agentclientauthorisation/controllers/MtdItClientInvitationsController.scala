@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
+import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.service.{ClientNameService, InvitationsService}
+import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -32,11 +34,21 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
+  emailConnector: EmailConnector,
+  asaConnector: AgentServicesAccountConnector,
+  clientNameService: ClientNameService,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
   @Named("old.auth.stride.enrolment") oldStrideRole: String,
   @Named("new.auth.stride.enrolment") newStrideRole: String)
-    extends BaseClientInvitationsController(invitationsService, metrics, authConnector, auditService) {
+    extends BaseClientInvitationsController(
+      invitationsService,
+      metrics,
+      authConnector,
+      emailConnector,
+      asaConnector,
+      clientNameService,
+      auditService) {
 
   implicit val ec: ExecutionContext = ecp.get
 
