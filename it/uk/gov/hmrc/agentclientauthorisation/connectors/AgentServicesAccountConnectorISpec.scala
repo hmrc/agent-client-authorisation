@@ -2,7 +2,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, CustomerDetails, Individual}
 import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, AppAndStubs}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -14,6 +14,7 @@ class AgentServicesAccountConnectorISpec extends UnitSpec with AppAndStubs with 
 
   val arn = Arn("TARN0000001")
   val nino = Nino("AB123456A")
+  val mtdItId = MtdItId("LC762757D")
   val vrn = Vrn("101747641")
 
   "getAgencyNameAgent" should {
@@ -29,6 +30,21 @@ class AgentServicesAccountConnectorISpec extends UnitSpec with AppAndStubs with 
 
       intercept[AgencyNameNotFound] {
         await(connector.getAgencyNameAgent)
+      }
+    }
+  }
+  "getAgencyNameViaClient" should {
+    "return an agency name for a valid arn" in {
+      givenGetAgencyNameViaClientStub(arn)
+      val result = await(connector.getAgencyNameViaClient(arn))
+
+      result shouldBe Some("My Agency")
+    }
+    "return AgencyNameNotFound exception when there is no agencyName" in {
+      givenAgencyNameNotFoundClientStub(arn)
+
+      intercept[AgencyNameNotFound] {
+        await(connector.getAgencyNameViaClient(arn))
       }
     }
   }
@@ -78,6 +94,18 @@ class AgentServicesAccountConnectorISpec extends UnitSpec with AppAndStubs with 
       givenClientDetailsNotFound(vrn)
       val result = await(connector.getCustomerDetails(vrn))
       result shouldBe CustomerDetails(None, None, None)
+    }
+  }
+  "getNinoForMtdItId" should {
+    "return the corresponding nino for an MtdItId" in {
+      givenNinoForMtdItId(mtdItId, nino)
+      val result = await(connector.getNinoForMtdItId(mtdItId))
+      result shouldBe Some(nino)
+    }
+    "return None when there is no nino for a mtdItId" in {
+      givenNinoNotFoundForMtdItId(mtdItId)
+      val result = await(connector.getNinoForMtdItId(mtdItId))
+      result shouldBe None
     }
   }
 }

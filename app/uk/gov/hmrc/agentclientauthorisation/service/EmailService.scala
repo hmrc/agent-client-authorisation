@@ -33,8 +33,8 @@ class EmailService @Inject()(
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     for {
       agencyEmail <- asaConnector.getAgencyEmailBy(invitation.arn)
-      agencyName <- asaConnector.getAgencyNameViaClient(invitation.arn)
-      clientName <- clientNameService.getClientNameByService(invitation.clientId.value, invitation.service)
+      agencyName  <- asaConnector.getAgencyNameViaClient(invitation.arn)
+      clientName  <- clientNameService.getClientNameByService(invitation.clientId.value, invitation.service)
       emailInfo = emailInformationAccepted(invitation, agencyEmail, agencyName, clientName)
       result <- emailConnector.sendEmail(emailInfo)
     } yield result

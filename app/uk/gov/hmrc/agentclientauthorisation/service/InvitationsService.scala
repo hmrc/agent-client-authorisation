@@ -91,17 +91,19 @@ class InvitationsService @Inject()(
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
-        val createRelationship: Future[Unit] = invitation.service match {
-          case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
-          case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
-          case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
-        }
-
-        def changeInvitationStatusAndRecover =
-          changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-            .andThen {
-              case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
-            }
+        def changeInvitationStatusAndRecover = {
+          val createRelationship: Future[Unit] = invitation.service match {
+            case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
+            case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
+            case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
+          }
+          createRelationship
+            .flatMap(
+              _ =>
+                changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+                  .andThen {
+                    case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+                })
             .recoverWith {
               case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
                 Logger.warn(
@@ -112,9 +114,9 @@ class InvitationsService @Inject()(
                       reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
                   }
             }
+        }
 
         for {
-          _      <- createRelationship
           result <- changeInvitationStatusAndRecover
           _      <- emailService.sendAcceptedEmail(invitation)
         } yield result

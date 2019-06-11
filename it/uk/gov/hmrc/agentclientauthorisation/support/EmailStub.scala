@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 
-trait EmailStubs {
+trait EmailStub {
 
   me: StartAndStopWireMock =>
 

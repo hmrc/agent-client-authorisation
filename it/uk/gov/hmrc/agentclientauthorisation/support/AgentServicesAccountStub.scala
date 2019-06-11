@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.utils.UriEncoding
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait AgentServicesAccountStub {
@@ -13,6 +13,17 @@ trait AgentServicesAccountStub {
   def givenGetAgencyNameAgentStub =
     stubFor(
       get(urlEqualTo(s"/agent-services-account/agent/agency-name"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""
+                         |{
+                         |  "agencyName" : "My Agency"
+                         |}""".stripMargin)))
+
+  def givenGetAgencyNameViaClientStub(arn: Arn) =
+    stubFor(
+      get(urlEqualTo(s"/agent-services-account/client/agency-name/${arn.value}"))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -124,6 +135,28 @@ trait AgentServicesAccountStub {
           aResponse()
             .withStatus(404)
         ))
+
+  def givenNinoForMtdItId(mtdItId: MtdItId, nino: Nino) =
+    stubFor(
+      get(urlEqualTo(s"/agent-services-account/client/mtdItId/${mtdItId.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""
+                         | {
+                         |    "nino":"${nino.value}"
+                         | }
+               """.stripMargin)
+        )
+    )
+  def givenNinoNotFoundForMtdItId(mtdItId: MtdItId) =
+    stubFor(
+      get(urlEqualTo(s"/agent-services-account/client/mtdItId/${mtdItId.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(404)
+        )
+    )
 
   private def encodePathSegment(pathSegment: String): String =
     UriEncoding.encodePathSegment(pathSegment, UTF_8.name)

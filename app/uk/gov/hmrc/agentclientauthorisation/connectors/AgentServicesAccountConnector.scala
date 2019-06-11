@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import com.codahale.metrics.MetricRegistry
+import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Singleton}
 import play.api.Logger
@@ -40,12 +41,22 @@ object AgencyName {
     (JsPath \ "agencyName").readNullable[String].map(AgencyName(_))
 }
 
+@ImplementedBy(classOf[AgentServicesAccountConnectorImpl])
+trait AgentServicesAccountConnector {
+  def getAgencyNameAgent(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+  def getAgencyNameViaClient(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+  def getAgencyEmailBy(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String]
+  def getTradingName(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+  def getCustomerDetails(vrn: Vrn)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[CustomerDetails]
+  def getNinoForMtdItId(mtdItId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]]
+}
+
 @Singleton
-class AgentServicesAccountConnector @Inject()(
+class AgentServicesAccountConnectorImpl @Inject()(
   @Named("agent-services-account-baseUrl") baseUrl: URL,
   http: HttpGet,
   metrics: Metrics)
-    extends HttpAPIMonitor {
+    extends HttpAPIMonitor with AgentServicesAccountConnector {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -65,7 +76,7 @@ class AgentServicesAccountConnector @Inject()(
       case _: NotFoundException => Future.failed(AgencyNameNotFound())
     }
 
-  def getAgencyEmailBy(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
+  def getAgencyEmailBy(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
     monitor("ConsumedAPI-Get-AgencyEmailByArn-GET") {
       http
         .GET[AgencyEmail](new URL(baseUrl, s"/agent-services-account/client/agency-email/${arn.value}").toString)
@@ -74,10 +85,6 @@ class AgentServicesAccountConnector @Inject()(
       case _: NotFoundException => {
         println("failed get agency email")
         Future.failed(AgencyEmailNotFound())
-      }
-      case _ => {
-        println("FAILED FOR SOME OTHER REASON GET AGENCY EMAIL")
-        throw new Exception
       }
     }
 
