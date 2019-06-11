@@ -34,9 +34,6 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
-  emailConnector: EmailConnector,
-  asaConnector: AgentServicesAccountConnector,
-  clientNameService: ClientNameService,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
   @Named("old.auth.stride.enrolment") oldStrideRole: String,
@@ -45,9 +42,6 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
       invitationsService,
       metrics,
       authConnector,
-      emailConnector,
-      asaConnector,
-      clientNameService,
       auditService) {
 
   implicit val ec: ExecutionContext = ecp.get

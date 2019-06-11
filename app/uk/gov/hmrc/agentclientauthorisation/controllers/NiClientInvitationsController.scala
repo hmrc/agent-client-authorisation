@@ -34,18 +34,12 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
-  emailConnector: EmailConnector,
-  asaConnector: AgentServicesAccountConnector,
-  clientNameService: ClientNameService,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
     extends BaseClientInvitationsController(
       invitationsService,
       metrics,
       authConnector,
-      emailConnector,
-      asaConnector,
-      clientNameService,
       auditService) {
 
   implicit val ec: ExecutionContext = ecp.get

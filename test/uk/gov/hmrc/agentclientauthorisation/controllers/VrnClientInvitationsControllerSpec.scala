@@ -22,9 +22,8 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.service.ClientNameService
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -38,9 +37,6 @@ class VrnClientInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockEmailConnector: EmailConnector = resettingMock[EmailConnector]
-  val mockAsaConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
-  val mockClientNameService: ClientNameService = resettingMock[ClientNameService]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
@@ -49,9 +45,6 @@ class VrnClientInvitationsControllerSpec
     new VatClientInvitationsController(invitationsService)(
       metrics,
       microserviceAuthConnector,
-      mockEmailConnector,
-      mockAsaConnector,
-      mockClientNameService,
       auditService,
       ecp,
       "strideId",

@@ -21,9 +21,7 @@ import javax.inject.Provider
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import play.api.i18n.{Messages, MessagesApi}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector}
-import uk.gov.hmrc.agentclientauthorisation.service.ClientNameService
+import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
@@ -43,8 +41,8 @@ import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval}
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class MtdItClientInvitationsControllerSpec
     extends AkkaMaterializerSpec with ResettingMockitoSugar with ClientEndpointBehaviours with TestData {
@@ -52,9 +50,7 @@ class MtdItClientInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockEmailConnector: EmailConnector = resettingMock[EmailConnector]
   val mockAsaConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
-  val mockClientNameService: ClientNameService = resettingMock[ClientNameService]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
@@ -64,9 +60,6 @@ class MtdItClientInvitationsControllerSpec
     new MtdItClientInvitationsController(invitationsService)(
       metrics,
       microserviceAuthConnector,
-      mockEmailConnector,
-      mockAsaConnector,
-      mockClientNameService,
       auditService,
       ecp,
       "maintain agent relationships",

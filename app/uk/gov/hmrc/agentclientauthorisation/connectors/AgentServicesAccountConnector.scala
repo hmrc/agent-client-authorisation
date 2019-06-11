@@ -83,7 +83,6 @@ class AgentServicesAccountConnectorImpl @Inject()(
         .map(_.email)
     } recoverWith {
       case _: NotFoundException => {
-        println("failed get agency email")
         Future.failed(AgencyEmailNotFound())
       }
     }

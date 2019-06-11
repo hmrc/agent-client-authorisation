@@ -16,10 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 import play.api.libs.json.Json
-import Service._
-import play.api.i18n.{Lang, Messages, MessagesApi}
-import play.i18n.MessagesApi
-import play.api.i18n.I18nSupport
 
 case class EmailInformation(
   to: Seq[String],
@@ -31,11 +27,4 @@ case class EmailInformation(
 
 object EmailInformation {
   implicit val formats = Json.format[EmailInformation]
-
-//  def getEmailTemplateService(service: Service): String =
-//    service.id match {
-//      case HMRCMTDIT  => Messages(s"service.$HMRCMTDIT")
-//      case HMRCPIR    => Messages(s"service.$HMRCPIR")
-//      case HMRCMTDVAT => Messages(s"service.$HMRCMTDVAT")
-//    }
 }
