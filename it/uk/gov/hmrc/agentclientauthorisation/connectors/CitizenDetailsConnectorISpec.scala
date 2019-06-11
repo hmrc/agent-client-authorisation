@@ -61,6 +61,17 @@ class CitizenDetailsConnectorISpec extends UnitSpec with AppAndStubs with Citize
       val result = await(connector.getCitizenDateOfBirth(nino))
       result.getOrElse(CitizenDateOfBirth(None)).dateOfBirth shouldBe None
     }
-
+  }
+  "getCitizenDetails" should {
+    "return a citizen for a given nino" in {
+      givenCitizenDetailsAreKnownFor(nino.value, "11221971")
+      val result = await(connector.getCitizenDetails(nino))
+      result shouldBe Citizen(Some("John"), Some("Smith"), Some(nino.value))
+    }
+    "return an empty citizen if no citizen record is found" in {
+      givenCitizenDetailsReturnsResponseFor(nino.value, 404)
+      val result = await(connector.getCitizenDetails(nino))
+      result shouldBe Citizen(None, None, None)
+    }
   }
 }

@@ -21,8 +21,10 @@ import javax.inject.Provider
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier}
+import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
+import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.http.HeaderCarrier
 //import play.api.libs.functional._
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
@@ -35,12 +37,11 @@ import uk.gov.hmrc.agentclientauthorisation.service.StatusUpdateFailure
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino1}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId}
-import uk.gov.hmrc.auth.core.AffinityGroup.Individual
-import uk.gov.hmrc.auth.core.retrieve.{CompositeRetrieval, Credentials, Retrieval}
-import uk.gov.hmrc.auth.core.retrieve.Retrievals._
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval}
+import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class MtdItClientInvitationsControllerSpec
@@ -49,9 +50,11 @@ class MtdItClientInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val mockAsaConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
+  implicit val hc: HeaderCarrier = resettingMock[HeaderCarrier]
 
   val controller =
     new MtdItClientInvitationsController(invitationsService)(
@@ -60,7 +63,8 @@ class MtdItClientInvitationsControllerSpec
       auditService,
       ecp,
       "maintain agent relationships",
-      "maintain_agent_relationships") {
+      "maintain_agent_relationships"
+    ) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
@@ -79,6 +83,8 @@ class MtdItClientInvitationsControllerSpec
         .authorise(any(), any[Retrieval[~[Enrolments, Credentials]]]())(any(), any[ExecutionContext]))
       .thenReturn(returnValue)
 
+  private def agencyEmailStub = when(mockAsaConnector.getAgencyEmailBy(arn)).thenReturn(Future("abc@xyz.com"))
+
   "Accepting an invitation" should {
     val clientMtdItCorrect: Future[~[Enrolments, Credentials]] = {
       val retrievals = new ~(Enrolments(clientMtdItEnrolment), Credentials("providerId", "GovernmentGateway"))
@@ -86,6 +92,7 @@ class MtdItClientInvitationsControllerSpec
     }
     "Return no content" in {
       clientAuthStubForStride(clientMtdItCorrect)
+      agencyEmailStub
 
       val invitation = anInvitation(nino)
       whenFindingAnInvitation thenReturn (Future successful Some(invitation))

@@ -65,6 +65,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBaseUrl("des")
     bindBaseUrl("citizen-details")
     bindBaseUrl("ni-exemption-registration")
+    bindBaseUrl("email")
     bindProperty2param("des.environment", "des.environment")
     bindProperty2param("des.authorizationToken", "des.authorization-token")
     bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")

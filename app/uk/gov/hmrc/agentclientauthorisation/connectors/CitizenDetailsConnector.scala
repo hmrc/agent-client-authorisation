@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import com.codahale.metrics.MetricRegistry
+import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Singleton}
 import org.joda.time.LocalDate
@@ -42,13 +43,37 @@ object CitizenDateOfBirth {
         case None      => CitizenDateOfBirth(None)
       }
 }
+case class Citizen(firstName: Option[String], lastName: Option[String], nino: Option[String] = None) {
+  lazy val name: Option[String] = {
+    val n = Seq(firstName, lastName).collect({ case Some(x) => x }).mkString(" ")
+    if (n.isEmpty) None else Some(n)
+  }
+}
+
+object Citizen {
+  implicit val reads: Reads[Citizen] = {
+    val current = JsPath \ "name" \ "current"
+    for {
+      fn <- (current \ "firstName").readNullable[String]
+      ln <- (current \ "lastName").readNullable[String]
+      n  <- (JsPath \ "ids" \ "nino").readNullable[String]
+    } yield Citizen(fn, ln, n)
+  }
+}
+
+@ImplementedBy(classOf[CitizenDetailsConnectorImpl])
+trait CitizenDetailsConnector {
+  def getCitizenDateOfBirth(
+    nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]]
+  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen]
+}
 
 @Singleton
-class CitizenDetailsConnector @Inject()(
+class CitizenDetailsConnectorImpl @Inject()(
   @Named("citizen-details-baseUrl") baseUrl: URL,
   http: HttpGet with HttpDelete,
   metrics: Metrics)
-    extends HttpAPIMonitor {
+    extends HttpAPIMonitor with CitizenDetailsConnector {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -58,6 +83,14 @@ class CitizenDetailsConnector @Inject()(
       val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
       http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
         case _ => None
+      }
+    }
+
+  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
+    monitor(s"ConsumedAPI-CitizenDetails-GET") {
+      val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
+      http.GET[Citizen](url.toString).recover {
+        case _: NotFoundException => Citizen(None, None, None)
       }
     }
 }

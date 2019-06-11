@@ -37,6 +37,12 @@ sealed abstract class Service(
 
 object Service {
 
+  val HMRCMTDIT = "HMRC-MTD-IT"
+
+  val HMRCPIR = "PERSONAL-INCOME-RECORD"
+
+  val HMRCMTDVAT = "HMRC-MTD-VAT"
+
   case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT", NinoType, MtdItIdType, true)
 
   case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI", NinoType, NinoType, false)
