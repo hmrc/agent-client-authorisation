@@ -46,11 +46,7 @@ class NiClientInvitationsControllerSpec
   }
 
   val controller =
-    new NiClientInvitationsController(invitationsService)(
-      metrics,
-      microserviceAuthConnector,
-      auditService,
-      ecp) {
+    new NiClientInvitationsController(invitationsService)(metrics, microserviceAuthConnector, auditService, ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
