@@ -30,23 +30,32 @@ class EmailService @Inject()(
   emailConnector: EmailConnector,
   messagesApi: MessagesApi) {
 
-  def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+  private def sendEmail(invitation: Invitation, templateId: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Unit] =
     for {
       agencyEmail <- asaConnector.getAgencyEmailBy(invitation.arn)
       agencyName  <- asaConnector.getAgencyNameViaClient(invitation.arn)
       clientName  <- clientNameService.getClientNameByService(invitation.clientId.value, invitation.service)
-      emailInfo = emailInformationAccepted(invitation, agencyEmail, agencyName, clientName)
+      emailInfo = emailInformation(templateId, agencyEmail, agencyName, clientName, invitation)
       result <- emailConnector.sendEmail(emailInfo)
     } yield result
 
-  private def emailInformationAccepted(
-    invitation: Invitation,
+  def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    sendEmail(invitation, "client_accepted_authorisation_request")
+
+  def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    sendEmail(invitation, "client_rejected_authorisation_request")
+
+  private def emailInformation(
+    templateId: String,
     agencyEmail: String,
     agencyName: Option[String],
-    clientName: Option[String]) =
+    clientName: Option[String],
+    invitation: Invitation) =
     EmailInformation(
       Seq(agencyEmail),
-      "client_accepted_authorisation_request",
+      templateId,
       Map(
         "agencyName" -> agencyName.getOrElse(""),
         "clientName" -> clientName.getOrElse(""),
@@ -57,4 +66,5 @@ class EmailService @Inject()(
         })
       )
     )
+
 }

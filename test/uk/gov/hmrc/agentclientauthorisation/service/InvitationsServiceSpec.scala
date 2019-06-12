@@ -83,7 +83,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(play.api.mvc.Results.Accepted)
+        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -99,7 +99,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenRelationshipIsCreated(invitation) thenReturn (Future failed new Exception("RELATIONSHIP_ALREADY_EXISTS"))
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(play.api.mvc.Results.Accepted)
+        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -126,7 +126,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenAfiRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(play.api.mvc.Results.Accepted)
+        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -192,6 +192,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "update the invitation status" in {
       val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
       whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(())
 
       val response = await(service.rejectInvitation(testInvitation))
 
@@ -199,6 +200,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "not reject a cancelled invitation" in {
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(())
+
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
       response shouldBe Left(

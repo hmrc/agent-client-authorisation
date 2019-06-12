@@ -20,12 +20,12 @@ class EmailConnectorISpec extends UnitSpec with AppAndStubs with EmailStub {
   "sendEmail" should {
     val emailInfo = EmailInformation(Seq("abc@xyz.com"), "template-id", Map("param1" -> "foo", "param2" -> "bar"))
 
-    "return 202 Accepted when the email service responds" in {
+    "return Unit when the email service responds" in {
       givenEmailSent(emailInfo)
 
       val result = await(connector.sendEmail(emailInfo))
 
-      status(result) shouldBe 202
+      result shouldBe ()
     }
     "throw an Exception when the email service throws an Exception" in {
       givenEmailReturns500

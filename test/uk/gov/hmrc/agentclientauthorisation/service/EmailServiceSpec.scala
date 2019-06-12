@@ -60,7 +60,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
   val emailService = new EmailService(mockAsaConnector, mockClientNameService, mockEmailConnector, mockMessagesApi)
 
   "sendAcceptedEmail" should {
-    "return 204 for a successfully sent email for ITSA service" in {
+    "return Unit for a successfully sent email for ITSA service" in {
       (mockAsaConnector
         .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(arn, hc, *)
@@ -77,7 +77,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
         .expects(*, hc, *)
-        .returns(play.api.mvc.Results.Accepted)
+        .returns(())
 
       val result = await(
         emailService.sendAcceptedEmail(Invitation(
@@ -93,7 +93,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      status(result) shouldBe 202
+      result shouldBe ()
     }
     "return 204 for a successfully sent email for IRV service" in {
       (mockAsaConnector
@@ -112,7 +112,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
         .expects(*, hc, *)
-        .returns(play.api.mvc.Results.Accepted)
+        .returns(())
 
       val result = await(
         emailService.sendAcceptedEmail(Invitation(
@@ -128,7 +128,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      status(result) shouldBe 202
+      result shouldBe ()
     }
     "return 204 for a successfully sent email for VAT service" in {
       (mockAsaConnector
@@ -147,7 +147,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
         .expects(*, hc, *)
-        .returns(play.api.mvc.Results.Accepted)
+        .returns(())
 
       val result = await(
         emailService.sendAcceptedEmail(Invitation(
@@ -163,7 +163,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      status(result) shouldBe 202
+      result shouldBe ()
     }
     "throw an AgencyEmailNotFound exception when there is no agency email" in {
       (mockAsaConnector
@@ -249,6 +249,43 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
             List.empty
           )))
       }
+    }
+  }
+  "sendRejectEmail" should {
+    "return unit for a successfully send rejection email" in {
+      (mockAsaConnector
+        .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(arn, hc, *)
+        .returns(Future("abc@def.com"))
+      (mockAsaConnector
+        .getAgencyNameViaClient(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(arn, hc, *)
+        .returns(Future(Some("Mr Agent")))
+      (mockClientNameService
+        .getClientNameByService(_: String, _: Service)(_: HeaderCarrier, _: ExecutionContext))
+        .expects("LCLG57411010846", Service.MtdIt, hc, *)
+        .returns(Future(Some("Mr Client")))
+      mockMessagesApi.apply("services.HMRC-MTD-IT")
+      (mockEmailConnector
+        .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(*, hc, *)
+        .returns(())
+
+      val result = await(
+        emailService.sendRejectedEmail(Invitation(
+          BSONObjectID.generate(),
+          InvitationId("ATSNMKR6P6HRL"),
+          arn,
+          Some("personal"),
+          Service.MtdIt,
+          MtdItId("LCLG57411010846"),
+          MtdItId("LCLG57411010846"),
+          LocalDate.parse("2010-01-01"),
+          Some("continue/url"),
+          List.empty
+        )))
+
+      result shouldBe ()
     }
   }
 

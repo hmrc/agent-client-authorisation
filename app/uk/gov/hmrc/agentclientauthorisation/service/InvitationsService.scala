@@ -91,7 +91,7 @@ class InvitationsService @Inject()(
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
-        def changeInvitationStatusAndRecover = {
+        def changeInvitationStatusAndRecover: Future[Either[StatusUpdateFailure, Invitation]] = {
           val createRelationship: Future[Unit] = invitation.service match {
             case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
             case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
@@ -131,18 +131,26 @@ class InvitationsService @Inject()(
       .findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
         case Success(_) => reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
       }
 
   def rejectInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
-    changeInvitationStatus(invitation, model.Rejected)
-      .andThen {
-        case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
-      }
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
+    def changeStatus: Future[Either[StatusUpdateFailure, Invitation]] =
+      changeInvitationStatus(invitation, model.Rejected)
+        .andThen {
+          case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
+        }
+    for {
+      result <- changeStatus
+      _      <- emailService.sendRejectedEmail(invitation)
+    } yield result
+  }
 
   def findInvitation(invitationId: InvitationId)(
     implicit ec: ExecutionContext,
