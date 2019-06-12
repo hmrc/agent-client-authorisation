@@ -40,7 +40,6 @@ class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: H
 
   def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"Send-Email-${emailInformation.templateId}") {
-      Logger.error(s"the email info sent is: $emailInformation")
       http
         .POST[EmailInformation, HttpResponse](new URL(s"$baseUrl/hmrc/email").toString, emailInformation)
         .map(_ => ())
