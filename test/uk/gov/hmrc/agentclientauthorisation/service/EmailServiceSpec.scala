@@ -40,17 +40,29 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
   val mockAsaConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
   val mockMessagesApi: MessagesApi = new MessagesApi {
     override def messages: Map[String, Map[String, String]] = ???
+
     override def preferred(candidates: Seq[Lang]): Messages = ???
+
     override def preferred(request: RequestHeader): Messages = ???
+
     override def preferred(request: Http.RequestHeader): Messages = ???
+
     override def setLang(result: Result, lang: Lang): Result = ???
+
     override def clearLang(result: Result): Result = ???
+
     override def apply(key: String, args: Any*)(implicit lang: Lang): String = "dummy response"
+
     override def apply(keys: Seq[String], args: Any*)(implicit lang: Lang): String = ???
+
     override def translate(key: String, args: Seq[Any])(implicit lang: Lang): Option[String] = ???
+
     override def isDefinedAt(key: String)(implicit lang: Lang): Boolean = ???
+
     override def langCookieName: String = ???
+
     override def langCookieSecure: Boolean = ???
+
     override def langCookieHttpOnly: Boolean = ???
   }
   implicit val hc = HeaderCarrier()
@@ -252,7 +264,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
     }
   }
   "sendRejectEmail" should {
-    "return unit for a successfully send rejection email" in {
+    "return unit for a successfully sent rejection email" in {
       (mockAsaConnector
         .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(arn, hc, *)
@@ -273,6 +285,44 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
 
       val result = await(
         emailService.sendRejectedEmail(Invitation(
+          BSONObjectID.generate(),
+          InvitationId("ATSNMKR6P6HRL"),
+          arn,
+          Some("personal"),
+          Service.MtdIt,
+          MtdItId("LCLG57411010846"),
+          MtdItId("LCLG57411010846"),
+          LocalDate.parse("2010-01-01"),
+          Some("continue/url"),
+          List.empty
+        )))
+
+      result shouldBe ()
+    }
+  }
+
+  "sendAuthExpiredEmail" should {
+    "return unit for a successfully sent authorisation expired email" in {
+      (mockAsaConnector
+        .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(arn, hc, *)
+        .returns(Future("abc@def.com"))
+      (mockAsaConnector
+        .getAgencyNameViaClient(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(arn, hc, *)
+        .returns(Future(Some("Mr Agent")))
+      (mockClientNameService
+        .getClientNameByService(_: String, _: Service)(_: HeaderCarrier, _: ExecutionContext))
+        .expects("LCLG57411010846", Service.MtdIt, hc, *)
+        .returns(Future(Some("Mr Client")))
+      mockMessagesApi.apply("services.HMRC-MTD-IT")
+      (mockEmailConnector
+        .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(*, hc, *)
+        .returns(())
+
+      val result = await(
+        emailService.sendAuthExpiredEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("ATSNMKR6P6HRL"),
           arn,

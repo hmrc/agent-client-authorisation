@@ -191,15 +191,16 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
-  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
+  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] =
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
         .map { invitations =>
           invitations.foreach { invitation =>
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
-              //APB-3623 send an email to notify agent of expiration here
-              invitationsRepository.update(invitation, Expired, DateTime.now())
+              invitationsRepository
+                .update(invitation, Expired, DateTime.now())
+                .flatMap(invitation => emailService.sendAuthExpiredEmail(invitation))
             }
           }
         }
