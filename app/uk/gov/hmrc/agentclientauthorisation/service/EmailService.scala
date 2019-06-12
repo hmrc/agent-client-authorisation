@@ -32,7 +32,7 @@ class EmailService @Inject()(
 
   private def sendEmail(invitation: Invitation, templateId: String)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] =
+    ec: ExecutionContext): Future[Unit] =
     for {
       agencyEmail <- asaConnector.getAgencyEmailBy(invitation.arn)
       agencyName  <- asaConnector.getAgencyNameViaClient(invitation.arn)
@@ -41,10 +41,10 @@ class EmailService @Inject()(
       result <- emailConnector.sendEmail(emailInfo)
     } yield result
 
-  def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+  def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_accepted_authorisation_request")
 
-  def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+  def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_rejected_authorisation_request")
 
   private def emailInformation(

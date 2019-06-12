@@ -22,17 +22,15 @@ import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named}
 import play.api.Logger
-import play.api.mvc.Result
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
-import play.api.mvc.Results.Accepted
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @ImplementedBy(classOf[EmailConnectorImpl])
 trait EmailConnector {
-  def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result]
+  def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit]
 }
 
 class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: HttpPost, metrics: Metrics)
@@ -40,12 +38,12 @@ class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: H
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+  def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"Send-Email-${emailInformation.templateId}") {
       Logger.error(s"the email info sent is: $emailInformation")
       http
         .POST[EmailInformation, HttpResponse](new URL(s"$baseUrl/hmrc/email").toString, emailInformation)
-        .map(_ => Accepted("email sent"))
+        .map(_ => ())
     }.recover {
       case e => throw new Exception(s"sending email failed: $e")
     }
