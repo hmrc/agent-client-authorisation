@@ -85,7 +85,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
 
   def whenInvitationIsRejected: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
-    when(invitationsService.rejectInvitation(any[Invitation])(any()))
+    when(invitationsService.rejectInvitation(any[Invitation])(any(), any()))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
     when(invitationsService.clientsReceived(any[Service], any(), eqs(None))(any()))

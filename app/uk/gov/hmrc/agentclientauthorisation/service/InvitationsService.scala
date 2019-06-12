@@ -138,11 +138,18 @@ class InvitationsService @Inject()(
       }
 
   def rejectInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
-    changeInvitationStatus(invitation, model.Rejected)
-      .andThen {
-        case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
-      }
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
+    def changeStatus =
+      changeInvitationStatus(invitation, model.Rejected)
+        .andThen {
+          case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
+        }
+    for {
+      result <- changeStatus
+      _      <- emailService.sendRejectedEmail(invitation)
+    } yield result
+  }
 
   def findInvitation(invitationId: InvitationId)(
     implicit ec: ExecutionContext,

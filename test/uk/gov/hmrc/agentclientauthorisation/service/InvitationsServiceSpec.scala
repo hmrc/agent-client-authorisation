@@ -192,6 +192,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "update the invitation status" in {
       val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
       whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(
+        play.api.mvc.Results.Accepted)
 
       val response = await(service.rejectInvitation(testInvitation))
 
@@ -199,6 +201,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "not reject a cancelled invitation" in {
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(
+        play.api.mvc.Results.Accepted)
+
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
       response shouldBe Left(
@@ -209,6 +214,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "not reject an accepted invitation" in {
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(
+        play.api.mvc.Results.Accepted)
+
       val response = await(service.rejectInvitation(testInvitationWithStatus(Accepted)))
 
       response shouldBe Left(
@@ -219,6 +227,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "not reject an already rejected invitation" in {
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(
+        play.api.mvc.Results.Accepted)
+
       val response = await(service.rejectInvitation(testInvitationWithStatus(Rejected)))
 
       response shouldBe Left(
@@ -228,6 +239,9 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         ))
     }
     "not reject an invitation that has expired" in {
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(
+        play.api.mvc.Results.Accepted)
+
       val response = await(service.rejectInvitation(testInvitationWithStatus(Expired)))
 
       response shouldBe Left(

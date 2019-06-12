@@ -251,5 +251,10 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
       }
     }
   }
+  "sendRejectEmail" should {
+    "return 204 for a successfully send rejection email" in {
+      //TODO: write me
+    }
+  }
 
 }
