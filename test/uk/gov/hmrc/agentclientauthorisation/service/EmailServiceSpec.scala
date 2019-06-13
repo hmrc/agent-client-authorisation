@@ -21,6 +21,8 @@ import org.scalamock.scalatest.MockFactory
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.{RequestHeader, Result}
 import play.mvc.Http
+import org.mockito.Mockito._
+import play.api.Logger
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, EmailInformation, Invitation, Service}
@@ -38,6 +40,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
   val mockClientNameService: ClientNameService = mock[ClientNameService]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val mockAsaConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
+  val mockLogger: Logger = mock[Logger]
   val mockMessagesApi: MessagesApi = new MessagesApi {
     override def messages: Map[String, Map[String, String]] = ???
 
@@ -69,7 +72,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
 
   val arn = Arn("TARN0000001")
 
-  val emailService = new EmailService(mockAsaConnector, mockClientNameService, mockEmailConnector, mockMessagesApi)
+  val emailService = new EmailService(mockAsaConnector, mockClientNameService, mockEmailConnector, mockMessagesApi, mockLogger)
 
   "sendAcceptedEmail" should {
     "return Unit for a successfully sent email for ITSA service" in {
@@ -91,7 +94,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(())
 
-      val result = await(
+      await(
         emailService.sendAcceptedEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("ATSNMKR6P6HRL"),
@@ -105,7 +108,8 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      result shouldBe ()
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
+
     }
     "return 204 for a successfully sent email for IRV service" in {
       (mockAsaConnector
@@ -126,7 +130,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(())
 
-      val result = await(
+      await(
         emailService.sendAcceptedEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("BTSNMKR6P6HRL"),
@@ -140,7 +144,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      result shouldBe ()
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
     "return 204 for a successfully sent email for VAT service" in {
       (mockAsaConnector
@@ -161,7 +165,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(())
 
-      val result = await(
+      await(
         emailService.sendAcceptedEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("CTSNMKR6P6HRL"),
@@ -175,7 +179,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      result shouldBe ()
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
     "throw an AgencyEmailNotFound exception when there is no agency email" in {
       (mockAsaConnector
@@ -199,7 +203,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           )))
       }
     }
-    "throw an AgencyNameNotFoundException when there is mo agency name" in {
+    "throw an AgencyNameNotFoundException when there is no agency name" in {
       (mockAsaConnector
         .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(arn, hc, *)
@@ -225,7 +229,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           )))
       }
     }
-    "throw an Exception if sending email failed" in {
+    "will log an error if sending an email fails but will return successful" in {
       (mockAsaConnector
         .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(arn, hc, *)
@@ -240,13 +244,19 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects("LCLG57411010846", Service.MtdIt, hc, *)
         .returns(Future(Some("Mr Client")))
 
+      val exception = new Exception("some kind of problem")
+
       mockMessagesApi.apply("services.HMRC-MTD-IT")
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
         .expects(*, hc, *)
-        .throws(new Exception("sending email failed"))
+        .returns(Future.failed(exception))
 
-      intercept[Exception] {
+      (mockLogger
+        .error(_: String, _: Throwable))
+        .expects("sending email failed", exception)
+        .returns(())
+
         await(
           emailService.sendAcceptedEmail(Invitation(
             BSONObjectID.generate(),
@@ -259,8 +269,8 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
             LocalDate.parse("2010-01-01"),
             Some("continue/url"),
             List.empty
-          )))
-      }
+          ))) shouldBe Unit
+
     }
   }
   "sendRejectEmail" should {
@@ -283,7 +293,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(())
 
-      val result = await(
+      await(
         emailService.sendRejectedEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("ATSNMKR6P6HRL"),
@@ -297,7 +307,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      result shouldBe ()
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
   }
 
@@ -321,7 +331,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(())
 
-      val result = await(
+      await(
         emailService.sendAuthExpiredEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("ATSNMKR6P6HRL"),
@@ -335,8 +345,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
           List.empty
         )))
 
-      result shouldBe ()
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
   }
-
 }

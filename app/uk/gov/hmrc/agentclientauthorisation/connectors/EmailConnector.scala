@@ -21,7 +21,6 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named}
-import play.api.Logger
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
@@ -43,7 +42,5 @@ class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: H
       http
         .POST[EmailInformation, HttpResponse](new URL(s"$baseUrl/hmrc/email").toString, emailInformation)
         .map(_ => ())
-    }.recover {
-      case e => throw new Exception(s"sending email failed: $e")
     }
 }

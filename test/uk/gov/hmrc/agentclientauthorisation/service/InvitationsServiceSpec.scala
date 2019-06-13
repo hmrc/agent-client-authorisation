@@ -397,21 +397,25 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           List(StatusChangeEvent(now(), Pending))
         )
 
-        when(
-          invitationsRepository.findInvitationsBy(status = Some(Pending)))
+        val updatedExpiredInvitation = invitation.copy(events = StatusChangeEvent(now(), Expired) :: invitation.events)
+
+        when(invitationsRepository.findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any()))
           .thenReturn(Future(List(invitation)))
 
         when(
-          invitationsRepository.update(any(), any(), any())(any())
-        ).thenReturn(Future successful invitation)
+          invitationsRepository.update(eqs(invitation), eqs(Expired), any())(any())
+        ).thenReturn(Future successful updatedExpiredInvitation)
 
         when(
-          mockEmailService.sendAuthExpiredEmail(invitation)
-        ).thenReturn(Future successful())
+          mockEmailService.sendAuthExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+        ).thenReturn(Future successful ())
 
-        val result = service.findAndUpdateExpiredInvitations
+        await(service.findAndUpdateExpiredInvitations)
 
-        await(result) shouldBe()
+        verify(invitationsRepository).findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any())
+        verify(invitationsRepository).update(eqs(invitation), eqs(Expired), any[DateTime])(any())
+        verify(mockEmailService).sendAuthExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+
       }
     }
   }
