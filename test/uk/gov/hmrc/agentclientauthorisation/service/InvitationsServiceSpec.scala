@@ -379,6 +379,47 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
   }
 
+  "findAndUpdateExpiredInvitations" should {
+
+    "send an authorisation expired email" when {
+      "the expiry date is before the current date" in {
+
+        val invitation = Invitation(
+          generate,
+          InvitationId.create(arn, mtdItId1.value, Service.PersonalIncomeRecord.id, DateTime.parse("2019-01-01"))('B'),
+          Arn(arn),
+          Some("personal"),
+          Service.PersonalIncomeRecord,
+          ClientIdentifier(nino1),
+          ClientIdentifier(nino1),
+          now().toLocalDate.minusDays(14),
+          None,
+          List(StatusChangeEvent(now(), Pending))
+        )
+
+        val updatedExpiredInvitation = invitation.copy(events = StatusChangeEvent(now(), Expired) :: invitation.events)
+
+        when(invitationsRepository.findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any()))
+          .thenReturn(Future(List(invitation)))
+
+        when(
+          invitationsRepository.update(eqs(invitation), eqs(Expired), any())(any())
+        ).thenReturn(Future successful updatedExpiredInvitation)
+
+        when(
+          mockEmailService.sendExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+        ).thenReturn(Future successful ())
+
+        await(service.findAndUpdateExpiredInvitations)
+
+        verify(invitationsRepository).findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any())
+        verify(invitationsRepository).update(eqs(invitation), eqs(Expired), any[DateTime])(any())
+        verify(mockEmailService).sendExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+
+      }
+    }
+  }
+
   private def testInvitationWithStatus(status: InvitationStatus) =
     Invitation(
       generate,

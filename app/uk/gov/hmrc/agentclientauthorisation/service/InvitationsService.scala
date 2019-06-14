@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.util.concurrent.TimeUnit.DAYS
-
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
@@ -29,13 +27,12 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{HmrcMtdVat, Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
-import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.util.Success
 
@@ -191,15 +188,16 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
-  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
+  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] =
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
         .map { invitations =>
           invitations.foreach { invitation =>
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
-              //APB-3623 send an email to notify agent of expiration here
-              invitationsRepository.update(invitation, Expired, DateTime.now())
+              invitationsRepository
+                .update(invitation, Expired, DateTime.now())
+                .flatMap(invitation => emailService.sendExpiredEmail(invitation))
             }
           }
         }

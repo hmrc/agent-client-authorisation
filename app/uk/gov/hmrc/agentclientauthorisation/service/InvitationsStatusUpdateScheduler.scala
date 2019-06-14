@@ -24,6 +24,7 @@ import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -36,7 +37,7 @@ class InvitationsStatusUpdateScheduler @Inject()(
   actorSystem: ActorSystem,
   @Named("invitation-status-update-scheduler.interval") interval: Int,
   @Named("invitation-status-update-scheduler.enabled") enabled: Boolean
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext, hc: HeaderCarrier) {
 
   if (enabled) {
     Logger(getClass).info("invitation status update scheduler is enabled.")
@@ -58,7 +59,8 @@ class InvitationsStatusUpdateScheduler @Inject()(
 }
 
 class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
-  implicit ec: ExecutionContext)
+  implicit ec: ExecutionContext,
+  hc: HeaderCarrier)
     extends Actor {
 
   def receive = {
