@@ -17,12 +17,14 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.LocalDate
+import org.mockito.Mockito._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.BeforeAndAfter
+import org.slf4j
+import play.api.LoggerLike
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.{RequestHeader, Result}
 import play.mvc.Http
-import org.mockito.Mockito._
-import play.api.Logger
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, EmailInformation, Invitation, Service}
@@ -31,16 +33,18 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailServiceSpec extends UnitSpec with MockFactory {
+class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
 
   val mockMetrics: Metrics = mock[Metrics]
   val mockClientNameService: ClientNameService = mock[ClientNameService]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val mockAsaConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
-  val mockLogger: Logger = mock[Logger]
+  val testLogger = LoggerLikeStub
+
   val mockMessagesApi: MessagesApi = new MessagesApi {
     override def messages: Map[String, Map[String, String]] = ???
 
@@ -68,11 +72,19 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
 
     override def langCookieHttpOnly: Boolean = ???
   }
+
+  before {
+    testLogger.errorList.clear()
+  }
+
   implicit val hc = HeaderCarrier()
 
   val arn = Arn("TARN0000001")
 
-  val emailService = new EmailService(mockAsaConnector, mockClientNameService, mockEmailConnector, mockMessagesApi, mockLogger)
+  val emailService =
+    new EmailService(mockAsaConnector, mockClientNameService, mockEmailConnector, mockMessagesApi) {
+      override def getLogger: LoggerLike = testLogger
+    }
 
   "sendAcceptedEmail" should {
     "return Unit for a successfully sent email for ITSA service" in {
@@ -252,25 +264,21 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
         .expects(*, hc, *)
         .returns(Future.failed(exception))
 
-      (mockLogger
-        .error(_: String, _: Throwable))
-        .expects("sending email failed", exception)
-        .returns(())
+      await(
+        emailService.sendAcceptedEmail(Invitation(
+          BSONObjectID.generate(),
+          InvitationId("ATSNMKR6P6HRL"),
+          arn,
+          Some("personal"),
+          Service.MtdIt,
+          MtdItId("LCLG57411010846"),
+          MtdItId("LCLG57411010846"),
+          LocalDate.parse("2010-01-01"),
+          Some("continue/url"),
+          List.empty
+        ))) shouldBe ()
 
-        await(
-          emailService.sendAcceptedEmail(Invitation(
-            BSONObjectID.generate(),
-            InvitationId("ATSNMKR6P6HRL"),
-            arn,
-            Some("personal"),
-            Service.MtdIt,
-            MtdItId("LCLG57411010846"),
-            MtdItId("LCLG57411010846"),
-            LocalDate.parse("2010-01-01"),
-            Some("continue/url"),
-            List.empty
-          ))) shouldBe Unit
-
+      testLogger.checkErrors("sending email failed", exception)
     }
   }
   "sendRejectEmail" should {
@@ -348,4 +356,17 @@ class EmailServiceSpec extends UnitSpec with MockFactory {
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
   }
+
+}
+
+object LoggerLikeStub extends LoggerLike with UnitSpec {
+
+  override val logger: slf4j.Logger = null
+  val errorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
+
+  override def error(message: => String, error: => Throwable) =
+    errorList += ((message, error))
+
+  def checkErrors(expectMsg: String, expectError: Throwable) =
+    errorList should contain(expectMsg, expectError)
 }

@@ -32,7 +32,7 @@ class EmailConnectorISpec extends UnitSpec with AppAndStubs with EmailStub {
 
       intercept[Exception] {
         await(connector.sendEmail(emailInfo))
-      }.getMessage should startWith("sending email failed")
+      }
     }
   }
 }

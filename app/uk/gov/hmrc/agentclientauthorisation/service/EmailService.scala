@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.Inject
-import play.api.Logger
+import play.api.{Logger, LoggerLike}
 import play.api.i18n.MessagesApi
-import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{EmailInformation, Invitation, Service}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,8 +28,9 @@ class EmailService @Inject()(
   asaConnector: AgentServicesAccountConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
-  messagesApi: MessagesApi,
-  logger: Logger) {
+  messagesApi: MessagesApi) {
+
+  protected def getLogger: LoggerLike = Logger
 
   private def sendEmail(invitation: Invitation, templateId: String)(
     implicit hc: HeaderCarrier,
@@ -41,11 +41,11 @@ class EmailService @Inject()(
       clientName  <- clientNameService.getClientNameByService(invitation.clientId.value, invitation.service)
       emailInfo = emailInformation(templateId, agencyEmail, agencyName, clientName, invitation)
       result <- emailConnector.sendEmail(emailInfo).recoverWith {
-        case e => {
-          logger.error("sending email failed", e)
-          Future.successful(())
-        }
-      }
+                 case e => {
+                   getLogger.error("sending email failed", e)
+                   Future.successful(())
+                 }
+               }
     } yield result
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
@@ -56,7 +56,6 @@ class EmailService @Inject()(
 
   def sendAuthExpiredEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_expired_authorisation_request")
-
 
   private def emailInformation(
     templateId: String,

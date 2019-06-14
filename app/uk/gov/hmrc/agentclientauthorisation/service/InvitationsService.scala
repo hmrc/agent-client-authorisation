@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.util.concurrent.TimeUnit.DAYS
-
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
@@ -29,13 +27,12 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRepository, InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{HmrcMtdVat, Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
-import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.util.Success
 
