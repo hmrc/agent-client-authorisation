@@ -340,7 +340,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
         .returns(())
 
       await(
-        emailService.sendAuthExpiredEmail(Invitation(
+        emailService.sendExpiredEmail(Invitation(
           BSONObjectID.generate(),
           InvitationId("ATSNMKR6P6HRL"),
           arn,

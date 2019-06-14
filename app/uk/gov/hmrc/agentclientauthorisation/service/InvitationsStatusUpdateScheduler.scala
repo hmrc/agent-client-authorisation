@@ -80,7 +80,7 @@ class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: Invi
                   .scheduleOnce(delay, self, newUid)
                 Logger(getClass)
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
-                invitationsService.findAndUpdateExpiredInvitations
+                invitationsService.findAndUpdateExpiredInvitations()
               })
           } else {
             val dateTime = if (runAt.isBefore(now)) now else runAt

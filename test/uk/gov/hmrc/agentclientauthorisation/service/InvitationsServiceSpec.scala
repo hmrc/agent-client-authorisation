@@ -407,14 +407,14 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         ).thenReturn(Future successful updatedExpiredInvitation)
 
         when(
-          mockEmailService.sendAuthExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+          mockEmailService.sendExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
         ).thenReturn(Future successful ())
 
         await(service.findAndUpdateExpiredInvitations)
 
         verify(invitationsRepository).findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any())
         verify(invitationsRepository).update(eqs(invitation), eqs(Expired), any[DateTime])(any())
-        verify(mockEmailService).sendAuthExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
+        verify(mockEmailService).sendExpiredEmail(eqs(updatedExpiredInvitation))(any(), any())
 
       }
     }

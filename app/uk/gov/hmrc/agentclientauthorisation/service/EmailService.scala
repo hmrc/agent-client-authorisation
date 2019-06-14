@@ -54,7 +54,7 @@ class EmailService @Inject()(
   def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_rejected_authorisation_request")
 
-  def sendAuthExpiredEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+  def sendExpiredEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_expired_authorisation_request")
 
   private def emailInformation(
