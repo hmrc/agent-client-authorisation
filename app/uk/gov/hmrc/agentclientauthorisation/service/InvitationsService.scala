@@ -188,12 +188,13 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
-  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] =
+  def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
         .map { invitations =>
           invitations.foreach { invitation =>
+            implicit val hc = HeaderCarrier(extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
               invitationsRepository
                 .update(invitation, Expired, DateTime.now())
