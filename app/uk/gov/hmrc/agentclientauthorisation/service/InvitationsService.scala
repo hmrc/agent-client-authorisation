@@ -194,7 +194,6 @@ class InvitationsService @Inject()(
         .findInvitationsBy(status = Some(Pending))
         .map { invitations =>
           invitations.foreach { invitation =>
-            implicit val hc = HeaderCarrier(extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
               invitationsRepository
                 .update(invitation, Expired, DateTime.now())

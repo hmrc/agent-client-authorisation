@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConn
 import uk.gov.hmrc.agentclientauthorisation.model.{EmailInformation, Invitation, Service}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmailService @Inject()(
@@ -54,8 +55,10 @@ class EmailService @Inject()(
   def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_rejected_authorisation_request")
 
-  def sendExpiredEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+  def sendExpiredEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
+    implicit val hc = HeaderCarrier(extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
     sendEmail(invitation, "client_expired_authorisation_request")
+  }
 
   private def emailInformation(
     templateId: String,
