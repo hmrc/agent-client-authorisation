@@ -321,22 +321,23 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
 
   "sendAuthExpiredEmail" should {
     "return unit for a successfully sent authorisation expired email" in {
+
       (mockAsaConnector
         .getAgencyEmailBy(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
-        .expects(arn, hc, *)
+        .expects(arn, *, *)
         .returns(Future("abc@def.com"))
       (mockAsaConnector
         .getAgencyNameViaClient(_: Arn)(_: HeaderCarrier, _: ExecutionContext))
-        .expects(arn, hc, *)
+        .expects(arn, *, *)
         .returns(Future(Some("Mr Agent")))
       (mockClientNameService
         .getClientNameByService(_: String, _: Service)(_: HeaderCarrier, _: ExecutionContext))
-        .expects("LCLG57411010846", Service.MtdIt, hc, *)
+        .expects("LCLG57411010846", Service.MtdIt, *, *)
         .returns(Future(Some("Mr Client")))
       mockMessagesApi.apply("services.HMRC-MTD-IT")
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
-        .expects(*, hc, *)
+        .expects(*, *, *)
         .returns(())
 
       await(
