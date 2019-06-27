@@ -49,7 +49,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId"         -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "clientIdType"         -> clientIdentifierType(clientId.value),
+        "clientIdType"         -> clientIdentifierType(clientId),
         "clientId"             -> clientId.value,
         "service"              -> service.id
       )
@@ -63,17 +63,17 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId"         -> invitation.id.stringify,
         "agentReferenceNumber" -> invitation.arn.value,
-        "clientIdType"         -> clientIdentifierType(invitation.clientId.value),
+        "clientIdType"         -> clientIdentifierType(invitation.clientId),
         "clientId"             -> invitation.clientId,
         "service"              -> invitation.service.id,
         "clientResponse"       -> "Expired"
       )
     )
 
-  private def clientIdentifierType(clientId: String): String = clientId match {
-    case maybeVrn if Vrn.isValid(maybeVrn)                                                          => "vrn"
-    case maybeNinoOrMtdItd if Nino.isValid(maybeNinoOrMtdItd) || MtdItId.isValid(maybeNinoOrMtdItd) => "ni"
-    case _                                                                                          => throw new IllegalStateException(s"Unsupported ClientIdType")
+  private def clientIdentifierType(clientId: ClientId): String = clientId.underlying match {
+    case _: Vrn               => "vrn"
+    case _: Nino | _: MtdItId => "ni"
+    case _                    => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
   private[audit] def auditEvent(

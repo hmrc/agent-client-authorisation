@@ -62,9 +62,17 @@ class AgentInvitationValidationSpec
       result is BadRequest withCode "UNSUPPORTED_CLIENT_ID_TYPE"
     }
 
-    "fail when vrn is invalid and service is of type HMRC-MTD-VAT" in {
-      responseFor(validMtdVatInvite.copy(clientId = "101747642")) is BadRequest withCode "INVALID_CLIENT_ID"
-      responseFor(validMtdVatInvite.copy(clientId = "GB01747641")) is BadRequest withCode "INVALID_CLIENT_ID"
+    "fail when VRN is invalid (i.e. does not match VRN regex) and service is of type HMRC-MTD-VAT" in {
+      responseFor(validMtdVatInvite.copy(clientId = "12345678")) is BadRequest withCode "INVALID_CLIENT_ID"
+      responseFor(validMtdVatInvite.copy(clientId = "1234567890")) is BadRequest withCode "INVALID_CLIENT_ID"
+      responseFor(validMtdVatInvite.copy(clientId = "A01747641")) is BadRequest withCode "INVALID_CLIENT_ID"
+    }
+
+    "not fail due to VRN's checksum digits" in {
+      val vrnGoodChecksum = "101747641"
+      val vrnBadChecksum = "101747642"
+      responseOptFor(validMtdVatInvite.copy(clientId = vrnGoodChecksum)) shouldBe None
+      responseOptFor(validMtdVatInvite.copy(clientId = vrnBadChecksum)) shouldBe None
     }
 
     "fail when ni is supplied as client id type for service HMRC-MTD-VAT" in {
