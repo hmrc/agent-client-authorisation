@@ -26,20 +26,20 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AgentInvitationValidation extends Results {
 
-  private type Validation = (AgentInvitation) => Future[Option[Result]]
+  private type Validation = AgentInvitation => Future[Option[Result]]
 
-  private val hasValidClientId: Validation = (invitation) =>
+  private val hasValidClientId: Validation = invitation =>
     Future successful {
       val valid = invitation.getService.supportedSuppliedClientIdType.isValid(invitation.clientId)
       if (valid) None else Some(InvalidClientId)
   }
 
-  private val supportedService: Validation = (invite) => {
+  private val supportedService: Validation = invite => {
     if (Service.findById(invite.service).isDefined) Future successful None
     else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}""""))
   }
 
-  private val supportedClientIdType: Validation = (invite) => {
+  private val supportedClientIdType: Validation = invite => {
     if (invite.getService.supportedSuppliedClientIdType.id == invite.clientIdType) Future successful None
     else
       Future successful Some(

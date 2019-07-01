@@ -31,6 +31,7 @@ object Binders {
   implicit object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
   implicit object MtdItIdBinder extends SimpleObjectBinder[MtdItId](MtdItId.apply, _.value)
   implicit object VrnBinder extends SimpleObjectBinder[Vrn](Vrn.apply, _.value)
+  implicit object UtrBinder extends SimpleObjectBinder[Utr](Utr.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
   implicit object LocalDateBinder
       extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
