@@ -16,6 +16,6 @@ trait MongoApp extends MongoSpecSupport {
 object MongoApp {
 
   import scala.concurrent.duration._
-  val failoverStrategyForTest = FailoverStrategy(50.millis, 5, _ * 1.618)
+  val failoverStrategyForTest = FailoverStrategy(1000.millis, 5, _ * 1.618)
 
 }

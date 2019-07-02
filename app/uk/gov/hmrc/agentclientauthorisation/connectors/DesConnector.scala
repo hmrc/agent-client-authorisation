@@ -18,21 +18,22 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
 
-import javax.inject.{Inject, Named, Singleton}
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import javax.inject.{Inject, Named, Singleton}
 import org.joda.time.LocalDate
 import play.api.libs.json.Json.reads
-import play.api.libs.json.{JsObject, Reads, __}
 import play.api.libs.json.Reads._
+import play.api.libs.json.{Format, JsObject, Json, Reads, __}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.model.{TrustDetails, TrustDetailsResponse}
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
-import uk.gov.hmrc.http.logging.Authorization
 
 case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
 
@@ -47,6 +48,7 @@ object BusinessDetails {
 }
 
 case class VatCustomerInfo(effectiveRegistrationDate: Option[LocalDate])
+
 object VatCustomerInfo {
   implicit val vatCustomerInfoReads: Reads[VatCustomerInfo] = {
     (__ \ "approvedInformation").readNullable[JsObject].map {
@@ -81,6 +83,12 @@ class DesConnector @Inject()(
     val url = new URL(baseUrl, s"/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
     getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
   }
+
+  def getTrustDetails(
+    utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TrustDetailsResponse]] =
+    getWithDesHeaders[TrustDetailsResponse](
+      "getTrustDetails-API-1495",
+      new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString)
 
   private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
     implicit hc: HeaderCarrier,

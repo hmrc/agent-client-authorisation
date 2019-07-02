@@ -32,6 +32,7 @@ This supports Agent and Client authorisation processes for the following regimes
 |Self Assessment|HMRC-MTD-IT|
 |Income-Record-Viewer for Individuals|PERSONAL-INCOME-RECORD|
 |Value-Added-Tax|HMRC-MTD-VAT|
+|For Trust|HMRC-TRUST-ORG|
 
 
 ### Invitation Status <a name="invitationStatus"></a>

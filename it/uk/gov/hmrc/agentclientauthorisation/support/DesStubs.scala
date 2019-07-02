@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait DesStubs {
@@ -153,7 +153,7 @@ trait DesStubs {
                        |         "businessStartDate" : "2017-04-02",
                        |         "registrationReason" : "0013"
                        |         ${if (isEffectiveRegistrationDatePresent)
-                         s""","effectiveRegistrationDate" : "${vatRegDate}""""
+                         s""","effectiveRegistrationDate" : "$vatRegDate""""
                        else ""}
                        |      },
                        |      "bankDetails" : {
@@ -223,6 +223,18 @@ trait DesStubs {
           .withStatus(404)))
 
     this
+  }
+
+  def getTrustDetails(utr: Utr, status: Int = 200, response: String) = {
+    stubFor(
+      get(urlEqualTo(s"/trusts/agent-known-fact-check/${utr.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withStatus(status)
+            .withBody(response)))
   }
 
   def failsVatCustomerDetails(vrn: Vrn, withStatus: Int) = {

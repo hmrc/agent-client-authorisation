@@ -16,19 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import javax.inject._
 import com.kenshoo.play.metrics.Metrics
+import javax.inject._
 import org.joda.time.LocalDate
 import play.api.Logger
 import play.api.http.HeaderNames
-import play.api.libs.json.{JsError, JsSuccess, JsValue}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, Result}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -42,6 +43,7 @@ class AgencyInvitationsController @Inject()(
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService,
   agentLinkService: AgentLinkService,
+  desConnector: DesConnector,
   agentServicesAccountConnector: AgentServicesAccountConnector)(
   implicit
   metrics: Metrics,
@@ -103,7 +105,7 @@ class AgencyInvitationsController @Inject()(
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
-      case Service.MtdIt =>
+      case MtdIt =>
         invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
       case _ => Future successful Some(suppliedClientId)
     }) flatMap {
@@ -123,14 +125,17 @@ class AgencyInvitationsController @Inject()(
 
   private def addLinkToInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     invitation.service match {
-      case service if service == Service.MtdIt || service == Service.PersonalIncomeRecord =>
+
+      case service if service == MtdIt || service == PersonalIncomeRecord =>
         agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
           Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
-      case Service.Vat =>
+
+      case service if service == Vat || service == Trust =>
         agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
           Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
+
       case _ => Future.successful(None)
     }
 
@@ -240,8 +245,9 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
-  def normaliseAgentName(agentName: String) =
-    agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
+  def knownFactForTrust(utr: Utr): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    desConnector.getTrustDetails(utr).map(r => Ok(Json.toJson(r)))
+  }
 
-  override protected def agencyLink(invitation: Invitation) = None
+  override protected def agencyLink(invitation: Invitation): None.type = None
 }

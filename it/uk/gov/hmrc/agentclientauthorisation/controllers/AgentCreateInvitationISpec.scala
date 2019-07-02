@@ -75,6 +75,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
 
         status(response) shouldBe 201
       }
+
       "service is VAT" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
@@ -87,6 +88,22 @@ class AgentCreateInvitationISpec extends BaseISpec {
             |  "service": "HMRC-MTD-VAT",
             |  "clientIdType": "vrn",
             |  "clientId": "101747696"
+            |}""".stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+      }
+
+      "service is Trust" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-TERS-ORG",
+            |  "clientIdType": "utr",
+            |  "clientId": "2134514321"
             |}""".stripMargin)
 
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))

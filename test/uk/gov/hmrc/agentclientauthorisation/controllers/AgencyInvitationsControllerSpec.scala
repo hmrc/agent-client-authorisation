@@ -27,7 +27,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
@@ -55,6 +55,7 @@ class AgencyInvitationsControllerSpec
   val metrics: Metrics = resettingMock[Metrics]
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
+  val mockDesConnector = resettingMock[DesConnector]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
@@ -69,6 +70,7 @@ class AgencyInvitationsControllerSpec
       invitationsService,
       kfcService,
       multiInvitationsService,
+      mockDesConnector,
       agentServicesaccountConnector)(metrics, microserviceAuthConnector, ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
@@ -383,11 +385,6 @@ class AgencyInvitationsControllerSpec
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
     }
-  }
-
-  "normalise agencyName" in {
-    controller.normaliseAgentName("My age%*&nt name") shouldBe "my-agent-name"
-    controller.normaliseAgentName("Paul  Tan 8 ()^£$???") shouldBe "paul-tan-8-"
   }
 
   private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =

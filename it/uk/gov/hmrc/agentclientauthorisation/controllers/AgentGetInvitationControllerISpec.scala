@@ -86,6 +86,38 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
     }
 
+    "return 200 with a Trust invitation entity for an authorised agent with no query parameters" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(
+        invitationsRepo.create(
+          arn,
+          Some("trust"),
+          Service.Trust,
+          ClientIdentifier("101747696", UtrType.id),
+          ClientIdentifier("101747696", UtrType.id),
+          DateTime.now(),
+          LocalDate.now()))
+
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+
+      status(response) shouldBe 200
+
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded" \ "invitations" \ 0).as[JsObject]
+      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (json \ "arn").as[String] shouldBe arn.value
+      (json \ "clientType").as[String] shouldBe "trust"
+      (json \ "status").as[String] shouldBe "Pending"
+      (json \ "clientId").as[String] shouldBe "101747696"
+      (json \ "clientIdType").as[String] shouldBe "utr"
+      (json \ "suppliedClientId").as[String] shouldBe "101747696"
+      (json \ "suppliedClientIdType").as[String] shouldBe "utr"
+      (json \ "clientActionUrl").as[String].matches(invitationLinkRegex("trust")) shouldBe true
+    }
+
     "return 200 with an invitation entity for an authorised agent with query parameters" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
