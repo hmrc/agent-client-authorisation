@@ -66,6 +66,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
       given().agentAdmin(arn1, agentCode1).givenAuthorisedAsAgent(arn1)
       given().client(clientId = nino).hasABusinessPartnerRecord(nino)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn1)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = nino).getTradingName(nino, "Trader")
 
       val location = agencySendInvitation(arn1, validInvitation).header("location")
 
@@ -105,6 +109,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should create invitation if postcode has no spaces" in {
       given().agentAdmin(arn1, agentCode1).givenAuthorisedAsAgent(arn1)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn1)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino1)
+      given().client(clientId = nino).getTradingName(nino1, "Trader")
 
       agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("AA11AA"))).status shouldBe 201
     }
@@ -112,6 +120,10 @@ class AgencyInvitationsApiPlatformISpec extends AgencyInvitationsISpec {
     "should create invitation if postcode has more than one space" in {
       given().agentAdmin(arn1, agentCode1).givenAuthorisedAsAgent(arn1)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn1)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = nino).getTradingName(nino, "Trader")
 
       val response = agencySendInvitation(arn1, validInvitation.copy(clientPostcode = Some("A A1 1A A")))
       withClue(response.body) {

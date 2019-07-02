@@ -71,9 +71,14 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
 
     "return 200 when trying to get their own invitation" in {
       val myNino = nino
+      val client = new ClientApi(this, myNino, mtdItId1, port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getTradingName(nino, "Trader")
+
       val invite = sendInvitationToClient(myNino)
 
-      val client = new ClientApi(this, myNino, mtdItId1, port)
       given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
@@ -81,9 +86,16 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations for MTD" in {
+      val client = new ClientApi(this, nino, mtdItId1, port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getTradingName(nino, "Trader")
+
+
       val invite = sendInvitationToClient(nino)
 
-      val client = new ClientApi(this, nino, mtdItId1, port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
       given().client(clientId = client.suppliedClientId).givenClientMtdItId(MtdItId("otherMtdItId"))
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
@@ -91,10 +103,16 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to get someone else's invitations for PIR" in {
-      val invite = sendInvitationToClient(nino, service = PersonalIncomeRecord)
-
       val clientNino = nino1
       val client = new ClientApi(this, clientNino, clientNino, port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenCitizenDetails(nino, "10102010")
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getTradingName(nino, "Trader")
+
+      val invite = sendInvitationToClient(nino, service = PersonalIncomeRecord)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
       given().client(clientId = client.suppliedClientId).givenClientNi(clientNino)
 
       val response = getReceivedInvitationResource(invite.links.selfLink)(port, client.hc)
@@ -102,9 +120,13 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     }
 
     "return 403 NO_PERMISSION_ON_CLIENT when trying to transition someone else's invitation" in {
-      val invite = sendInvitationToClient(nino)
-
       val client = new ClientApi(this, nino1, MtdItId("0123456789"), port)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getAgencyEmailViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenGetAgentNameViaClient(arn1)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = client.suppliedClientId, canonicalClientId = mtdItId1).getTradingName(nino, "Trader")
+
+      val invite = sendInvitationToClient(nino)
       given()
         .client(clientId = client.suppliedClientId, canonicalClientId = MtdItId("0123456789"))
         .givenClientMtdItId(MtdItId("otherMtdItId"))

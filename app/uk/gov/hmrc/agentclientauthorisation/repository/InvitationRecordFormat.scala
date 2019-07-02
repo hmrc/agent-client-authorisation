@@ -43,6 +43,7 @@ object InvitationRecordFormat {
     suppliedClientId: String,
     suppliedClientIdType: String,
     expiryDateOp: Option[LocalDate],
+    detailsForEmail: Option[DetailsForEmail],
     clientActionUrl: Option[String],
     events: List[StatusChangeEvent]): Invitation = {
 
@@ -62,6 +63,7 @@ object InvitationRecordFormat {
       ClientIdentifier(suppliedClientId, suppliedClientIdType),
       expiryDate,
       None,
+      None,
       events
     )
   }
@@ -76,6 +78,7 @@ object InvitationRecordFormat {
     (JsPath \ "suppliedClientId").read[String] and
     (JsPath \ "suppliedClientIdType").read[String] and
     (JsPath \ "expiryDate").readNullable[LocalDate] and
+    (JsPath \ "detailsForEmail").readNullable[DetailsForEmail] and
     (JsPath \ "clientActionUrl").readNullable[String] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
@@ -97,6 +100,7 @@ object InvitationRecordFormat {
         "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
         "events"               -> invitation.events,
+        "detailsForEmail"      -> invitation.detailsForEmail,
         "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
         createdKey             -> invitation.firstEvent().time,

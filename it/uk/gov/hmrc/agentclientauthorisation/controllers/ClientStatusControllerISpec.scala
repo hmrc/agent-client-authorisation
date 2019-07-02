@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
-  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   "GET /status" should {
     "return 200 OK indicating client has pending invitations if she has one for PIR" in {
@@ -51,6 +51,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )
@@ -64,6 +65,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.MtdIt,
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )
@@ -75,6 +77,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now,
         LocalDate.now
       )
@@ -107,6 +110,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )
@@ -118,6 +122,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.MtdIt,
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )
@@ -151,6 +156,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673C")),
         ClientIdentifier(Nino("AB835673C")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )
@@ -184,6 +190,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now.minusDays(14),
         LocalDate.now
       )
@@ -196,6 +203,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now.minusDays(15),
         LocalDate.now.minusDays(5)
       )
@@ -230,6 +238,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now,
         LocalDate.now.plusDays(14)
       )

@@ -18,7 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentclientauthorisation.connectors.AgencyNameNotFound
+import uk.gov.hmrc.agentclientauthorisation.model.AgencyEmailNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 
 class AgentCreateInvitationISpec extends BaseISpec {
 
@@ -31,6 +34,11 @@ class AgentCreateInvitationISpec extends BaseISpec {
     "return 201 Created with link to invitation in headers" when {
       "service is ITSA" in {
         givenAuditConnector()
+        givenGetAgencyNameViaClientStub(arn)
+        givenTradingName(nino, "Trade Pears")
+        givenGetAgencyEmailAgentStub(arn)
+        givenNinoForMtdItId(mtdItId, nino)
+
         givenAuthorisedAsAgent(arn)
         hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
 
@@ -49,6 +57,9 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "service is PIR" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
+        givenCitizenDetails(nino, "19122019")
+        givenGetAgencyNameViaClientStub(arn)
+        givenGetAgencyEmailAgentStub(arn)
 
         val
         requestBody = Json.parse(
@@ -67,6 +78,9 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "service is VAT" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
+        givenClientDetails(vrn)
+        givenGetAgencyNameViaClientStub(arn)
+        givenGetAgencyEmailAgentStub(arn)
 
         val requestBody = Json.parse(
           """{
@@ -78,6 +92,66 @@ class AgentCreateInvitationISpec extends BaseISpec {
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+      }
+    }
+
+    "throw exception when adding DetailsForEmail Failed" when {
+      "Agency Email not found" in {
+        givenAuditConnector()
+        givenNotFoundAgencyEmailAgentStub(arn)
+        givenGetAgencyNameViaClientStub(arn)
+        givenNinoForMtdItId(mtdItId, nino)
+
+        givenAuthorisedAsAgent(arn)
+        hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
+
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-MTD-IT",
+            |  "clientIdType": "ni",
+            |  "clientId": "AB123456A"
+            |}""".stripMargin)
+
+        intercept[AgencyEmailNotFound] {
+          await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+        }
+      }
+
+      "Agency Name not found" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenAgencyNameNotFoundClientStub(arn)
+        givenGetAgencyEmailAgentStub(arn)
+
+        val
+        requestBody = Json.parse(
+          """{
+            |  "service": "PERSONAL-INCOME-RECORD",
+            |  "clientIdType": "ni",
+            |  "clientId": "AB123456A"
+            |}""".stripMargin)
+
+        intercept[AgencyNameNotFound] {
+          await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+        }
+      }
+      "Client Name not found" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenGetAgencyNameViaClientStub(arn)
+        givenGetAgencyEmailAgentStub(arn)
+
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-MTD-VAT",
+            |  "clientIdType": "vrn",
+            |  "clientId": "101747696"
+            |}""".stripMargin)
+
+
+        intercept[ClientNameNotFound] {
+          await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+        }
       }
     }
 

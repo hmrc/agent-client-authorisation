@@ -45,8 +45,20 @@ class AgencyFilteringByClientIdIApiPlatformISpec
 
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+      given().client(clientId = nino).getTradingName(nino, "Trader")
+      given().client(clientId = nino).givenCitizenDetails(nino, "10102010")
+
+      given().client(clientId = nino2).givenGetAgentNameViaClient(arn)
+      given().client(clientId = nino2).getAgencyEmailViaClient(arn)
+      given().client(clientId = nino2).givenMtdItIdToNinoForClient(mtdItId2, nino2)
       given().client(clientId = nino2).hasABusinessPartnerRecordWithMtdItId(nino2, mtdItId2)
+      given().client(clientId = nino2).getTradingName(nino2, "Trader 2")
+      given().client(clientId = nino2).givenCitizenDetails(nino2, "10102010")
+
 
       And("the Agency has sent 1 invitation to 2 different clients")
       agencySendsSeveralInvitations(agency)((client1, MtdItService), (client2, MtdItService))

@@ -70,14 +70,26 @@ class InvitationsService @Inject()(
     }
 
   def create(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId)(
-    implicit ec: ExecutionContext): Future[Invitation] = {
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
-      invitationsRepository.create(arn, clientType, service, clientId, suppliedClientId, startDate, expiryDate).map {
-        invitation =>
-          Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
-          invitation
+      for {
+        detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
+        invitation <- invitationsRepository
+                       .create(
+                         arn,
+                         clientType,
+                         service,
+                         clientId,
+                         suppliedClientId,
+                         Some(detailsForEmail),
+                         startDate,
+                         expiryDate)
+      } yield {
+        Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
+        invitation
       }
     }
   }
@@ -124,8 +136,7 @@ class InvitationsService @Inject()(
 
   def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
-    invitationsRepository
-      .findInvitationInfoBy(arn, clientIds, status)
+    invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext,
@@ -154,7 +165,7 @@ class InvitationsService @Inject()(
     hc: HeaderCarrier,
     request: Request[Any]): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
-      invitationsRepository.find("invitationId" -> invitationId).map(_.headOption)
+      invitationsRepository.findByInvitationId(invitationId)
     }
 
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(

@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import javax.inject._
 import org.joda.time.{DateTime, LocalDate}
+import play.api.Logger
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -34,13 +35,54 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
+trait InvitationsRepository {
+  def create(
+    arn: Arn,
+    clientType: Option[String],
+    service: Service,
+    clientId: ClientId,
+    suppliedClientId: ClientId,
+    detailsForEmail: Option[DetailsForEmail],
+    startDate: DateTime,
+    expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation]
+
+  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
+    implicit ec: ExecutionContext): Future[Invitation]
+
+  def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]]
+
+  def findInvitationsBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]]
+
+  def findInvitationInfoBy(
+    arn: Option[Arn] = None,
+    service: Option[Service] = None,
+    clientId: Option[String] = None,
+    status: Option[InvitationStatus] = None,
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]]
+
+  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]]
+
+  def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit]
+
+  def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit]
+
+  def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit]
+}
+
 @Singleton
-class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
+class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     extends ReactiveRepository[Invitation, BSONObjectID](
       "invitations",
       mongo.mongoConnector.db,
       InvitationRecordFormat.mongoFormat,
-      ReactiveMongoFormats.objectIdFormats) with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with InvitationsRepository
+    with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
   import ImplicitBSONHandlers._
   import play.api.libs.json.Json.JsValueWrapper
@@ -68,9 +110,11 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
+    detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
     expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] = {
-    val invitation = Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, startDate, expiryDate)
+    val invitation =
+      Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate)
     insert(invitation).map(_ => invitation)
   }
 
@@ -93,6 +137,9 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
                     throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
                 }
     } yield updated
+
+  def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
+    find("invitationId" -> invitationId).map(_.headOption)
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
@@ -136,7 +183,7 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
     val query = Json.obj(searchOptions: _*)
-    findInvitationInfoBy(query)
+    findInvitationInfoBySearch(query)
   }
 
   def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
@@ -148,10 +195,11 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
           .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.getOrElse("").toString)
     }
     val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
-    findInvitationInfoBy(query)
+    findInvitationInfoBySearch(query)
   }
 
-  private def findInvitationInfoBy(query: JsObject)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+  private def findInvitationInfoBySearch(query: JsObject)(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
 
     implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
@@ -190,4 +238,12 @@ class InvitationsRepository @Inject()(mongo: ReactiveMongoComponent)
             case None             => Future.successful(())
           }
     } yield ()
+
+  def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
+    val updatedInvitation = invitation.copy(detailsForEmail = None)
+    collection.update(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map { result =>
+      if (result.ok) ()
+      else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
+    }
+  }
 }

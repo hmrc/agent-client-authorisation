@@ -26,6 +26,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class ClientNameNotFound() extends Exception
+
 class ClientNameService @Inject()(
   agentServicesAccountConnector: AgentServicesAccountConnector,
   citizenDetailsConnector: CitizenDetailsConnector) {

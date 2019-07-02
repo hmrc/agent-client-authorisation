@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain._
 
 trait StubUtils {
@@ -49,5 +50,49 @@ trait StubUtils {
   case class AgentAdmin(val arn: String) extends BaseUser with AgentAuthStubs {}
 
   case class Client(val clientId: ClientId, val canonicalClientId: TaxIdentifier)
-      extends BaseUser with ClientUserAuthStubs with RelationshipStubs with DesStubs
+      extends BaseUser with ClientUserAuthStubs with RelationshipStubs with DesStubs with ASAStubs
+}
+
+trait ASAStubs {
+  def givenGetAgentNameViaClient(arn: Arn) = {
+    stubFor(get(urlPathEqualTo(s"/agent-services-account/client/agency-name/${arn.value}"))
+      .willReturn(aResponse().withStatus(200).withBody(
+        s"""{
+           |  "agencyName" : "My Agency"
+           |}""".stripMargin)))
+  }
+
+  def givenMtdItIdToNinoForClient(mtdItId: MtdItId, nino: Nino) = {
+    stubFor(get(urlPathEqualTo(s"/agent-services-account/client/mtdItId/${mtdItId.value}"))
+      .willReturn(aResponse().withStatus(200).withBody(
+        s"""{
+           |  "nino" : "${nino.value}"
+           |}""".stripMargin)))
+  }
+
+  def getTradingName(nino: Nino, tradingName: String) =
+    stubFor(
+      get(urlEqualTo(s"/agent-services-account/client/trading-name/nino/$nino"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""{"tradingName": "$tradingName"}""")
+        ))
+
+  def getVatClientDetails(vrn: Vrn) =
+    stubFor(
+      get(urlEqualTo(s"/agent-services-account/client/vat-customer-details/vrn/${vrn.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""{"organisationName": "Gadgetron",
+                         |"individual" : {
+                         |    "title": "Mr",
+                         |    "firstName": "Winston",
+                         |    "middleName": "H",
+                         |    "lastName": "Greenburg"
+                         |    },
+                         |"tradingName": "GDT"
+                         |}""".stripMargin)
+        ))
 }

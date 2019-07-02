@@ -34,6 +34,34 @@ trait BasicUserAuthStubs {
 
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
+  def givenCitizenDetails(nino: Nino, dob: String) = stubFor(
+    get(urlEqualTo(s"/citizen-details/nino/$nino"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(s"""{
+                       |   "name": {
+                       |      "current": {
+                       |         "firstName": "John",
+                       |         "lastName": "Smith"
+                       |      },
+                       |      "previous": []
+                       |   },
+                       |   "ids": {
+                       |      "nino": "$nino"
+                       |   },
+                       |   "dateOfBirth": "$dob"
+                       |}""".stripMargin)))
+
+  def getAgencyEmailViaClient(arn: Arn) = stubFor(get(urlEqualTo(s"/agent-services-account/client/agency-email/${arn.value}"))
+    .willReturn(
+      aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "agencyEmail" : "agent@email.com"
+                     |}""".stripMargin)))
+
   def givenClientMtdItId(mtdItId: MtdItId) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
                                                                                                         |{
@@ -60,46 +88,51 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
   }
 
   def givenClientNi(nino: Nino) = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-NI",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "NINO",
-                                                                                                        |          "value": "${nino.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-NI",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "NINO",
+                     |          "value": "${nino.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
        """.stripMargin)))
 
     this
   }
 
   def givenClientVat(vrn: Vrn) = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "credentials":{
-                                                                                                        |    "providerId": "12345",
-                                                                                                        |    "providerType": "GovernmentGateway"
-                                                                                                        |  },
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-MTD-VAT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "VRN",
-                                                                                                        |          "value": "${vrn.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse().withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "credentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-MTD-VAT",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "VRN",
+                     |          "value": "${vrn.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
        """.stripMargin)))
 
     this

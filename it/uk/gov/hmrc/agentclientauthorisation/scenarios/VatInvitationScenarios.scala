@@ -33,7 +33,9 @@ class VatInvitationScenarios
     val client = new ClientApi(this, vrn, vrn, port)
 
     Given("An agent is logged in")
-    given().client(clientId = vrn)
+    given().client(clientId = vrn).getAgencyEmailViaClient(arn)
+    given().client(clientId = vrn).givenGetAgentNameViaClient(arn)
+    given().client(clientId = vrn).getVatClientDetails(vrn)
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")
@@ -56,7 +58,9 @@ class VatInvitationScenarios
     val client = new ClientApi(this, vrn, vrn, port)
 
     Given("An agent is logged in")
-    given().client(clientId = vrn)
+    given().client(clientId = vrn).getAgencyEmailViaClient(arn)
+    given().client(clientId = vrn).givenGetAgentNameViaClient(arn)
+    given().client(clientId = vrn).getVatClientDetails(vrn)
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")

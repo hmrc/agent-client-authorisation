@@ -48,6 +48,7 @@ object TestConstants {
     clientId = ClientIdentifier(Nino("AA123456A")),
     suppliedClientId = ClientIdentifier(Nino("AA123456A")),
     expiryDate = LocalDate.now().plusDays(14),
+    detailsForEmail = None,
     clientActionUrl = None,
     events = List(StatusChangeEvent(DateTime.now(), Pending))
   )

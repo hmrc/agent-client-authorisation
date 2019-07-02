@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Service}
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with AgentServicesAccountStub {
 
-  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   "GET /invitations/:id" should {
     "return 200 OK with the invitation if found" in {
@@ -44,6 +44,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Age
         Service.PersonalIncomeRecord,
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
+        None,
         DateTime.now,
         LocalDate.now
       )
