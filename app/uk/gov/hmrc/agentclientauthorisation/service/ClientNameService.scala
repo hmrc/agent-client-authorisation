@@ -17,18 +17,21 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.Inject
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentclientauthorisation.model.Service
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.model.{Service, TrustDetailsResponse}
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class ClientNameNotFound() extends Exception
+
 class ClientNameService @Inject()(
   agentServicesAccountConnector: AgentServicesAccountConnector,
-  citizenDetailsConnector: CitizenDetailsConnector) {
+  citizenDetailsConnector: CitizenDetailsConnector,
+  desConnector: DesConnector) {
 
   def getClientNameByService(clientId: String, service: Service)(
     implicit hc: HeaderCarrier,
@@ -37,6 +40,7 @@ class ClientNameService @Inject()(
       case HMRCMTDIT if MtdItId.isValid(clientId) => getItsaTradingName(MtdItId(clientId))
       case HMRCPIR if Nino.isValid(clientId)      => getCitizenName(Nino(clientId))
       case HMRCMTDVAT if Vrn.isValid(clientId)    => getVatName(Vrn(clientId))
+      case HMRCTERSORG if Utr.isValid(clientId)   => getTrustName(Utr(clientId))
       case _                                      => Future successful None
     }
 
@@ -64,5 +68,11 @@ class ClientNameService @Inject()(
         .orElse(customerDetails.organisationName)
         .orElse(customerDetails.individual.map(_.name))
     }
+
+  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    for {
+      trustDetails: Option[TrustDetailsResponse] <- desConnector.getTrustDetails(utr)
+      trustName = trustDetails.map(_.trustDetails.trustName)
+    } yield trustName
 
 }

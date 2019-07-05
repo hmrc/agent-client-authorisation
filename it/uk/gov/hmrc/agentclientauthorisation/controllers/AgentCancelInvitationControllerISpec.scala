@@ -21,7 +21,7 @@ import org.joda.time.{DateTime, LocalDate}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AgentCancelInvitationControllerISpec extends BaseISpec {
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   implicit val mat = app.injector.instanceOf[Materializer]
 
@@ -58,6 +58,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -87,6 +88,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 

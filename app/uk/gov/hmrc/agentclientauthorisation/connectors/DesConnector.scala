@@ -19,15 +19,16 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 
 import com.codahale.metrics.MetricRegistry
+import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Singleton}
 import org.joda.time.LocalDate
 import play.api.libs.json.Json.reads
 import play.api.libs.json.Reads._
-import play.api.libs.json.{Format, JsObject, Json, Reads, __}
+import play.api.libs.json.{JsObject, Reads, _}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.{TrustDetails, TrustDetailsResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{TrustDetailsResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
@@ -62,14 +63,22 @@ object VatCustomerInfo {
   }
 }
 
+@ImplementedBy(classOf[DesConnectorImpl])
+trait DesConnector {
+  def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
+  def getVatCustomerInformation(
+    vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]]
+  def getTrustDetails(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TrustDetailsResponse]]
+}
+
 @Singleton
-class DesConnector @Inject()(
+class DesConnectorImpl @Inject()(
   @Named("des-baseUrl") baseUrl: URL,
   @Named("des.authorizationToken") authorizationToken: String,
   @Named("des.environment") environment: String,
   httpGet: HttpGet,
   metrics: Metrics)
-    extends HttpAPIMonitor {
+    extends HttpAPIMonitor with DesConnector {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getBusinessDetails(

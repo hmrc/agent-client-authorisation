@@ -37,6 +37,9 @@ class PersonalIncomeRecordInvitationScenarios
       .client(clientId = nino)
       .hasABusinessPartnerRecord(nino)
     anAfiRelationshipIsCreatedWith(arn, nino)
+    given().client(clientId = nino).getAgencyEmailViaClient(arn)
+    given().client(clientId = nino).givenGetAgentNameViaClient(arn)
+    given().client(clientId = nino).givenCitizenDetails(nino, "10102010")
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")
@@ -60,6 +63,9 @@ class PersonalIncomeRecordInvitationScenarios
       .client(clientId = nino)
       .hasABusinessPartnerRecord(nino)
     anAfiRelationshipIsCreatedWith(arn, nino)
+    given().client(clientId = nino).getAgencyEmailViaClient(arn)
+    given().client(clientId = nino).givenGetAgentNameViaClient(arn)
+    given().client(clientId = nino).givenCitizenDetails(nino, "10102010")
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")

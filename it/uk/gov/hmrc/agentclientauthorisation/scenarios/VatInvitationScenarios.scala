@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.scenarios
 
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 
@@ -31,9 +32,14 @@ class VatInvitationScenarios
   scenario("accept a VAT invitation") {
     val agency = new AgencyApi(this, arn, port)
     val client = new ClientApi(this, vrn, vrn, port)
+    val emailInformation = (templateId: String) => EmailInformation(Seq("agent@email.com"),
+      templateId,
+      Map("agencyName"->"My Agency", "clientName" -> "GDT", "service" -> "submit their VAT returns through software."))
 
     Given("An agent is logged in")
-    given().client(clientId = vrn)
+    given().client(clientId = vrn).getAgencyEmailViaClient(arn)
+    given().client(clientId = vrn).givenGetAgentNameViaClient(arn)
+    given().client(clientId = vrn).getVatClientDetails(vrn)
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")
@@ -42,6 +48,8 @@ class VatInvitationScenarios
     And("Client accepts the first invitation")
     given().client(clientId = vrn).givenClientVat(vrn)
     anMtdVatRelationshipIsCreatedWith(arn, vrn)
+    given().client(clientId = vrn).givenEmailSent(emailInformation("client_accepted_authorisation_request"))
+
     val invitations = client.getInvitations()
     client.acceptInvitation(invitations.firstInvitation)
 
@@ -54,9 +62,15 @@ class VatInvitationScenarios
   scenario("reject a VAT invitation") {
     val agency = new AgencyApi(this, arn, port)
     val client = new ClientApi(this, vrn, vrn, port)
+    val emailInformation = (templateId: String) => EmailInformation(Seq("agent@email.com"),
+      templateId,
+      Map("agencyName"->"My Agency", "clientName" -> "GDT", "service" -> "submit their VAT returns through software."))
 
     Given("An agent is logged in")
-    given().client(clientId = vrn)
+    given().client(clientId = vrn).getAgencyEmailViaClient(arn)
+    given().client(clientId = vrn).givenGetAgentNameViaClient(arn)
+    given().client(clientId = vrn).getVatClientDetails(vrn)
+    given().client(clientId = vrn).givenEmailSent(emailInformation("client_rejected_authorisation_request"))
     given().agentAdmin(arn).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
 
     When("An agent sends invitations to Client")

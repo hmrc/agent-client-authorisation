@@ -21,9 +21,8 @@ import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.NoPermissionOnAgency
-import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AgentGetInvitationControllerISpec extends BaseISpec {
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   implicit val mat = app.injector.instanceOf[Materializer]
 
@@ -66,6 +65,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -98,6 +98,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Trust,
           ClientIdentifier("101747696", UtrType.id),
           ClientIdentifier("101747696", UtrType.id),
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -130,6 +131,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -140,6 +142,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Vat,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -150,6 +153,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.PersonalIncomeRecord,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -185,6 +189,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -209,6 +214,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -239,6 +245,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.PersonalIncomeRecord,
           clientIdentifierIrv,
           clientIdentifierIrv,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -269,6 +276,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Vat,
           clientIdentifierVat,
           clientIdentifierVat,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -299,6 +307,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Vat,
           clientIdentifierVat,
           clientIdentifierVat,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -330,6 +339,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -350,6 +360,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -376,6 +387,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -407,6 +419,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Vat,
           clientIdentifierVat,
           clientIdentifierVat,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -435,6 +448,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -462,6 +476,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -481,6 +496,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 
@@ -500,6 +516,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.MtdIt,
           clientIdentifier,
           clientIdentifier,
+          None,
           DateTime.now(),
           LocalDate.now()))
 

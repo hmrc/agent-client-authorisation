@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 import org.scalamock.scalatest.MockFactory
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{CustomerDetails, Individual, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -30,12 +30,15 @@ class ClientNameServiceSpec extends UnitSpec with MockFactory {
 
   val mockAgentServicesAccountConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
   val mockCitizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
+  val mockDesConnector: DesConnector = mock[DesConnector]
 
-  val clientNameService = new ClientNameService(mockAgentServicesAccountConnector, mockCitizenDetailsConnector)
+  val clientNameService =
+    new ClientNameService(mockAgentServicesAccountConnector, mockCitizenDetailsConnector, mockDesConnector)
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
   val vrn = Vrn("555219930")
+  val utr = Utr("2134514321")
   implicit val hc = HeaderCarrier()
 
   "getClientNameByService" should {
@@ -117,6 +120,20 @@ class ClientNameServiceSpec extends UnitSpec with MockFactory {
           CustomerDetails(None, Some(Individual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None)))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Miss Marilyn M Monroe")
+    }
+  }
+
+  "getTrustName" should {
+    "get trust name from trust details" in {
+      val trustDetailsResponse =
+        TrustDetailsResponse(TrustDetails(utr.value, "Trusted", TrustAddress("Line 1", "Line 2", country = "UK"), ""))
+      (mockDesConnector
+        .getTrustDetails(_: Utr)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(utr, *, *)
+        .returns(Future(Some(trustDetailsResponse)))
+
+      val result = await(clientNameService.getClientNameByService(utr.value, Service.Trust))
+      result shouldBe Some("Trusted")
     }
   }
 

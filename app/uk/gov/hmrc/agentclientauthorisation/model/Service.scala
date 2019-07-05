@@ -43,6 +43,8 @@ object Service {
 
   val HMRCMTDVAT = "HMRC-MTD-VAT"
 
+  val HMRCTERSORG = "HMRC-TERS-ORG"
+
   case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT", NinoType, MtdItIdType, true)
 
   case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI", NinoType, NinoType, false)

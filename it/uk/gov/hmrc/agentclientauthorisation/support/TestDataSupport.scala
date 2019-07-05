@@ -1,7 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait TestDataSupport {
@@ -24,5 +24,7 @@ trait TestDataSupport {
   val postcode: String = "AA11AA"
   val vatRegDate: LocalDate = LocalDate.parse("2018-01-01")
   val dateOfBirth: LocalDate = LocalDate.parse("1980-04-10")
+
+  val utr = Utr("2134514321")
 
 }

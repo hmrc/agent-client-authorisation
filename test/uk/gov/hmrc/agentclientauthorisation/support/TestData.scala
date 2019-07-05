@@ -54,6 +54,7 @@ trait TestData {
       ClientIdentifier(nino1.value, "ni"),
       now().toLocalDate.plusDays(100),
       None,
+      None,
       events = List(StatusChangeEvent(now(), Pending))
     ),
     Invitation(
@@ -66,6 +67,7 @@ trait TestData {
       ClientIdentifier(nino1.value, "ni"),
       now().toLocalDate.plusDays(100),
       None,
+      None,
       events = List(StatusChangeEvent(now(), Accepted))
     ),
     Invitation(
@@ -77,6 +79,7 @@ trait TestData {
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
       now().toLocalDate.plusDays(100),
+      None,
       None,
       events = List(StatusChangeEvent(now(), Pending))
     )

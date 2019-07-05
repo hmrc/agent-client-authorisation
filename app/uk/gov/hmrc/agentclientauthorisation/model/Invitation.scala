@@ -117,6 +117,7 @@ case class Invitation(
   clientId: ClientId,
   suppliedClientId: ClientId,
   expiryDate: LocalDate,
+  detailsForEmail: Option[DetailsForEmail],
   clientActionUrl: Option[String],
   events: List[StatusChangeEvent]) {
 
@@ -140,6 +141,7 @@ object Invitation {
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
+    detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
     expiryDate: LocalDate): Invitation =
     Invitation(
@@ -150,6 +152,7 @@ object Invitation {
       clientId = clientId,
       suppliedClientId = suppliedClientId,
       expiryDate = expiryDate,
+      detailsForEmail = None,
       clientActionUrl = None,
       events = List(StatusChangeEvent(startDate, Pending))
     )
@@ -173,6 +176,7 @@ object Invitation {
           "expiryDate"           -> invitation.expiryDate,
           "status"               -> invitation.status,
           "invitationId"         -> invitation.invitationId.value,
+          "detailsForEmail"      -> invitation.detailsForEmail,
           "clientActionUrl"      -> invitation.clientActionUrl
         )
     }

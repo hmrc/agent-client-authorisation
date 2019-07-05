@@ -19,14 +19,14 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{AgentNotSubscribed, DateOfBirthDoesNotMatch, VatRegistrationDateDoesNotMatch}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepository])
+  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   implicit val mat = app.injector.instanceOf[Materializer]
 

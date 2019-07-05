@@ -15,8 +15,6 @@ class AgentGetTrustDetailsISpec extends BaseISpec {
 
   "GET /known-facts/organisations/trust/:utr" should {
 
-    val utr = Utr("2134514321")
-
     val trustDetailsResponse =
       TrustDetailsResponse(
         TrustDetails(

@@ -83,7 +83,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
+        when(mockEmailService.updateEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -100,6 +103,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
         when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
+        when(mockEmailService.updateEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -119,6 +126,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           ClientIdentifier(nino1),
           ClientIdentifier(nino1),
           now().toLocalDate.plusDays(14),
+          None,
           None,
           List(StatusChangeEvent(now(), Pending))
         )
@@ -294,14 +302,14 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "findInvitation" should {
     "return None when the passed invitationId is not in the repository" in {
-      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future.successful(List.empty))
+      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any())).thenReturn(Future.successful(None))
       await(service.findInvitation(InvitationId("INVALIDINV"))) shouldBe None
     }
 
     "return Some(invitation) when invitation is present" in {
       val invitation = testInvitation
-      val query = ("invitationId" -> invitation.invitationId)
-      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
+      when(invitationsRepository.findByInvitationId(any[InvitationId])(any()))
+        .thenReturn(Future successful Some(invitation))
       when(agentLinkService.getAgentLink(any(), any())(any(), any())).thenReturn(Future.successful("/invitations"))
 
       await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
@@ -309,7 +317,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
     "return some invitation with status Expired when the invitation had a status of expired in the first place" in {
       val invitation = testInvitationWithStatus(Expired)
-      when(invitationsRepository.find((any[String], any[JsObject]))).thenReturn(Future successful List(invitation))
+      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any()))
+        .thenReturn(Future successful Some(invitation))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
     }
@@ -394,6 +403,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
           ClientIdentifier(nino1),
           now().toLocalDate.minusDays(14),
           None,
+          None,
           List(StatusChangeEvent(now(), Pending))
         )
 
@@ -431,6 +441,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       ClientIdentifier(nino1),
       LocalDate.now().plusDays(14),
       None,
+      None,
       List(StatusChangeEvent(now(), Pending), StatusChangeEvent(now(), status))
     )
 
@@ -446,6 +457,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       ClientIdentifier(mtdItId1),
       ClientIdentifier(nino1),
       LocalDate.now().plusDays(14),
+      Some(DetailsForEmail("email@mail.com", "Agent Name", "Client Name")),
       Some("/invitations"),
       List(StatusChangeEvent(creationDate(), Pending))
     )

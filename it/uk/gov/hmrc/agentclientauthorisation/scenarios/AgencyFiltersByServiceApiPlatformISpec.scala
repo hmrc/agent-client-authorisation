@@ -38,6 +38,10 @@ class AgencyFiltersByServiceApiPlatformISpec
       Given("An agent is logged in")
       given().agentAdmin(arn, agentCode).givenAuthorisedAsAgent(arn).givenGetAgentName(arn)
       given().client(clientId = nino).hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn)
+      given().client(clientId = nino).getTradingName(nino, "Trader")
       val client = new ClientApi(this, nino, mtdItId1, port)
 
       When("An agent sends several invitations")
@@ -57,6 +61,12 @@ class AgencyFiltersByServiceApiPlatformISpec
       given()
         .client(clientId = nino)
         .hasABusinessPartnerRecord(nino)
+      given().client(clientId = nino).givenMtdItIdToNinoForClient(mtdItId1, nino)
+      given().client(clientId = nino).givenGetAgentNameViaClient(arn)
+      given().client(clientId = nino).getAgencyEmailViaClient(arn)
+      given().client(clientId = nino).givenCitizenDetails(nino, "10102010")
+
+
       val client = new ClientApi(this, nino, nino, port)
 
       When("An agent sends several invitations")
