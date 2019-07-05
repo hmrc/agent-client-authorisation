@@ -84,7 +84,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
         when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
-        when(mockEmailService.checkIfWithNoEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.updateEmailDetails(any())(any(), any())) thenReturn Future(invitation)
         when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
         when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 
@@ -104,7 +104,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
         when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
         when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
-        when(mockEmailService.checkIfWithNoEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.updateEmailDetails(any())(any(), any())) thenReturn Future(invitation)
         when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
         when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 

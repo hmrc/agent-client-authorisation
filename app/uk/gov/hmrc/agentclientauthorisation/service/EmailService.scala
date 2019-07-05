@@ -56,7 +56,7 @@ class EmailService @Inject()(
                    }
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
 
-  def checkIfWithNoEmailDetails(
+  def updateEmailDetails(
     invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
     invitation.detailsForEmail match {
       case Some(_) => Future successful invitation
@@ -90,13 +90,13 @@ class EmailService @Inject()(
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     for {
-      invite <- checkIfWithNoEmailDetails(invitation)
+      invite <- updateEmailDetails(invitation)
       result <- sendEmail(invite, "client_accepted_authorisation_request")
     } yield result
 
   def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     for {
-      invite <- checkIfWithNoEmailDetails(invitation)
+      invite <- updateEmailDetails(invitation)
       result <- sendEmail(invite, "client_rejected_authorisation_request")
     } yield result
 
