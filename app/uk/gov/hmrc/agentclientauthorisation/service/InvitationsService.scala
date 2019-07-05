@@ -127,8 +127,13 @@ class InvitationsService @Inject()(
 
         for {
           result <- changeInvitationStatusAndRecover
-          _      <- emailService.sendAcceptedEmail(invitation)
-        } yield result
+          _ <- result match {
+                case Right(invite) => emailService.sendAcceptedEmail(invite)
+                case Left(_)       => Future successful ()
+              }
+        } yield {
+          result
+        }
 
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
     }
@@ -156,7 +161,10 @@ class InvitationsService @Inject()(
         }
     for {
       result <- changeStatus
-      _      <- emailService.sendRejectedEmail(invitation)
+      _ <- result match {
+            case Right(invite) => emailService.sendRejectedEmail(invite)
+            case Left(_)       => Future successful ()
+          }
     } yield result
   }
 

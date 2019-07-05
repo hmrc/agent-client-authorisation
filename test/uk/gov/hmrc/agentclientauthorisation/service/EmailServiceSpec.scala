@@ -80,6 +80,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
 
   before {
     testLogger.errorList.clear()
+    testLogger.warnList.clear()
   }
 
   implicit val hc = HeaderCarrier()
@@ -99,6 +100,19 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
   val clientIdentifier = ClientIdentifier("FOO", MtdItIdType.id)
   val clientIdentifierIrv = ClientIdentifier("AA000003D", NinoType.id)
   val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
+  val invite: Invitation = Invitation(
+    BSONObjectID.generate(),
+    InvitationId("ATSNMKR6P6HRL"),
+    arn,
+    Some("personal"),
+    Service.MtdIt,
+    MtdItId("LCLG57411010846"),
+    MtdItId("LCLG57411010846"),
+    LocalDate.parse("2010-01-01"),
+    Some(dfe),
+    Some("continue/url"),
+    List.empty
+  )
 
   "sendAcceptedEmail" should {
     "return Unit for a successfully sent email for ITSA service" in {
@@ -107,25 +121,13 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
         .expects(*, hc, *)
         .returns(())
+
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
         .returns(Future())
 
-      await(
-        emailService.sendAcceptedEmail(Invitation(
-          BSONObjectID.generate(),
-          InvitationId("ATSNMKR6P6HRL"),
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          MtdItId("LCLG57411010846"),
-          MtdItId("LCLG57411010846"),
-          LocalDate.parse("2010-01-01"),
-          Some(dfe),
-          Some("continue/url"),
-          List.empty
-        )))
+      await(emailService.sendAcceptedEmail(invite))
 
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
 
@@ -214,7 +216,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
           List.empty
         ))) shouldBe ()
 
-      testLogger.checkErrors("sending email failed", exception)
+      testLogger.checkWarns("sending email failed", exception)
     }
   }
   "sendRejectEmail" should {
@@ -285,10 +287,17 @@ object LoggerLikeStub extends LoggerLike with UnitSpec {
 
   override val logger: slf4j.Logger = null
   val errorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
+  val warnList: ListBuffer[(String, Throwable)] = ListBuffer.empty
 
   override def error(message: => String, error: => Throwable) =
     errorList += ((message, error))
 
+  override def warn(message: => String, error: => Throwable) =
+    warnList += ((message, error))
+
   def checkErrors(expectMsg: String, expectError: Throwable) =
     errorList should contain(expectMsg, expectError)
+
+  def checkWarns(expectMsg: String, expectError: Throwable) =
+    warnList should contain(expectMsg, expectError)
 }

@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.nino1
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain._
@@ -50,7 +52,21 @@ trait StubUtils {
   case class AgentAdmin(val arn: String) extends BaseUser with AgentAuthStubs {}
 
   case class Client(val clientId: ClientId, val canonicalClientId: TaxIdentifier)
-      extends BaseUser with ClientUserAuthStubs with RelationshipStubs with DesStubs with ASAStubs
+      extends BaseUser with ClientUserAuthStubs with RelationshipStubs with DesStubs with ASAStubs with EmailStubs
+}
+
+trait EmailStubs {
+  def givenEmailSent(emailInformation: EmailInformation) = {
+    val emailInformationJson = Json.toJson(emailInformation).toString()
+
+    stubFor(
+      post(urlEqualTo("/hmrc/email"))
+        .withRequestBody(similarToJson(emailInformationJson))
+        .willReturn(aResponse().withStatus(202)))
+
+  }
+  private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
+
 }
 
 trait ASAStubs {

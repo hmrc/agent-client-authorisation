@@ -98,6 +98,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           Service.Trust,
           ClientIdentifier("101747696", UtrType.id),
           ClientIdentifier("101747696", UtrType.id),
+          None,
           DateTime.now(),
           LocalDate.now()))
 

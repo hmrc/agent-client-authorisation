@@ -83,7 +83,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
+        when(mockEmailService.checkIfWithNoEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -100,6 +103,10 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
         when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
+        when(mockEmailService.checkIfWithNoEmailDetails(any())(any(), any())) thenReturn Future(invitation)
+        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
@@ -450,7 +457,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       ClientIdentifier(mtdItId1),
       ClientIdentifier(nino1),
       LocalDate.now().plusDays(14),
-      None,
+      Some(DetailsForEmail("email@mail.com", "Agent Name", "Client Name")),
       Some("/invitations"),
       List(StatusChangeEvent(creationDate(), Pending))
     )
