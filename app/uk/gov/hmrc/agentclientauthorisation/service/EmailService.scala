@@ -56,8 +56,7 @@ class EmailService @Inject()(
                    }
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
 
-  def updateEmailDetails(
-    invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
+  def updateEmailDetails(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
     invitation.detailsForEmail match {
       case Some(_) => Future successful invitation
       case _ =>

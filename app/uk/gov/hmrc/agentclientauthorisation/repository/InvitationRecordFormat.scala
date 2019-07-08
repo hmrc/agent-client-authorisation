@@ -62,7 +62,7 @@ object InvitationRecordFormat {
       ClientIdentifier(clientId, clientIdType),
       ClientIdentifier(suppliedClientId, suppliedClientIdType),
       expiryDate,
-      None,
+      detailsForEmail,
       None,
       events
     )
