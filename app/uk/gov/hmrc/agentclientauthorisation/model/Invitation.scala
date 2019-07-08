@@ -152,7 +152,7 @@ object Invitation {
       clientId = clientId,
       suppliedClientId = suppliedClientId,
       expiryDate = expiryDate,
-      detailsForEmail = None,
+      detailsForEmail = detailsForEmail,
       clientActionUrl = None,
       events = List(StatusChangeEvent(startDate, Pending))
     )
