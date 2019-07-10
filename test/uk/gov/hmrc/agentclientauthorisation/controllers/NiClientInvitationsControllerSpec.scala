@@ -84,7 +84,7 @@ class NiClientInvitationsControllerSpec
           .acceptInvitation(Nino("AA000003D"), invitationId)(FakeRequest()))
 
       response.header.status shouldBe 204
-      verifyAgentClientRelationshipCreatedAuditEvent()
+      verifyAgentClientRelationshipCreatedAuditEvent("PERSONAL-INCOME-RECORD")
     }
 
     "Return NO_CONTENT when rejecting an invitation that has nino with spaces in between" in {

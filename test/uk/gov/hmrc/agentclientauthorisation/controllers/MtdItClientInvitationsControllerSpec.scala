@@ -100,7 +100,7 @@ class MtdItClientInvitationsControllerSpec
 
       val response = await(controller.acceptInvitation(mtdItId1, invitationId)(FakeRequest()))
       response.header.status shouldBe 204
-      verifyAgentClientRelationshipCreatedAuditEvent()
+      verifyAgentClientRelationshipCreatedAuditEvent("HMRC-MTD-IT")
     }
 
     "Return not found when the invitation doesn't exist" in {

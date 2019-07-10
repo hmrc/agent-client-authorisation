@@ -37,12 +37,14 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
               .withStatus(200)
               .withBody(s"""{
                            |  "HMRC-MTD-IT": ["AARN1187295", "AARN1187296"],
-                           |  "HMRC-MTD-VAT": ["AARN1187259"]
+                           |  "HMRC-MTD-VAT": ["AARN1187259"],
+                           |  "HMRC-TERS-ORG": ["AARN1187259"]
                            |}""".stripMargin)))
 
       val result = await(connector.getActiveRelationships)
       result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"), Arn("AARN1187296"))
       result("HMRC-MTD-VAT") should contain.only(Arn("AARN1187259"))
+      result("HMRC-TERS-ORG") should contain.only(Arn("AARN1187259"))
     }
 
     "return the map of active relationships when only one present" in {
@@ -59,6 +61,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
       result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"))
       result.get("HMRC-MTD-VAT") shouldBe None
+      result.get("HMRC-TERS-ORG") shouldBe None
     }
 
     "return an empty map of active relationships when none available" in {
@@ -73,6 +76,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
       result.get("HMRC-MTD-IT") shouldBe None
       result.get("HMRC-MTD-VAT") shouldBe None
+      result.get("HMRC-TERS-ORG") shouldBe None
     }
   }
 
