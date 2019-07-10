@@ -49,7 +49,7 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
       acceptInvitation(ClientIdentifier(utr), invitationId)
     }
 
-//TODO Replace With UTR in APB-3608
+//TODO Replace With UTR in APB-3937
 //  def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
 //    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
 //      implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
