@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Generator, Nino}
 
 object TestConstants {
@@ -31,6 +31,8 @@ object TestConstants {
   val ninoSpace = Nino("AA 00 00 03 D")
 
   val vrn: Vrn = Vrn("101747696")
+
+  val utr = Utr("2134514321")
 
   val arn = "ABCDEF123456"
 

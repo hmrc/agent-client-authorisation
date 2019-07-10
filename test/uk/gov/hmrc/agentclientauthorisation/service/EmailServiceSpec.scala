@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{LocalDate}
 import org.mockito.Mockito._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfter
@@ -24,14 +24,12 @@ import org.slf4j
 import play.api.LoggerLike
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.{RequestHeader, Result}
-import play.modules.reactivemongo.ReactiveMongoComponent
 import play.mvc.Http
-import reactivemongo.ReactiveMongoHelper
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -188,6 +186,33 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
 
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
+
+    //TODO Update test for APB-3865
+    "return Unit to remove email details for Trust" in {
+      (mockInvitationRepository
+        .removeEmailDetails(_: Invitation)(_: ExecutionContext))
+        .expects(*, *)
+        .returns(Future())
+
+      await(
+        emailService.sendAcceptedEmail(Invitation(
+          BSONObjectID.generate(),
+          InvitationId("DTSNMKR6P6HRL"),
+          arn,
+          Some("business"),
+          Service.Trust,
+          Utr("555219930"),
+          Utr("555219930"),
+          LocalDate.parse("2010-01-01"),
+          Some(dfe),
+          Some("continue/url"),
+          List.empty
+        )))
+
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
+      testLogger.checkWarns("No setup for Trust Email Yet")
+    }
+
     "will log an error if sending an email fails but will return successful" in {
 
       val exception = new Exception("some kind of problem")
@@ -216,7 +241,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
           List.empty
         ))) shouldBe ()
 
-      testLogger.checkWarns("sending email failed", exception)
+      testLogger.checkWarnsWithErrors("sending email failed", exception)
     }
   }
   "sendRejectEmail" should {
@@ -287,17 +312,25 @@ object LoggerLikeStub extends LoggerLike with UnitSpec {
 
   override val logger: slf4j.Logger = null
   val errorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
-  val warnList: ListBuffer[(String, Throwable)] = ListBuffer.empty
+  val warnWithErrorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
+  val warnList: ListBuffer[String] = ListBuffer.empty
 
   override def error(message: => String, error: => Throwable) =
     errorList += ((message, error))
 
   override def warn(message: => String, error: => Throwable) =
-    warnList += ((message, error))
+    warnWithErrorList += ((message, error))
+
+  override def warn(message: => String) =
+    warnList += (message)
 
   def checkErrors(expectMsg: String, expectError: Throwable) =
     errorList should contain(expectMsg, expectError)
 
-  def checkWarns(expectMsg: String, expectError: Throwable) =
-    warnList should contain(expectMsg, expectError)
+  def checkWarnsWithErrors(expectMsg: String, expectError: Throwable) =
+    warnWithErrorList should contain(expectMsg, expectError)
+
+  def checkWarns(expectMsg: String) =
+    warnList should contain(expectMsg)
+
 }

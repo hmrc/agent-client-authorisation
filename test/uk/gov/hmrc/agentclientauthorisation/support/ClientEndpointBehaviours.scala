@@ -27,8 +27,8 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino, nino1, vrn}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino, nino1, utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Utr, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -68,7 +68,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
       suppliedClientId = ClientIdentifier(nino)
     )
 
-  def aVatInvitation(nino: Nino) =
+  def aVatInvitation(vrn: Vrn) =
     TestConstants.defaultInvitation.copy(
       id = BSONObjectID.parse(invitationDbId).get,
       invitationId = invitationId,
@@ -76,6 +76,16 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
       service = Service.Vat,
       clientId = ClientIdentifier(vrn),
       suppliedClientId = ClientIdentifier(vrn)
+    )
+
+  def aTrustInvitation(utr: Utr) =
+    TestConstants.defaultInvitation.copy(
+      id = BSONObjectID.parse(invitationDbId).get,
+      invitationId = invitationId,
+      arn = arn,
+      service = Service.Trust,
+      clientId = ClientIdentifier(utr),
+      suppliedClientId = ClientIdentifier(utr)
     )
 
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
@@ -112,14 +122,27 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     "service"                                    -> "PERSONAL-INCOME-RECORD")
   }
 
-  def verifyAgentClientRelationshipCreatedAuditEvent() =
+  def assertCreateTrustRelationshipEvent(event: DataEvent) = {
+    event.auditSource shouldBe "agent-client-authorisation"
+    event.auditType shouldBe "AgentClientRelationshipCreated"
+    val details = event.detail.toSeq
+    details should contain allOf ("invitationId" -> invitationId.value,
+    "agentReferenceNumber"                       -> arn.value,
+    "clientIdType"                               -> "utr",
+    "clientId"                                   -> utr.value,
+    "service"                                    -> "HMRC-TERS-ORG")
+  }
+
+  def verifyAgentClientRelationshipCreatedAuditEvent(service: String) =
     eventually {
       val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
       verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
       val event: DataEvent = argumentCaptor.getValue
-      if (event.detail.toSeq.contains("service" -> "HMRC-MTD-IT"))
-        assertCreateITSARelationshipEvent(event)
-      else assertCreateIRVRelationshipEvent(event)
+      service match {
+        case "HMRC-MTD-IT"            => assertCreateITSARelationshipEvent(event)
+        case "PERSONAL-INCOME-RECORD" => assertCreateIRVRelationshipEvent(event)
+        case "HMRC-TERS-ORG"          => assertCreateTrustRelationshipEvent(event)
+      }
       //Add more if need be
     }
 

@@ -61,6 +61,11 @@ class RelationshipsConnector @Inject()(
     }
   }
 
+  def createTrustRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Trust-PUT") {
+      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation).toString, "") map (_ => Unit)
+    }
+
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/relationships/active"
@@ -74,6 +79,13 @@ class RelationshipsConnector @Inject()(
         case _: NotFoundException => Seq()
       }
     }
+
+  private def trustRelationshipUrl(invitation: Invitation): URL =
+    new URL(
+      baseUrl,
+      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/${encodePathSegment(
+        invitation.clientId.value)}"
+    )
 
   private def mtdItRelationshipUrl(invitation: Invitation): URL =
     new URL(

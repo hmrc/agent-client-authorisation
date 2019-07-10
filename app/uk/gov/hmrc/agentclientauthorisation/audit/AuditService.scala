@@ -21,7 +21,7 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.AgentClientInvitationEvent
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
@@ -73,6 +73,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
   private def clientIdentifierType(clientId: ClientId): String = clientId.underlying match {
     case _: Vrn               => "vrn"
     case _: Nino | _: MtdItId => "ni"
+    case _: Utr               => "utr"
     case _                    => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
