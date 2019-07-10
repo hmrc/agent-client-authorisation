@@ -93,6 +93,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       mockClientNameService,
       mockEmailConnector,
       mockInvitationRepository,
+      "14 Days",
       mockMessagesApi) {
       override def getLogger: LoggerLike = testLogger
     }
@@ -132,7 +133,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
 
     }
-    "return 204 for a successfully sent email for IRV service" in {
+    "return Unit for a successfully sent email for IRV service" in {
       mockMessagesApi.apply("services.PERSONAL-INCOME-RECORD")
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
@@ -160,7 +161,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
 
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
-    "return 204 for a successfully sent email for VAT service" in {
+    "return Unit for a successfully sent email for VAT service" in {
       mockMessagesApi.apply("services.PERSONAL-INCOME-RECORD")
       (mockEmailConnector
         .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
