@@ -24,6 +24,8 @@ class EmailInformationSpec extends UnitSpec {
   val emails = Seq("someone@something.go.global")
   val templateId = "client_accepted_email"
   val parametersAccept = Map("agentName" -> "Agent 1", "clientName" -> "Client 2", "service" -> "Accept ITSA")
+  val parametersExpired =
+    Map("agentName" -> "Agent 1", "clientName" -> "Client 2", "service" -> "Expired ITSA", "expiryPeriod" -> "14 days")
 
   "EmailInformation" should {
     "return accept email info" in {
@@ -34,6 +36,16 @@ class EmailInformationSpec extends UnitSpec {
       (json \ "to").as[Seq[String]] shouldBe emails
       (json \ "templateId").as[String] shouldBe templateId
       (json \ "parameters").as[Map[String, String]] shouldBe parametersAccept
+    }
+
+    "return expired email info" in {
+      val emailExpiredInfo = EmailInformation(emails, templateId, parametersExpired, false, None, None)
+
+      val json = toJson(emailExpiredInfo)
+
+      (json \ "to").as[Seq[String]] shouldBe emails
+      (json \ "templateId").as[String] shouldBe templateId
+      (json \ "parameters").as[Map[String, String]] shouldBe parametersExpired
     }
   }
 

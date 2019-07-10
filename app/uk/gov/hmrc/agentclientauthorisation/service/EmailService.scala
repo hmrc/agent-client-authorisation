@@ -15,7 +15,7 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.service
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
 import play.api.{Logger, LoggerLike}
 import play.api.i18n.MessagesApi
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
@@ -33,6 +33,7 @@ class EmailService @Inject()(
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
   invitationsRepository: InvitationsRepository,
+  @Named("invitation.expiryDuration") expiryPeriod: String,
   messagesApi: MessagesApi) {
 
   protected def getLogger: LoggerLike = Logger
@@ -117,6 +118,7 @@ class EmailService @Inject()(
       Map(
         "agencyName" -> agencyName,
         "clientName" -> clientName,
+        "expiryPeriod" -> expiryPeriod,
         "service" -> (invitation.service.id match {
           case Service.HMRCMTDIT  => messagesApi(s"service.${Service.HMRCMTDIT}")
           case Service.HMRCPIR    => messagesApi(s"service.${Service.HMRCPIR}")
