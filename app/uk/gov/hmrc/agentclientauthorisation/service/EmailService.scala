@@ -123,8 +123,8 @@ class EmailService @Inject()(
       Seq(agencyEmail),
       templateId,
       Map(
-        "agencyName" -> agencyName,
-        "clientName" -> clientName,
+        "agencyName"   -> agencyName,
+        "clientName"   -> clientName,
         "expiryPeriod" -> expiryPeriod,
         "service" -> (invitation.service.id match {
           case Service.HMRCMTDIT  => messagesApi(s"service.${Service.HMRCMTDIT}")
