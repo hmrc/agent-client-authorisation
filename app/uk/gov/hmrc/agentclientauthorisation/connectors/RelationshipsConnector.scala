@@ -83,7 +83,7 @@ class RelationshipsConnector @Inject()(
   private def trustRelationshipUrl(invitation: Invitation): URL =
     new URL(
       baseUrl,
-      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/${encodePathSegment(
+      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
         invitation.clientId.value)}"
     )
 
