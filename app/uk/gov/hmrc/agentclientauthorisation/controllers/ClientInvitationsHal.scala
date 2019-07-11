@@ -20,9 +20,10 @@ import play.api.hal.Hal.hal
 import play.api.hal.{HalLink, HalLinks, HalResource}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Call
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -38,6 +39,9 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.getInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.getInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
+      case Service.Trust =>
+        //TODO To Be Added for APB-3938
+        Call("GET", s"/clients/UTR/:utr/invitations/received/${invitation.invitationId.value}")
     }
     var links = HalLinks(Vector(HalLink("self", link.url)))
 
@@ -51,6 +55,9 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.acceptInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.acceptInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
+      case Service.Trust =>
+        routes.TrustClientInvitationsController
+          .acceptInvitation(Utr(invitation.clientId.value), invitation.invitationId)
     }
     val rejectLink = invitation.service match {
       case Service.MtdIt =>
@@ -60,6 +67,9 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.rejectInvitation(Nino(invitation.clientId.value), invitation.invitationId)
       case Service.Vat =>
         routes.VatClientInvitationsController.rejectInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
+      case Service.Trust =>
+        routes.TrustClientInvitationsController
+          .rejectInvitation(Utr(invitation.clientId.value), invitation.invitationId)
     }
 
     if (invitation.status == Pending) {
@@ -77,8 +87,10 @@ trait ClientInvitationsHal {
           routes.MtdItClientInvitationsController.getInvitation(MtdItId(i.clientId.value), i.invitationId)
         case Service.PersonalIncomeRecord =>
           routes.NiClientInvitationsController.getInvitation(Nino(i.clientId.value), i.invitationId)
-        case Service.Vat => routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
-
+        case Service.Vat   => routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
+        case Service.Trust =>
+          //TODO To Be Added for APB-3938
+          Call("GET", s"/clients/UTR/:utr/invitations/received/${i.invitationId.value}")
       }
       HalLink("invitations", link.toString)
     }.toVector
@@ -93,6 +105,8 @@ trait ClientInvitationsHal {
         routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
       case clientId @ ClientIdentifier(Vrn(_)) =>
         routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
+      case clientId @ ClientIdentifier(Utr(_)) =>
+        routes.TrustClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Utr], None)
     }
 
     val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)

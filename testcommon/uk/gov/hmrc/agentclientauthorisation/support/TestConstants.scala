@@ -33,6 +33,7 @@ object TestConstants {
   val vrn: Vrn = Vrn("101747696")
 
   val utr = Utr("2134514321")
+  val utr2 = Utr("3134514321")
 
   val arn = "ABCDEF123456"
 

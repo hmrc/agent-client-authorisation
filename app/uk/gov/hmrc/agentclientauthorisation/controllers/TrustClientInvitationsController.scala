@@ -58,4 +58,13 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
       actionInvitation(ClientIdentifier(utr), invitationId, invitationsService.rejectInvitation)
     }
 
+  def getInvitations(utr: Utr, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(utr, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[Utr]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))
+        else None
+      getInvitations(Service.Trust, ClientIdentifier(utr), status)
+    }
+
 }

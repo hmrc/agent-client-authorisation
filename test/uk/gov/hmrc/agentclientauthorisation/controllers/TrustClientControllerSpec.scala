@@ -19,16 +19,17 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.Provider
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import play.api.libs.json.{OFormat, Reads}
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Rejected}
+import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval, ~}
 import uk.gov.hmrc.auth.core.{Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, utr}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{utr, utr2}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -98,6 +99,28 @@ class TrustClientControllerSpec
 
       val response = await(controller.rejectInvitation(utr, invitationId)(FakeRequest()))
       response.header.status shouldBe 204
+    }
+  }
+
+  "Get All Invitations by Utr" should {
+    val clientTrustCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientTrustEnrolment), Credentials("providerId", "GovernmentGateway"))
+      Future.successful(retrievals)
+    }
+
+    "return 200" in {
+
+      clientAuthStubForStride(clientTrustCorrect)
+      val invitation = aTrustInvitation(utr)
+      val invitation2 = aTrustInvitation(utr2)
+      whenClientReceivedInvitation thenReturn (Future successful Seq(invitation, invitation2))
+
+      val response = await(controller.getInvitations(utr, None)(FakeRequest()))
+      response.header.status shouldBe 200
+      ((jsonBodyOf(response) \ "_embedded" \ "invitations")(0) \ "clientId").as[String] shouldBe invitation.clientId
+        .value
+      ((jsonBodyOf(response) \ "_embedded" \ "invitations")(1) \ "clientId")
+        .as[String] shouldBe invitation2.clientId.value
     }
   }
 
