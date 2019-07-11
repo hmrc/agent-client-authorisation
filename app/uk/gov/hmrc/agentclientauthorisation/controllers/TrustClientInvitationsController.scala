@@ -49,14 +49,13 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
       acceptInvitation(ClientIdentifier(utr), invitationId)
     }
 
-//TODO Replace With UTR in APB-3937
-//  def rejectInvitation(mtdItId: MtdItId, invitationId: InvitationId): Action[AnyContent] =
-//    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
-//      implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
-//        if (currentUser.credentials.providerType == "GovernmentGateway")
-//          Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
-//        else None
-//      actionInvitation(ClientIdentifier(mtdItId), invitationId, invitationsService.rejectInvitation)
-//    }
+  def rejectInvitation(utr: Utr, invitationId: InvitationId): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(utr, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[Utr]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))
+        else None
+      actionInvitation(ClientIdentifier(utr), invitationId, invitationsService.rejectInvitation)
+    }
 
 }

@@ -22,7 +22,7 @@ import org.mockito.Mockito.when
 import play.api.test.FakeRequest
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.Accepted
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Rejected}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ClientEndpointBehaviours, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, Retrieval, ~}
@@ -82,6 +82,22 @@ class TrustClientControllerSpec
       val response = await(controller.acceptInvitation(utr, invitationId)(FakeRequest()))
       response.header.status shouldBe 204
       verifyAgentClientRelationshipCreatedAuditEvent("HMRC-TERS-ORG")
+    }
+  }
+
+  "Rejecting Trust Invitation" should {
+    val clientTrustCorrect: Future[~[Enrolments, Credentials]] = {
+      val retrievals = new ~(Enrolments(clientTrustEnrolment), Credentials("providerId", "GovernmentGateway"))
+      Future.successful(retrievals)
+    }
+    "return 204" in {
+      clientAuthStubForStride(clientTrustCorrect)
+      val invitation = aTrustInvitation(utr)
+      whenFindingAnInvitation thenReturn (Future successful Some(invitation))
+      whenInvitationIsRejected thenReturn (Future successful Right(transitionInvitation(invitation, Rejected)))
+
+      val response = await(controller.rejectInvitation(utr, invitationId)(FakeRequest()))
+      response.header.status shouldBe 204
     }
   }
 
