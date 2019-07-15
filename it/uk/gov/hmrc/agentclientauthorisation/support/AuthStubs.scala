@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
-import uk.gov.hmrc.domain.{Nino, SaAgentReference, TaxIdentifier}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -62,26 +62,87 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |  "agencyEmail" : "agent@email.com"
                      |}""".stripMargin)))
 
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr) = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "credentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-MTD-IT",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "MTDITID",
+                     |          "value": "${mtdItId.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key": "HMRC-MTD-VAT",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "VRN",
+                     |          "value": "${vrn.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key": "HMRC-NI",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "NINO",
+                     |          "value": "${nino.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key": "HMRC-TERS-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "SAUTR",
+                     |          "value": "${utr.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
+       """.stripMargin)))
+
+    this
+  }
+
   def givenClientMtdItId(mtdItId: MtdItId) = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody(s"""
-                                                                                                        |{
-                                                                                                        |  "credentials":{
-                                                                                                        |    "providerId": "12345",
-                                                                                                        |    "providerType": "GovernmentGateway"
-                                                                                                        |  },
-                                                                                                        |  "allEnrolments": [
-                                                                                                        |    {
-                                                                                                        |      "key": "HMRC-MTD-IT",
-                                                                                                        |      "identifiers": [
-                                                                                                        |        {
-                                                                                                        |          "key": "MTDITID",
-                                                                                                        |          "value": "${mtdItId.value}"
-                                                                                                        |        }
-                                                                                                        |      ],
-                                                                                                        |      "state": "Activated"
-                                                                                                        |    }
-                                                                                                        |  ]
-                                                                                                        |}
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "credentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-MTD-IT",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "MTDITID",
+                     |          "value": "${mtdItId.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
        """.stripMargin)))
 
     this

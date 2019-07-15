@@ -123,3 +123,5 @@ object ClientIdentifier {
 
   implicit def wrap[T <: TaxIdentifier](taxId: T): ClientIdentifier[T] = ClientIdentifier(taxId)
 }
+
+case class ClientService(service: Service, clientIdentifier: TaxIdentifier)

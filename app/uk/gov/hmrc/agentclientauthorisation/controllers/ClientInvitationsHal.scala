@@ -106,7 +106,7 @@ trait ClientInvitationsHal {
       case clientId @ ClientIdentifier(Vrn(_)) =>
         routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
       case clientId @ ClientIdentifier(Utr(_)) =>
-        routes.TrustClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Utr], None)
+        routes.ClientInvitationsController.getInvitations("UTR", clientId.value, status)
     }
 
     val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)
