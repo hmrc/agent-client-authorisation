@@ -64,15 +64,6 @@ class VatClientInvitationsController @Inject()(invitationsService: InvitationsSe
       getInvitation(ClientIdentifier(vrn), invitationId)
   }
 
-  def getInvitations(vrn: Vrn, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(vrn, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[Vrn]] =
-        if (currentUser.credentials.providerType == "GovernmentGateway")
-          Some(ClientIdentifier(VrnType.createUnderlying(vrn.value)))
-        else None
-      getInvitations(Service.Vat, ClientIdentifier(vrn), status)
-    }
-
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Vrn] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.Vat, VrnType)(action)
 

@@ -65,15 +65,6 @@ class MtdItClientInvitationsController @Inject()(invitationsService: Invitations
       getInvitation(ClientIdentifier(mtdItId), invitationId)
   }
 
-  def getInvitations(mtdItId: MtdItId, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(mtdItId, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[MtdItId]] =
-        if (currentUser.credentials.providerType == "GovernmentGateway")
-          Some(ClientIdentifier(MtdItIdType.createUnderlying(mtdItId.value)))
-        else None
-      getInvitations(Service.MtdIt, ClientIdentifier(mtdItId), status)
-    }
-
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[MtdItId] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.MtdIt, MtdItIdType)(action)
 

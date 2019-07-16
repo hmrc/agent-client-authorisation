@@ -100,11 +100,11 @@ trait ClientInvitationsHal {
 
     val link = clientId match {
       case clientId @ ClientIdentifier(MtdItId(_)) =>
-        routes.MtdItClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[MtdItId], None)
+        routes.ClientInvitationsController.getInvitations("MTDITID", clientId.value, None)
       case clientId @ ClientIdentifier(Nino(_)) =>
-        routes.NiClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Nino], None)
+        routes.ClientInvitationsController.getInvitations("NI", clientId.value, None)
       case clientId @ ClientIdentifier(Vrn(_)) =>
-        routes.VatClientInvitationsController.getInvitations(clientId.underlying.asInstanceOf[Vrn], None)
+        routes.ClientInvitationsController.getInvitations("VRN", clientId.value, None)
       case clientId @ ClientIdentifier(Utr(_)) =>
         routes.ClientInvitationsController.getInvitations("UTR", clientId.value, status)
     }
