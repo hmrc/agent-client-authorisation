@@ -25,7 +25,7 @@ import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdType, ClientIdentifier, Service, TypeOfEnrolment}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
@@ -96,7 +96,11 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
 
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
 
-  case class CurrentUser(enrolments: Enrolments, credentials: Credentials)
+  case class CurrentUser(
+    enrolments: Enrolments,
+    credentials: Credentials,
+    service: Service,
+    taxIdentifier: TaxIdentifier)
 
   def hasRequiredStrideRole(enrolments: Enrolments, strideRoles: Seq[String]): Boolean =
     strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
@@ -118,19 +122,34 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .contains(clientId)
   }
 
-  def AuthorisedClientOrStrideUser[T](clientId: TaxIdentifier, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
-    implicit ec: ExecutionContext): Action[AnyContent] =
+  def determineService(service: String, identifier: String)(implicit hc: HeaderCarrier): Either[Future[Result], (Service, TaxIdentifier)] =
+    service match {
+      case "MTDITID" if MtdItIdType.isValid(identifier) =>
+        Right(Service.MtdIt, MtdItIdType.createUnderlying(identifier))
+      case "NI" if NinoType.isValid(identifier) =>
+        Right(Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier))
+      case "VRN" if VrnType.isValid(identifier) => Right(Service.Vat, VrnType.createUnderlying(identifier))
+      case "UTR" if UtrType.isValid(identifier) => Right(Service.Trust, UtrType.createUnderlying(identifier))
+      case e                                    => Left(Future.successful(BadRequest(s"Unsupported $e")))
+    }
+
+  def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(
+    body: RequestAndCurrentUser)(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
       authorised().retrieve(allEnrolments and credentials) {
         case enrolments ~ creds =>
-          creds.providerType match {
-            case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
-              body(request)(CurrentUser(enrolments, creds))
-            case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRoles) =>
-              body(request)(CurrentUser(enrolments, creds))
-            case _ =>
-              Future successful NoPermissionToPerformOperation
+          determineService(service, identifier) match {
+            case Right((clientService, clientId)) =>
+              creds.providerType match {
+                case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
+                  body(request)(CurrentUser(enrolments, creds, clientService, clientId))
+                case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRoles) =>
+                  body(request)(CurrentUser(enrolments, creds, clientService, clientId))
+                case _ =>
+                  Future successful NoPermissionToPerformOperation
+              }
+            case Left(error) => error
           }
       } recover {
         case e: AuthorisationException =>

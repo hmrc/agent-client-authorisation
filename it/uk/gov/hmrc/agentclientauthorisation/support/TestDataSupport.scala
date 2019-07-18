@@ -27,10 +27,14 @@ trait TestDataSupport {
   val dateOfBirth: LocalDate = LocalDate.parse("1980-04-10")
 
   val utr = Utr("2134514321")
+  val utr2 = Utr("3087612352")
+
 
   val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
 
   val STRIDE_ROLE = "maintain agent relationships"
   val NEW_STRIDE_ROLE = "maintain_agent_relationships"
+
+  val strideRoles = Seq(STRIDE_ROLE, NEW_STRIDE_ROLE)
 
 }

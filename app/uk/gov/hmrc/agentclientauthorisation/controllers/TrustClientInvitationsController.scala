@@ -41,7 +41,7 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
   private val strideRoles = Seq(oldStrideRole, newStrideRole)
 
   def acceptInvitation(utr: Utr, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(utr, strideRoles) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser("UTR", utr.value, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[Utr]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))
@@ -50,7 +50,7 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
     }
 
   def rejectInvitation(utr: Utr, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(utr, strideRoles) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser("UTR", utr.value, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[Utr]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))

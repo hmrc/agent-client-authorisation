@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Provider, Singleton}
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
@@ -41,28 +41,14 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 
   private val strideRoles = Seq(oldStrideRole, newStrideRole)
 
-  private def determineService(service: String, identifier: String): ClientService =
-    service match {
-      case "MTDITID" if MtdItIdType.isValid(identifier) =>
-        ClientService(Service.MtdIt, MtdItIdType.createUnderlying(identifier))
-      case "NI" if NinoType.isValid(identifier) =>
-        ClientService(Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier))
-      case "VRN" if VrnType.isValid(identifier) => ClientService(Service.Vat, VrnType.createUnderlying(identifier))
-      case "UTR" if UtrType.isValid(identifier) => ClientService(Service.Trust, UtrType.createUnderlying(identifier))
-      case _                                    => throw new Exception(s"Unsupported $service and identifier $identifier")
+  def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
+        if (currentUser.credentials.providerType == "GovernmentGateway")
+          Some(ClientIdentifier(currentUser.taxIdentifier))
+        else None
+      getInvitations(currentUser.service, ClientIdentifier(currentUser.taxIdentifier), status)
     }
-
-  def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] = {
-    val clientService = determineService(service, identifier)
-    AuthorisedClientOrStrideUser(clientService.clientIdentifier, strideRoles) {
-      implicit request => implicit currentUser =>
-        implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
-          if (currentUser.credentials.providerType == "GovernmentGateway")
-            Some(ClientIdentifier(clientService.clientIdentifier))
-          else None
-        getInvitations(clientService.service, ClientIdentifier(clientService.clientIdentifier), status)
-    }
-  }
 
   override protected def agencyLink(invitation: Invitation): Option[String] = None
 }
