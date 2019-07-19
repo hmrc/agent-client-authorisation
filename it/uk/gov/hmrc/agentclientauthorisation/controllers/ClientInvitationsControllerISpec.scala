@@ -55,6 +55,17 @@ class ClientInvitationsControllerISpec extends BaseISpec {
       givenClientAll(mtdItId, vrn, nino, utr)
   }
 
+  //TODO update when refactor in the future
+  "GET /clients/:service/:identifier/invitations/received/:invitationId" should {
+    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received/:invitationId")
+
+    "return 501" in {
+      val result = await(controller.getInvitation(trustClient.urlIdentifier, trustClient.clientId.value, InvitationId("D123456789"))(request))
+
+      status(result) shouldBe 501
+    }
+  }
+
   "GET /clients/:service/:taxIdentifier/invitations/received" should {
     list.foreach { client =>
       runGetAllInvitationsScenario(client, true)
@@ -79,11 +90,6 @@ class ClientInvitationsControllerISpec extends BaseISpec {
     }
 
     s"return 200 for getting no ${testClient.service.id} invitations for logged in ${if(forStride) "stride" else "client"}" in new LoggedinUser(forStride) {
-      if(forStride)
-        givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
-      else
-        givenClientAll(mtdItId, vrn, nino, utr)
-
       val result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
 
       status(result) shouldBe 200

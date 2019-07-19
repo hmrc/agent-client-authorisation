@@ -40,8 +40,8 @@ trait ClientInvitationsHal {
       case Service.Vat =>
         routes.VatClientInvitationsController.getInvitation(Vrn(invitation.clientId.value), invitation.invitationId)
       case Service.Trust =>
-        //TODO To Be Added for APB-3938
-        Call("GET", s"/clients/UTR/:utr/invitations/received/${invitation.invitationId.value}")
+        //TODO To Be Implemented
+        routes.ClientInvitationsController.getInvitation("UTR", invitation.clientId.value, invitation.invitationId)
     }
     var links = HalLinks(Vector(HalLink("self", link.url)))
 
@@ -89,8 +89,8 @@ trait ClientInvitationsHal {
           routes.NiClientInvitationsController.getInvitation(Nino(i.clientId.value), i.invitationId)
         case Service.Vat   => routes.VatClientInvitationsController.getInvitation(Vrn(i.clientId.value), i.invitationId)
         case Service.Trust =>
-          //TODO To Be Added for APB-3938
-          Call("GET", s"/clients/UTR/:utr/invitations/received/${i.invitationId.value}")
+          //TODO To Be Implemented
+          routes.ClientInvitationsController.getInvitation("UTR", i.clientId.value, i.invitationId)
       }
       HalLink("invitations", link.toString)
     }.toVector

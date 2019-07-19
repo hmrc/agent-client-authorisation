@@ -122,7 +122,10 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .contains(clientId)
   }
 
-  def determineService(service: String, identifier: String)(implicit hc: HeaderCarrier): Either[Future[Result], (Service, TaxIdentifier)] =
+  type BadRequest = Result
+
+  def determineService(service: String, identifier: String)(
+    implicit hc: HeaderCarrier): Either[BadRequest, (Service, TaxIdentifier)] =
     service match {
       case "MTDITID" if MtdItIdType.isValid(identifier) =>
         Right(Service.MtdIt, MtdItIdType.createUnderlying(identifier))
@@ -130,7 +133,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         Right(Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier))
       case "VRN" if VrnType.isValid(identifier) => Right(Service.Vat, VrnType.createUnderlying(identifier))
       case "UTR" if UtrType.isValid(identifier) => Right(Service.Trust, UtrType.createUnderlying(identifier))
-      case e                                    => Left(Future.successful(BadRequest(s"Unsupported $e")))
+      case e                                    => Left(BadRequest(s"Unsupported $e"))
     }
 
   def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(
@@ -149,7 +152,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
                 case _ =>
                   Future successful NoPermissionToPerformOperation
               }
-            case Left(error) => error
+            case Left(error) => Future successful error
           }
       } recover {
         case e: AuthorisationException =>

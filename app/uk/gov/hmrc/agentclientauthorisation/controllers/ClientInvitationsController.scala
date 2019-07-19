@@ -17,14 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Provider, Singleton}
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
+import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 @Singleton
 class ClientInvitationsController @Inject()(invitationsService: InvitationsService)(
@@ -40,6 +41,11 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   implicit val ec: ExecutionContext = ecp.get
 
   private val strideRoles = Seq(oldStrideRole, newStrideRole)
+
+  def getInvitation(service: String, identifier: String, invitationId: InvitationId): Action[AnyContent] =
+    Action.async {
+      Future.successful(NotImplemented)
+    }
 
   def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
     AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
