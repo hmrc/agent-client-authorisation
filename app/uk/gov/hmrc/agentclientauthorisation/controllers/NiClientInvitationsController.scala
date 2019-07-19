@@ -56,12 +56,6 @@ class NiClientInvitationsController @Inject()(invitationsService: InvitationsSer
       getInvitation(ClientIdentifier(nino), invitationId)
   }
 
-  def getInvitations(nino: Nino, status: Option[InvitationStatus]): Action[AnyContent] = onlyForClients {
-    implicit request => implicit authNino =>
-      implicit val authTaxId: Some[ClientIdentifier[Nino]] = Some(authNino)
-      getInvitations(Service.PersonalIncomeRecord, ClientIdentifier(nino), status)
-  }
-
   def onlyForClients(action: Request[AnyContent] => ClientIdentifier[Nino] => Future[Result]): Action[AnyContent] =
     super.onlyForClients(Service.PersonalIncomeRecord, NinoType)(action)
 

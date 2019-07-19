@@ -110,7 +110,7 @@ abstract class BaseClientInvitationsController(
     authTaxId match {
       case None => block
       case Some(authTaxIdentifier)
-          if authTaxIdentifier.value.replaceAll("\\s", "") == authTaxIdentifier.value.replaceAll("\\s", "") =>
+          if authTaxIdentifier.value.replaceAll("\\s", "") == taxId.value.replaceAll("\\s", "") =>
         block
       case _ => Future successful NoPermissionOnClient
     }

@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Named, Provider}
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import javax.inject.{Inject, Named, Provider, Singleton}
+import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
-import uk.gov.hmrc.agentmtdidentifiers.model.{InvitationId, MtdItId, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.domain.TaxIdentifier
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class TrustClientInvitationsController @Inject()(invitationsService: InvitationsService)(
+@Singleton
+class ClientInvitationsController @Inject()(invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -40,22 +42,19 @@ class TrustClientInvitationsController @Inject()(invitationsService: Invitations
 
   private val strideRoles = Seq(oldStrideRole, newStrideRole)
 
-  def acceptInvitation(utr: Utr, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser("UTR", utr.value, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[Utr]] =
-        if (currentUser.credentials.providerType == "GovernmentGateway")
-          Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))
-        else None
-      acceptInvitation(ClientIdentifier(utr), invitationId)
+  def getInvitation(service: String, identifier: String, invitationId: InvitationId): Action[AnyContent] =
+    Action.async {
+      Future.successful(NotImplemented)
     }
 
-  def rejectInvitation(utr: Utr, invitationId: InvitationId): Action[AnyContent] =
-    AuthorisedClientOrStrideUser("UTR", utr.value, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[Utr]] =
+  def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
-          Some(ClientIdentifier(UtrType.createUnderlying(utr.value)))
+          Some(ClientIdentifier(currentUser.taxIdentifier))
         else None
-      actionInvitation(ClientIdentifier(utr), invitationId, invitationsService.rejectInvitation)
+      getInvitations(currentUser.service, ClientIdentifier(currentUser.taxIdentifier), status)
     }
 
+  override protected def agencyLink(invitation: Invitation): Option[String] = None
 }
