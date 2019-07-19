@@ -67,6 +67,15 @@ class AuthActionsISpec extends BaseISpec {
 
       status(result) shouldBe 401
     }
+
+    s"return 403 if not logged in through GG or PA" in {
+      isNotGGorPA
+      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+
+      val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride("UTR", utr.value, strideRoles)(request)
+
+      status(result) shouldBe 403
+    }
   }
 
   def runHappyLoginScenario(testClient: TestClient, forStride: Boolean, forClient: Boolean) = {

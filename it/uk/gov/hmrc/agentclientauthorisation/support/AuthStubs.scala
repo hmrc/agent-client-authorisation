@@ -30,6 +30,25 @@ trait BasicUserAuthStubs {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
     this
   }
+
+  def isNotGGorPA = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "credentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "Verify"
+                     |  },
+                     |  "allEnrolments": []
+                     |}
+       """.stripMargin)))
+
+    this
+  }
+
+
 }
 
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
