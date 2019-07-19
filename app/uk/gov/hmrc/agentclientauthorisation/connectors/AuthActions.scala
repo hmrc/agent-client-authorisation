@@ -122,10 +122,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .contains(clientId)
   }
 
-  type BadRequest = Result
-
   def determineService(service: String, identifier: String)(
-    implicit hc: HeaderCarrier): Either[BadRequest, (Service, TaxIdentifier)] =
+    implicit hc: HeaderCarrier): Either[Result, (Service, TaxIdentifier)] =
     service match {
       case "MTDITID" if MtdItIdType.isValid(identifier) =>
         Right(Service.MtdIt, MtdItIdType.createUnderlying(identifier))
