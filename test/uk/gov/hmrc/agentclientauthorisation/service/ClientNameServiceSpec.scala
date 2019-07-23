@@ -125,12 +125,11 @@ class ClientNameServiceSpec extends UnitSpec with MockFactory {
 
   "getTrustName" should {
     "get trust name from trust details" in {
-      val trustDetailsResponse =
-        TrustDetailsResponse(TrustDetails(utr.value, "Trusted", TrustAddress("Line 1", "Line 2", country = "UK"), ""))
+      val trustDetailsResponse = TrustResponse(Right(TrustName("Trusted")))
       (mockDesConnector
-        .getTrustDetails(_: Utr)(_: HeaderCarrier, _: ExecutionContext))
+        .getTrustName(_: Utr)(_: HeaderCarrier, _: ExecutionContext))
         .expects(utr, *, *)
-        .returns(Future(Some(trustDetailsResponse)))
+        .returns(Future(trustDetailsResponse))
 
       val result = await(clientNameService.getClientNameByService(utr.value, Service.Trust))
       result shouldBe Some("Trusted")

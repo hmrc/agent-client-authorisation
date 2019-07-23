@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import java.util.UUID
 
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
@@ -28,11 +29,11 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Reads, _}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.{TrustDetailsResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{InvalidTrust, TrustName, TrustResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -68,7 +69,7 @@ trait DesConnector {
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
   def getVatCustomerInformation(
     vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]]
-  def getTrustDetails(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TrustDetailsResponse]]
+  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 }
 
 @Singleton
@@ -80,6 +81,8 @@ class DesConnectorImpl @Inject()(
   metrics: Metrics)
     extends HttpAPIMonitor with DesConnector {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
+
+  private val rawHttpReads = new RawHttpReads
 
   def getBusinessDetails(
     nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
@@ -93,11 +96,23 @@ class DesConnectorImpl @Inject()(
     getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
   }
 
-  def getTrustDetails(
-    utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[TrustDetailsResponse]] =
-    getWithDesHeaders[TrustDetailsResponse](
-      "getTrustDetails-API-1495",
-      new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString)
+  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
+    val desHeaderCarrier = hc.copy(
+      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
+    )
+
+    val url = new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString
+
+    httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
+      response.status match {
+        case 200 => TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
+        case 400 | 404 =>
+          TrustResponse(Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
+        case _ => throw new RuntimeException(s"unexpected status during retrieving TrustName, error=${response.body}")
+      }
+    }
+  }
 
   private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
     implicit hc: HeaderCarrier,

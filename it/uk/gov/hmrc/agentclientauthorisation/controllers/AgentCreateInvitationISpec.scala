@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgencyNameNotFound
-import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, TrustAddress, TrustDetails, TrustDetailsResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 
@@ -96,21 +96,13 @@ class AgentCreateInvitationISpec extends BaseISpec {
       }
 
       "service is Trust" in {
-        val trustDetailsResponse =
-          TrustDetailsResponse(
-            TrustDetails(
-              utr.value,
-              "Nelson James Trust",
-              TrustAddress("10 Enderson Road", "Cheapside", Some("Riverside"), Some("Boston"), Some("SN8 4DD"), "GB"),
-              "TERS"))
-
-        val trustDetailsSuccessResponseJson = Json.toJson(trustDetailsResponse).toString()
+        val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
 
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
         givenGetAgencyNameViaClientStub(arn)
         givenGetAgencyEmailAgentStub(arn)
-        getTrustDetails(utr, response = trustDetailsSuccessResponseJson)
+        getTrustName(utr, response = trustNameJson)
 
         val requestBody = Json.parse(
           """{

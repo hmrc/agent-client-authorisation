@@ -225,7 +225,7 @@ trait DesStubs {
     this
   }
 
-  def getTrustDetails(utr: Utr, status: Int = 200, response: String) = {
+  def getTrustName(utr: Utr, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/trusts/agent-known-fact-check/${utr.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
