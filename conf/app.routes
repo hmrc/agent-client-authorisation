@@ -13,7 +13,7 @@ POST        /agencies/references/arn/:arn/clientType/:clientType                
 GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
 GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
 GET         /known-facts/individuals/:nino/dob/:dob                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactIrv(nino: uk.gov.hmrc.domain.Nino, dob: LocalDate)
-GET         /known-facts/organisations/trust/:utr                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.knownFactForTrust(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
+GET         /known-facts/organisations/trust/:utr                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getTrustName(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
 
 # Client routes
 # --------------------------------

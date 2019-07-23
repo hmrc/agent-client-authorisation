@@ -17,9 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.Inject
+import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentclientauthorisation.model.{Service, TrustDetailsResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -70,9 +71,10 @@ class ClientNameService @Inject()(
     }
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    for {
-      trustDetails: Option[TrustDetailsResponse] <- desConnector.getTrustDetails(utr)
-      trustName = trustDetails.map(_.trustDetails.trustName)
-    } yield trustName
-
+    desConnector.getTrustName(utr).map(_.response).map {
+      case Right(trustName) => Some(trustName.name)
+      case Left(invalidTrust) =>
+        Logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
+        None
+    }
 }
