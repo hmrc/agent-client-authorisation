@@ -15,10 +15,10 @@ class AgentGetTrustNameISpec extends BaseISpec {
     val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
 
     val invalidTrustJson =
-      """{"code": "INVALID_TRUST_STATE","reason": "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible"}"""
+      """{"code": "INVALID_TRUST_STATE","reason": "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible."}"""
 
     val notFoundJson =
-      """{"code": "RESOURCE_NOT_FOUND","reason": "The remote endpoint has indicated that the trust is not found"}"""
+      """{"code": "RESOURCE_NOT_FOUND","reason": "The remote endpoint has indicated that the trust is not found."}"""
 
     val request = FakeRequest("GET", s"/known-facts/organisations/trust/${utr.value}")
 
@@ -45,7 +45,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
         Left(
           InvalidTrust(
             "INVALID_TRUST_STATE",
-            "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible")))
+            "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible.")))
     }
 
     "handles 404 response from DES" in {
@@ -56,7 +56,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
       val result = controller.getTrustName(utr)(request)
       status(result) shouldBe 200
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
-        Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found")))
+        Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))
     }
   }
 
