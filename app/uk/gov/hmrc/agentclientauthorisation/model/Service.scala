@@ -96,7 +96,7 @@ case object VrnType extends ClientIdType(classOf[Vrn], "vrn", "VRN", Vrn.apply) 
 }
 
 case object UtrType extends ClientIdType(classOf[Utr], "utr", "SAUTR", Utr.apply) {
-  override def isValid(value: String) = Utr.isValid(value)
+  override def isValid(value: String) = value.matches("^\\d{10}$")
 }
 
 case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {
