@@ -73,11 +73,6 @@ class ClientNameServiceSpec extends UnitSpec with MockFactory {
 
       result shouldBe Some("Trady name")
     }
-    "return None is the clientId type and service do not match" in {
-      val result = await(clientNameService.getClientNameByService("AB123456A", Service.Vat))
-
-      result shouldBe None
-    }
   }
   "getItsaTradingName" should {
     "get the citizen name if there is no trading name" in {

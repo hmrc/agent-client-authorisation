@@ -127,9 +127,10 @@ class EmailService @Inject()(
         "clientName"   -> clientName,
         "expiryPeriod" -> expiryPeriod.replace("_", " "),
         "service" -> (invitation.service.id match {
-          case Service.HMRCMTDIT  => messagesApi(s"service.${Service.HMRCMTDIT}")
-          case Service.HMRCPIR    => messagesApi(s"service.${Service.HMRCPIR}")
-          case Service.HMRCMTDVAT => messagesApi(s"service.${Service.HMRCMTDVAT}")
+          case Service.HMRCMTDIT   => messagesApi(s"service.${Service.HMRCMTDIT}")
+          case Service.HMRCPIR     => messagesApi(s"service.${Service.HMRCPIR}")
+          case Service.HMRCMTDVAT  => messagesApi(s"service.${Service.HMRCMTDVAT}")
+          case Service.HMRCTERSORG => messagesApi(s"service.${Service.HMRCTERSORG}")
         })
       )
     )

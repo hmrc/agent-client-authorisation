@@ -38,11 +38,11 @@ class ClientNameService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[String]] =
     service.id match {
-      case HMRCMTDIT if MtdItId.isValid(clientId) => getItsaTradingName(MtdItId(clientId))
-      case HMRCPIR if Nino.isValid(clientId)      => getCitizenName(Nino(clientId))
-      case HMRCMTDVAT if Vrn.isValid(clientId)    => getVatName(Vrn(clientId))
-      case HMRCTERSORG if Utr.isValid(clientId)   => getTrustName(Utr(clientId))
-      case _                                      => Future successful None
+      case HMRCMTDIT   => getItsaTradingName(MtdItId(clientId))
+      case HMRCPIR     => getCitizenName(Nino(clientId))
+      case HMRCMTDVAT  => getVatName(Vrn(clientId))
+      case HMRCTERSORG => getTrustName(Utr(clientId))
+      case _           => Future successful None
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
