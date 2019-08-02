@@ -245,8 +245,10 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
-  def getTrustName(utr: Utr): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    desConnector.getTrustName(utr).map(r => Ok(Json.toJson(r)))
+  def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth {
+      desConnector.getTrustName(utr).map(r => Ok(Json.toJson(r)))
+    }
   }
 
   override protected def agencyLink(invitation: Invitation): None.type = None
