@@ -78,6 +78,12 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       }
   }
 
+  def withBasicAuth[A](body: => Future[Result])(
+    implicit
+    request: Request[A],
+    hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Result] = authorised() { body }
+
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
   def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(
