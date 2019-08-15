@@ -69,7 +69,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBaseUrl("email")
     bindProperty2param("des.environment", "des.environment")
     bindProperty2param("des.authorizationToken", "des.authorization-token")
-    bindProperty2param("invitation.expiryDuration", "invitation.expiryDuration")
+    bindPropertyWithFun("invitation.expiryDuration", _.replace("_", " "))
     bindProperty2param("agent-invitations-frontend.external-url", "agent-invitations-frontend.external-url")
     bindIntegerProperty("invitation-status-update-scheduler.interval")
     bindBooleanProperty("invitation-status-update-scheduler.enabled")

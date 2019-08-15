@@ -20,6 +20,7 @@ import play.api.{Logger, LoggerLike}
 import play.api.i18n.MessagesApi
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -57,55 +58,34 @@ class EmailService @Inject()(
                    }
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
 
-  def updateEmailDetails(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
-    invitation.detailsForEmail match {
-      case Some(_) => Future successful invitation
-      case _ =>
-        getLogger.warn(s"Adding Details For Email to ${invitation.invitationId.value}. Status: ${invitation.status}")
-        createDetailsForEmail(invitation.arn, invitation.clientId, invitation.service)
-          .map(dfe => invitation.copy(detailsForEmail = Some(dfe)))
-    }
-
-  //TODO Remove Trust Check in APB-3865
   def sendEmail(invitation: Invitation, templateId: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] =
     invitation.detailsForEmail match {
       case Some(dfe) =>
         for {
-          _ <- if (invitation.service != Service.Trust) {
-                val emailInfo: EmailInformation =
-                  emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
-
-                emailConnector
-                  .sendEmail(emailInfo)
-                  .recoverWith {
-                    case e =>
-                      getLogger.warn("sending email failed", e)
-                      Future.successful(())
-                  }
-              } else {
-                getLogger.warn("No setup for Trust Email Yet")
-                Future successful ()
+          _ <- {
+            val emailInfo: EmailInformation =
+              emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
+            emailConnector
+              .sendEmail(emailInfo)
+              .recoverWith {
+                case e =>
+                  getLogger.warn("sending email failed", e)
+                  Future.successful(())
               }
+          }
           _ <- invitationsRepository.removeEmailDetails(invitation)
         } yield ()
       case _ =>
-        getLogger.error("No Details For Email to send has been found")
         Future.successful(())
     }
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
-    for {
-      invite <- updateEmailDetails(invitation)
-      result <- sendEmail(invite, "client_accepted_authorisation_request")
-    } yield result
+    sendEmail(invitation, "client_accepted_authorisation_request")
 
   def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
-    for {
-      invite <- updateEmailDetails(invitation)
-      result <- sendEmail(invite, "client_rejected_authorisation_request")
-    } yield result
+    sendEmail(invitation, "client_rejected_authorisation_request")
 
   def sendExpiredEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val hc: HeaderCarrier = HeaderCarrier(
@@ -125,12 +105,12 @@ class EmailService @Inject()(
       Map(
         "agencyName"   -> agencyName,
         "clientName"   -> clientName,
-        "expiryPeriod" -> expiryPeriod.replace("_", " "),
+        "expiryPeriod" -> expiryPeriod,
         "service" -> (invitation.service.id match {
-          case Service.HMRCMTDIT   => messagesApi(s"service.${Service.HMRCMTDIT}")
-          case Service.HMRCPIR     => messagesApi(s"service.${Service.HMRCPIR}")
-          case Service.HMRCMTDVAT  => messagesApi(s"service.${Service.HMRCMTDVAT}")
-          case Service.HMRCTERSORG => messagesApi(s"service.${Service.HMRCTERSORG}")
+          case HMRCMTDIT   => messagesApi(s"service.$HMRCMTDIT")
+          case HMRCPIR     => messagesApi(s"service.$HMRCPIR")
+          case HMRCMTDVAT  => messagesApi(s"service.$HMRCMTDVAT")
+          case HMRCTERSORG => messagesApi(s"service.$HMRCTERSORG")
         })
       )
     )

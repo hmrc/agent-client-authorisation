@@ -188,8 +188,12 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
     }
 
-    //TODO Update test for APB-3865
     "return Unit to remove email details for Trust" in {
+      mockMessagesApi.apply("services.HMRC-TERS-ORG")
+      (mockEmailConnector
+        .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(*, hc, *)
+        .returns(())
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
@@ -211,7 +215,6 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
         )))
 
       verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
-      testLogger.checkWarns("No setup for Trust Email Yet")
     }
 
     "will log an error if sending an email fails but will return successful" in {

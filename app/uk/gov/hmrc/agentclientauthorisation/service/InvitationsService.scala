@@ -54,7 +54,7 @@ class InvitationsService @Inject()(
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue.replace('_', ' '))
+  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue)
 
   def translateToMtdItId(clientId: String, clientIdType: String)(
     implicit hc: HeaderCarrier,
