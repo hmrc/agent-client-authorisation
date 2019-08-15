@@ -66,28 +66,23 @@ class EmailService @Inject()(
           .map(dfe => invitation.copy(detailsForEmail = Some(dfe)))
     }
 
-  //TODO Remove Trust Check in APB-3865
   def sendEmail(invitation: Invitation, templateId: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] =
     invitation.detailsForEmail match {
       case Some(dfe) =>
         for {
-          _ <- if (invitation.service != Service.Trust) {
-                val emailInfo: EmailInformation =
-                  emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
-
-                emailConnector
-                  .sendEmail(emailInfo)
-                  .recoverWith {
-                    case e =>
-                      getLogger.warn("sending email failed", e)
-                      Future.successful(())
-                  }
-              } else {
-                getLogger.warn("No setup for Trust Email Yet")
-                Future successful ()
+          _ <- {
+            val emailInfo: EmailInformation =
+              emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
+            emailConnector
+              .sendEmail(emailInfo)
+              .recoverWith {
+                case e =>
+                  getLogger.warn("sending email failed", e)
+                  Future.successful(())
               }
+          }
           _ <- invitationsRepository.removeEmailDetails(invitation)
         } yield ()
       case _ =>
