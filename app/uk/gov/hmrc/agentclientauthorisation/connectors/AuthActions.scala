@@ -132,11 +132,11 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     implicit hc: HeaderCarrier): Either[Result, (Service, TaxIdentifier)] =
     service match {
       case "MTDITID" if MtdItIdType.isValid(identifier) =>
-        Right(Service.MtdIt, MtdItIdType.createUnderlying(identifier))
+        Right((Service.MtdIt, MtdItIdType.createUnderlying(identifier)))
       case "NI" if NinoType.isValid(identifier) =>
-        Right(Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier))
-      case "VRN" if VrnType.isValid(identifier) => Right(Service.Vat, VrnType.createUnderlying(identifier))
-      case "UTR" if UtrType.isValid(identifier) => Right(Service.Trust, UtrType.createUnderlying(identifier))
+        Right((Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier)))
+      case "VRN" if VrnType.isValid(identifier) => Right((Service.Vat, VrnType.createUnderlying(identifier)))
+      case "UTR" if UtrType.isValid(identifier) => Right((Service.Trust, UtrType.createUnderlying(identifier)))
       case e                                    => Left(BadRequest(s"Unsupported $e"))
     }
 
