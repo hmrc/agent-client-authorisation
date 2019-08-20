@@ -75,8 +75,6 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBooleanProperty("invitation-status-update-scheduler.enabled")
     bindBooleanProperty("mongodb-migration.enabled")
 
-    bindBooleanProperty("skip-des-for-trusts")
-
     if (configuration.getBoolean("mongodb-migration.enabled").getOrElse(false)) {
       bind(classOf[RepositoryMigrationService]).asEagerSingleton()
     }

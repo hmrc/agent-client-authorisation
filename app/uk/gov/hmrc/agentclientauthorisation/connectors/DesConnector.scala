@@ -77,7 +77,6 @@ class DesConnectorImpl @Inject()(
   @Named("des-baseUrl") baseUrl: URL,
   @Named("des.authorizationToken") authorizationToken: String,
   @Named("des.environment") environment: String,
-  @Named("skip-des-for-trusts") skipDes: Boolean,
   httpGet: HttpGet,
   metrics: Metrics)
     extends HttpAPIMonitor with DesConnector {
@@ -97,57 +96,24 @@ class DesConnectorImpl @Inject()(
     getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
   }
 
-  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] =
-    if (skipDes) {
-      val trustResponse = utr match {
-        case Utr("3887997235") =>
-          TrustResponse(
-            Left(
-              InvalidTrust(
-                "INVALID_TRUST_STATE",
-                "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible.")))
-        case Utr("5786221775") =>
-          TrustResponse(
-            Left(InvalidTrust(
-              "INVALID_TRUST_STATE",
-              "The remote endpoint has indicated that there are Pending changes yet to be processed and playback is not yet possible.")))
-        case Utr("6028812143") =>
-          TrustResponse(
-            Left(
-              InvalidTrust(
-                "INVALID_TRUST_STATE",
-                "The remote endpoint has indicated that the REGIME provided is invalid.")))
-        case Utr("3087612352") =>
-          TrustResponse(
-            Left(InvalidTrust(
-              "RESOURCE_NOT_FOUND",
-              "The remote endpoint has indicated that no resource can be returned for the UTR provided and playback is not possible.")))
-        case Utr("3110118175") =>
-          TrustResponse(
-            Left(InvalidTrust("INVALID_UTR", "Submission has not passed validation. Invalid parameter UTR.")))
-        case Utr(_) => TrustResponse(Right(TrustName("Nelson James Trust")))
-      }
+  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
-      Future.successful(trustResponse)
-    } else {
+    val desHeaderCarrier = hc.copy(
+      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
+    )
 
-      val desHeaderCarrier = hc.copy(
-        authorization = Some(Authorization(s"Bearer $authorizationToken")),
-        extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
-      )
+    val url = new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString
 
-      val url = new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString
-
-      httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
-        response.status match {
-          case 200 => TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
-          case 400 | 404 =>
-            TrustResponse(
-              Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
-          case _ => throw new RuntimeException(s"unexpected status during retrieving TrustName, error=${response.body}")
-        }
+    httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
+      response.status match {
+        case 200 => TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
+        case 400 | 404 =>
+          TrustResponse(Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
+        case _ => throw new RuntimeException(s"unexpected status during retrieving TrustName, error=${response.body}")
       }
     }
+  }
 
   private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
     implicit hc: HeaderCarrier,
