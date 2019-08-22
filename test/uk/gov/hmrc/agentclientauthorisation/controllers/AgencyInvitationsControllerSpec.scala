@@ -56,6 +56,7 @@ class AgencyInvitationsControllerSpec
   val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockDesConnector = resettingMock[DesConnector]
+  val mockTrustResponseCache = resettingMock[TrustResponseCache]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
@@ -71,7 +72,9 @@ class AgencyInvitationsControllerSpec
       kfcService,
       multiInvitationsService,
       mockDesConnector,
-      agentServicesaccountConnector)(metrics, microserviceAuthConnector, ecp) {
+      agentServicesaccountConnector,
+      mockTrustResponseCache
+    )(metrics, microserviceAuthConnector, ecp) {
       override val authConnector: PlayAuthConnector = mockPlayAuthConnector
     }
 
