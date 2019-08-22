@@ -45,9 +45,3 @@ GET         /status                                                             
 # Invitations
 # --------------------------------
 GET         /invitations/:invitationId                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationById(invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-
-# Whitelist
-# --------------------------------
-GET         /forbidden                                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.WhitelistController.forbidden
-
-
