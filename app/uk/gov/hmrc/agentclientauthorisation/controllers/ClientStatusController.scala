@@ -24,12 +24,11 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
-import uk.gov.hmrc.agentclientauthorisation.service.{Cache, InvitationsService}
-import uk.gov.hmrc.auth.core.{AuthConnector, InsufficientEnrolments, UnsupportedAffinityGroup, UnsupportedAuthProvider}
+import uk.gov.hmrc.agentclientauthorisation.service.{ClientStatusCache, InvitationsService}
+import uk.gov.hmrc.auth.core.{AuthConnector, UnsupportedAffinityGroup}
 import uk.gov.hmrc.http.Upstream4xxResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.control.NonFatal
 
 @Singleton
 class ClientStatusController @Inject()(
@@ -103,5 +102,3 @@ object ClientStatusController {
   val defaultClientStatus = Future.successful(ClientStatus(false, false, false))
 
 }
-
-trait ClientStatusCache extends Cache[ClientStatus]

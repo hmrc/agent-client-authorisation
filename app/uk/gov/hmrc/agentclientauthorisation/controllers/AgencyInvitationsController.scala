@@ -44,7 +44,8 @@ class AgencyInvitationsController @Inject()(
   knownFactsCheckService: KnownFactsCheckService,
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
-  agentServicesAccountConnector: AgentServicesAccountConnector)(
+  agentServicesAccountConnector: AgentServicesAccountConnector,
+  trustResponseCache: TrustResponseCache)(
   implicit
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector,
@@ -247,7 +248,9 @@ class AgencyInvitationsController @Inject()(
 
   def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      desConnector.getTrustName(utr).map(r => Ok(Json.toJson(r)))
+      trustResponseCache(utr.value) {
+        desConnector.getTrustName(utr)
+      }.map(r => Ok(Json.toJson(r)))
     }
   }
 

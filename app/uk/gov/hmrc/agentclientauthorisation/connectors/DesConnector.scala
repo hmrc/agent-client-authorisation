@@ -66,9 +66,12 @@ object VatCustomerInfo {
 
 @ImplementedBy(classOf[DesConnectorImpl])
 trait DesConnector {
+
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
+
   def getVatCustomerInformation(
     vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]]
+
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 }
 

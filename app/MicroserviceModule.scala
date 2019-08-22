@@ -16,18 +16,14 @@
 
 import java.net.{URL, URLDecoder}
 
-import com.codahale.metrics.MetricRegistry
-import com.google.inject.{AbstractModule, TypeLiteral}
 import com.google.inject.name.Names
-import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Provider, Singleton}
+import com.google.inject.{AbstractModule, TypeLiteral}
+import javax.inject.Provider
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusCache
-import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.repository._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsStatusUpdateScheduler, KenshooCacheMetrics, LocalCaffeineCache, RepositoryMigrationService}
+import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
@@ -55,6 +51,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
+    bind(classOf[TrustResponseCache]).toProvider(classOf[TrustResponseCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
     bind(classOf[InvitationsRepository]).to(classOf[InvitationsRepositoryImpl])
 
@@ -212,22 +209,4 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 
-}
-
-@Singleton
-class ClientStatusCacheProvider @Inject()(val environment: Environment, configuration: Configuration, metrics: Metrics)
-    extends Provider[ClientStatusCache] with ServicesConfig {
-
-  override val runModeConfiguration: Configuration = configuration
-  override def mode = environment.mode
-
-  import scala.concurrent.duration._
-
-  override val get: ClientStatusCache = new LocalCaffeineCache[ClientStatus](
-    "ClientStatus",
-    configuration.underlying.getInt("clientStatus.cache.size"),
-    Duration.create(configuration.underlying.getString("clientStatus.cache.expires"))
-  ) with ClientStatusCache with KenshooCacheMetrics {
-    override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-  }
 }
