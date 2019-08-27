@@ -221,6 +221,34 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
     this
   }
+
+
+  def givenClientTrust(utr: Utr) = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse().withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "credentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-TERS-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "SAUTR",
+                     |          "value": "${utr.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
+       """.stripMargin)))
+
+    this
+  }
 }
 
 trait AgentAuthStubs extends BasicUserAuthStubs {

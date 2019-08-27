@@ -41,7 +41,7 @@ class AgentLinkService @Inject()(
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def getAgentLink(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
+  def getInvitationUrl(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
       normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
       record              <- fetchOrCreateRecord(arn, normalisedAgentName)

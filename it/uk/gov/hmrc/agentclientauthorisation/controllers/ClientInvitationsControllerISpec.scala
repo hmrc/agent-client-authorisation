@@ -1,18 +1,21 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
+
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
+import uk.gov.hmrc.agentclientauthorisation.support.RelationshipStubs
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ClientInvitationsControllerISpec extends BaseISpec {
+class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs {
 
   val controller: ClientInvitationsController = app.injector.instanceOf[ClientInvitationsController]
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
@@ -25,12 +28,12 @@ class ClientInvitationsControllerISpec extends BaseISpec {
                          clientId: TaxIdentifier,
                          suppliedClientId: TaxIdentifier)
 
-  val itsaClient = TestClient(personal, Service.MtdIt, "MTDITID", mtdItId, nino)
-  val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
-  val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
-  val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
+  val itsaClient = TestClient(personal, MtdIt, "MTDITID", mtdItId, nino)
+  val irvClient = TestClient(personal, PersonalIncomeRecord, "NI", nino, nino)
+  val vatClient = TestClient(personal, Vat, "VRN", vrn, vrn)
+  val trustClient = TestClient(business, Trust, "UTR", utr, utr)
 
-  val list = List(itsaClient, irvClient, vatClient, trustClient)
+  val clients = List(itsaClient, irvClient, vatClient, trustClient)
 
   def createInvitation(clientType: Option[String],
                        service: Service,
@@ -55,19 +58,75 @@ class ClientInvitationsControllerISpec extends BaseISpec {
       givenClientAll(mtdItId, vrn, nino, utr)
   }
 
-  //TODO update when refactor in the future
-  "GET /clients/:service/:identifier/invitations/received/:invitationId" should {
-    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received/:invitationId")
+  "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
+    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
 
-    "return 501" in {
-      val result = await(controller.getInvitation(trustClient.urlIdentifier, trustClient.clientId.value, InvitationId("D123456789"))(request))
+    "accept invitation as expected" in new LoggedinUser(false) {
+      clients.foreach { client =>
+        givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+        anAfiRelationshipIsCreatedWith(arn, client.clientId)
 
-      status(result) shouldBe 501
+        val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+        val result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        status(result) shouldBe 204
+      }
+    }
+
+    "return bad_request for invalid clientType and clientId combination" in new LoggedinUser(false) {
+      clients.foreach { client =>
+        val invalidClient = client.copy(urlIdentifier = client.urlIdentifier.toLowerCase)
+        val result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
+        status(result) shouldBe 400
+      }
+    }
+  }
+
+  "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject" should {
+    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject")
+
+    "reject invitation as expected" in new LoggedinUser(false) {
+      clients.foreach { client =>
+        givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+        anAfiRelationshipIsCreatedWith(arn, client.clientId)
+
+        val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+        val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        status(result) shouldBe 204
+      }
+    }
+
+    "return bad_request for invalid clientType and clientId combination" in new LoggedinUser(false) {
+      clients.foreach { client =>
+        val invalidClient = client.copy(urlIdentifier = client.urlIdentifier.toLowerCase)
+        val result = await(controller.rejectInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
+        status(result) shouldBe 400
+      }
+    }
+  }
+
+  "GET /clients/:clientIdType/:clientId/invitations/received/:invitationId" should {
+    val request = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/received/:invitationId")
+
+    "return invitation as expected" in new LoggedinUser(false) {
+
+      clients.foreach { client =>
+        val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+        val result = await(controller.getInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        status(result) shouldBe 200
+      }
+    }
+
+    "return bad_request for invalid clientType and clientId combination" in new LoggedinUser(false) {
+      clients.foreach { client =>
+        val invalidClient = client.copy(urlIdentifier = client.urlIdentifier.toLowerCase)
+        val result = await(controller.getInvitation(invalidClient.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request))
+        status(result) shouldBe 400
+      }
     }
   }
 
   "GET /clients/:service/:taxIdentifier/invitations/received" should {
-    list.foreach { client =>
+    clients.foreach { client =>
       runGetAllInvitationsScenario(client, true)
       runGetAllInvitationsScenario(client, false)
     }
@@ -101,9 +160,6 @@ class ClientInvitationsControllerISpec extends BaseISpec {
     }
   }
 
-  //TODO Replace this With ClientInvitationsController
-  val trustController: TrustClientInvitationsController = app.injector.instanceOf[TrustClientInvitationsController]
-
   val determineServiceUrl: TaxIdentifier => String = {
     case MtdItId(_) => "MTDITID"
     case Nino(_)    => "NI"
@@ -127,13 +183,13 @@ class ClientInvitationsControllerISpec extends BaseISpec {
 
       val invitationId: InvitationId = invitation.invitationId
 
-      val result: Future[Result] = trustController.acceptInvitation(utr, invitationId)(request)
+      val result: Future[Result] = controller.acceptInvitation("UTR", utr.value, invitationId)(request)
 
       status(result) shouldBe 204
     }
 
     s"attempting to accept an invitation that does not exist for logged in ${if(forStride) "stride" else "client"}" in new LoggedinUser(forStride) {
-      val result: Future[Result] = trustController.acceptInvitation(utr, InvitationId("D123456789"))(request)
+      val result: Future[Result] = controller.acceptInvitation("UTR", utr.value, InvitationId("D123456789"))(request)
 
       status(result) shouldBe 404
     }
@@ -143,7 +199,7 @@ class ClientInvitationsControllerISpec extends BaseISpec {
 
       val invitationId: InvitationId = invitation.invitationId
 
-      val result: Future[Result] = trustController.acceptInvitation(utr2, invitationId)(request)
+      val result: Future[Result] = controller.acceptInvitation("UTR", utr2.value, invitationId)(request)
 
       status(result) shouldBe 403
     }
@@ -162,13 +218,13 @@ class ClientInvitationsControllerISpec extends BaseISpec {
 
       val invitationId: InvitationId = invitation.invitationId
 
-      val result: Future[Result] = trustController.rejectInvitation(utr, invitationId)(request)
+      val result: Future[Result] = controller.rejectInvitation("UTR", utr.value, invitationId)(request)
 
       status(result) shouldBe 204
     }
 
     s"attempting to reject an invitation that does not exist for current logged in ${if(forStride) "stride" else "client"}" in new LoggedinUser(forStride) {
-      val result: Future[Result] = trustController.rejectInvitation(utr, InvitationId("D123456789"))(request)
+      val result: Future[Result] = controller.rejectInvitation("UTR", utr.value, InvitationId("D123456789"))(request)
 
       status(result) shouldBe 404
     }
@@ -178,7 +234,7 @@ class ClientInvitationsControllerISpec extends BaseISpec {
 
       val invitationId: InvitationId = invitation.invitationId
 
-      val result: Future[Result] = trustController.rejectInvitation(utr2, invitationId)(request)
+      val result: Future[Result] = controller.rejectInvitation("UTR", utr2.value, invitationId)(request)
 
       status(result) shouldBe 403
     }

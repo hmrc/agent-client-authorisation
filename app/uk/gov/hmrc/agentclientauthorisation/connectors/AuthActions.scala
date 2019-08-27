@@ -25,8 +25,9 @@ import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
@@ -37,7 +38,7 @@ import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-
+import uk.gov.hmrc.domain.Nino
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
@@ -128,16 +129,15 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .contains(clientId)
   }
 
-  def determineService(service: String, identifier: String)(
-    implicit hc: HeaderCarrier): Either[Result, (Service, TaxIdentifier)] =
-    service match {
-      case "MTDITID" if MtdItIdType.isValid(identifier) =>
-        Right((Service.MtdIt, MtdItIdType.createUnderlying(identifier)))
-      case "NI" if NinoType.isValid(identifier) =>
-        Right((Service.PersonalIncomeRecord, NinoType.createUnderlying(identifier)))
-      case "VRN" if VrnType.isValid(identifier) => Right((Service.Vat, VrnType.createUnderlying(identifier)))
-      case "UTR" if UtrType.isValid(identifier) => Right((Service.Trust, UtrType.createUnderlying(identifier)))
-      case e                                    => Left(BadRequest(s"Unsupported $e"))
+  def validateClientId(clientIdType: String, clientId: String): Either[Result, (Service, TaxIdentifier)] =
+    clientIdType match {
+      case "MTDITID" if MtdItIdType.isValid(clientId) =>
+        Right((MtdIt, MtdItId(clientId)))
+      case "NI" if NinoType.isValid(clientId) =>
+        Right((PersonalIncomeRecord, Nino(clientId)))
+      case "VRN" if VrnType.isValid(clientId) => Right((Vat, Vrn(clientId)))
+      case "UTR" if UtrType.isValid(clientId) => Right((Trust, Utr(clientId)))
+      case e                                  => Left(BadRequest(s"Unsupported $e"))
     }
 
   def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(
@@ -146,7 +146,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
       authorised().retrieve(allEnrolments and credentials) {
         case enrolments ~ creds =>
-          determineService(service, identifier) match {
+          validateClientId(service, identifier) match {
             case Right((clientService, clientId)) =>
               creds.providerType match {
                 case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
@@ -182,9 +182,6 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
           }
         action(identifiers)
       }
-
-  private def extractAffinityGroup(affinityGroup: AffinityGroup): String =
-    (affinityGroup.toJson \ "affinityGroup").as[String]
 
   protected def withMultiEnrolledClient[A](
     body: Seq[(String, String)] => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =

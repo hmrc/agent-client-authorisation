@@ -70,7 +70,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any()))
         .thenReturn(Future.successful(()))
 
-      val response = await(service.getAgentLink(Arn(arn), "personal"))
+      val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 
       response shouldBe "/invitations/personal/ABCDEFGH/stan-lee"
     }
@@ -81,7 +81,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentServicesAccountConnector.getAgencyNameAgent(any(), any()))
         .thenReturn(Future.successful(Some("stan-lee")))
 
-      val response = await(service.getAgentLink(Arn(arn), "personal"))
+      val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 
       response should fullyMatch regex "/invitations/personal/[A-Z0-9]{8}/stan-lee"
     }

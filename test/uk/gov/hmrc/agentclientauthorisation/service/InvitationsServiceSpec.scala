@@ -308,7 +308,7 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
       val invitation = testInvitation
       when(invitationsRepository.findByInvitationId(any[InvitationId])(any()))
         .thenReturn(Future successful Some(invitation))
-      when(agentLinkService.getAgentLink(any(), any())(any(), any())).thenReturn(Future.successful("/invitations"))
+      when(agentLinkService.getInvitationUrl(any(), any())(any(), any())).thenReturn(Future.successful("/invitations"))
 
       await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
     }

@@ -147,8 +147,8 @@ class AgencyInvitationsControllerSpec
     "create a agent link and store it in the headers" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
-      val response = await(controller.getAgentLink(arn, "personal")(FakeRequest()))
+      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+      val response = await(controller.getInvitationUrl(arn, "personal")(FakeRequest()))
 
       status(response) shouldBe 201
       response.header.headers.get("Location") shouldBe Some("/foo")
@@ -210,7 +210,7 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
 
       val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 
@@ -228,7 +228,7 @@ class AgencyInvitationsControllerSpec
 
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(multiInvitationsService.getAgentLink(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
 
       val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
 

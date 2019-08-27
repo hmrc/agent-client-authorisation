@@ -8,7 +8,7 @@ PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                
 
 GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
 GET         /agencies/references/arn/:arn                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecordByArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
-POST        /agencies/references/arn/:arn/clientType/:clientType                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getAgentLink(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientType: String)
+POST        /agencies/references/arn/:arn/clientType/:clientType                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getInvitationUrl(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientType: String)
 
 GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactVat(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, vatRegistrationDate: LocalDate)
 GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
@@ -17,24 +17,11 @@ GET         /known-facts/organisations/trust/:utr                               
 
 # Client routes
 # --------------------------------
-PUT         /clients/MTDITID/:mtdItId/invitations/received/:invitationId/accept               @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.acceptInvitation(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/NI/:nino/invitations/received/:invitationId/accept                       @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.acceptInvitation(nino: uk.gov.hmrc.domain.Nino, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/VRN/:vrn/invitations/received/:invitationId/accept                       @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.acceptInvitation(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/UTR/:utr/invitations/received/:invitationId/accept                       @uk.gov.hmrc.agentclientauthorisation.controllers.TrustClientInvitationsController.acceptInvitation(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-
-PUT         /clients/MTDITID/:mtdItId/invitations/received/:invitationId/reject               @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.rejectInvitation(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/NI/:nino/invitations/received/:invitationId/reject                       @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.rejectInvitation(nino: uk.gov.hmrc.domain.Nino, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/VRN/:vrn/invitations/received/:invitationId/reject                       @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.rejectInvitation(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-PUT         /clients/UTR/:utr/invitations/received/:invitationId/reject                       @uk.gov.hmrc.agentclientauthorisation.controllers.TrustClientInvitationsController.rejectInvitation(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-
-GET         /clients/MTDITID/:mtdItId/invitations/received/:invitationId                      @uk.gov.hmrc.agentclientauthorisation.controllers.MtdItClientInvitationsController.getInvitation(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-GET         /clients/NI/:nino/invitations/received/:invitationId                              @uk.gov.hmrc.agentclientauthorisation.controllers.NiClientInvitationsController.getInvitation(nino: uk.gov.hmrc.domain.Nino, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
-GET         /clients/VRN/:vrn/invitations/received/:invitationId                              @uk.gov.hmrc.agentclientauthorisation.controllers.VatClientInvitationsController.getInvitation(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
+PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
+PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
+GET         /clients/:clientIdType/:clientId/invitations/received/:invitationId               @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
 GET         /clients/:service/:identifier/invitations/received                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(service: String, identifier: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
-
-#TODO Yet to be Implemeneted
-GET         /clients/:service/:identifier/invitations/received/:invitationId                  @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(service: String, identifier: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
 GET         /clients/invitations/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getInvitationsInfo(uid: String, status:  Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
