@@ -51,7 +51,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     if (clientIdType == "NI") {
       onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
-        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(ClientIdentifier(Nino(clientId)))
+        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
         acceptInvitation(ClientIdentifier(Nino(clientId)), invitationId)
       }
     } else {
