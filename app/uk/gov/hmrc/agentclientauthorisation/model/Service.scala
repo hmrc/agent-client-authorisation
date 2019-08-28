@@ -69,11 +69,11 @@ object Service {
 
 }
 
-sealed abstract class ClientIdType[T <: TaxIdentifier](
-  val clazz: Class[T],
+sealed abstract class ClientIdType[+T <: TaxIdentifier](
+  val clazz: Class[_],
   val id: String,
   val enrolmentId: String,
-  val createUnderlying: (String) => T) {
+  val createUnderlying: String => T) {
   def isValid(value: String): Boolean
 }
 

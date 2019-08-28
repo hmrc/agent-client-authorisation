@@ -24,8 +24,6 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 trait AgencyInvitationsHal {
 
-  protected def agencyLink(invitation: Invitation): Option[String]
-
   def toHalResource(
     invitations: List[Invitation],
     arn: Arn,
@@ -55,8 +53,6 @@ trait AgencyInvitationsHal {
         HalLink(
           "self",
           routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url)))
-
-    agencyLink(invitation).foreach(href => links = links ++ HalLink("agency", href))
 
     HalResource(links, toJson(invitation)(Invitation.external.writes).as[JsObject])
   }

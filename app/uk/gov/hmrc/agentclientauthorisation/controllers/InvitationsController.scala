@@ -22,7 +22,6 @@ import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
-import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 
@@ -46,6 +45,4 @@ class InvitationsController @Inject()(
       }
     }
   }
-
-  override protected def agencyLink(invitation: Invitation) = None
 }

@@ -1,4 +1,5 @@
 package uk.gov.hmrc.agentclientauthorisation.support
+
 import uk.gov.hmrc.domain.TaxIdentifier
 
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -15,12 +16,6 @@ trait ACRStubs {
           aResponse()
             .withStatus(201)
         )
-    )
-  }
-
-  def givenGetActiveRelationship = {
-    stubFor(
-      get(urlEqualTo(s"/agent-client-relationships/relationships/active"))
     )
   }
 

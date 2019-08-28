@@ -70,11 +70,11 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getAgentLink(givenArn: Arn, clientType: String) = onlyForAgents { implicit request => implicit arn =>
+  def getInvitationUrl(givenArn: Arn, clientType: String) = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       for {
         result <- agentLinkService
-                   .getAgentLink(arn, clientType)
+                   .getInvitationUrl(arn, clientType)
                    .map(link => Created.withHeaders(HeaderNames.LOCATION -> link))
       } yield result
     }
@@ -128,12 +128,12 @@ class AgencyInvitationsController @Inject()(
     invitation.service match {
 
       case service if service == MtdIt || service == PersonalIncomeRecord =>
-        agentLinkService.getAgentLink(invitation.arn, "personal").map { link =>
+        agentLinkService.getInvitationUrl(invitation.arn, "personal").map { link =>
           Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
 
       case service if service == Vat || service == Trust =>
-        agentLinkService.getAgentLink(invitation.arn, "business").map { link =>
+        agentLinkService.getInvitationUrl(invitation.arn, "business").map { link =>
           Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
         }
 
@@ -155,7 +155,7 @@ class AgencyInvitationsController @Inject()(
         invitationsWithLink <- Future.traverse(invitations) { invites =>
                                 (invites.clientType, invites.status) match {
                                   case (Some(ct), Pending) =>
-                                    agentLinkService.getAgentLink(invites.arn, ct).map { link =>
+                                    agentLinkService.getInvitationUrl(invites.arn, ct).map { link =>
                                       invites.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link"))
                                     }
                                   case (_, Pending) =>
@@ -191,7 +191,7 @@ class AgencyInvitationsController @Inject()(
                                  case Some(invite) =>
                                    (invite.clientType, invite.status) match {
                                      case (Some(clientType), Pending) =>
-                                       agentLinkService.getAgentLink(invite.arn, clientType).map { link =>
+                                       agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
                                          Some(invite.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
                                        }
                                      case (_, Pending) => addLinkToInvitation(invite)
@@ -254,5 +254,4 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  override protected def agencyLink(invitation: Invitation): None.type = None
 }
