@@ -96,7 +96,6 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      println(s"So $json")
       json.invitations.length shouldBe 4
     }
 

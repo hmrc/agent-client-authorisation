@@ -149,7 +149,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
 
     val createKeys: Seq[String] =
-      if (services.nonEmpty && services.length > 1)
+      if (services.length > 1)
         services.map(service => InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, Some(service), status))
       else Seq(InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, services.headOption, status))
 
@@ -167,12 +167,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     val query =
       if (searchOptions.nonEmpty) Json.obj("$and" -> searchOptions.map(so => Json.obj(so._1 -> so._2)))
       else Json.obj("$and"                        -> Json.parse("[{}]"))
-
-    println(s"$createKeys")
-    println()
-    println(s"$searchOptions")
-    println()
-    println(s"$query")
 
     collection
       .find[JsObject, JsObject](query, None)

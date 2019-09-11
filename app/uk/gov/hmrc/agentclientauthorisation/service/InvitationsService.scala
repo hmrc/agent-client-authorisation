@@ -190,10 +190,12 @@ class InvitationsService @Inject()(
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[List[Invitation]] =
-    monitor(s"Repository-List-Invitations-Sent${services.map(s => s"-${s.id}")}") {
+    ec: ExecutionContext): Future[List[Invitation]] = {
+    val csvServices: Seq[String] = if (services.nonEmpty) services.map(s => s"-${s.id}") else Seq("")
+    monitor(s"Repository-List-Invitations-Sent$csvServices") {
       invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
     }
+  }
 
   def findInvitationsInfoBy(
     arn: Option[Arn] = None,
