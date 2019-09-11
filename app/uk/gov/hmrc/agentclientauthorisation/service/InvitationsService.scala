@@ -180,20 +180,19 @@ class InvitationsService @Inject()(
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(service = Some(service), clientId = Some(clientId.value), status = status)
+      invitationsRepository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status)
     }
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
-    service: Option[Service] = None,
+    services: Seq[Service] = Seq.empty[Service],
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[List[Invitation]] =
-    monitor(
-      s"Repository-List-Invitations-Sent${service.map(s => s"-${s.id}").getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(arn, service, clientId, status, createdOnOrAfter)
+    monitor(s"Repository-List-Invitations-Sent${services.map(s => s"-${s.id}")}") {
+      invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
     }
 
   def findInvitationsInfoBy(
