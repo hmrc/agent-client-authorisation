@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -43,7 +43,6 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     super.beforeEach()
     await(agentReferenceRepo.ensureIndexes)
     await(invitationsRepo.ensureIndexes)
-    await(dropMongoDb())
   }
 
   val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)
@@ -85,7 +84,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
 
     "return Invitations for Agent without Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -100,7 +99,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Service Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -116,7 +115,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with ClientId Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -131,7 +130,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Status Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -146,7 +145,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with CreatedBefore Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -161,7 +160,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Services and CreatedBefore Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -177,7 +176,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Status, ClientId and Service Query Params" in {
-      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
