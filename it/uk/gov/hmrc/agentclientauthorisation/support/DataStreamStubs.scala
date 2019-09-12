@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.Age
 trait DataStreamStubs extends Eventually {
   me: StartAndStopWireMock =>
 
-  override implicit val patienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
+  override implicit val patienceConfig = PatienceConfig(scaled(Span(10, Seconds)), scaled(Span(500, Millis)))
 
   def verifyAuditRequestSent(
     count: Int,

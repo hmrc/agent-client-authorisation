@@ -53,7 +53,7 @@ trait InvitationsRepository {
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
-    service: Option[Service] = None,
+    services: Seq[Service] = Seq.empty[Service],
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]]
@@ -143,22 +143,30 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
 
   def findInvitationsBy(
     arn: Option[Arn] = None,
-    service: Option[Service] = None,
+    services: Seq[Service] = Seq.empty,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val key = InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, service, status)
-    val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
-      InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key)),
-      InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
-        Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
-    ).filter(_._2.isDefined)
-      .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
-    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
-    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
+    val createKeys: Seq[String] =
+      if (services.length > 1)
+        services.map(service => InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, Some(service), status))
+      else Seq(InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, services.headOption, status))
 
-    val query = Json.obj(searchOptions: _*)
+    val serviceQuery: (String, Option[JsValue]) = "$or" -> Some(
+      JsArray(createKeys.map(key => Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key))))))
+
+    val dateQuery: (String, Option[JsValue]) = InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
+      Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
+
+    val searchOptions: Seq[(String, JsValueWrapper)] =
+      Seq(serviceQuery, dateQuery)
+        .filter(_._2.isDefined)
+        .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
+
+    val query =
+      if (searchOptions.nonEmpty) Json.obj("$and" -> searchOptions.map(so => Json.obj(so._1 -> so._2)))
+      else Json.obj("$and"                        -> Json.parse("[{}]"))
 
     collection
       .find[JsObject, JsObject](query, None)

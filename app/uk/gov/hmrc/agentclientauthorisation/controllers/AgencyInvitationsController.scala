@@ -140,6 +140,12 @@ class AgencyInvitationsController @Inject()(
       case _ => Future.successful(None)
     }
 
+  private def toListOfServices(servicesOpt: Option[String]) =
+    servicesOpt match {
+      case Some(string) => string.replace(" ", "").split(",").map(Service(_)).toSeq
+      case _            => Seq.empty[Service]
+    }
+
   def getSentInvitations(
     givenArn: Arn,
     clientType: Option[String],
@@ -149,9 +155,10 @@ class AgencyInvitationsController @Inject()(
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
+      val csvServices = toListOfServices(service)
       val invitationsWithOptLinks: Future[List[Invitation]] = for {
         invitations <- invitationsService
-                        .findInvitationsBy(Some(arn), service.map(Service(_)), clientId, status, createdOnOrAfter)
+                        .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
         invitationsWithLink <- Future.traverse(invitations) { invites =>
                                 (invites.clientType, invites.status) match {
                                   case (Some(ct), Pending) =>

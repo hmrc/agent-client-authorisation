@@ -87,23 +87,27 @@ class AgencyInvitationsControllerSpec
   override protected def beforeEach(): Unit = {
     super.beforeEach()
 
-    when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(None), eqs(None))(any(), any()))
+    when(
+      invitationsService
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(any(), any()))
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Some(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any(), any()))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any(), any()))
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(None), eqs(None), eqs(Some(Accepted)), eqs(None))(any(), any()))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(
+          any(),
+          any()))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(
       invitationsService.findInvitationsBy(
         eqs(Some(arn)),
-        eqs(Some(Service.MtdIt)),
+        eqs(Seq(Service.MtdIt)),
         any[Option[String]],
         eqs(Some(Accepted)),
         eqs(None))(any(), any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
@@ -202,68 +206,6 @@ class AgencyInvitationsControllerSpec
 
       response shouldBe InvitationNotFound
     }
-  }
-
-  "getSentInvitations" should {
-
-    "for a matching agency should return the invitations" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
-
-      val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
-
-      status(response) shouldBe 200
-      val jsonBody = jsonBodyOf(response)
-
-      invitationsSize(jsonBody) shouldBe 3
-
-      invitationLink(jsonBody, 0) shouldBe expectedAgencySentInvitationLink(arn, mtdSaPendingInvitationId)
-      invitationLink(jsonBody, 1) shouldBe expectedAgencySentInvitationLink(arn, mtdSaAcceptedInvitationId)
-      invitationLink(jsonBody, 2) shouldBe expectedAgencySentInvitationLink(arn, otherRegimePendingInvitationId)
-    }
-
-    "include the invitation ID in invitations" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
-
-      val response = await(controller.getSentInvitations(arn, None, None, None, None, None, None)(FakeRequest()))
-
-      status(response) shouldBe 200
-      val jsonBody = jsonBodyOf(response)
-
-      invitationsSize(jsonBody) shouldBe 3
-
-      (embeddedInvitations(jsonBody)(0) \ "status").asOpt[String] should not be None
-      (embeddedInvitations(jsonBody)(0) \ "id").asOpt[String] shouldBe None
-      (embeddedInvitations(jsonBody)(0) \ "invitationId").asOpt[String] shouldBe Some("ASZPJLZMLKRBO")
-    }
-
-    "include all query parameters in the self link" in {
-
-      agentAuthStub(agentAffinityAndEnrolments)
-
-      val clientType = Some("personal")
-      val service = Some("HMRC-MTD-IT")
-      val clientIdType = Some("ni")
-      val clientId = Some("AA123456A")
-      val invitationStatus = Some(Accepted)
-      val response = await(
-        controller.getSentInvitations(arn, clientType, service, clientIdType, clientId, invitationStatus, None)(
-          FakeRequest()))
-
-      status(response) shouldBe 200
-      val jsonBody = jsonBodyOf(response)
-
-      (jsonBody \ "_links" \ "self" \ "href").as[String] shouldBe
-        routes.AgencyInvitationsController
-          .getSentInvitations(arn, clientType, service, clientIdType, clientId, invitationStatus, None)
-          .url
-    }
-
   }
 
   "checkKnownFactItsa" should {

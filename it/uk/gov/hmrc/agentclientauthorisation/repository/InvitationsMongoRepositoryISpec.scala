@@ -95,9 +95,9 @@ class InvitationsMongoRepositoryISpec
         "mongodb-migration.enabled"                  -> false
       )
 
-  lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
+  lazy val mockReactiveMongoComponent: ReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
 
-  lazy val repository = new InvitationsRepositoryImpl(mockReactiveMongoComponent) {
+  lazy val repository: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mockReactiveMongoComponent) {
     override def withCurrentTime[A](f: DateTime => A): A = f(now)
   }
 
@@ -209,7 +209,7 @@ class InvitationsMongoRepositoryISpec
 
       addInvitations(now, invitationITSA1, invitationIRV)
 
-      val list1 = listByArn(Arn(arn), Some(Service.MtdIt), None, None, None)
+      val list1 = listByArn(Arn(arn), Seq(Service.MtdIt), None, None, None)
 
       list1.size shouldBe 1
       list1.head.clientId.underlying shouldBe clientId1
@@ -229,7 +229,7 @@ class InvitationsMongoRepositoryISpec
 
       addInvitations(now, invitationITSA1, invitationITSA2)
 
-      val list = listByArn(Arn(arn), None, Some(clientId1.value), None, None)
+      val list = listByArn(Arn(arn), Seq.empty[Service], Some(clientId1.value), None, None)
 
       list.size shouldBe 1
       list.head.clientId.underlying shouldBe clientId1
@@ -246,7 +246,7 @@ class InvitationsMongoRepositoryISpec
 
       update(invitations.head, Accepted, DateTime.now())
 
-      val list = listByArn(Arn(arn), None, None, Some(Pending), None)
+      val list = listByArn(Arn(arn), Seq.empty[Service], None, Some(Pending), None)
 
       list.size shouldBe 1
       list.head.clientId.underlying shouldBe clientId2
@@ -269,26 +269,26 @@ class InvitationsMongoRepositoryISpec
       update(invitations(1), Rejected, DateTime.now().minusDays(11))
       update(invitations(2), Accepted, DateTime.now().minusDays(2))
 
-      val list1 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(10).toLocalDate))
+      val list1 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(10).toLocalDate))
       list1.size shouldBe 1
       list1.head.clientId.underlying shouldBe clientId1
       list1.head.status shouldBe Accepted
 
-      val list2 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(20).toLocalDate))
+      val list2 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(20).toLocalDate))
       list2.size shouldBe 2
       list2.head.clientId.underlying shouldBe clientId1
       list2.head.status shouldBe Accepted
       list2(1).clientId.underlying shouldBe clientId2
       list2(1).status shouldBe Rejected
 
-      val list21 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(21).toLocalDate))
+      val list21 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(21).toLocalDate))
       list21.size shouldBe 2
       list21.head.clientId.underlying shouldBe clientId1
       list21.head.status shouldBe Accepted
       list21(1).clientId.underlying shouldBe clientId2
       list21(1).status shouldBe Rejected
 
-      val list3 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(30).toLocalDate))
+      val list3 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(30).toLocalDate))
       list3.size shouldBe 3
       list3.head.clientId.underlying shouldBe clientId1
       list3.head.status shouldBe Accepted
@@ -297,10 +297,10 @@ class InvitationsMongoRepositoryISpec
       list3(2).clientId.underlying shouldBe clientId1
       list3(2).status shouldBe Expired
 
-      val list0 = listByArn(Arn(arn), None, None, None, Some(now.minusDays(9).toLocalDate))
+      val list0 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(9).toLocalDate))
       list0.size shouldBe 0
 
-      val list01 = listByArn(Arn(arn), None, None, None, Some(now.toLocalDate))
+      val list01 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.toLocalDate))
       list01.size shouldBe 0
     }
   }
@@ -564,11 +564,11 @@ class InvitationsMongoRepositoryISpec
 
   private def addInvitation(startDate: DateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
 
-  private def listByArn(arn: Arn) = await(repository.findInvitationsBy(Some(arn), None, None, None, None))
+  private def listByArn(arn: Arn) = await(repository.findInvitationsBy(Some(arn), Seq.empty[Service], None, None, None))
 
   private def listByArn(
     arn: Arn,
-    service: Option[Service],
+    service: Seq[Service],
     clientId: Option[String],
     status: Option[InvitationStatus],
     createdOnOrAfter: Option[LocalDate]): Seq[Invitation] =
@@ -583,7 +583,7 @@ class InvitationsMongoRepositoryISpec
     await(repository.findInvitationInfoBy(Some(arn), service, clientId, status, createdOnOrAfter))
 
   private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
-    await(repository.findInvitationsBy(service = Some(service), clientId = Some(clientId.value), status = status))
+    await(repository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status))
 
   private def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime) =
     await(repository.update(invitation, status, updateDate))
