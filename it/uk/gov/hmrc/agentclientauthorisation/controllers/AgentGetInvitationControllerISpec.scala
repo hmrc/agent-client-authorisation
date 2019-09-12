@@ -160,6 +160,37 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       json.invitations.length shouldBe 4
     }
 
+    "return Invitations for Agent with Services and CreatedBefore Query Params" in {
+      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
+      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
+
+      status(response) shouldBe 200
+
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 2
+    }
+
+    "return Invitations for Agent with Status, ClientId and Service Query Params" in {
+      testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val response = controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDIT}"), None, Some(mtdItId.value), Some(Pending), None)(request)
+
+      status(response) shouldBe 200
+
+      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 1
+    }
+
     "return no Invitations for Agent" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
