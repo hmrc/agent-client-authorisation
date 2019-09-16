@@ -253,16 +253,16 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         clientAuthStub(agentAffinityConfidenceAndEnrolment)
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
-        status(result) shouldBe 401
-        result shouldBe GenericUnauthorized
+        status(result) shouldBe 403
+        result shouldBe GenericForbidden
       }
 
       "user: Individual with confidence level less than 200" in {
         clientAuthStub(client(AffinityGroup.Individual, ConfidenceLevel.L100, clientMtdItIrvVat))
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
-        status(result) shouldBe 401
-        result shouldBe GenericUnauthorized
+        status(result) shouldBe 403
+        result shouldBe GenericForbidden
       }
     }
   }

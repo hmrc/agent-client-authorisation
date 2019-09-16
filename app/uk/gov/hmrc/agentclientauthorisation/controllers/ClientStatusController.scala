@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, Relationshi
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{ClientStatusCache, InvitationsService}
-import uk.gov.hmrc.auth.core.{AuthConnector, UnsupportedAffinityGroup}
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.Upstream4xxResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -75,11 +75,11 @@ class ClientStatusController @Inject()(
                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
                    }
       } yield Ok(Json.toJson(status))
-    }.recover {
-      case _: UnsupportedAffinityGroup => Ok(Json.toJson(ClientStatus(false, false, false)))
+    } {
+      Ok(Json.toJson(ClientStatus(false, false, false)))
     }
-  }
 
+  }
 }
 
 object ClientStatusController {
