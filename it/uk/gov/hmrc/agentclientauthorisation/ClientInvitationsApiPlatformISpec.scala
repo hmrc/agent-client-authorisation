@@ -47,7 +47,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
     "return 403 NO_PERMISSION_ON_CLIENT when try to access someone else's invitations" in {
 
       given().client(clientId = nino, canonicalClientId = mtdItId1).givenClientMtdItId(mtdItId1)
-      clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(NoPermissionToPerformOperation)
+      clientGetReceivedInvitations(MtdItId("0123456789")) should matchErrorResult(GenericForbidden)
     }
   }
 
@@ -132,7 +132,7 @@ class ClientInvitationsApiPlatformISpec extends ClientInvitationsISpec {
         .givenClientMtdItId(MtdItId("otherMtdItId"))
 
       val response = updateInvitationResource(invite.links.acceptLink.get)(port, client.hc)
-      response should matchErrorResult(NoPermissionToPerformOperation)
+      response should matchErrorResult(GenericForbidden)
     }
   }
 }

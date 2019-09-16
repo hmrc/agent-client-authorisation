@@ -165,9 +165,6 @@ trait TestData {
       Some(AffinityGroup.Individual),
       Enrolments(agentEnrolment))
 
-  val failedStubForAgent: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future failed InsufficientEnrolments()
-
   val failedStubForClient: Future[Enrolments] = Future failed MissingBearerToken()
 
 }

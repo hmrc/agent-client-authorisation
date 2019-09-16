@@ -27,7 +27,10 @@ trait WiremockAware {
 trait BasicUserAuthStubs {
 
   def isNotLoggedIn = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401)))
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withHeader("WWW-Authenticate", """MDTP detail="BearerTokenExpired"""")
+        .withStatus(401)))
     this
   }
 

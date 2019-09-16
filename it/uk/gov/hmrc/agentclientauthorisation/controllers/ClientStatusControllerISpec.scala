@@ -365,7 +365,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
           aResponse()
             .withStatus(401)
-            .withHeader("WWW-Authenti cate", "MDTP detail=\"MissingBearerToken\"")))
+            .withHeader("WWW-Authenticate", "MDTP detail=\"MissingBearerToken\"")))
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port).get()
