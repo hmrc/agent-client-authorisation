@@ -186,8 +186,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
 
           (affinity, confidence) match {
             case (Individual, cl) if cl >= L200 => body(clientIdTypePlusIds)
-            case (Organisation, _)                              => body(clientIdTypePlusIds)
-            case _                                              => Future successful GenericForbidden
+            case (Organisation, _)              => body(clientIdTypePlusIds)
+            case _                              => Future successful GenericForbidden
           }
         case _ => Future successful GenericUnauthorized
       } recover handleFailure

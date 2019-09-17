@@ -130,7 +130,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Status Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -145,7 +145,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with CreatedBefore Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -160,7 +160,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Services and CreatedBefore Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -176,7 +176,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Status, ClientId and Service Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
