@@ -61,8 +61,9 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
   val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
   val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
+  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPDRef", cgtRef, cgtRef)
 
-  val testClients = List(itsaClient, irvClient, vatClient, trustClient)
+  val testClients = List(itsaClient, irvClient, vatClient, trustClient, cgtClient)
 
   def createInvitation(clientType: Option[String],
                        service: Service,
@@ -84,7 +85,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
 
     "return Invitations for Agent without Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -99,7 +100,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Service Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -115,7 +116,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with ClientId Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub

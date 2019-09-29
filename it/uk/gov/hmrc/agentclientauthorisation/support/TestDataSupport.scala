@@ -1,7 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model.DetailsForEmail
+import uk.gov.hmrc.agentclientauthorisation.model.{CgtRef, DetailsForEmail}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
@@ -16,6 +16,7 @@ trait TestDataSupport {
   val serviceITSA = "HMRC-MTD-IT"
   val servicePIR = "PERSONAL-INCOME-RECORD"
   val serviceVAT = "HMRC-MTD-VAT"
+  val serviceCGT = "HMRC-CGT-PD"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
@@ -29,6 +30,7 @@ trait TestDataSupport {
   val utr = Utr("2134514321")
   val utr2 = Utr("3087612352")
 
+  val cgtRef = CgtRef("1234567890")
 
   val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
 

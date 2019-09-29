@@ -253,6 +253,15 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
+  def checkKnownFactCgt(cgtRef: CgtRef, something: String): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+    knownFactsCheckService.clientSomethingCgtMatches(cgtRef, something).map{
+      case Some(true) => NoContent
+      case Some(false) => Locked
+      case None => NotFound
+    }
+  }
+
   def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
       trustResponseCache(utr.value) {

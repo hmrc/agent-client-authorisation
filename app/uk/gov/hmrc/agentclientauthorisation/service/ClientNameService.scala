@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.Service
+import uk.gov.hmrc.agentclientauthorisation.model.{CgtRef, Service}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
@@ -42,6 +42,7 @@ class ClientNameService @Inject()(
       case HMRCPIR     => getCitizenName(Nino(clientId))
       case HMRCMTDVAT  => getVatName(Vrn(clientId))
       case HMRCTERSORG => getTrustName(Utr(clientId))
+      case HMRCCGTPD => getCGTName(CgtRef(clientId))
       case _           => Future successful None
     }
 
@@ -77,4 +78,7 @@ class ClientNameService @Inject()(
         Logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
         None
     }
+
+  def getCGTName(ref: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    Future.successful(Some("CGT Name"))
 }
