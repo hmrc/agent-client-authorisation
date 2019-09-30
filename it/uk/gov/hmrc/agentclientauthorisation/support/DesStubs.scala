@@ -225,18 +225,6 @@ trait DesStubs {
     this
   }
 
-  def errorVatCustomerDetails(vrn: Vrn, status: Int) = {
-    stubFor(
-      get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .withHeader("authorization", equalTo("Bearer secret"))
-        .withHeader("environment", equalTo("test"))
-        .willReturn(aResponse()
-          .withStatus(status)
-          .withBody("Error")))
-
-    this
-  }
-
   def getTrustName(utr: Utr, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/trusts/agent-known-fact-check/${utr.value}"))
