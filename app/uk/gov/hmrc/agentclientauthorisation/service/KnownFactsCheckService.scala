@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Singleton}
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.model.CgtRef
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,9 +51,4 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
       case Some(CitizenDateOfBirth(_))                                           => Some(false)
       case None                                                                  => None
     }
-
-  def clientSomethingCgtMatches(cgtRef: CgtRef, something: String)
-                               (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Boolean]] = {
-    Future.successful(None)
-  }
 }

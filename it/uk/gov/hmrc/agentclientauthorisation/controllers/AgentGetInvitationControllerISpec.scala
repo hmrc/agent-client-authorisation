@@ -61,9 +61,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
   val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
   val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
-  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPDRef", cgtRef, cgtRef)
-
-  val testClients = List(itsaClient, irvClient, vatClient, trustClient, cgtClient)
+  val testClients = List(itsaClient, irvClient, vatClient, trustClient)
 
   def createInvitation(clientType: Option[String],
                        service: Service,
