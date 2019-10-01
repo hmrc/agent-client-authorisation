@@ -61,7 +61,17 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
   val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
   val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
-  val testClients = List(itsaClient, irvClient, vatClient, trustClient)
+  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPRef", cgtRef, cgtRef)
+
+  val testClients = List(
+    itsaClient,
+    irvClient,
+    vatClient,
+    trustClient,
+    cgtClient)
+
+  //Prior to Client Type and Client ActionUrl
+  val legacyList = List(itsaClient, irvClient, vatClient)
 
   def createInvitation(clientType: Option[String],
                        service: Service,
@@ -79,14 +89,17 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       LocalDate.now().plusDays(14))
   }
 
+  trait TestSetup {
+    testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+    givenAuditConnector()
+    givenAuthorisedAsAgent(arn)
+    givenGetAgencyNameAgentStub
+  }
+
   "GET /agencies/:arn/invitations/sent" should {
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
 
-    "return Invitations for Agent without Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent without Query Params" in new TestSetup {
 
       val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
 
@@ -94,14 +107,10 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      json.invitations.length shouldBe 4
+      json.invitations.length shouldBe 5
     }
 
-    "return Invitations for Agent with Service Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with Service Query Params" in new TestSetup {
 
       val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
       val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, None)(request)
@@ -113,11 +122,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       json.invitations.length shouldBe 2
     }
 
-    "return Invitations for Agent with ClientId Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with ClientId Query Params" in new TestSetup {
 
       val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
 
@@ -128,11 +133,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       json.invitations.length shouldBe 1
     }
 
-    "return Invitations for Agent with Status Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with Status Query Params" in new TestSetup {
 
       val response = controller.getSentInvitations(arn, None, None, None, None, Some(Pending), None)(request)
 
@@ -140,14 +141,10 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      json.invitations.length shouldBe 4
+      json.invitations.length shouldBe 5
     }
 
-    "return Invitations for Agent with CreatedBefore Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with CreatedBefore Query Params" in new TestSetup {
 
       val response = controller.getSentInvitations(arn, None, None, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
 
@@ -155,14 +152,10 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      json.invitations.length shouldBe 4
+      json.invitations.length shouldBe 5
     }
 
-    "return Invitations for Agent with Services and CreatedBefore Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with Services and CreatedBefore Query Params" in new TestSetup {
 
       val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
       val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
@@ -174,11 +167,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       json.invitations.length shouldBe 2
     }
 
-    "return Invitations for Agent with Status, ClientId and Service Query Params" in {
-      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+    "return Invitations for Agent with Status, ClientId and Service Query Params" in new TestSetup {
 
       val response = controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDIT}"), None, Some(mtdItId.value), Some(Pending), None)(request)
 
@@ -223,98 +212,14 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
   "GET /agencies/:arn/invitations/sent/:invitationId" should {
 
-    val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
     val clientIdentifier = ClientIdentifier("FOO", MtdItIdType.id)
 
-    "return 200 with an invitation entity" in {
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
-
-      val invitation = await(
-        invitationsRepo.create(
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          clientIdentifier,
-          clientIdentifier,
-          None,
-          DateTime.now(),
-          LocalDate.now()))
-
-      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
-
-      status(response) shouldBe 200
-
-      val json = jsonBodyOf(response).as[JsObject]
-      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
-      (json \ "arn").as[String] shouldBe arn.value
-      (json \ "clientType").as[String] shouldBe "personal"
-      (json \ "status").as[String] shouldBe "Pending"
-      (json \ "clientId").as[String] shouldBe "FOO"
-      (json \ "clientIdType").as[String] shouldBe "MTDITID"
-      (json \ "suppliedClientId").as[String] shouldBe "FOO"
-      (json \ "suppliedClientIdType").as[String] shouldBe "MTDITID"
-      (json \ "clientActionUrl").as[String].matches(invitationLinkRegex("personal")) shouldBe true
+    testClients.foreach { client =>
+      runGetInvitationIdSpec(client)
     }
 
-    "return 200 with Accepted VAT invitation without client type and skip providing action url" in {
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
-
-      val invitation = await(
-        invitationsRepo.create(
-          arn,
-          None,
-          Service.Vat,
-          clientIdentifierVat,
-          clientIdentifierVat,
-          None,
-          DateTime.now(),
-          LocalDate.now()))
-
-      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
-
-      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
-
-      status(response) shouldBe 200
-
-      val json = jsonBodyOf(response).as[JsObject]
-      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
-      (json \ "clientType").asOpt[String] shouldBe None
-      (json \ "status").as[String] shouldBe "Accepted"
-      (json \ "clientActionUrl").asOpt[String] shouldBe None
-    }
-
-    "return 200 with Accepted ITSA invitation without client type and skip providing action url" in {
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
-
-      val invitation = await(
-        invitationsRepo.create(
-          arn,
-          None,
-          Service.MtdIt,
-          clientIdentifier,
-          clientIdentifier,
-          None,
-          DateTime.now(),
-          LocalDate.now()))
-
-      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
-
-      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
-
-      status(response) shouldBe 200
-
-      val json = jsonBodyOf(response).as[JsObject]
-      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
-      (json \ "clientType").asOpt[String] shouldBe None
-      (json \ "status").as[String] shouldBe "Accepted"
-      (json \ "clientActionUrl").asOpt[String] shouldBe None
-    }
+    legacyList.foreach { client =>
+      runGetInvitationLegacy(client)}
 
     "return 403 when invitation is for another agent" in {
       givenAuditConnector()
@@ -331,25 +236,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           DateTime.now(),
           LocalDate.now()))
 
-      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
-
-      status(response) shouldBe 403
-    }
-
-    "return 403 when arn is not of current agent" in {
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn2)
-
-      val invitation = await(
-        invitationsRepo.create(
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          clientIdentifier,
-          clientIdentifier,
-          None,
-          DateTime.now(),
-          LocalDate.now()))
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
@@ -371,6 +258,8 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           DateTime.now(),
           LocalDate.now()))
 
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
       status(response) shouldBe 401
@@ -380,9 +269,59 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/A7GJRTMY4DS3T")
+
       val response = controller.getSentInvitation(arn, InvitationId("A7GJRTMY4DS3T"))(request)
 
       status(response) shouldBe 404
+    }
+  }
+
+  def runGetInvitationIdSpec(testClient: TestClient): Unit = {
+    s"return 200 get Invitation for ${testClient.service}" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(createInvitation(testClient.clientType, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+
+      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
+
+      status(response) shouldBe 200
+
+      val json = jsonBodyOf(response).as[JsObject]
+      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (json \ "arn").as[String] shouldBe arn.value
+      (json \ "clientType").asOpt[String] shouldBe invitation.clientType
+      (json \ "status").as[String] shouldBe "Pending"
+      (json \ "clientId").as[String] shouldBe invitation.clientId.value
+      (json \ "clientIdType").as[String] shouldBe invitation.clientId.typeId
+      (json \ "suppliedClientId").as[String] shouldBe invitation.suppliedClientId.value
+      (json \ "suppliedClientIdType").as[String] shouldBe invitation.suppliedClientId.typeId
+      (json \ "clientActionUrl").as[String].matches(invitationLinkRegex(invitation.clientType.get)) shouldBe true
+    }
+  }
+
+  def runGetInvitationLegacy(testClient: TestClient): Unit = {
+    s"return 200 get invitation Accepted for ${testClient.service} for no clientType and Skip Add ClientActionUrl" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyNameAgentStub
+
+      val invitation = await(createInvitation(None, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
+
+      status(response) shouldBe 200
+      val json = jsonBodyOf(response).as[JsObject]
+      (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
+      (json \ "clientType").asOpt[String] shouldBe None
+      (json \ "status").as[String] shouldBe "Accepted"
+      (json \ "clientActionUrl").asOpt[String] shouldBe None
     }
   }
 }
