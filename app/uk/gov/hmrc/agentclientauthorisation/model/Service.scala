@@ -103,7 +103,7 @@ case object UtrType extends ClientIdType(classOf[Utr], "utr", "SAUTR", Utr.apply
   override def isValid(value: String) = value.matches("^\\d{10}$")
 }
 
-case object CgtRefType extends ClientIdType(classOf[CgtRef], "cgt", "CGTPDRef", CgtRef.apply) {
+case object CgtRefType extends ClientIdType(classOf[CgtRef], "cgtref", "CGTPDRef", CgtRef.apply) {
   override def isValid(value: String): Boolean = CgtRef.isValid(value)
 }
 
