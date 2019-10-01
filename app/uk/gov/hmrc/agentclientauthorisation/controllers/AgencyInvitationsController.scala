@@ -165,11 +165,6 @@ class AgencyInvitationsController @Inject()(
                                     agentLinkService.getInvitationUrl(invites.arn, ct).map { link =>
                                       invites.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link"))
                                     }
-                                  case (_, Pending) =>
-                                    addLinkToInvitation(invites)
-                                      .map(
-                                        _.getOrElse(
-                                          throw new IllegalStateException("No Pending Invitation to Add Link")))
                                   case _ => Future.successful(invites)
                                 }
                               }
@@ -201,8 +196,7 @@ class AgencyInvitationsController @Inject()(
                                        agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
                                          Some(invite.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
                                        }
-                                     case (_, Pending) => addLinkToInvitation(invite)
-                                     case _            => Future.successful(Some(invite))
+                                     case _ => Future.successful(Some(invite))
                                    }
                                  case _ => Future successful None
                                }
