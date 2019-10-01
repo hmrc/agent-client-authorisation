@@ -115,6 +115,27 @@ class AgentCreateInvitationISpec extends BaseISpec {
 
         status(response) shouldBe 201
       }
+
+      "service is CapitalGains" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenGetAgencyNameViaClientStub(arn)
+        givenGetAgencyEmailAgentStub(arn)
+        //TODO Add Known Fact Stub to GET Name - APB-4403
+
+        val requestBody = Json.parse(
+          s"""
+             |{
+             |  "service":"HMRC-CGT-PD",
+             |  "clientIdType":"CGTPDRef",
+             |  "clientId":"XMCGTP123456789"
+             |}
+           """.stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+      }
     }
 
     "throw exception when adding DetailsForEmail Failed" when {

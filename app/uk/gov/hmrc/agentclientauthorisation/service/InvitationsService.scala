@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{HmrcMtdVat, Nino}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
@@ -76,7 +76,10 @@ class InvitationsService @Inject()(
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
       for {
-        detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
+        detailsForEmailOpt <- {
+          if (service.id != "HMRC-CGT-PD") emailService.createDetailsForEmail(arn, clientId, service).map(Some(_))
+          else Future.successful(None)
+        }
         invitation <- invitationsRepository
                        .create(
                          arn,
@@ -84,7 +87,7 @@ class InvitationsService @Inject()(
                          service,
                          clientId,
                          suppliedClientId,
-                         Some(detailsForEmail),
+                         detailsForEmailOpt,
                          startDate,
                          expiryDate)
       } yield {

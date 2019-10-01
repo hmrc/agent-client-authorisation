@@ -93,6 +93,7 @@ class EmailService @Inject()(
     sendEmail(invitation, "client_expired_authorisation_request")
   }
 
+  //TODO - APB-4370
   private def emailInformation(
     templateId: String,
     agencyEmail: String,

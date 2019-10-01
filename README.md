@@ -33,6 +33,7 @@ This supports Agent and Client authorisation processes for the following regimes
 |Income-Record-Viewer for Individuals|PERSONAL-INCOME-RECORD|
 |Value-Added-Tax|HMRC-MTD-VAT|
 |For Trust|HMRC-TRUST-ORG|
+|Capital Gains Tax| HMRC-CGT-PD|
 
 
 ### Invitation Status <a name="invitationStatus"></a>
@@ -97,6 +98,25 @@ Example Body of IRV:
   "service": "PERSONAL-INCOME-RECORD",
   "clientIdType": "ni",
   "clientId": "AE123456C"
+}
+```
+
+Example Body of Trust
+```json
+{
+  "service": "HMRC-TERS-ORG",
+  "clientIdType": "utr",
+  "clientId": "2134514321"
+}
+
+```
+
+Example of CGT:
+```json
+{
+  "service": "HMRC-CGT-PD",
+  "clientIdType": "CGTPDRef",
+  "clientId": "XMCGTP123456789"
 }
 ```
 

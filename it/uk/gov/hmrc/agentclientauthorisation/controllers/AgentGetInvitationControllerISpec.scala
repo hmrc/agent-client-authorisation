@@ -61,7 +61,6 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
   val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
   val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
-
   val testClients = List(itsaClient, irvClient, vatClient, trustClient)
 
   def createInvitation(clientType: Option[String],
@@ -84,7 +83,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
 
     "return Invitations for Agent without Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -99,7 +98,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with Service Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
@@ -115,7 +114,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
 
     "return Invitations for Agent with ClientId Query Params" in {
-      await(testClients.foreach(client => createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+      testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
