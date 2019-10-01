@@ -115,7 +115,7 @@ Example of CGT:
 ```json
 {
   "service": "HMRC-CGT-PD",
-  "clientIdType": "cgtref",
+  "clientIdType": "CGTPDRef",
   "clientId": "XMCGTP123456789"
 }
 ```
