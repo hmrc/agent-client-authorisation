@@ -127,7 +127,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
           s"""
              |{
              |  "service":"HMRC-CGT-PD",
-             |  "clientIdType":"cgtref",
+             |  "clientIdType":"CGTPDRef",
              |  "clientId":"XMCGTP123456789"
              |}
            """.stripMargin)
