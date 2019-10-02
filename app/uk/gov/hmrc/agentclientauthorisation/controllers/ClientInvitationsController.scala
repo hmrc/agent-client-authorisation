@@ -98,6 +98,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
       case "MTDITID" => MtdItIdType
       case "VRN"     => VrnType
       case "UTR"     => UtrType
+      case "CGTPDRef" => CgtRefType
     }
 
   def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =

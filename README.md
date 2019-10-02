@@ -78,6 +78,7 @@ Example Body of ITSA:
 ```json
 {
   "service": "HMRC-MTD-IT",
+  "clientType":"personal",
   "clientIdType": "ni",
   "clientId": "AB123456A"
 }
@@ -87,6 +88,7 @@ Example Body of VAT:
 ```json
 {
   "service": "HMRC-MTD-VAT",
+  "clientType":"personal / business",
   "clientIdType": "vrn",
   "clientId": "101747696"
 }
@@ -96,6 +98,7 @@ Example Body of IRV:
 ```json
 {
   "service": "PERSONAL-INCOME-RECORD",
+  "clientType":"personal",
   "clientIdType": "ni",
   "clientId": "AE123456C"
 }
@@ -105,6 +108,7 @@ Example Body of Trust
 ```json
 {
   "service": "HMRC-TERS-ORG",
+  "clientType":"business",
   "clientIdType": "utr",
   "clientId": "2134514321"
 }
@@ -115,6 +119,7 @@ Example of CGT:
 ```json
 {
   "service": "HMRC-CGT-PD",
+  "clientType":"personal / business",
   "clientIdType": "CGTPDRef",
   "clientId": "XMCGTP123456789"
 }

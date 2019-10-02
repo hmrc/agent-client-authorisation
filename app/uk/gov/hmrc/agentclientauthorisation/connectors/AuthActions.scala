@@ -22,14 +22,12 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import play.api.Logger
-import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
-import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, Vat}
+import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
@@ -127,9 +125,10 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         Right((MtdIt, MtdItId(clientId)))
       case "NI" if NinoType.isValid(clientId) =>
         Right((PersonalIncomeRecord, Nino(clientId)))
-      case "VRN" if VrnType.isValid(clientId) => Right((Vat, Vrn(clientId)))
-      case "UTR" if UtrType.isValid(clientId) => Right((Trust, Utr(clientId)))
-      case e                                  => Left(BadRequest(s"Unsupported $e"))
+      case "VRN" if VrnType.isValid(clientId)        => Right((Vat, Vrn(clientId)))
+      case "UTR" if UtrType.isValid(clientId)        => Right((Trust, Utr(clientId)))
+      case "CGTPDRef" if CgtRefType.isValid(clientId) => Right((CapitalGains, CgtRef(clientId)))
+      case e                                         => Left(BadRequest(s"Unsupported $e"))
     }
 
   def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(

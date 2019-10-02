@@ -33,7 +33,7 @@ class AuthActionsISpec extends BaseISpec {
     if(forStride)
       givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
     else if(forClient)
-      givenClientAll(mtdItId, vrn, nino, utr)
+      givenClientAll(mtdItId, vrn, nino, utr, cgtRef)
     else isNotLoggedIn
   }
 
