@@ -55,7 +55,7 @@ object Service {
 
   case object Trust extends Service("HMRC-TERS-ORG", 'D', "HMRC-TERS-ORG", UtrType, UtrType, false)
 
-  case object CapitalGains extends Service(HMRCCGTPD, 'E', HMRCCGTPD, CgtRefType, CgtRefType, true)
+  case object CapitalGains extends Service("HMRC-CGT-PD", 'E', "HMRC-CGT-PD", CgtRefType, CgtRefType, true)
 
   val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, Trust, CapitalGains)
 

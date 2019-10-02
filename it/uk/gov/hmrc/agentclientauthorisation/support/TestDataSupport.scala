@@ -16,6 +16,7 @@ trait TestDataSupport {
   val serviceITSA = "HMRC-MTD-IT"
   val servicePIR = "PERSONAL-INCOME-RECORD"
   val serviceVAT = "HMRC-MTD-VAT"
+  val serviceCGT = "HMRC-CGT-PD"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
@@ -28,6 +29,8 @@ trait TestDataSupport {
 
   val utr = Utr("2134514321")
   val utr2 = Utr("3087612352")
+
+  val cgtRef = CgtRef("XMCGTP123456789")
 
   val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
 
