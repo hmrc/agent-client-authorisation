@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 
 trait WiremockAware {
@@ -84,7 +84,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |  "agencyEmail" : "agent@email.com"
                      |}""".stripMargin)))
 
-  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr) = {
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, cgtRef: CgtRef) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse()
         .withStatus(200)
@@ -134,6 +134,15 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        }
                      |      ],
                      |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key":"HMRC-CGT-PD",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"CGTPDRef",
+                     |          "value":"${cgtRef.value}"
+                     |        }
+                     |      ]
                      |    }
                      |  ]
                      |}
