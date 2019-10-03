@@ -125,10 +125,10 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         Right((MtdIt, MtdItId(clientId)))
       case "NI" if NinoType.isValid(clientId) =>
         Right((PersonalIncomeRecord, Nino(clientId)))
-      case "VRN" if VrnType.isValid(clientId)        => Right((Vat, Vrn(clientId)))
-      case "UTR" if UtrType.isValid(clientId)        => Right((Trust, Utr(clientId)))
+      case "VRN" if VrnType.isValid(clientId)         => Right((Vat, Vrn(clientId)))
+      case "UTR" if UtrType.isValid(clientId)         => Right((Trust, Utr(clientId)))
       case "CGTPDRef" if CgtRefType.isValid(clientId) => Right((CapitalGains, CgtRef(clientId)))
-      case e                                         => Left(BadRequest(s"Unsupported $e"))
+      case e                                          => Left(BadRequest(s"Unsupported $e"))
     }
 
   def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(

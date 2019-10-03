@@ -166,8 +166,6 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     case Utr(_)     => "SAUTR"
   }
 
-
-  //TODO Rework this with ForEach
   "PUT /clients/UTR/:utr/invitations/received/:invitationId/accept" should {
     runAcceptInvitationScenario(trustClient, true)
     runAcceptInvitationScenario(trustClient, false)
@@ -204,7 +202,6 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
   }
 
-  //TODO Rework this with ForEach
   "PUT /clients/UTR/:utr/invitations/received/:invitationId/reject" should {
     runRejectInvitationScenario(trustClient, true)
     runRejectInvitationScenario(trustClient, false)

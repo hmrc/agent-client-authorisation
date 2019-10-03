@@ -94,10 +94,10 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
 
   private def getType(clientIdType: String): ClientIdType[TaxIdentifier] =
     clientIdType match {
-      case "NI"      => NinoType
-      case "MTDITID" => MtdItIdType
-      case "VRN"     => VrnType
-      case "UTR"     => UtrType
+      case "NI"       => NinoType
+      case "MTDITID"  => MtdItIdType
+      case "VRN"      => VrnType
+      case "UTR"      => UtrType
       case "CGTPDRef" => CgtRefType
     }
 
