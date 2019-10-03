@@ -1,8 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 import com.kenshoo.play.metrics.Metrics
-import play.api.{Configuration, Environment}
 import play.api.mvc.{Action, AnyContent, Result}
-import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentclientauthorisation.model.Service

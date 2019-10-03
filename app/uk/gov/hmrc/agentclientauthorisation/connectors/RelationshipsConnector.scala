@@ -66,6 +66,12 @@ class RelationshipsConnector @Inject()(
       http.PUT[String, HttpResponse](trustRelationshipUrl(invitation).toString, "") map (_ => Unit)
     }
 
+  def createCapitalGainsRelationship(
+    invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
+      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation).toString, "") map (_ => Unit)
+    }
+
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/relationships/active"
@@ -98,6 +104,13 @@ class RelationshipsConnector @Inject()(
     new URL(
       baseUrl,
       s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(
+        invitation.clientId.value)}"
+    )
+
+  private def cgtRelationshipUrl(invitation: Invitation): URL =
+    new URL(
+      baseUrl,
+      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(
         invitation.clientId.value)}"
     )
 

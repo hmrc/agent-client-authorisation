@@ -109,6 +109,7 @@ class InvitationsService @Inject()(
             case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
             case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
             case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
+            case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
           }
           createRelationship
             .flatMap(
