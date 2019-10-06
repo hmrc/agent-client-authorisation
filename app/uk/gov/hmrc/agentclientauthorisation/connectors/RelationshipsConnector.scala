@@ -44,12 +44,12 @@ class RelationshipsConnector @Inject()(
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => ())
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => ())
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
@@ -57,19 +57,19 @@ class RelationshipsConnector @Inject()(
     ec: ExecutionContext): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => Unit)
+      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => ())
     }
   }
 
   def createTrustRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Trust-PUT") {
-      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation).toString, "") map (_ => ())
     }
 
   def createCapitalGainsRelationship(
     invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
-      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation).toString, "") map (_ => Unit)
+      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation).toString, "") map (_ => ())
     }
 
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =

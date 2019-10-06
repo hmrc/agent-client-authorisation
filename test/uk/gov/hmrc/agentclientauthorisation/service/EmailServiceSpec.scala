@@ -124,7 +124,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(emailService.sendAcceptedEmail(invite))
 
@@ -140,7 +140,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendAcceptedEmail(Invitation(
@@ -168,7 +168,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendAcceptedEmail(Invitation(
@@ -197,7 +197,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendAcceptedEmail(Invitation(
@@ -228,7 +228,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendAcceptedEmail(Invitation(
@@ -258,7 +258,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendRejectedEmail(Invitation(
@@ -289,7 +289,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future())
+        .returns(Future(): Unit)
 
       await(
         emailService.sendExpiredEmail(Invitation(

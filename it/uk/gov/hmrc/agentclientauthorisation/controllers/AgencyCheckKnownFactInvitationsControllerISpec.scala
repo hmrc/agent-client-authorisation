@@ -17,9 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{AgentNotSubscribed, DateOfBirthDoesNotMatch, VatRegistrationDateDoesNotMatch}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
+import uk.gov.hmrc.http.Upstream5xxResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -58,7 +60,16 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 
       val result = await(controller.checkKnownFactItsa(nino, "AAAAAA")(request))
 
-      status(result) shouldBe 400
+      result shouldBe postcodeFormatInvalid("The submitted postcode, AAAAAA, does not match the expected format.")
+    }
+
+    "return 400 if given postcode is not present" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+
+      val result = await(controller.checkKnownFactItsa(nino, "")(request))
+
+      result shouldBe postcodeRequired("HMRC-MTD-IT")
     }
 
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
@@ -67,7 +78,18 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
       hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
 
       val result = await(controller.checkKnownFactItsa(nino, "BN114AW")(request))
-      status(result) shouldBe 403
+
+      result shouldBe PostcodeDoesNotMatch
+    }
+
+    "return 501 if given non-UK address" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasABusinessPartnerRecord(nino, "AA11AA", "PL")
+
+      val result = await(controller.checkKnownFactItsa(nino, "AA11AA")(request))
+
+      result shouldBe nonUkAddress("PL")
     }
   }
 
@@ -82,7 +104,6 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
       val result = await(controller.checkKnownFactIrv(nino, dateOfBirth)(request))
 
       status(result) shouldBe 204
-
     }
 
     "return Date Of Birth Does Not Match if Nino is known in citizen details and the dateOfBirth did not match" in {
@@ -141,6 +162,14 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       hasNoVatCustomerDetails(vrn)
+      val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
+
+      status(result) shouldBe 404
+    }
+    "return Not Found if Vrn is without any 'approvedInformation' present" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasVatCustomerDetailsWithNoApprovedInformation(vrn)
 
       val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
       status(result) shouldBe 404
@@ -152,6 +181,15 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 
       val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
       result shouldBe AgentNotSubscribed
+    }
+
+    "return 502 when DES/ETMP is unavailable" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      failsVatCustomerDetails(vrn, 503)
+
+      val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
+      status(result) shouldBe 502
     }
   }
 

@@ -235,6 +235,9 @@ class AgencyInvitationsController @Inject()(
             Logger(getClass).warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
             Locked
           }
+          case e =>
+            Logger(getClass).warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
+            BadGateway
         }
   }
 

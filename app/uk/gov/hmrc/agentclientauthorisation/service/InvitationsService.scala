@@ -134,7 +134,7 @@ class InvitationsService @Inject()(
           result <- changeInvitationStatusAndRecover
           _ <- result match {
                 case Right(invite) => emailService.sendAcceptedEmail(invite)
-                case Left(_)       => Future successful ()
+                case Left(_)       => Future successful Unit
               }
         } yield {
           result
@@ -168,7 +168,7 @@ class InvitationsService @Inject()(
       result <- changeStatus
       _ <- result match {
             case Right(invite) => emailService.sendRejectedEmail(invite)
-            case Left(_)       => Future successful ()
+            case Left(_)       => Future successful Unit
           }
     } yield result
   }

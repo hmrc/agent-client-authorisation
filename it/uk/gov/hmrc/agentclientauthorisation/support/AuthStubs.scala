@@ -90,7 +90,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -157,7 +157,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -185,7 +185,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     | "credentials":{
+                     | "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -212,7 +212,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
       .willReturn(aResponse().withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -240,7 +240,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
       .willReturn(aResponse().withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -372,7 +372,7 @@ trait StrideAuthStubs extends BasicUserAuthStubs{
                    |"allEnrolments": [{
                    |  "key": "$strideRole"
                    |	}],
-                   |  "credentials": {
+                   |  "optionalCredentials": {
                    |    "providerId": "$strideUserId",
                    |    "providerType": "PrivilegedApplication"
                    |  }

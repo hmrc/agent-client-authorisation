@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatchers.{any, eq => eqs}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.JsObject
 import play.api.mvc.Request
 import play.api.test.FakeRequest

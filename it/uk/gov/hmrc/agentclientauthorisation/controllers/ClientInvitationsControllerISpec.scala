@@ -6,16 +6,17 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, EmailInformation, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
-import uk.gov.hmrc.agentclientauthorisation.support.{RelationshipStubs, TestHalResponseInvitations}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.audit.HandlerResult.Rejected
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs {
+class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs with EmailStub {
 
   val controller: ClientInvitationsController = app.injector.instanceOf[ClientInvitationsController]
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
@@ -61,15 +62,20 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
+    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
     "accept invitation as expected" in new LoggedinUser(false) {
       clients.foreach { client =>
         givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+//        givenEmailSent(EmailInformation())
         anAfiRelationshipIsCreatedWith(arn, client.clientId)
 
         val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
         val result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
+        val updatedInvitation = await(controller.getInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(getResult))
+        val testInvitation = jsonBodyOf(updatedInvitation).as[TestHalResponseInvitation]
+        testInvitation.status shouldBe Accepted.toString
       }
     }
 
@@ -84,6 +90,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject" should {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject")
+    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
     "reject invitation as expected" in new LoggedinUser(false) {
       clients.foreach { client =>
@@ -92,6 +99,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
         val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
+        val updatedInvitation = await(controller.getInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(getResult))
+        val testInvitation = jsonBodyOf(updatedInvitation).as[TestHalResponseInvitation]
+        testInvitation.status shouldBe Rejected.toString
       }
     }
 

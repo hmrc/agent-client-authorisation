@@ -20,7 +20,7 @@ import org.joda.time.{DateTime, LocalDate}
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent

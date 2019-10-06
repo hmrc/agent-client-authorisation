@@ -32,7 +32,7 @@ import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -136,7 +136,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
       authorised().retrieve(allEnrolments and credentials) {
-        case enrolments ~ creds =>
+        case enrolments ~ Some(creds) =>
           validateClientId(service, identifier) match {
             case Right((clientService, clientId)) =>
               creds.providerType match {
@@ -149,6 +149,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
               }
             case Left(error) => Future successful error
           }
+        case _ ~ _ => Future successful GenericForbidden
       } recover handleFailure
     }
 
