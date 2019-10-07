@@ -149,7 +149,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
               }
             case Left(error) => Future successful error
           }
-        case _ ~ _ => Future successful GenericForbidden
+        case _ => Future successful GenericForbidden
       } recover handleFailure
     }
 
