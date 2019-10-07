@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{HmrcMtdVat, Nino}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
@@ -109,6 +109,7 @@ class InvitationsService @Inject()(
             case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
             case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
             case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
+            case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
           }
           createRelationship
             .flatMap(
@@ -133,7 +134,7 @@ class InvitationsService @Inject()(
           result <- changeInvitationStatusAndRecover
           _ <- result match {
                 case Right(invite) => emailService.sendAcceptedEmail(invite)
-                case Left(_)       => Future successful ()
+                case Left(_)       => Future.successful(())
               }
         } yield {
           result
@@ -167,7 +168,7 @@ class InvitationsService @Inject()(
       result <- changeStatus
       _ <- result match {
             case Right(invite) => emailService.sendRejectedEmail(invite)
-            case Left(_)       => Future successful ()
+            case Left(_)       => Future.successful(())
           }
     } yield result
   }

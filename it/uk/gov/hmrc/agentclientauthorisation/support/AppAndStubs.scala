@@ -20,8 +20,6 @@ import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.FakeApplication
-import reactivemongo.api.{DB, FailoverStrategy}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport, Awaiting => MongoAwaiting}
@@ -31,7 +29,7 @@ import uk.gov.hmrc.play.it.Port
 import scala.concurrent.ExecutionContext
 
 trait AppAndStubs
-    extends StartAndStopWireMock with StubUtils with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
+    extends StartAndStopWireMock with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
     with Matchers {
   me: Suite with TestSuite =>
 

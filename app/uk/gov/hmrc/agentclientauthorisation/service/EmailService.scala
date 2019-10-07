@@ -62,7 +62,8 @@ class EmailService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] =
     invitation.detailsForEmail match {
-      case Some(dfe) =>
+      //TODO APB-4370 To be Added
+      case Some(dfe) if invitation.service.id != "HMRC-CGT-PD" =>
         for {
           _ <- {
             val emailInfo: EmailInformation =

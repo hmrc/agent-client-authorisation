@@ -57,7 +57,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "service is PIR" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenCitizenDetails(nino, "19122019")
+        givenCitizenDetailsAreKnownFor(nino.value, "19122019")
         givenGetAgencyNameViaClientStub(arn)
         givenGetAgencyEmailAgentStub(arn)
 

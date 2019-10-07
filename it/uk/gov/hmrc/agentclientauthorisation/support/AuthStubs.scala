@@ -51,38 +51,26 @@ trait BasicUserAuthStubs {
     this
   }
 
+  def givenUnauthorisedForUnsupportedAuthProvider =
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .willReturn(
+          aResponse()
+            .withStatus(401)
+            .withHeader("WWW-Authenticate", "MDTP detail=\"UnsupportedAuthProvider\"")))
+
+  def givenUnauthorisedForUnsupportedAffinityGroup =
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .willReturn(
+          aResponse()
+            .withStatus(401)
+            .withHeader("WWW-Authenticate", "MDTP detail=\"UnsupportedAffinityGroup\"")))
 
 }
 
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
-  def givenCitizenDetails(nino: Nino, dob: String) = stubFor(
-    get(urlEqualTo(s"/citizen-details/nino/$nino"))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(s"""{
-                       |   "name": {
-                       |      "current": {
-                       |         "firstName": "John",
-                       |         "lastName": "Smith"
-                       |      },
-                       |      "previous": []
-                       |   },
-                       |   "ids": {
-                       |      "nino": "$nino"
-                       |   },
-                       |   "dateOfBirth": "$dob"
-                       |}""".stripMargin)))
-
-  def getAgencyEmailViaClient(arn: Arn) = stubFor(get(urlEqualTo(s"/agent-services-account/client/agency-email/${arn.value}"))
-    .willReturn(
-      aResponse()
-        .withStatus(200)
-        .withBody(s"""
-                     |{
-                     |  "agencyEmail" : "agent@email.com"
-                     |}""".stripMargin)))
 
   def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, cgtRef: CgtRef) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
@@ -90,7 +78,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -157,7 +145,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -185,7 +173,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
         .withStatus(200)
         .withBody(s"""
                      |{
-                     | "credentials":{
+                     | "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -212,7 +200,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
       .willReturn(aResponse().withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -240,7 +228,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
       .willReturn(aResponse().withStatus(200)
         .withBody(s"""
                      |{
-                     |  "credentials":{
+                     |  "optionalCredentials":{
                      |    "providerId": "12345",
                      |    "providerType": "GovernmentGateway"
                      |  },
@@ -261,19 +249,13 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
     this
   }
+
+
 }
 
 trait AgentAuthStubs extends BasicUserAuthStubs {
 
   protected var saAgentReference: Option[SaAgentReference] = None
-
-  def givenGetAgentName(arn: Arn) = {
-    stubFor(get(urlPathEqualTo("/agent-services-account/agent/agency-name"))
-      .willReturn(aResponse().withStatus(200).withBody(
-        s"""{
-           |  "agencyName" : "My Agency"
-           |}""".stripMargin)))
-  }
 
   def givenAuthorisedAsAgent(arn: Arn) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
@@ -372,7 +354,7 @@ trait StrideAuthStubs extends BasicUserAuthStubs{
                    |"allEnrolments": [{
                    |  "key": "$strideRole"
                    |	}],
-                   |  "credentials": {
+                   |  "optionalCredentials": {
                    |    "providerId": "$strideUserId",
                    |    "providerType": "PrivilegedApplication"
                    |  }

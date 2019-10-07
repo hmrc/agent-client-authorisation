@@ -1,7 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model.DetailsForEmail
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 

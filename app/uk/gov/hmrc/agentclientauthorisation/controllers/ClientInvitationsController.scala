@@ -77,7 +77,7 @@ class ClientInvitationsController @Inject()(invitationsService: InvitationsServi
   private def getAuthTaxId(clientIdType: String, clientId: String)(
     implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
     clientIdType match {
-      case ("MTDITID" | "UTR" | "VRN") if currentUser.credentials.providerType == "GovernmentGateway" =>
+      case ("MTDITID" | "UTR" | "VRN" | "CGTPDRef") if currentUser.credentials.providerType == "GovernmentGateway" =>
         Some(ClientIdentifier(currentUser.taxIdentifier))
       case _ => None
     }

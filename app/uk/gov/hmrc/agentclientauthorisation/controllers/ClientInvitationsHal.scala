@@ -57,7 +57,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController
           .acceptInvitation("UTR", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
-        routes.ClientInvitationsController.acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
+        routes.ClientInvitationsController
+          .acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
     }
 
     lazy val rejectLink = invitation.service match {
@@ -72,7 +73,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController
           .rejectInvitation("UTR", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
-        routes.ClientInvitationsController.rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
+        routes.ClientInvitationsController
+          .rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
     }
 
     if (invitation.status == Pending) {
