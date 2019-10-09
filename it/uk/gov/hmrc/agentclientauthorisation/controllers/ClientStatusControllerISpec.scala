@@ -376,7 +376,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
   def givenClientHasNoActiveRelationships =
     stubFor(
-      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(
+      get(urlPathEqualTo("/agent-client-relationships/client/relationships/active")).willReturn(
         aResponse()
           .withStatus(200)
           .withBody("{}")))
@@ -388,7 +388,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
   def givenClientHasActiveRelationshipsWith(arn: Arn) =
     stubFor(
-      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(
+      get(urlPathEqualTo("/agent-client-relationships/client/relationships/active")).willReturn(
         aResponse()
           .withStatus(200)
           .withBody(s"""{
@@ -398,7 +398,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
   def givenClientHasActiveRelationshipsFails(arn: Arn, status: Int) =
     stubFor(
-      get(urlPathEqualTo("/agent-client-relationships/relationships/active")).willReturn(aResponse()
+      get(urlPathEqualTo("/agent-client-relationships/client/relationships/active")).willReturn(aResponse()
         .withStatus(status)))
 
   def givenClientHasActiveAfiRelationshipsWith(arn: Arn) =

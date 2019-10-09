@@ -31,7 +31,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
     "return the map of active relationships when multiple present" in {
       stubFor(
-        get(urlEqualTo(s"/agent-client-relationships/relationships/active"))
+        get(urlEqualTo(s"/agent-client-relationships/client/relationships/active"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -49,7 +49,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
     "return the map of active relationships when only one present" in {
       stubFor(
-        get(urlEqualTo(s"/agent-client-relationships/relationships/active"))
+        get(urlEqualTo(s"/agent-client-relationships/client/relationships/active"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -66,7 +66,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
     "return an empty map of active relationships when none available" in {
       stubFor(
-        get(urlEqualTo(s"/agent-client-relationships/relationships/active"))
+        get(urlEqualTo(s"/agent-client-relationships/client/relationships/active"))
           .willReturn(
             aResponse()
               .withStatus(200)

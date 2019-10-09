@@ -74,7 +74,7 @@ class RelationshipsConnector @Inject()(
 
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
-      val url = s"$baseUrl/agent-client-relationships/relationships/active"
+      val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
       http.GET[Map[String, Seq[Arn]]](url)
     }
 
