@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
-import uk.gov.hmrc.agentclientauthorisation.service.{ClientStatusCache, InvitationsService}
+import uk.gov.hmrc.agentclientauthorisation.service.{AgentCacheProvider, InvitationsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.Upstream4xxResponse
 
@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 class ClientStatusController @Inject()(
   invitationsService: InvitationsService,
   relationshipsConnector: RelationshipsConnector,
-  clientStatusCache: ClientStatusCache)(
+  agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
   authConnector: AuthConnector,
@@ -43,6 +43,7 @@ class ClientStatusController @Inject()(
     extends AuthActions(metrics, authConnector) {
 
   implicit val ec: ExecutionContext = ecp.get
+  private val clientStatusCache = agentCacheProvider.clientStatusCache
 
   val getStatus: Action[AnyContent] = Action.async { implicit request =>
     withClientIdentifiedBy { identifiers: Seq[(Service, String)] =>

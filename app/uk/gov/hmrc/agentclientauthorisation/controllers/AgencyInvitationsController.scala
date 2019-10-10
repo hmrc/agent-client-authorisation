@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -45,7 +45,7 @@ class AgencyInvitationsController @Inject()(
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
   agentServicesAccountConnector: AgentServicesAccountConnector,
-  trustResponseCache: TrustResponseCache)(
+  agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
   microserviceAuthConnector: MicroserviceAuthConnector,
@@ -54,6 +54,9 @@ class AgencyInvitationsController @Inject()(
     with AgencyInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get
+
+  private val trustCache = agentCacheProvider.trustResponseCache
+  private val cgtCache = agentCacheProvider.cgtSubscriptionCache
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
@@ -252,10 +255,26 @@ class AgencyInvitationsController @Inject()(
 
   def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      trustResponseCache(utr.value) {
+      trustCache(utr.value) {
         desConnector.getTrustName(utr)
       }.map(r => Ok(Json.toJson(r)))
     }
   }
 
+  def getCgtSubscriptionDetails(cgtRef: CgtRef): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth {
+      cgtCache(cgtRef.value) {
+        desConnector.getCgtSubscription(cgtRef)
+      }.map { cgtSubscription =>
+        cgtSubscription.response match {
+          case Right(sub) => Ok(Json.toJson(sub))
+          case Left(cgtError) =>
+            cgtError.httpResponseCode match {
+              case 400 => BadRequest(Json.toJson(cgtError.errors))
+              case 404 => NotFound(Json.toJson(cgtError.errors))
+            }
+        }
+      }
+    }
+  }
 }

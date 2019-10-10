@@ -29,8 +29,8 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Reads, _}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.model.{InvalidTrust, TrustName, TrustResponse}
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads, HttpResponse}
@@ -73,6 +73,9 @@ trait DesConnector {
     vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]]
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
+
+  def getCgtSubscription(
+    cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse]
 }
 
 @Singleton
@@ -115,6 +118,31 @@ class DesConnectorImpl @Inject()(
           TrustResponse(Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
         case _ => throw new RuntimeException(s"unexpected status during retrieving TrustName, error=${response.body}")
       }
+    }
+  }
+
+  def getCgtSubscription(
+    cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse] = {
+
+    val desHeaderCarrier = hc.copy(
+      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
+    )
+
+    val url = new URL(baseUrl, s"/subscriptions/CGT/ZCGT/${cgtRef.value}").toString
+
+    httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
+      val result = response.status match {
+        case 200 =>
+          Right(response.json.as[CgtSubscription])
+        case 400 | 404 =>
+          (response.json \ "failures").asOpt[Seq[DesError]] match {
+            case Some(e) => Left(CgtError(response.status, e))
+            case None    => Left(CgtError(response.status, Seq(response.json.as[DesError])))
+          }
+      }
+
+      CgtSubscriptionResponse(result)
     }
   }
 
