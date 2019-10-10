@@ -6,7 +6,7 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{DetailsForEmail, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support.RelationshipStubs
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -34,19 +34,20 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   val trustClient = TestClient(business, Trust, "UTR", utr, utr)
 
   val clients = List(itsaClient, irvClient, vatClient, trustClient)
+  val apiClients = List(itsaClient, vatClient)
 
   def createInvitation(clientType: Option[String],
                        service: Service,
                        arn: Arn,
                        clientId: ClientId,
-                       suppliedClientId: ClientId): Future[Invitation] = {
+                       suppliedClientId: ClientId, dfeOpt: Option[DetailsForEmail] = Some(dfe)): Future[Invitation] = {
     repository.create(
       arn,
       clientType,
       service,
       clientId,
       suppliedClientId,
-      Some(dfe),
+      dfeOpt,
       DateTime.now(DateTimeZone.UTC),
       LocalDate.now().plusDays(14))
   }
@@ -58,6 +59,17 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       givenClientAll(mtdItId, vrn, nino, utr)
   }
 
+  trait AddEmailSupport {
+    givenGetAgencyNameViaClientStub(arn)
+    givenTradingName(nino, "Trade Pears")
+    givenGetAgencyEmailAgentStub(arn)
+    givenNinoForMtdItId(mtdItId, nino)
+    givenCitizenDetails(nino, "19122019")
+    givenClientDetails(vrn)
+    val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
+    getTrustName(utr, response = trustNameJson)
+  }
+
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
 
@@ -67,6 +79,17 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         anAfiRelationshipIsCreatedWith(arn, client.clientId)
 
         val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
+        val result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        status(result) shouldBe 204
+      }
+    }
+
+    "accept invitation without Email which added later" in new LoggedinUser(false) with AddEmailSupport {
+      apiClients.foreach { client =>
+        givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+        anAfiRelationshipIsCreatedWith(arn, client.clientId)
+
+        val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId, None))
         val result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
       }
@@ -91,6 +114,23 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
         val invitation = await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId))
         val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        status(result) shouldBe 204
+      }
+    }
+
+    "reject invitation without Email which added later" in new LoggedinUser(false) with AddEmailSupport {
+      apiClients.foreach { client =>
+        givenCreateRelationship(
+          arn,
+          client.service.id,
+          if (client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier,
+          client.clientId)
+        anAfiRelationshipIsCreatedWith(arn, client.clientId)
+
+        val invitation =
+          await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId, None))
+        val result = await(
+          controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
       }
     }

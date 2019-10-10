@@ -58,6 +58,15 @@ class EmailService @Inject()(
                    }
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
 
+  def updateEmailDetails(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
+    invitation.detailsForEmail match {
+      case Some(_) => Future successful invitation
+      case _ =>
+        getLogger.warn(s"Adding Details For Email to ${invitation.invitationId.value}. Status: ${invitation.status}")
+        createDetailsForEmail(invitation.arn, invitation.clientId, invitation.service)
+          .map(dfe => invitation.copy(detailsForEmail = Some(dfe)))
+    }
+
   def sendEmail(invitation: Invitation, templateId: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] =
@@ -82,10 +91,16 @@ class EmailService @Inject()(
     }
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
-    sendEmail(invitation, "client_accepted_authorisation_request")
+    for {
+      invite <- updateEmailDetails(invitation)
+      result <- sendEmail(invite, "client_accepted_authorisation_request")
+    } yield result
 
   def sendRejectedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
-    sendEmail(invitation, "client_rejected_authorisation_request")
+    for {
+      invite <- updateEmailDetails(invitation)
+      result <- sendEmail(invite, "client_rejected_authorisation_request")
+    } yield result
 
   def sendExpiredEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val hc: HeaderCarrier = HeaderCarrier(
