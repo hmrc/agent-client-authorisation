@@ -19,31 +19,43 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Provider, Singleton}
+import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.TrustResponse
+import uk.gov.hmrc.agentclientauthorisation.model.{CgtSubscriptionResponse, TrustResponse}
 import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-trait ClientStatusCache extends Cache[ClientStatus]
-trait TrustResponseCache extends Cache[TrustResponse]
+trait KenshooCacheMetrics {
+
+  val kenshooRegistry: MetricRegistry
+
+  def record[T](name: String): Unit = {
+    kenshooRegistry.getMeters.getOrDefault(name, kenshooRegistry.meter(name)).mark()
+    Logger(getClass).debug(s"kenshoo-event::meter::$name::recorded")
+  }
+
+}
 
 trait Cache[T] {
   def apply(key: String)(body: => Future[T])(implicit ec: ExecutionContext): Future[T]
 }
 
-class DoNotCache[T] {
+class DoNotCache[T] extends Cache[T] {
   def apply(key: String)(body: => Future[T])(implicit ec: ExecutionContext): Future[T] = body
 }
 
-abstract class LocalCaffeineCache[T](name: String, size: Int, expires: Duration) extends KenshooCacheMetrics {
+class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit metrics: Metrics)
+    extends KenshooCacheMetrics with Cache[T] {
 
-  val underlying: com.github.blemale.scaffeine.Cache[String, T] =
+  val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
+
+  private val underlying: com.github.blemale.scaffeine.Cache[String, T] =
     Scaffeine()
+      .recordStats()
       .expireAfterWrite(expires)
       .maximumSize(size)
       .build[String, T]()
@@ -63,45 +75,27 @@ abstract class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)
     }
 }
 
-trait KenshooCacheMetrics {
-
-  val kenshooRegistry: MetricRegistry
-
-  def record[T](name: String): Unit = {
-    kenshooRegistry.getMeters.getOrDefault(name, kenshooRegistry.meter(name)).mark()
-    Logger(getClass).debug(s"kenshoo-event::meter::$name::recorded")
-  }
-
-}
-
 @Singleton
-class ClientStatusCacheProvider @Inject()(val environment: Environment, configuration: Configuration, metrics: Metrics)
-    extends Provider[ClientStatusCache] with ServicesConfig {
+class AgentCacheProvider @Inject()(val environment: Environment, configuration: Configuration)(
+  implicit metrics: Metrics)
+    extends ServicesConfig {
 
   override val runModeConfiguration: Configuration = configuration
   override def mode = environment.mode
 
-  override val get: ClientStatusCache = new LocalCaffeineCache[ClientStatus](
-    "ClientStatus",
-    configuration.underlying.getInt("clientStatus.cache.size"),
-    Duration.create(configuration.underlying.getString("clientStatus.cache.expires"))
-  ) with ClientStatusCache with KenshooCacheMetrics {
-    override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-  }
-}
+  val cacheSize = configuration.underlying.getInt("agent.cache.size")
+  val cacheExpires = Duration.create(configuration.underlying.getString("agent.cache.expires"))
+  val cacheEnabled = configuration.underlying.getBoolean("agent.cache.enabled")
 
-@Singleton
-class TrustResponseCacheProvider @Inject()(val environment: Environment, configuration: Configuration, metrics: Metrics)
-    extends Provider[TrustResponseCache] with ServicesConfig {
+  val clientStatusCache: Cache[ClientStatus] =
+    if (cacheEnabled) new LocalCaffeineCache[ClientStatus]("clientStatus", cacheSize, cacheExpires)
+    else new DoNotCache[ClientStatus]
 
-  override val runModeConfiguration: Configuration = configuration
-  override def mode = environment.mode
+  val trustResponseCache: Cache[TrustResponse] =
+    if (cacheEnabled) new LocalCaffeineCache[TrustResponse]("trustResponse", cacheSize, cacheExpires)
+    else new DoNotCache[TrustResponse]
 
-  override val get: TrustResponseCache = new LocalCaffeineCache[TrustResponse](
-    "TrustResponse",
-    configuration.underlying.getInt("trustResponse.cache.size"),
-    Duration.create(configuration.underlying.getString("trustResponse.cache.expires"))
-  ) with TrustResponseCache with KenshooCacheMetrics {
-    override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-  }
+  val cgtSubscriptionCache: Cache[CgtSubscriptionResponse] =
+    if (cacheEnabled) new LocalCaffeineCache[CgtSubscriptionResponse]("cgtSubscription", cacheSize, cacheExpires)
+    else new DoNotCache[CgtSubscriptionResponse]
 }

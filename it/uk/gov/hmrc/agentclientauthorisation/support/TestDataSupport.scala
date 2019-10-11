@@ -39,4 +39,10 @@ trait TestDataSupport {
 
   val strideRoles = Seq(STRIDE_ROLE, NEW_STRIDE_ROLE)
 
+  val tpd = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
+
+  val cgtAddressDetails =
+    CgtAddressDetails("line1", Some("line2"), Some("line2"), Some("line2"), "GB", Some("postcode"))
+
+  val cgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpd, cgtAddressDetails))
 }

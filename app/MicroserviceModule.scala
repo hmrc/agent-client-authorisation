@@ -50,8 +50,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
     bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
-    bind(classOf[ClientStatusCache]).toProvider(classOf[ClientStatusCacheProvider])
-    bind(classOf[TrustResponseCache]).toProvider(classOf[TrustResponseCacheProvider])
+    bind(classOf[AgentCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
     bind(classOf[InvitationsRepository]).to(classOf[InvitationsRepositoryImpl])
 

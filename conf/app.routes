@@ -15,6 +15,8 @@ GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode           
 GET         /known-facts/individuals/:nino/dob/:dob                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactIrv(nino: uk.gov.hmrc.domain.Nino, dob: LocalDate)
 GET         /known-facts/organisations/trust/:utr                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getTrustName(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
 
+GET         /cgt/subscriptions/:cgtRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCgtSubscriptionDetails(cgtRef: uk.gov.hmrc.agentmtdidentifiers.model.CgtRef)
+
 # Client routes
 # --------------------------------
 PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
