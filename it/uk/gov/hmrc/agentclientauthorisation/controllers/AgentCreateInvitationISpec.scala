@@ -121,7 +121,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuthorisedAsAgent(arn)
         givenGetAgencyNameViaClientStub(arn)
         givenGetAgencyEmailAgentStub(arn)
-        //TODO Add Known Fact Stub to GET Name - APB-4403
+        getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
 
         val requestBody = Json.parse(
           s"""

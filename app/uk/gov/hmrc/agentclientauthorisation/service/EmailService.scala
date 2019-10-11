@@ -62,8 +62,7 @@ class EmailService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit] =
     invitation.detailsForEmail match {
-      //TODO APB-4370 To be Added
-      case Some(dfe) if invitation.service.id != "HMRC-CGT-PD" =>
+      case Some(dfe) =>
         for {
           _ <- {
             val emailInfo: EmailInformation =
@@ -94,7 +93,6 @@ class EmailService @Inject()(
     sendEmail(invitation, "client_expired_authorisation_request")
   }
 
-  //TODO - APB-4370
   private def emailInformation(
     templateId: String,
     agencyEmail: String,
@@ -113,6 +111,7 @@ class EmailService @Inject()(
           case HMRCPIR     => messagesApi(s"service.$HMRCPIR")
           case HMRCMTDVAT  => messagesApi(s"service.$HMRCMTDVAT")
           case HMRCTERSORG => messagesApi(s"service.$HMRCTERSORG")
+          case HMRCCGTPD   => messagesApi(s"service.$HMRCCGTPD")
         })
       )
     )
