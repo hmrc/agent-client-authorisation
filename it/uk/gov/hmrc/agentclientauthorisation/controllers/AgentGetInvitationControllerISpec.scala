@@ -20,7 +20,6 @@ import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitations
@@ -50,19 +49,6 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val invitationLinkRegex: String => String =
     (clientType: String) => s"(http:\\/\\/localhost:9448\\/invitations\\/${clientType}\\/[A-Z0-9]{8}\\/my-agency)"
 
-  case class TestClient(
-                         clientType: Option[String],
-                         service: Service,
-                         urlIdentifier: String,
-                         clientId: TaxIdentifier,
-                         suppliedClientId: TaxIdentifier)
-
-  val itsaClient = TestClient(personal, Service.MtdIt, "MTDITID", mtdItId, nino)
-  val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
-  val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
-  val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
-  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPDRef", cgtRef, cgtRef)
-
   val testClients = List(
     itsaClient,
     irvClient,
@@ -73,24 +59,22 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   //Prior to Client Type and Client ActionUrl
   val legacyList = List(itsaClient, irvClient, vatClient)
 
-  def createInvitation(clientType: Option[String],
-                       service: Service,
-                       arn: Arn,
-                       clientId: ClientId,
-                       suppliedClientId: ClientId): Future[Invitation] = {
+  def createInvitation(arn: Arn,
+                       testClient: TestClient[_],
+                       hasEmail: Boolean = true): Future[Invitation] = {
     invitationsRepo.create(
       arn,
-      clientType,
-      service,
-      clientId,
-      suppliedClientId,
-      Some(dfe),
+      testClient.clientType,
+      testClient.service,
+      testClient.clientId,
+      testClient.suppliedClientId,
+      if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
       LocalDate.now().plusDays(14))
   }
 
   trait TestSetup {
-    testClients.foreach(client => await(createInvitation(client.clientType, client.service, arn, client.clientId, client.suppliedClientId)))
+    testClients.foreach(client => await(createInvitation(arn, client)))
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
     givenGetAgencyNameAgentStub
@@ -277,13 +261,13 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     }
   }
 
-  def runGetInvitationIdSpec(testClient: TestClient): Unit = {
+  def runGetInvitationIdSpec[T <: TaxIdentifier](testClient: TestClient[T]): Unit = {
     s"return 200 get Invitation for ${testClient.service}" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
 
-      val invitation = await(createInvitation(testClient.clientType, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val invitation: Invitation = await(createInvitation(arn, testClient))
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
@@ -300,16 +284,17 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       (json \ "suppliedClientId").as[String] shouldBe invitation.suppliedClientId.value
       (json \ "suppliedClientIdType").as[String] shouldBe invitation.suppliedClientId.typeId
       (json \ "clientActionUrl").as[String].matches(invitationLinkRegex(invitation.clientType.get)) shouldBe true
+      (json \ "detailsForEmail").asOpt[DetailsForEmail] shouldBe Some(dfe(testClient.clientName))
     }
   }
 
-  def runGetInvitationLegacy(testClient: TestClient): Unit = {
+  def runGetInvitationLegacy[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     s"return 200 get invitation Accepted for ${testClient.service} for no clientType and Skip Add ClientActionUrl" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyNameAgentStub
 
-      val invitation = await(createInvitation(None, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val invitation: Invitation = await(createInvitation(arn, testClient.copy[T](clientType = None)))
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
 
       await(invitationsRepo.update(invitation, Accepted, DateTime.now()))

@@ -83,7 +83,7 @@ class AgentServicesAccountConnectorISpec extends UnitSpec with AppAndStubs with 
   }
   "getCustomerDetails" should {
     "return a CustomerDetails object for a valid vrn" in {
-      givenClientDetails(vrn)
+      givenClientDetailsForVat(vrn)
       val result = await(connector.getCustomerDetails(vrn))
       result shouldBe CustomerDetails(
         Some("Gadgetron"),

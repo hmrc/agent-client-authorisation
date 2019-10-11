@@ -88,7 +88,7 @@ trait AgentServicesAccountStub {
             .withStatus(404)
         ))
 
-  def givenClientDetails(vrn: Vrn) =
+  def givenClientDetailsForVat(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/agent-services-account/client/vat-customer-details/vrn/${vrn.value}"))
         .willReturn(

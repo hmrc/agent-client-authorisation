@@ -1,9 +1,10 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.joda.time.LocalDate
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 trait TestDataSupport {
 
@@ -21,7 +22,9 @@ trait TestDataSupport {
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
   val mtdItId = MtdItId("ABCDEF123456789")
+  val mtdItId2 = MtdItId("TUWXYZ123456789")
   val vrn = Vrn("101747696")
+  val vrn2 = Vrn("121747696")
 
   val postcode: String = "AA11AA"
   val vatRegDate: LocalDate = LocalDate.parse("2018-01-01")
@@ -31,8 +34,9 @@ trait TestDataSupport {
   val utr2 = Utr("3087612352")
 
   val cgtRef = CgtRef("XMCGTP123456789")
+  val cgtRef2 = CgtRef("XMCGTP987654321")
 
-  val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
+  val dfe = (clientName: String) => DetailsForEmail("abc@def.com", "Mr Agent", clientName)
 
   val STRIDE_ROLE = "maintain agent relationships"
   val NEW_STRIDE_ROLE = "maintain_agent_relationships"
@@ -45,4 +49,27 @@ trait TestDataSupport {
     CgtAddressDetails("line1", Some("line2"), Some("line2"), Some("line2"), "GB", Some("postcode"))
 
   val cgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpd, cgtAddressDetails))
+
+  case class TestClient[T <: TaxIdentifier](
+                         clientType: Option[String],
+                         clientName: String,
+                         service: Service,
+                         clientIdType: ClientIdType[T],
+                         urlIdentifier: String,
+                         clientId: TaxIdentifier,
+                         suppliedClientId: TaxIdentifier,
+                         wrongIdentifier: TaxIdentifier)
+
+  val itsaClient = TestClient(personal, "Trade Pears", MtdIt, MtdItIdType, "MTDITID", mtdItId, nino, mtdItId2)
+  val irvClient = TestClient(personal, "John Smith", PersonalIncomeRecord, NinoType, "NI", nino, nino, nino2)
+  val vatClient = TestClient(personal, "GDT", Vat, VrnType, "VRN", vrn, vrn, vrn2)
+  val trustClient = TestClient(business, "Nelson James Trust", Trust, UtrType, "UTR", utr, utr, utr2)
+  val cgtClient = TestClient(business, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
+
+  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, cgtClient)
+  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient)
+
+  val apiClients = List(itsaClient, vatClient)
+
+
 }

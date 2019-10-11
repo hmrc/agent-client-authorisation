@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.Service
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -42,6 +42,7 @@ class ClientNameService @Inject()(
       case HMRCPIR     => getCitizenName(Nino(clientId))
       case HMRCMTDVAT  => getVatName(Vrn(clientId))
       case HMRCTERSORG => getTrustName(Utr(clientId))
+      case HMRCCGTPD   => getCgtName(CgtRef(clientId))
       case _           => Future successful None
     }
 
@@ -75,6 +76,18 @@ class ClientNameService @Inject()(
       case Right(trustName) => Some(trustName.name)
       case Left(invalidTrust) =>
         Logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
+        None
+    }
+
+  def getCgtName(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    desConnector.getCgtSubscription(cgtRef).map(_.response).map {
+      case Right(cgtSubscription) =>
+        cgtSubscription.subscriptionDetails.typeOfPersonDetails.name match {
+          case Right(trusteeName)   => Some(trusteeName.name)
+          case Left(individualName) => Some(s"${individualName.firstName} ${individualName.lastName}")
+        }
+      case Left(e) =>
+        Logger(getClass).warn(s"Error occcured when getting CGT Name")
         None
     }
 }

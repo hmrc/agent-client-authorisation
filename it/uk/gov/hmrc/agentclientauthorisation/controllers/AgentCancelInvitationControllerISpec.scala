@@ -45,37 +45,16 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     await(invitationsRepo.ensureIndexes)
   }
 
-  case class TestClient(clientType: Option[String],
-                        service: Service,
-                        urlIdentifier: String,
-                        clientId: TaxIdentifier,
-                        suppliedClientId: TaxIdentifier)
-
-  val itsaClient = TestClient(personal, Service.MtdIt, "MTDITID", mtdItId, nino)
-  val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", nino, nino)
-  val vatClient = TestClient(personal, Service.Vat, "VRN", vrn, vrn)
-  val trustClient = TestClient(business, Service.Trust, "UTR", utr, utr)
-  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPDRef", cgtRef, cgtRef)
-
-  val testClients = List(
-    itsaClient,
-    irvClient,
-    vatClient,
-    trustClient,
-    cgtClient)
-
-  def createInvitation(clientType: Option[String],
-                       service: Service,
-                       arn: Arn,
-                       clientId: ClientId,
-                       suppliedClientId: ClientId): Future[Invitation] = {
+  def createInvitation(arn: Arn,
+                       testClient: TestClient[_],
+                       hasEmail: Boolean = true): Future[Invitation] = {
     invitationsRepo.create(
       arn,
-      clientType,
-      service,
-      clientId,
-      suppliedClientId,
-      Some(dfe),
+      testClient.clientType,
+      testClient.service,
+      testClient.clientId,
+      testClient.suppliedClientId,
+      if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
       LocalDate.now().plusDays(14))
   }
@@ -86,13 +65,13 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     givenGetAgencyNameAgentStub
   }
 
-  def runSuccessfulCancelledInvitation(testClient: TestClient): Unit = {
+  def runSuccessfulCancelledInvitation(testClient: TestClient[_]): Unit = {
     val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
     val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId")
 
     s"return 204 when an invitation is successfully cancelled for ${testClient.service}" in new StubSetup {
 
-      val invitation = await(createInvitation(testClient.clientType, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val invitation: Invitation = await(createInvitation(arn, testClient))
 
       val response = controller.cancelInvitation(arn, invitation.invitationId)(request)
       status(response) shouldBe 204
@@ -106,7 +85,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     }
   }
 
-  def runUnsuccessfulCanceledInvitation(testClient: TestClient): Unit = {
+  def runUnsuccessfulCanceledInvitation(testClient: TestClient[_]): Unit = {
     s"return NoPermissionOnAgency when the logged in arn doesn't not match the invitation for ${testClient.service}" in {
 
       val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
@@ -115,7 +94,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn2)
       givenGetAgencyNameAgentStub
 
-      val invitation = await(createInvitation(testClient.clientType, testClient.service, arn, testClient.clientId, testClient.suppliedClientId))
+      val invitation: Invitation = await(createInvitation(arn, testClient))
 
       val response = controller.cancelInvitation(arn2, invitation.invitationId)(request)
 
@@ -125,9 +104,9 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
 
   "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
 
-    testClients.foreach { testClient =>
-      runSuccessfulCancelledInvitation(testClient)
-      runUnsuccessfulCanceledInvitation(testClient)
+    uiClients.foreach { client =>
+      runSuccessfulCancelledInvitation(client)
+      runUnsuccessfulCanceledInvitation(client)
     }
 
     "return InvitationNotFound when there is no invitation to cancel" in {

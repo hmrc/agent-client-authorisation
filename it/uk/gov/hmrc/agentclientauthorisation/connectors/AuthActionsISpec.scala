@@ -45,20 +45,6 @@ class AuthActionsISpec extends BaseISpec {
     else isNotLoggedIn
   }
 
-  case class TestClient[T <: TaxIdentifier](
-                         clientType: Option[String],
-                         service: Service,
-                         urlIdentifier: String,
-                         clientIdType: ClientIdType[T],
-                         clientId: TaxIdentifier,
-                         suppliedClientId: TaxIdentifier)
-
-  val itsaClient = TestClient(personal, Service.MtdIt, "MTDITID", MtdItIdType, mtdItId, nino)
-  val irvClient = TestClient(personal, Service.PersonalIncomeRecord, "NI", NinoType, nino, nino)
-  val vatClient = TestClient(personal, Service.Vat, "VRN", VrnType, vrn, vrn)
-  val trustClient = TestClient(business, Service.Trust, "UTR", UtrType, utr, utr)
-  val cgtClient = TestClient(business, Service.CapitalGains, "CGTPDRef", CgtRefType, cgtRef, cgtRef)
-
   val testClientList = List(itsaClient, irvClient, vatClient, trustClient)
 
   "OnlyForAgents" should {

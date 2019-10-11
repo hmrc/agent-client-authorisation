@@ -78,7 +78,7 @@ class EmailService @Inject()(
           _ <- invitationsRepository.removeEmailDetails(invitation)
         } yield ()
       case _ =>
-        Future.successful(())
+        Future.successful((): Unit)
     }
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
