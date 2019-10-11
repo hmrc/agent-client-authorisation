@@ -50,12 +50,7 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
         Status.FORBIDDEN,
         "CLIENT_REGISTRATION_NOT_FOUND",
         "The Client's MTDfB registration was not found.")
-      checkConstant(
-        ClientNinoNotFound,
-        Status.FORBIDDEN,
-        "CLIENT_NINO_NOT_FOUND",
-        "There must be a NINO in the client's user profile.")
-      checkConstant(NotAnAgent, Status.FORBIDDEN, "NOT_AN_AGENT", "The logged in user is not an agent.")
+      checkConstant(NotAClient, Status.FORBIDDEN, "NOT_A_CLIENT", "The logged in user must be a client to proceed.")
       checkConstant(
         NoPermissionOnAgency,
         Status.FORBIDDEN,

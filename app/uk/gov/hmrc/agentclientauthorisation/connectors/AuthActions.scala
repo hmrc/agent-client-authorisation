@@ -87,7 +87,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
     authorised(authProvider).retrieve(allEnrolments) { allEnrols =>
       val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
       if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
-      else Future successful ClientNinoNotFound
+      else Future successful NotAClient
     } recover handleFailure
   }
 
