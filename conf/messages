@@ -2,3 +2,4 @@ service.HMRC-MTD-IT=send their Income Tax updates through software.
 service.PERSONAL-INCOME-RECORD=view their PAYE income record.
 service.HMRC-MTD-VAT=submit their VAT returns through software.
 service.HMRC-TERS-ORG=maintain a trust or an estate.
+service.HMRC-CGT-PD=manage their Capital Gains Tax on UK property disposals.

@@ -113,6 +113,8 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
     List.empty
   )
 
+  //TODO rearrange to use forEach
+
   "sendAcceptedEmail" should {
     "return Unit for a successfully sent email for ITSA service" in {
       mockMessagesApi.apply("services.HMRC-MTD-IT")
@@ -208,6 +210,35 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
           Service.Trust,
           Utr("555219930"),
           Utr("555219930"),
+          LocalDate.parse("2010-01-01"),
+          Some(dfe),
+          Some("continue/url"),
+          List.empty
+        )))
+
+      verify(mockEmailConnector).sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext)
+    }
+
+    "return Unit to remove email details for CGT" in {
+      mockMessagesApi.apply("services.HMRC-CGT-PD")
+      (mockEmailConnector
+        .sendEmail(_: EmailInformation)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(*, hc, *)
+        .returns(())
+      (mockInvitationRepository
+        .removeEmailDetails(_: Invitation)(_: ExecutionContext))
+        .expects(*, *)
+        .returns(Future((): Unit))
+
+      await(
+        emailService.sendAcceptedEmail(Invitation(
+          BSONObjectID.generate(),
+          InvitationId("EWR3O9WB6E7TY"),
+          arn,
+          Some("business"),
+          Service.CapitalGains,
+          CgtRef("XMCGTP267321143"),
+          CgtRef("XMCGTP267321143"),
           LocalDate.parse("2010-01-01"),
           Some(dfe),
           Some("continue/url"),
