@@ -130,13 +130,40 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |          "key":"CGTPDRef",
                      |          "value":"${cgtRef.value}"
                      |        }
-                     |      ]
+                     |      ],
+                     |      "state": "Activated"
                      |    }
                      |  ]
                      |}
        """.stripMargin)))
 
     this
+  }
+
+  def givenClientAllBusCgt(cgtRef: CgtRef) = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "optionalCredentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key":"HMRC-CGT-PD",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"CGTPDRef",
+                     |          "value":"${cgtRef.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
+       """.stripMargin)))
   }
 
   def givenClientMtdItId(mtdItId: MtdItId) = {

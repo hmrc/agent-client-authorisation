@@ -21,8 +21,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
   implicit val mat = app.injector.instanceOf[Materializer]
 
-  def createInvitation(arn: Arn,
-                       testClient: TestClient[_],
+  def createInvitation[T<:TaxIdentifier](arn: Arn,
+                       testClient: TestClient[T],
                        hasEmail: Boolean = true): Future[Invitation] = {
     repository.create(
       arn,
@@ -37,7 +37,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   def createEmailInfo(dfe: DetailsForEmail,
                       templateId: String,
-                      service: Service) = {
+                      service: Service): EmailInformation = {
 
     val serviceText = service match {
       case MtdIt => "send their Income Tax updates through software."
@@ -55,9 +55,11 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         "service"      -> s"$serviceText"))
   }
 
-  class LoggedInUser(forStride: Boolean) {
+  class LoggedInUser(forStride: Boolean, forBusiness: Boolean = false) {
     if(forStride)
       givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
+    else if(forBusiness)
+      givenClientAllBusCgt(cgtRefBus)
     else
       givenClientAll(mtdItId, vrn, nino, utr, cgtRef)
   }
@@ -72,6 +74,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
     getTrustName(utr, response = trustNameJson)
     getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
+    getCgtSubscription(cgtRefBus, 200, Json.toJson(cgtSubscriptionBus).toString())
   }
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
@@ -86,13 +89,16 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     apiClients.foreach { client =>
       runAcceptInvitationsScenario(client,"API",false)
     }
+
+    runAcceptInvitationsScenario(cgtClientBus, "UI", false, true)
+    runAcceptInvitationsScenario(cgtClientBus, "UI", true, true)
   }
 
-  def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean) = {
+  def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false) = {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
-    s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) with AddEmailSupportStub {
+    s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
@@ -105,19 +111,19 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testInvitationOpt.map(_.status) shouldBe Some(Accepted.toString)
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
     }
 
-    s"attempting via $journey to accept an ${client.service.id} invitation that does not exist for logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
-      val result: Future[Result] = controller.acceptInvitation(client.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request)
+    s"attempting via $journey to accept an ${client.service.id} invitation that does not exist for ${client.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
+      val result: Future[Result] = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request))
 
       status(result) shouldBe 404
     }
 
-    s"attempting via $journey to accept an ${client.service.id} invitation that is not for the client if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
+    s"attempting via $journey to accept an ${client.service.id} invitation that is not for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       val invitation: Invitation = await(createInvitation(arn, client))
       val invitationId: InvitationId = invitation.invitationId
 
@@ -144,13 +150,16 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     apiClients.foreach { client =>
       runRejectInvitationsScenario(client, "API",false)
     }
+
+    runRejectInvitationsScenario(cgtClientBus, "UI", false, true)
+    runRejectInvitationsScenario(cgtClientBus, "UI", true, true)
   }
 
-  def runRejectInvitationsScenario[T<:TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean) = {
+  def runRejectInvitationsScenario[T<:TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBussiness: Boolean = false) = {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
-    s"reject via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) with AddEmailSupportStub {
+    s"reject via $journey ${client.urlIdentifier} ${client.service.id} invitation for ${client.clientId.value} as expected with ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
         givenEmailSent(createEmailInfo(dfe(client.clientName), "client_rejected_authorisation_request", client.service))
 
       val invitation: Invitation = await(createInvitation(arn, client))
@@ -161,19 +170,19 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testInvitationOpt.map(_.status) shouldBe Some(Rejected.toString)
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.rejectInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
     }
 
-    s"attempting via $journey to reject an ${client.service.id} invitation that does not exist for logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
+    s"attempting via $journey to reject an ${client.service.id} invitation that does not exist for ${client.clientId.value} to logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
       val result: Future[Result] = controller.rejectInvitation(client.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request)
 
       status(result) shouldBe 404
     }
 
-    s"attempting via $journey to reject an ${client.service.id} invitation that is not for the client if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
+    s"attempting via $journey to reject an ${client.service.id} invitation that is not for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
       val invitation: Invitation = await(createInvitation(arn, client))
       val invitationId: InvitationId = invitation.invitationId
 
@@ -212,11 +221,14 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       runGetAllInvitationsScenario(client, true)
       runGetAllInvitationsScenario(client, false)
     }
+
+    runGetAllInvitationsScenario(cgtClientBus,  false, true)
+    runGetAllInvitationsScenario(cgtClientBus, true, true)
   }
 
-  private def runGetAllInvitationsScenario(testClient: TestClient[_], forStride: Boolean) = {
+  private def runGetAllInvitationsScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, forBusiness: Boolean = false) = {
     val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
-    s"return 200 for get all ${testClient.service.id} invitations for logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
+    s"return 200 for get all ${testClient.service.id} invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))
 
@@ -228,7 +240,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       json.invitations.length shouldBe 2
     }
 
-    s"return 200 for getting no ${testClient.service.id} invitations for logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride) {
+    s"return 200 for getting no ${testClient.service.id} invitations for ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       val result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
 
       status(result) shouldBe 200

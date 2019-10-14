@@ -20,7 +20,6 @@ import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
-import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitation
@@ -32,10 +31,10 @@ import scala.concurrent.Future
 
 class AgentCancelInvitationControllerISpec extends BaseISpec {
 
-  lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
+  lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
-  implicit val mat = app.injector.instanceOf[Materializer]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
@@ -65,11 +64,11 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     givenGetAgencyNameAgentStub
   }
 
-  def runSuccessfulCancelledInvitation(testClient: TestClient[_]): Unit = {
+  def runSuccessfulCancelledInvitation[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
     val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId")
 
-    s"return 204 when an invitation is successfully cancelled for ${testClient.service}" in new StubSetup {
+    s"return 204 when an ${testClient.service} invitation is successfully cancelled for ${testClient.clientId.value}" in new StubSetup {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 
@@ -85,8 +84,8 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     }
   }
 
-  def runUnsuccessfulCanceledInvitation(testClient: TestClient[_]): Unit = {
-    s"return NoPermissionOnAgency when the logged in arn doesn't not match the invitation for ${testClient.service}" in {
+  def runUnsuccessfulCanceledInvitation[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
+    s"return NoPermissionOnAgency when the logged in arn doesn't not match the invitation for ${testClient.service} to client: ${testClient.clientId.value}" in {
 
       val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
 

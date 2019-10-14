@@ -32,7 +32,11 @@ case class ClientNameNotFound() extends Exception
 class ClientNameService @Inject()(
   agentServicesAccountConnector: AgentServicesAccountConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
-  desConnector: DesConnector) {
+  desConnector: DesConnector,
+  agentCacheProvider: AgentCacheProvider) {
+
+  private val trustCache = agentCacheProvider.trustResponseCache
+  private val cgtCache = agentCacheProvider.cgtSubscriptionCache
 
   def getClientNameByService(clientId: String, service: Service)(
     implicit hc: HeaderCarrier,
@@ -72,7 +76,9 @@ class ClientNameService @Inject()(
     }
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    desConnector.getTrustName(utr).map(_.response).map {
+    trustCache(utr.value) {
+      desConnector.getTrustName(utr)
+    }.map(_.response).map {
       case Right(trustName) => Some(trustName.name)
       case Left(invalidTrust) =>
         Logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
@@ -80,7 +86,9 @@ class ClientNameService @Inject()(
     }
 
   def getCgtName(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    desConnector.getCgtSubscription(cgtRef).map(_.response).map {
+    cgtCache(cgtRef.value) {
+      desConnector.getCgtSubscription(cgtRef)
+    }.map(_.response).map {
       case Right(cgtSubscription) =>
         cgtSubscription.subscriptionDetails.typeOfPersonDetails.name match {
           case Right(trusteeName)   => Some(trusteeName.name)

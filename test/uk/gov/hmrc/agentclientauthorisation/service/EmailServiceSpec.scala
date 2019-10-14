@@ -15,10 +15,8 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.service
-import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{LocalDate}
+import org.joda.time.LocalDate
 import org.mockito.Mockito._
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfter
 import org.slf4j
 import play.api.LoggerLike
@@ -29,6 +27,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.support.MocksWithCache
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -38,15 +37,20 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
+class EmailServiceSpec extends UnitSpec with MocksWithCache with BeforeAndAfter {
 
-  val mockMetrics: Metrics = mock[Metrics]
-  val mockClientNameService: ClientNameService = mock[ClientNameService]
+  val clientNameService: ClientNameService =
+    new ClientNameService(
+      mockAgentServicesAccountConnector,
+      mockCitizenDetailsConnector,
+      mockDesConnector,
+      agentCacheProvider)
+
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val mockAsaConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
-  val mockInvitationRepository = mock[InvitationsRepository]
+  val mockInvitationRepository: InvitationsRepository = mock[InvitationsRepository]
 
-  val testLogger = LoggerLikeStub
+  val testLogger: LoggerLikeStub.type = LoggerLikeStub
 
   val mockMessagesApi: MessagesApi = new MessagesApi {
     override def messages: Map[String, Map[String, String]] = ???
@@ -88,7 +92,7 @@ class EmailServiceSpec extends UnitSpec with MockFactory with BeforeAndAfter {
   val emailService =
     new EmailService(
       mockAsaConnector,
-      mockClientNameService,
+      clientNameService,
       mockEmailConnector,
       mockInvitationRepository,
       "14 Days",
