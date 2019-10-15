@@ -128,7 +128,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       case "VRN" if VrnType.isValid(clientId)         => Right((Vat, Vrn(clientId)))
       case "UTR" if UtrType.isValid(clientId)         => Right((Trust, Utr(clientId)))
       case "CGTPDRef" if CgtRefType.isValid(clientId) => Right((CapitalGains, CgtRef(clientId)))
-      case e                                          => Left(BadRequest(s"Unsupported $e"))
+      case e =>
+        Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }
 
   def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(
@@ -144,12 +145,16 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
                 case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRoles) =>
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
-                case _ =>
+                case e =>
+                  Logger(getClass).warn(
+                    s"ProviderType found: $e or hasRequiredEnrolmentMatchingIdentifier: ${hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId)}")
                   Future successful GenericForbidden
               }
             case Left(error) => Future successful error
           }
-        case _ => Future successful GenericForbidden
+        case e =>
+          Logger(getClass).warn(s"No Creds Found: $e")
+          Future successful GenericForbidden
       } recover handleFailure
     }
 

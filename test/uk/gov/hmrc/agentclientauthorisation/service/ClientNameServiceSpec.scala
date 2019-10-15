@@ -15,10 +15,11 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.service
-import org.scalamock.scalatest.MockFactory
+
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.support.MocksWithCache
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -26,20 +27,31 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ClientNameServiceSpec extends UnitSpec with MockFactory {
-
-  val mockAgentServicesAccountConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
-  val mockCitizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
-  val mockDesConnector: DesConnector = mock[DesConnector]
+//TODO Convert to ISpec Maybe
+class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   val clientNameService =
-    new ClientNameService(mockAgentServicesAccountConnector, mockCitizenDetailsConnector, mockDesConnector)
+    new ClientNameService(
+      mockAgentServicesAccountConnector,
+      mockCitizenDetailsConnector,
+      mockDesConnector,
+      agentCacheProvider)
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
   val vrn = Vrn("555219930")
   val utr = Utr("2134514321")
+  val cgtRef = CgtRef("XMCGTP123456789")
   implicit val hc = HeaderCarrier()
+
+  val tpd = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
+  val tpdBus = TypeOfPersonDetails("Organisation", Right(OrganisationName("Trustee")))
+
+  val cgtAddressDetails =
+    CgtAddressDetails("line1", Some("line2"), Some("line2"), Some("line2"), "GB", Some("postcode"))
+
+  val cgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpd, cgtAddressDetails))
+  val cgtSubscriptionBus = CgtSubscription("CGT", SubscriptionDetails(tpdBus, cgtAddressDetails))
 
   "getClientNameByService" should {
     "get the trading name if the service is ITSA" in {
@@ -128,6 +140,19 @@ class ClientNameServiceSpec extends UnitSpec with MockFactory {
 
       val result = await(clientNameService.getClientNameByService(utr.value, Service.Trust))
       result shouldBe Some("Trusted")
+    }
+  }
+
+  "getCgtName" should {
+    "get cgt name from cgt details" in {
+      val cgtDetailsResponse = CgtSubscriptionResponse(Right(cgtSubscription))
+      (mockDesConnector
+        .getCgtSubscription(_: CgtRef)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(cgtRef, *, *)
+        .returns(Future(cgtDetailsResponse))
+
+      val result = await(clientNameService.getClientNameByService(cgtRef.value, Service.CapitalGains))
+      result shouldBe Some("firstName lastName")
     }
   }
 

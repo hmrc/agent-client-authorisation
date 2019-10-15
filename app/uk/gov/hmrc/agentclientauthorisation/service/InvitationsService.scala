@@ -76,10 +76,7 @@ class InvitationsService @Inject()(
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
       for {
-        detailsForEmailOpt <- {
-          if (service.id != "HMRC-CGT-PD") emailService.createDetailsForEmail(arn, clientId, service).map(Some(_))
-          else Future.successful(None)
-        }
+        detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
         invitation <- invitationsRepository
                        .create(
                          arn,
@@ -87,7 +84,7 @@ class InvitationsService @Inject()(
                          service,
                          clientId,
                          suppliedClientId,
-                         detailsForEmailOpt,
+                         Some(detailsForEmail),
                          startDate,
                          expiryDate)
       } yield {

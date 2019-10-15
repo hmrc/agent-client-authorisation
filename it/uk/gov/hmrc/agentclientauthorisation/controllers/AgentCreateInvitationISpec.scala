@@ -79,7 +79,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "service is VAT" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenClientDetails(vrn)
+        givenClientDetailsForVat(vrn)
         givenGetAgencyNameViaClientStub(arn)
         givenGetAgencyEmailAgentStub(arn)
 

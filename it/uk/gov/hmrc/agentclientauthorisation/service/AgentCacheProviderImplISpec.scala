@@ -6,7 +6,7 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsController, BaseISpec}
 
-class AgentCacheProviderISpec extends BaseISpec {
+class AgentCacheProviderImplISpec extends BaseISpec {
 
   override lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
