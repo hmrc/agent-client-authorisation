@@ -104,6 +104,7 @@ class InvitationsMongoRepositoryISpec
   override def beforeEach() {
     super.beforeEach()
     await(repository.ensureIndexes)
+    ()
   }
 
   val ninoValue = nino1.value

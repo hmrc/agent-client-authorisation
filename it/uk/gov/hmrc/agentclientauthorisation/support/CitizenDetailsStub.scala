@@ -1,11 +1,12 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
 trait CitizenDetailsStub {
   me: StartAndStopWireMock =>
 
-  def givenCitizenDetailsAreKnownFor(nino: String, dob: String): Unit =
+  def givenCitizenDetailsAreKnownFor(nino: String, dob: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(
@@ -25,7 +26,7 @@ trait CitizenDetailsStub {
                          |   "dateOfBirth": "$dob"
                          |}""".stripMargin)))
 
-  def givenCitizenDetailsNoDob(nino: String): Unit =
+  def givenCitizenDetailsNoDob(nino: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(
@@ -44,7 +45,7 @@ trait CitizenDetailsStub {
                          |   }
                          |}""".stripMargin)))
 
-  def givenCitizenDetailsReturnsResponseFor(nino: String, response: Int): Unit =
+  def givenCitizenDetailsReturnsResponseFor(nino: String, response: Int): StubMapping =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(aResponse()

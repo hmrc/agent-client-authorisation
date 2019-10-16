@@ -34,7 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val mockAgentReferenceRepository: MongoAgentReferenceRepository = mock[MongoAgentReferenceRepository]
@@ -63,11 +63,11 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
     "return a link when agent reference record already exists" in {
       val agentReferenceRecord = AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("obi-wan"))
 
-      when(mockAgentReferenceRepository.findByArn(any[Arn])(any()))
+      when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future successful Some(agentReferenceRecord))
-      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any(), any()))
+      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(Some("stan-lee")))
-      when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any()))
+      when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any[ExecutionContext]))
         .thenReturn(Future.successful(()))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
@@ -76,9 +76,10 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
     }
 
     "create new agent reference record and return a link" in {
-      when(mockAgentReferenceRepository.findByArn(any[Arn])(any())).thenReturn(Future successful None)
-      when(mockAgentReferenceRepository.create(any[AgentReferenceRecord])(any())).thenReturn(Future successful 1)
-      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any(), any()))
+      when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext])).thenReturn(Future successful None)
+      when(mockAgentReferenceRepository.create(any[AgentReferenceRecord])(any[ExecutionContext]))
+        .thenReturn(Future successful 1)
+      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(Some("stan-lee")))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))

@@ -25,7 +25,7 @@ class EmailConnectorISpec extends UnitSpec with AppAndStubs with EmailStub {
 
       val result = await(connector.sendEmail(emailInfo))
 
-      result shouldBe ()
+      result shouldBe (())
     }
     "throw an Exception when the email service throws an Exception" in {
       givenEmailReturns500

@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import javax.inject.Inject
 import play.api.Play.current
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.ws.{WS, WSRequest, WSResponse}
+import play.api.libs.ws.{WS, WSClient, WSRequest, WSResponse}
 import play.api.mvc.Results
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
@@ -26,8 +27,9 @@ import uk.gov.hmrc.play.http.ws.WSHttpResponse
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.language.postfixOps
 
-object Http {
+class Http @Inject()(wsClient: WSClient) {
 
   def get(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
     request.get()
@@ -54,24 +56,24 @@ object Http {
 
   private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
     await(
-      fun(WS.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
+      fun(wsClient.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
 
   private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
 
 }
 
-class Resource(path: String, port: Int) {
+class Resource(path: String, port: Int, http: Http) {
 
   private def url() = s"http://localhost:$port$path"
 
-  def get()(implicit hc: HeaderCarrier = HeaderCarrier()) = Http.get(url)(hc)
+  def get()(implicit hc: HeaderCarrier = HeaderCarrier()) = http.get(url)(hc)
 
   def postAsJson(body: String)(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    Http.post(url, body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
+    http.post(url, body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
 
   def postEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    Http.postEmpty(url)(hc)
+    http.postEmpty(url)(hc)
 
   def putEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    Http.putEmpty(url)(hc)
+    http.putEmpty(url)(hc)
 }

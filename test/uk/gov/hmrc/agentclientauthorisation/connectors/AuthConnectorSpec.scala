@@ -20,24 +20,25 @@ import com.kenshoo.play.metrics.Metrics
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Results._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.GenericForbidden
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.model.{MtdItIdType, NinoType, Service}
 import uk.gov.hmrc.agentclientauthorisation.support.TestData
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, InsufficientEnrolments, PlayAuthConnector}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
-import concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TestData {
 
@@ -56,11 +57,17 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   }
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any()))
+    when(
+      mockPlayAuthConnector.authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(
+        any[HeaderCarrier],
+        any[ExecutionContext]))
       .thenReturn(returnValue)
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
-    when(mockPlayAuthConnector.authorise(any(), any[Retrieval[Enrolments]]())(any(), any())).thenReturn(returnValue)
+    when(
+      mockPlayAuthConnector
+        .authorise(any[Predicate], any[Retrieval[Enrolments]]())(any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(returnValue)
 
   override def beforeEach(): Unit = reset(mockPlayAuthConnector)
 

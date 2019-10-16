@@ -24,6 +24,7 @@ import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json._
+import play.api.mvc.{AnyContent, Request}
 import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
@@ -34,10 +35,11 @@ import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
+import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.Upstream4xxResponse
+import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -81,7 +83,9 @@ class AgencyInvitationsControllerSpec
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
       mockPlayAuthConnector
-        .authorise(any(), any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any(), any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(
+          any[HeaderCarrier],
+          any[ExecutionContext]))
       .thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
@@ -89,19 +93,23 @@ class AgencyInvitationsControllerSpec
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(any(), any()))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(
+          any[HeaderCarrier],
+          any[ExecutionContext]))
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any(), any()))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(
+          any[HeaderCarrier],
+          any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
         .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(
-          any(),
-          any()))
+          any[HeaderCarrier],
+          any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(
@@ -110,7 +118,9 @@ class AgencyInvitationsControllerSpec
         eqs(Seq(Service.MtdIt)),
         any[Option[String]],
         eqs(Some(Accepted)),
-        eqs(None))(any(), any())).thenReturn(Future successful allInvitations.filter(_.status == Accepted))
+        eqs(None))(any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
+    ()
   }
 
   "createInvitation" should {
@@ -121,11 +131,18 @@ class AgencyInvitationsControllerSpec
       val inviteCreated = TestConstants.defaultInvitation
         .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
-      when(postcodeService.postCodeMatches(any[String](), any[String]())(any(), any()))
+      when(postcodeService.postCodeMatches(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful None)
-      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any(), any()))
+      when(
+        invitationsService.translateToMtdItId(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
-      when(invitationsService.create(any[Arn](), any(), any[Service](), any(), any())(any(), any()))
+      when(
+        invitationsService.create(
+          any[Arn](),
+          any[Option[String]],
+          any[Service](),
+          any[ClientIdentifier.ClientId],
+          any[ClientIdentifier.ClientId])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
@@ -151,7 +168,8 @@ class AgencyInvitationsControllerSpec
     "create a agent link and store it in the headers" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(multiInvitationsService.getInvitationUrl(any[Arn], any())(any(), any())).thenReturn(Future successful "/foo")
+      when(multiInvitationsService.getInvitationUrl(any[Arn], any[String])(any[ExecutionContext], any[HeaderCarrier]))
+        .thenReturn(Future successful "/foo")
       val response = await(controller.getInvitationUrl(arn, "personal")(FakeRequest()))
 
       status(response) shouldBe 201
@@ -170,9 +188,11 @@ class AgencyInvitationsControllerSpec
         inviteCreated.copy(
           events = List(StatusChangeEvent(DateTime.now(), Pending), StatusChangeEvent(DateTime.now(), Cancelled)))
 
-      when(invitationsService.findInvitation(any())(any(), any(), any()))
+      when(
+        invitationsService
+          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
         .thenReturn(Future successful Some(inviteCreated))
-      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any(), any()))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext], any[HeaderCarrier]))
         .thenReturn(Future successful Right(cancelledInvite))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -186,9 +206,11 @@ class AgencyInvitationsControllerSpec
       val inviteCreated = TestConstants.defaultInvitation
         .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
-      when(invitationsService.findInvitation(any())(any(), any(), any()))
+      when(
+        invitationsService
+          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[AnyContent]]))
         .thenReturn(Future successful Some(inviteCreated))
-      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any(), any()))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext], any[HeaderCarrier]))
         .thenReturn(Future successful Left(StatusUpdateFailure(Accepted, "already accepted")))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -199,7 +221,9 @@ class AgencyInvitationsControllerSpec
     "return 404 when trying to cancel a not found invitation" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(invitationsService.findInvitation(any())(any(), any(), any()))
+      when(
+        invitationsService
+          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
         .thenReturn(Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -214,7 +238,7 @@ class AgencyInvitationsControllerSpec
 
     "return No Content if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful None)
 
       await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest())) shouldBe NoContent
@@ -222,7 +246,7 @@ class AgencyInvitationsControllerSpec
 
     "return 400 if given invalid postcode" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(BadRequest))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 400
@@ -230,7 +254,7 @@ class AgencyInvitationsControllerSpec
 
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(Forbidden))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
@@ -238,7 +262,7 @@ class AgencyInvitationsControllerSpec
 
     "return 501 if Nino is known in ETMP but the postcode is non-UK" in {
       agentAuthStub(agentAffinityAndEnrolments)
-      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any(), any()))
+      when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(NotImplemented))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 501
@@ -252,7 +276,9 @@ class AgencyInvitationsControllerSpec
     "return No Content if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+      when(
+        kfcService
+          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(true))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NoContent
@@ -261,7 +287,9 @@ class AgencyInvitationsControllerSpec
     "return Vat Registration Date Does Not Match if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+      when(
+        kfcService
+          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(false))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatRegistrationDateDoesNotMatch
@@ -270,7 +298,9 @@ class AgencyInvitationsControllerSpec
     "return Not Found if Vrn is unknown in ETMP" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+      when(
+        kfcService
+          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful None)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NotFound
@@ -285,7 +315,9 @@ class AgencyInvitationsControllerSpec
     "return Locked if downstream service is in the middle of migration" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any(), any()))
+      when(
+        kfcService
+          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future failed Upstream4xxResponse("MIGRATION", 403, 423))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe Locked
@@ -301,7 +333,9 @@ class AgencyInvitationsControllerSpec
     "return No Content if Nino is known in citizen details and the dateOfBirth matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+      when(
+        kfcService
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(true))
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NoContent
@@ -310,7 +344,9 @@ class AgencyInvitationsControllerSpec
     "return Date Of Birth Does Not Match if Nino is known in citizen details and the dateOfBirth did not match" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+      when(
+        kfcService
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(false))
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe DateOfBirthDoesNotMatch
@@ -319,7 +355,9 @@ class AgencyInvitationsControllerSpec
     "return Not Found if Nino is unknown in citizen details" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
-      when(kfcService.clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any(), any()))
+      when(
+        kfcService
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful None)
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NotFound
@@ -360,8 +398,10 @@ class AgencyInvitationsControllerSpec
     Future successful Some(anInvitation(arn))
 
   private def whenFindingAnInvitation() =
-    when(invitationsService.findInvitation(any[InvitationId])(any(), any(), any()))
+    when(
+      invitationsService
+        .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[AnyContent]]))
 
   private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) =
-    when(invitationsService.cancelInvitation(any[Invitation])(any(), any()))
+    when(invitationsService.cancelInvitation(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
 }

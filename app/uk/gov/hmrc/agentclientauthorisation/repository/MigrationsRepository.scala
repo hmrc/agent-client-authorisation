@@ -44,15 +44,12 @@ class MigrationsRepository @Inject()(mongo: ReactiveMongoComponent)
       "migrations",
       mongo.mongoConnector.db,
       Migration.formats,
-      ReactiveMongoFormats.objectIdFormats) with AtomicUpdate[Migration]
-    with StrictlyEnsureIndexes[Migration, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with StrictlyEnsureIndexes[Migration, BSONObjectID] {
 
   override def indexes: Seq[Index] =
     Seq(
       Index(key = Seq("id" -> IndexType.Ascending), name = Some("invitationIdIndex"), unique = true)
     )
-
-  override def isInsertion(newRecordId: BSONObjectID, oldRecord: Migration): Boolean = true
 
   def tryLock(id: String)(implicit ec: ExecutionContext): Future[Unit] =
     insert(Migration(id, DateTime.now(DateTimeZone.UTC))).map(_ => ())

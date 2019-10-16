@@ -87,7 +87,8 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit] =
     collection
-      .update(Json.obj("uid" -> uid), Json.obj("$addToSet" -> Json.obj("normalisedAgentNames" -> newAgentName)))
+      .update(ordered = false)
+      .one(Json.obj("uid" -> uid), Json.obj("$addToSet" -> Json.obj("normalisedAgentNames" -> newAgentName)))
       .map(_ => ())
 
 }

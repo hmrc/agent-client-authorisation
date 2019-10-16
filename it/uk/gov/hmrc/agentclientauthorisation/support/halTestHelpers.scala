@@ -21,6 +21,7 @@ import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn}
 import uk.gov.hmrc.http.controllers.RestFormats
+import scala.language.postfixOps
 
 object HalTestHelpers {
   def apply(json: JsValue) = new HalResourceHelper(json)

@@ -126,7 +126,8 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
       updated <- modifiedOpt match {
                   case Some(modified) =>
                     collection
-                      .update(BSONDocument(ID -> invitation.id), bsonJson(modified))
+                      .update(ordered = false)
+                      .one(BSONDocument(ID -> invitation.id), bsonJson(modified))
                       .map { result =>
                         if (result.ok) modified
                         else
@@ -242,16 +243,18 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     for {
       invitationOpt <- findById(id)
       _ <- invitationOpt match {
-            case Some(invitation) => collection.update(BSONDocument(ID -> id), bsonJson(invitation)).map(_ => ())
-            case None             => Future.successful(())
+            case Some(invitation) =>
+              collection.update(ordered = false).one(BSONDocument(ID -> id), bsonJson(invitation)).map(_ => ())
+            case None => Future.successful(())
           }
     } yield ()
 
   def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
     val updatedInvitation = invitation.copy(detailsForEmail = None)
-    collection.update(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map { result =>
-      if (result.ok) ()
-      else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
+    collection.update(ordered = false).one(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map {
+      result =>
+        if (result.ok) ()
+        else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
     }
   }
 }

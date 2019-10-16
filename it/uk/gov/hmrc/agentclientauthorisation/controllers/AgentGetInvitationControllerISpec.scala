@@ -42,6 +42,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     super.beforeEach()
     await(agentReferenceRepo.ensureIndexes)
     await(invitationsRepo.ensureIndexes)
+    ()
   }
 
   val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)

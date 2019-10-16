@@ -42,7 +42,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val invitationsRepository: InvitationsRepository = mock[InvitationsRepository]
@@ -83,14 +83,18 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         whenRelationshipIsCreated(invitation) thenReturn (Future successful {})
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
-        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
-        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
-        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any(): Invitation)(any(): HeaderCarrier, any(): ExecutionContext)) thenReturn Future(
+          ())
+        when(mockEmailService.sendEmail(any(): Invitation, any(): String)(
+          any(): HeaderCarrier,
+          any(): ExecutionContext)) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any(): Invitation)(any(): ExecutionContext)) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1))
+          .update(any[Invitation], any[InvitationStatus], any[DateTime])(any(): ExecutionContext)
       }
 
     }
@@ -102,14 +106,18 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         val acceptedTestInvitation = transitionInvitation(invitation, Accepted)
         whenStatusIsChangedTo(Accepted) thenReturn (Future successful acceptedTestInvitation)
         when(mockEmailService.sendAcceptedEmail(invitation)) thenReturn Future(())
-        when(mockEmailService.sendAcceptedEmail(any())(any(), any())) thenReturn Future(())
-        when(mockEmailService.sendEmail(any(), any())(any(), any())) thenReturn Future(())
-        when(invitationsRepository.removeEmailDetails(any())(any())) thenReturn Future(())
+        when(mockEmailService.sendAcceptedEmail(any(): Invitation)(any(): HeaderCarrier, any(): ExecutionContext)) thenReturn Future(
+          ())
+        when(mockEmailService.sendEmail(any(): Invitation, any(): String)(
+          any(): HeaderCarrier,
+          any(): ExecutionContext)) thenReturn Future(())
+        when(invitationsRepository.removeEmailDetails(any(): Invitation)(any(): ExecutionContext)) thenReturn Future(())
 
         val response = await(service.acceptInvitation(invitation))
 
         response shouldBe Right(acceptedTestInvitation)
-        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1))
+          .update(any[Invitation], any[InvitationStatus], any[DateTime])(any[ExecutionContext])
       }
     }
 
@@ -138,7 +146,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
         response shouldBe Right(acceptedTestInvitation)
 
-        verify(invitationsRepository, times(1)).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
+        verify(invitationsRepository, times(1))
+          .update(any[Invitation], any[InvitationStatus], any[DateTime])(any[ExecutionContext])
       }
 
     }
@@ -190,7 +199,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
         await(service.acceptInvitation(invitation))
       }
 
-      verify(invitationsRepository, never()).update(any[Invitation], any[InvitationStatus], any[DateTime])(any())
+      verify(invitationsRepository, never())
+        .update(any[Invitation], any[InvitationStatus], any[DateTime])(any[ExecutionContext])
     }
   }
 
@@ -198,7 +208,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     "update the invitation status" in {
       val rejectedTestInvitation = transitionInvitation(testInvitation, Rejected)
       whenStatusIsChangedTo(Rejected) thenReturn rejectedTestInvitation
-      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(())
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any[HeaderCarrier], any[ExecutionContext])) thenReturn Future(
+        ())
 
       val response = await(service.rejectInvitation(testInvitation))
 
@@ -206,7 +217,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     }
 
     "not reject a cancelled invitation" in {
-      when(mockEmailService.sendRejectedEmail(any[Invitation])(any(), any())) thenReturn Future(())
+      when(mockEmailService.sendRejectedEmail(any[Invitation])(any[HeaderCarrier], any[ExecutionContext])) thenReturn Future(
+        ())
 
       val response = await(service.rejectInvitation(testInvitationWithStatus(Cancelled)))
 
@@ -300,22 +312,24 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
   "findInvitation" should {
     "return None when the passed invitationId is not in the repository" in {
-      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any())).thenReturn(Future.successful(None))
+      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any[ExecutionContext]))
+        .thenReturn(Future.successful(None))
       await(service.findInvitation(InvitationId("INVALIDINV"))) shouldBe None
     }
 
     "return Some(invitation) when invitation is present" in {
       val invitation = testInvitation
-      when(invitationsRepository.findByInvitationId(any[InvitationId])(any()))
+      when(invitationsRepository.findByInvitationId(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful Some(invitation))
-      when(agentLinkService.getInvitationUrl(any(), any())(any(), any())).thenReturn(Future.successful("/invitations"))
+      when(agentLinkService.getInvitationUrl(any[Arn], any[String])(any[ExecutionContext], any[HeaderCarrier]))
+        .thenReturn(Future.successful("/invitations"))
 
       await(service.findInvitation(invitation.invitationId)) shouldBe Some(invitation)
     }
 
     "return some invitation with status Expired when the invitation had a status of expired in the first place" in {
       val invitation = testInvitationWithStatus(Expired)
-      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any()))
+      when(invitationsRepository.findByInvitationId((any[InvitationId]))(any[ExecutionContext]))
         .thenReturn(Future successful Some(invitation))
 
       await(service.findInvitation(invitation.invitationId)).get.status shouldBe Expired
@@ -368,9 +382,8 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
   "findInvitationsInfoBy" should {
 
     "return a list of invitation Ids with expiry dates when status is not pending" in {
-      when(
-        invitationsRepository
-          .findInvitationInfoBy(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Expired)))(any()))
+      when(invitationsRepository
+        .findInvitationInfoBy(eqs(Arn(arn)), eqs(Seq("nino" -> nino.value)), eqs(Some(Expired)))(any[ExecutionContext]))
         .thenReturn(Future successful List(
           InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2018-01-01"), Expired),
           InvitationInfo(InvitationId("ABBBBBBBBBBCA"), LocalDate.parse("2017-01-01"), Expired)
@@ -407,22 +420,33 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
 
         val updatedExpiredInvitation = invitation.copy(events = StatusChangeEvent(now(), Expired) :: invitation.events)
 
-        when(invitationsRepository.findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any()))
+        when(
+          invitationsRepository.findInvitationsBy(
+            any[Option[Arn]],
+            any[Seq[Service]],
+            any[Option[String]],
+            eqs(Some(Pending)),
+            any[Option[LocalDate]])(any[ExecutionContext]))
           .thenReturn(Future(List(invitation)))
 
         when(
-          invitationsRepository.update(eqs(invitation), eqs(Expired), any())(any())
+          invitationsRepository.update(eqs(invitation), eqs(Expired), any[DateTime])(any[ExecutionContext])
         ).thenReturn(Future successful updatedExpiredInvitation)
 
         when(
-          mockEmailService.sendExpiredEmail(eqs(updatedExpiredInvitation))(any())
-        ).thenReturn(Future successful ())
+          mockEmailService.sendExpiredEmail(eqs(updatedExpiredInvitation))(any[ExecutionContext])
+        ).thenReturn(Future successful (()))
 
         await(service.findAndUpdateExpiredInvitations)
 
-        verify(invitationsRepository).findInvitationsBy(any(), any(), any(), eqs(Some(Pending)), any())(any())
-        verify(invitationsRepository).update(eqs(invitation), eqs(Expired), any[DateTime])(any())
-        verify(mockEmailService).sendExpiredEmail(eqs(updatedExpiredInvitation))(any())
+        verify(invitationsRepository).findInvitationsBy(
+          any[Option[Arn]],
+          any[Seq[Service]],
+          any[Option[String]],
+          eqs(Some(Pending)),
+          any[Option[LocalDate]])(any[ExecutionContext])
+        verify(invitationsRepository).update(eqs(invitation), eqs(Expired), any[DateTime])(any[ExecutionContext])
+        verify(mockEmailService).sendExpiredEmail(eqs(updatedExpiredInvitation))(any[ExecutionContext])
 
       }
     }
@@ -461,13 +485,15 @@ class InvitationsServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAf
     )
 
   private def whenStatusIsChangedTo(status: InvitationStatus): OngoingStubbing[Future[Invitation]] =
-    when(invitationsRepository.update(any[Invitation], eqs(status), any[DateTime])(any()))
+    when(invitationsRepository.update(any[Invitation], eqs(status), any[DateTime])(any[ExecutionContext]))
 
   private def whenRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
     when(relationshipsConnector.createMtdItRelationship(invitation))
 
   private def whenAfiRelationshipIsCreated(invitation: Invitation): OngoingStubbing[Future[Unit]] =
-    when(relationshipsConnector.createAfiRelationship(eqs(invitation), any[DateTime])(any(), any()))
+    when(
+      relationshipsConnector
+        .createAfiRelationship(eqs(invitation), any[DateTime])(any[HeaderCarrier], any[ExecutionContext]))
 
   private def whenDesBusinessPartnerRecordExistsFor(
     nino: Nino,

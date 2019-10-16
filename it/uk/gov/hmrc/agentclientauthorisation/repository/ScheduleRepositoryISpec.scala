@@ -3,7 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import java.util.UUID
 
 import org.joda.time.DateTime
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
@@ -33,6 +33,7 @@ class ScheduleRepositoryISpec
   override def beforeEach() {
     super.beforeEach()
     await(repo.ensureIndexes)
+    ()
   }
 
   val uid = UUID.randomUUID()

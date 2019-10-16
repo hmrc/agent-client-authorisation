@@ -16,12 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.joda.time.DateTime
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.FailoverStrategy
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -54,6 +52,7 @@ class MongoAgentReferenceRepositoryISpec
   override def beforeEach() {
     super.beforeEach()
     await(repository.ensureIndexes)
+    ()
   }
 
   "AgentReferenceRepository" when {

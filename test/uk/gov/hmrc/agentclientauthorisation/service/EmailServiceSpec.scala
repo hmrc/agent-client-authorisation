@@ -130,7 +130,7 @@ class EmailServiceSpec extends UnitSpec with MocksWithCache with BeforeAndAfter 
       (mockInvitationRepository
         .removeEmailDetails(_: Invitation)(_: ExecutionContext))
         .expects(*, *)
-        .returns(Future(): Unit)
+        .returns(Future(()))
 
       await(emailService.sendAcceptedEmail(invite))
 
@@ -278,7 +278,7 @@ class EmailServiceSpec extends UnitSpec with MocksWithCache with BeforeAndAfter 
           Some(dfe),
           Some("continue/url"),
           List.empty
-        ))) shouldBe ()
+        ))) shouldBe (())
 
       testLogger.checkWarnsWithErrors("sending email failed", exception)
     }
@@ -354,20 +354,26 @@ object LoggerLikeStub extends LoggerLike with UnitSpec {
   val warnWithErrorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
   val warnList: ListBuffer[String] = ListBuffer.empty
 
-  override def error(message: => String, error: => Throwable) =
+  override def error(message: => String, error: => Throwable): Unit = {
     errorList += ((message, error))
+    ()
+  }
 
-  override def warn(message: => String, error: => Throwable) =
+  override def warn(message: => String, error: => Throwable): Unit = {
     warnWithErrorList += ((message, error))
+    ()
+  }
 
-  override def warn(message: => String) =
-    warnList += (message)
+  override def warn(message: => String): Unit = {
+    warnList += message
+    ()
+  }
 
   def checkErrors(expectMsg: String, expectError: Throwable) =
-    errorList should contain(expectMsg, expectError)
+    errorList should contain((expectMsg, expectError))
 
   def checkWarnsWithErrors(expectMsg: String, expectError: Throwable) =
-    warnWithErrorList should contain(expectMsg, expectError)
+    warnWithErrorList should contain((expectMsg, expectError))
 
   def checkWarns(expectMsg: String) =
     warnList should contain(expectMsg)

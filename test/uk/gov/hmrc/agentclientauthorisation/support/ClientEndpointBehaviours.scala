@@ -22,6 +22,7 @@ import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import play.api.mvc.Request
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
@@ -35,7 +36,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   this: UnitSpec with ResettingMockitoSugar =>
@@ -55,7 +56,9 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def generator: Generator
 
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] =
-    when(invitationsService.findInvitation(eqs(invitationId))(any(), any(), any()))
+    when(
+      invitationsService
+        .findInvitation(eqs(invitationId))(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
 
   def noInvitation: Future[None.type] = Future successful None
 
@@ -92,13 +95,15 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     Future successful Some(anInvitation(nino1))
 
   def whenInvitationIsAccepted: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
-    when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any()))
+    when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
 
   def whenInvitationIsRejected: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
-    when(invitationsService.rejectInvitation(any[Invitation])(any(), any()))
+    when(invitationsService.rejectInvitation(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
-    when(invitationsService.clientsReceived(any[Service], any(), eqs(None))(any()))
+    when(
+      invitationsService.clientsReceived(any[Service], any[ClientIdentifier.ClientId], eqs(None))(
+        any[ExecutionContext]))
 
   def assertCreateITSARelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
@@ -136,7 +141,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def verifyAgentClientRelationshipCreatedAuditEvent(service: String) =
     eventually {
       val argumentCaptor: ArgumentCaptor[DataEvent] = ArgumentCaptor.forClass(classOf[DataEvent])
-      verify(auditConnector).sendEvent(argumentCaptor.capture())(any(), any())
+      verify(auditConnector).sendEvent(argumentCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
       val event: DataEvent = argumentCaptor.getValue
       service match {
         case "HMRC-MTD-IT"            => assertCreateITSARelationshipEvent(event)
@@ -148,6 +153,6 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def verifyNoAuditEventSent() = {
     Thread.sleep(scaled(Span(1000, Millis)).millisPart)
-    verify(auditConnector, never()).sendEvent(any(classOf[DataEvent]))(any(), any())
+    verify(auditConnector, never()).sendEvent(any(classOf[DataEvent]))(any[HeaderCarrier], any[ExecutionContext])
   }
 }

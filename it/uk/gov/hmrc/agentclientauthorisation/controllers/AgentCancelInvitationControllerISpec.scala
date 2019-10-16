@@ -42,6 +42,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
     super.beforeEach()
     await(agentReferenceRepo.ensureIndexes)
     await(invitationsRepo.ensureIndexes)
+    ()
   }
 
   def createInvitation(arn: Arn,
