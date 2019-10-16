@@ -88,5 +88,6 @@ class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: Invi
             toFuture(())
           }
       }
+      ()
   }
 }

@@ -20,11 +20,14 @@ import javax.inject._
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
+import ImplicitBSONHandlers._
+import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
 
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -54,13 +57,10 @@ class MigrationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def tryLock(id: String)(implicit ec: ExecutionContext): Future[Unit] =
     insert(Migration(id, DateTime.now(DateTimeZone.UTC))).map(_ => ())
 
-  def markDone(id: String)(implicit ec: ExecutionContext): Future[Unit] =
+  def markDone(id: String)(implicit ec: ExecutionContext): Future[Option[Future[FindAndModifyCommand.FindAndModifyResult]]] =
     find("id" -> id).map(_.headOption.map(migration =>
-      atomicUpdate(BSONDocument("id" -> id), bsonJson(migration.copy(finished = Some(DateTime.now(DateTimeZone.UTC)))))))
-
-  import ImplicitBSONHandlers._
+      collection.findAndUpdate(BSONDocument("id" -> id), bsonJson(migration.copy(finished = Some(DateTime.now(DateTimeZone.UTC)))))))
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
     BSONDocumentFormat.reads(writes.writes(entity)).get
-
 }
