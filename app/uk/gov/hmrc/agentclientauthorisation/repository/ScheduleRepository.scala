@@ -55,6 +55,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] {
 
   import ImplicitBSONHandlers._
+  import reactivemongo.bson._
 
   override def indexes =
     Seq(Index(Seq("uid" -> Ascending, "runAt" -> Ascending), unique = true))
@@ -71,14 +72,11 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
         }
     })
 
-  def write(newUid: String, newRunAt: DateTime)(implicit ec: ExecutionContext): Future[Unit] = {
-    val updateOp =
-      Json.obj("$set" -> Json.obj("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
+  def write(newUid: String, newRunAt: DateTime)(implicit ec: ExecutionContext): Future[Unit] =
     collection
-      .update(ordered = false)
-      .one(Json.obj(), updateOp)
-      .map(
-        _.errmsg.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error"))
-      )
-  }
+      .findAndUpdate(
+        selector = BSONDocument(),
+        update = BSONDocument(
+          "$set" -> BSONDocument("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt))))
+      .map(_.lastError.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
 }
