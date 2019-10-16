@@ -55,7 +55,6 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] {
 
   import ImplicitBSONHandlers._
-  import reactivemongo.bson._
 
   override def indexes =
     Seq(Index(Seq("uid" -> Ascending, "runAt" -> Ascending), unique = true))
