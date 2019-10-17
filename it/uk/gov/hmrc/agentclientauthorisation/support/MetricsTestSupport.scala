@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import org.scalatest.{Matchers, Suite}
+import org.scalatest.{Assertion, Matchers, Suite}
 import play.api.Application
 
 import scala.collection.JavaConversions
@@ -38,7 +38,7 @@ trait MetricsTestSupport {
     metricsRegistry = registry
   }
 
-  def verifyTimerExistsAndBeenUpdated(metric: String): Unit = {
+  def verifyTimerExistsAndBeenUpdated(metric: String): Assertion = {
     val timers = metricsRegistry.getTimers
     val metrics = timers.get(s"Timer-$metric")
     if (metrics == null) throw new Exception(s"Metric [$metric] not found, try one of ${timers.keySet()}")

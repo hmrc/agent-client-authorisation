@@ -19,8 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl}
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
+import uk.gov.hmrc.agentclientauthorisation.support.{Http, MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
@@ -31,6 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val http = app.injector.instanceOf(classOf[Http])
 
   "GET /status" should {
     "return 200 OK indicating client has pending invitations if she has one for PIR" in {
@@ -84,7 +85,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       await(repo.insert(invitation3))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -129,7 +130,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       await(repo.insert(invitation2))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -163,7 +164,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       await(repo.insert(invitation))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -211,7 +212,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       await(repo.update(invitation2, Expired, DateTime.now()))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -246,7 +247,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
       await(repo.insert(invitation))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -267,7 +268,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -288,7 +289,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -309,7 +310,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -330,7 +331,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -349,7 +350,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withHeader("WWW-Authenticate", "MDTP detail=\"UnsupportedAffinityGroup\"")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -368,7 +369,7 @@ class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
             .withHeader("WWW-Authenticate", "MDTP detail=\"MissingBearerToken\"")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/status", port).get()
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
       response.status shouldBe 401
     }
 

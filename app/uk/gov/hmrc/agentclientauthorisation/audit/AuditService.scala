@@ -42,7 +42,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
   def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)(
     implicit hc: HeaderCarrier,
     request: Request[Any],
-    ec: ExecutionContext): Unit =
+    ec: ExecutionContext): Future[Unit] =
     auditEvent(
       AgentClientInvitationEvent.AgentClientRelationshipCreated,
       "agent-client-relationship-created",
@@ -56,7 +56,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     )
 
   def sendInvitationExpired(
-    invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Unit =
+    invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Future[Unit] =
     auditEvent(
       AgentClientInvitationEvent.AgentClientInvitationResponse,
       "Client responded to agent invitation",

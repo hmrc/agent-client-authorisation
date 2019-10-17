@@ -65,7 +65,7 @@ class AgentReferenceController @Inject()(
       }
       .recoverWith {
         case e =>
-          Future failed (throw new Exception(s"Something has gone wrong for: $uid. Error found: ${e.getMessage}"))
+          Future failed new Exception(s"Something has gone wrong for: $uid. Error found: ${e.getMessage}")
       }
   }
 
@@ -77,8 +77,7 @@ class AgentReferenceController @Inject()(
       }
       .recoverWith {
         case e =>
-          Future failed (throw new Exception(
-            s"Something has gone wrong for: ${arn.value}. Error found: ${e.getMessage}"))
+          Future failed new Exception(s"Something has gone wrong for: ${arn.value}. Error found: ${e.getMessage}")
       }
   }
 

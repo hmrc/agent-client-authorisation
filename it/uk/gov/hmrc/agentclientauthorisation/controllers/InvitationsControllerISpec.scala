@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
-import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, Http, MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
@@ -31,6 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with AgentServicesAccountStub {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val http = app.injector.instanceOf(classOf[Http])
 
   "GET /invitations/:id" should {
     "return 200 OK with the invitation if found" in {
@@ -52,7 +53,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Age
       await(repo.insert(invitation))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/invitations/${invitation.invitationId.value}", port).get()
+        new Resource(s"/agent-client-authorisation/invitations/${invitation.invitationId.value}", port, http).get()
       response.status shouldBe 200
 
       val json = response.json
@@ -70,7 +71,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Age
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody("{}")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/invitations/foo", port).get()
+        new Resource(s"/agent-client-authorisation/invitations/foo", port, http).get()
       response.status shouldBe 404
     }
 
@@ -79,7 +80,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Age
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(401).withBody("{}")))
 
       val response: HttpResponse =
-        new Resource(s"/agent-client-authorisation/invitations/foo", port).get()
+        new Resource(s"/agent-client-authorisation/invitations/foo", port, http).get()
       response.status shouldBe 401
     }
   }

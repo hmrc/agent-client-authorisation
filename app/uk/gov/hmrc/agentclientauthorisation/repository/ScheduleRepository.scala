@@ -52,7 +52,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
       mongoComponent.mongoConnector.db,
       ScheduleRecord.formats,
       ReactiveMongoFormats.objectIdFormats) with ScheduleRepository
-    with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] with AtomicUpdate[ScheduleRecord] {
+    with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] {
 
   import ImplicitBSONHandlers._
 
@@ -72,13 +72,10 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     })
 
   def write(newUid: String, newRunAt: DateTime)(implicit ec: ExecutionContext): Future[Unit] =
-    atomicUpsert(
-      finder = BSONDocument(),
-      modifierBson = BSONDocument(
-        "$set" -> BSONDocument("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
-    ).map(update =>
-      update.writeResult.errmsg.foreach(error =>
-        Logger(getClass).warn(s"Updating uid and runAt failed with error: $error")))
-
-  override def isInsertion(newRecordId: BSONObjectID, oldRecord: ScheduleRecord): Boolean = false
+    collection
+      .findAndUpdate(
+        selector = BSONDocument(),
+        update = BSONDocument(
+          "$set" -> BSONDocument("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt))))
+      .map(_.lastError.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
 }

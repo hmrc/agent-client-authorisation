@@ -38,6 +38,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
     super.beforeEach()
     await(agentReferenceRepo.ensureIndexes)
     await(invitationsRepo.ensureIndexes)
+    ()
   }
 
   "GET /known-facts/individuals/nino/:nino/sa/postcode/:postcode" should {

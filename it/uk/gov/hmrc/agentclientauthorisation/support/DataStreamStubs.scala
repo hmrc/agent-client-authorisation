@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.libs.json.Json
@@ -57,7 +58,7 @@ trait DataStreamStubs extends Eventually {
       )
     }
 
-  def givenAuditConnector(): Unit = {
+  def givenAuditConnector(): StubMapping = {
     stubFor(post(urlPathMatching(auditUrl)).willReturn(aResponse().withStatus(204)))
     stubFor(post(urlPathMatching(auditUrl + "/merged")).willReturn(aResponse().withStatus(204)))
   }
