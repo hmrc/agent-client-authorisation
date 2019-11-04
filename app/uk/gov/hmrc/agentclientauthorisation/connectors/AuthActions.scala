@@ -107,7 +107,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
       .map(
         enrolment =>
           Enrolment(
-            enrolment.key,
+            enrolment.key.trim,
             enrolment.identifiers.map(identifier =>
               EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
             enrolment.state,
@@ -140,7 +140,6 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         case enrolments ~ Some(creds) =>
           validateClientId(service, identifier) match {
             case Right((clientService, clientId)) =>
-              Logger.warn(s"Client's clientId = $clientId, service = $service and auth-enrolments = $enrolments")
               creds.providerType match {
                 case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
