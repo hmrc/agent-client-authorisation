@@ -140,6 +140,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
         case enrolments ~ Some(creds) =>
           validateClientId(service, identifier) match {
             case Right((clientService, clientId)) =>
+              Logger.warn(s"Client's clientId = $clientId, service = $service and auth-enrolments = $enrolments")
               creds.providerType match {
                 case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
