@@ -28,6 +28,8 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 import ImplicitBSONHandlers._
 import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
+import play.api.libs.json.JodaWrites._
+import play.api.libs.json.JodaReads._
 
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}

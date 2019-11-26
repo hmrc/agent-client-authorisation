@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Named}
 import play.api.{Logger, LoggerLike}
-import play.api.i18n.MessagesApi
+import play.api.i18n.{Lang, Langs, MessagesApi}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
@@ -35,9 +35,11 @@ class EmailService @Inject()(
   emailConnector: EmailConnector,
   invitationsRepository: InvitationsRepository,
   @Named("invitation.expiryDuration") expiryPeriod: String,
-  messagesApi: MessagesApi) {
+  messagesApi: MessagesApi)(implicit langs: Langs) {
 
   protected def getLogger: LoggerLike = Logger
+
+  implicit val lang: Lang = langs.availables.head
 
   def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(
     implicit hc: HeaderCarrier,

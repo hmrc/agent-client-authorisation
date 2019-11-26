@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
@@ -32,8 +32,9 @@ class InvitationsController @Inject()(
   invitationsService: InvitationsService,
   microserviceAuthConnector: MicroserviceAuthConnector,
   metrics: Metrics,
+  cc: ControllerComponents,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, microserviceAuthConnector) with HalWriter with AgentInvitationValidation
+    extends AuthActions(metrics, microserviceAuthConnector, cc) with HalWriter with AgentInvitationValidation
     with AgencyInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get

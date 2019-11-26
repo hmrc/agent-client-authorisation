@@ -26,19 +26,20 @@ import uk.gov.hmrc.agentclientauthorisation.repository._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
-class MicroserviceModule(val environment: Environment, val configuration: Configuration)
-    extends AbstractModule with ServicesConfig {
 
-  override val runModeConfiguration: Configuration = configuration
-  override protected def mode = environment.mode
+class MicroserviceModule(val environment: Environment, val configuration: Configuration, servicesConfig: ServicesConfig)
+    extends AbstractModule {
+
+  val runModeConfiguration: Configuration = configuration
+  protected def mode = environment.mode
 
   def configure(): Unit = {
     val appName = "agent-client-authorisation"
 
-    val loggerDateFormat: Option[String] = configuration.getString("logger.json.dateformat")
+    val loggerDateFormat: Option[String] = configuration.get[Option[String]]("logger.json.dateformat")
     Logger.info(s"Starting microservice : $appName : in mode : ${environment.mode}")
     MDC.put("appName", appName)
     loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
@@ -71,11 +72,11 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bindBooleanProperty("invitation-status-update-scheduler.enabled")
     bindBooleanProperty("mongodb-migration.enabled")
 
-    if (configuration.getBoolean("mongodb-migration.enabled").getOrElse(false)) {
+    if (configuration.get[Option[Boolean]]("mongodb-migration.enabled").getOrElse(false)) {
       bind(classOf[RepositoryMigrationService]).asEagerSingleton()
     }
 
-    if (configuration.getBoolean("invitation-status-update-scheduler.enabled").getOrElse(false)) {
+    if (configuration.get[Option[Boolean]]("invitation-status-update-scheduler.enabled").getOrElse(false)) {
       bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()
     }
   }
@@ -84,7 +85,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[URL]).annotatedWith(Names.named(s"$serviceName-baseUrl")).toProvider(new BaseUrlProvider(serviceName))
 
   private class BaseUrlProvider(serviceName: String) extends Provider[URL] {
-    override lazy val get = new URL(baseUrl(serviceName))
+    override lazy val get = new URL(servicesConfig.baseUrl(serviceName))
   }
 
   private def bindProperty2param(objectName: String, propertyName: String) =
@@ -92,7 +93,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class PropertyProvider2param(confKey: String) extends Provider[String] {
     override lazy val get =
-      getConfString(confKey, throw new IllegalStateException(s"No value found for configuration property $confKey"))
+      servicesConfig.getString(confKey)
   }
 
   private def bindProperty(propertyName: String) =
@@ -100,7 +101,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class PropertyProvider(confKey: String) extends Provider[String] {
     override lazy val get = configuration
-      .getString(confKey)
+      .get[Option[String]](confKey)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 
@@ -111,7 +112,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class PropertyProviderWithFun(confKey: String, mapFx: String => String) extends Provider[String] {
     override lazy val get = configuration
-      .getString(confKey)
+      .get[Option[String]](confKey)
       .map(mapFx)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
@@ -123,7 +124,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class SeqStringPropertyProvider(confKey: String) extends Provider[Seq[String]] {
     override lazy val get: Seq[String] = configuration
-      .getStringSeq(confKey)
+      .get[Option[Seq[String]]](confKey)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
       .map(URLDecoder.decode(_, "utf-8"))
 
@@ -152,9 +153,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
             .toProvider(new StringServiceConfigPropertyProvider(propertyName))
 
         private class StringServiceConfigPropertyProvider(propertyName: String) extends Provider[String] {
-          override lazy val get = getConfString(
-            propertyName,
-            throw new RuntimeException(s"No service configuration value found for '$propertyName'"))
+          override lazy val get = servicesConfig.getString(
+            propertyName)
         }
       }
 
@@ -165,9 +165,8 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
           .toProvider(new IntServiceConfigPropertyProvider(propertyName))
 
       private class IntServiceConfigPropertyProvider(propertyName: String) extends Provider[Int] {
-        override lazy val get = getConfInt(
-          propertyName,
-          throw new RuntimeException(s"No service configuration value found for '$propertyName'"))
+        override lazy val get = servicesConfig.getInt(
+          propertyName)
       }
     }
 
@@ -179,7 +178,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
             .toProvider(new BooleanServiceConfigPropertyProvider(propertyName))
 
         private class BooleanServiceConfigPropertyProvider(propertyName: String) extends Provider[Boolean] {
-          override lazy val get = getConfBool(propertyName, false)
+          override lazy val get = servicesConfig.getBoolean(propertyName)
         }
       }
   }
@@ -192,9 +191,9 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
   private class BooleanPropertyProvider(confKey: String) extends Provider[Boolean] {
     def getBooleanFromRoot =
       runModeConfiguration
-        .getBoolean(confKey)
+        .get[Option[Boolean]](confKey)
         .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
-    override lazy val get: Boolean = getConfBool(confKey, getBooleanFromRoot)
+    override lazy val get: Boolean = servicesConfig.getBoolean(confKey)
   }
 
   private def bindIntegerProperty(propertyName: String) =
@@ -204,7 +203,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
 
   private class IntegerPropertyProvider(confKey: String) extends Provider[Int] {
     override lazy val get: Int = configuration
-      .getInt(confKey)
+      .get[Option[Int]](confKey)
       .getOrElse(throw new IllegalStateException(s"No value found for configuration property $confKey"))
   }
 

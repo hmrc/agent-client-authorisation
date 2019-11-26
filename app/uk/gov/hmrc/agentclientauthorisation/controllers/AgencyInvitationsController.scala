@@ -22,7 +22,7 @@ import org.joda.time.LocalDate
 import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector, MicroserviceAuthConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
@@ -48,9 +48,10 @@ class AgencyInvitationsController @Inject()(
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
+  cc: ControllerComponents,
   microserviceAuthConnector: MicroserviceAuthConnector,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, microserviceAuthConnector) with HalWriter with AgentInvitationValidation
+    extends AuthActions(metrics, microserviceAuthConnector, cc) with HalWriter with AgentInvitationValidation
     with AgencyInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Named, Provider, Singleton}
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient, invalidInvitationStatus}
@@ -37,12 +37,13 @@ import scala.util.Success
 class ClientInvitationsController @Inject()(invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
+  cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor],
   @Named("old.auth.stride.enrolment") oldStrideRole: String,
   @Named("new.auth.stride.enrolment") newStrideRole: String)
-    extends AuthActions(metrics, authConnector) with HalWriter with ClientInvitationsHal {
+    extends AuthActions(metrics, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get
 
