@@ -34,6 +34,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -83,7 +84,7 @@ class DesConnectorImpl @Inject()(
   @Named("des-baseUrl") baseUrl: URL,
   @Named("des.authorizationToken") authorizationToken: String,
   @Named("des.environment") environment: String,
-  httpGet: HttpGet,
+  httpGet: HttpClient,
   metrics: Metrics)
     extends HttpAPIMonitor with DesConnector {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import javax.inject.Inject
 import play.api.Play.current
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.ws.{WS, WSClient, WSRequest, WSResponse}
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.mvc.Results
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
@@ -37,17 +37,12 @@ class Http @Inject()(wsClient: WSClient) {
 
   def post(url: String, body: String, headers: Seq[(String, String)] = Seq.empty)(
     implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    request.withHeaders(headers: _*).post(body)
+    request.withHttpHeaders(headers: _*).post(body)
   }
 
-  def postEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    import play.api.http.Writeable._
-    request.post(Results.EmptyContent())
-  }
 
-  def putEmpty(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
-    import play.api.http.Writeable._
-    request.put(Results.EmptyContent())
+  def put(url: String, body: String, headers: Seq[(String, String)] = Seq.empty)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
+    request.withHttpHeaders(headers: _ *).put(body)
   }
 
   def delete(url: String)(implicit hc: HeaderCarrier): HttpResponse = perform(url) { request =>
@@ -56,7 +51,7 @@ class Http @Inject()(wsClient: WSClient) {
 
   private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
     await(
-      fun(wsClient.url(url).withHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
+      fun(wsClient.url(url).withHttpHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
 
   private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
 
@@ -72,8 +67,8 @@ class Resource(path: String, port: Int, http: Http) {
     http.post(url, body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
 
   def postEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    http.postEmpty(url)(hc)
+    http.post(url, "")(hc)
 
   def putEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    http.putEmpty(url)(hc)
+    http.put(url, "")(hc)
 }

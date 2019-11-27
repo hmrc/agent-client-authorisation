@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
 import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
@@ -29,7 +30,7 @@ import uk.gov.hmrc.play.it.Port
 import scala.concurrent.ExecutionContext
 
 trait AppAndStubs
-    extends StartAndStopWireMock with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
+    extends StartAndStopWireMock with GuiceOneServerPerSuite with DataStreamStubs with MetricsTestSupport
     with Matchers {
   me: Suite with TestSuite =>
 

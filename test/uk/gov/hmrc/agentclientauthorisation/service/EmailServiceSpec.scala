@@ -20,7 +20,7 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.slf4j
 import play.api.LoggerLike
-import play.api.i18n.{Lang, Messages, MessagesApi}
+import play.api.i18n.{Lang, Langs, Messages, MessagesApi}
 import play.api.mvc.{RequestHeader, Result}
 import play.mvc.Http
 import reactivemongo.bson.BSONObjectID
@@ -49,36 +49,38 @@ class EmailServiceSpec extends UnitSpec with MocksWithCache with BeforeAndAfter 
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val mockAsaConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
   val mockInvitationRepository: InvitationsRepository = mock[InvitationsRepository]
+  implicit val langs: Langs = mock[Langs]
+  implicit val lang: Lang = mock[Lang]
 
   val testLogger: LoggerLikeStub.type = LoggerLikeStub
 
-  val mockMessagesApi: MessagesApi = new MessagesApi {
-    override def messages: Map[String, Map[String, String]] = ???
+  val mockMessagesApi: MessagesApi = mock[MessagesApi]
+//    override def messages: Map[String, Map[String, String]] = ???
+//
+//    override def preferred(candidates: Seq[Lang]): Messages = ???
+//
+//    override def preferred(request: RequestHeader): Messages = ???
+//
+//    override def preferred(request: Http.RequestHeader): Messages = ???
+//
+//    override def setLang(result: Result, lang: Lang): Result = ???
+//
+//    override def clearLang(result: Result): Result = ???
+//
+//    override def apply(key: String, args: Any*)(implicit lang: Lang): String = "dummy response"
+//
+//    override def apply(keys: Seq[String], args: Any*)(implicit lang: Lang): String = ???
+//
+//    override def translate(key: String, args: Seq[Any])(implicit lang: Lang): Option[String] = ???
+//
+//    override def isDefinedAt(key: String)(implicit lang: Lang): Boolean = ???
+//
+//    override def langCookieName: String = ???
+//
+//    override def langCookieSecure: Boolean = ???
+//
+//    override def langCookieHttpOnly: Boolean = ???
 
-    override def preferred(candidates: Seq[Lang]): Messages = ???
-
-    override def preferred(request: RequestHeader): Messages = ???
-
-    override def preferred(request: Http.RequestHeader): Messages = ???
-
-    override def setLang(result: Result, lang: Lang): Result = ???
-
-    override def clearLang(result: Result): Result = ???
-
-    override def apply(key: String, args: Any*)(implicit lang: Lang): String = "dummy response"
-
-    override def apply(keys: Seq[String], args: Any*)(implicit lang: Lang): String = ???
-
-    override def translate(key: String, args: Seq[Any])(implicit lang: Lang): Option[String] = ???
-
-    override def isDefinedAt(key: String)(implicit lang: Lang): Boolean = ???
-
-    override def langCookieName: String = ???
-
-    override def langCookieSecure: Boolean = ???
-
-    override def langCookieHttpOnly: Boolean = ???
-  }
 
   before {
     testLogger.errorList.clear()
@@ -96,7 +98,7 @@ class EmailServiceSpec extends UnitSpec with MocksWithCache with BeforeAndAfter 
       mockEmailConnector,
       mockInvitationRepository,
       "14 Days",
-      mockMessagesApi) {
+      mockMessagesApi)(langs) {
       override def getLogger: LoggerLike = testLogger
     }
 
@@ -354,17 +356,17 @@ object LoggerLikeStub extends LoggerLike with UnitSpec {
   val warnWithErrorList: ListBuffer[(String, Throwable)] = ListBuffer.empty
   val warnList: ListBuffer[String] = ListBuffer.empty
 
-  override def error(message: => String, error: => Throwable): Unit = {
+  def error(message: => String, error: => Throwable): Unit = {
     errorList += ((message, error))
     ()
   }
 
-  override def warn(message: => String, error: => Throwable): Unit = {
+  def warn(message: => String, error: => Throwable): Unit = {
     warnWithErrorList += ((message, error))
     ()
   }
 
-  override def warn(message: => String): Unit = {
+  def warn(message: => String): Unit = {
     warnList += message
     ()
   }

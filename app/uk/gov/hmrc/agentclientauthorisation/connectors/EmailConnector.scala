@@ -24,6 +24,7 @@ import javax.inject.{Inject, Named}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,7 +33,7 @@ trait EmailConnector {
   def sendEmail(emailInformation: EmailInformation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit]
 }
 
-class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: HttpPost, metrics: Metrics)
+class EmailConnectorImpl @Inject()(@Named("email-baseUrl") baseUrl: URL, http: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with EmailConnector {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry

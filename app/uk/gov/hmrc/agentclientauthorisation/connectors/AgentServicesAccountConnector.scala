@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmail, AgencyEmailNotFo
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, NotFoundException}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -54,7 +55,7 @@ trait AgentServicesAccountConnector {
 @Singleton
 class AgentServicesAccountConnectorImpl @Inject()(
   @Named("agent-services-account-baseUrl") baseUrl: URL,
-  http: HttpGet,
+  http: HttpClient,
   metrics: Metrics)
     extends HttpAPIMonitor with AgentServicesAccountConnector {
 

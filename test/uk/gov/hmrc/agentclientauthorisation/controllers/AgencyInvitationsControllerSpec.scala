@@ -24,11 +24,11 @@ import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json._
-import play.api.mvc.{AnyContent, Request}
+import play.api.mvc.{AnyContent, ControllerComponents, Request}
 import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
@@ -37,15 +37,16 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
+import play.api.test.Helpers.stubControllerComponents
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgencyInvitationsControllerSpec
-    extends AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation
-    with TestData {
+    extends MocksWithCache with AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach
+    with TransitionInvitation with TestData {
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
@@ -53,12 +54,12 @@ class AgencyInvitationsControllerSpec
   val agentServicesaccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
-  val authConnector: AuthActions = resettingMock[AuthActions]
+  val authActions: AuthActions = resettingMock[AuthActions]
+  val cc: ControllerComponents = stubControllerComponents()
   val metrics: Metrics = resettingMock[Metrics]
-  val microserviceAuthConnector: MicroserviceAuthConnector = resettingMock[MicroserviceAuthConnector]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockDesConnector = resettingMock[DesConnector]
-  val agentCacheProvider = resettingMock[AgentCacheProvider]
+  override val mockDesConnector = resettingMock[DesConnector]
+  override val agentCacheProvider = resettingMock[AgentCacheProvider]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
@@ -74,11 +75,10 @@ class AgencyInvitationsControllerSpec
       kfcService,
       multiInvitationsService,
       mockDesConnector,
+      mockPlayAuthConnector,
       agentServicesaccountConnector,
       agentCacheProvider
-    )(metrics, microserviceAuthConnector, ecp) {
-      override val authConnector: PlayAuthConnector = mockPlayAuthConnector
-    }
+    )(metrics, cc, ecp) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(

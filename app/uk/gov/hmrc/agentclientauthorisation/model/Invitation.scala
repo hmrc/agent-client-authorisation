@@ -27,7 +27,6 @@ import scala.language.existentials
 import play.api.libs.json.JodaWrites._
 import play.api.libs.json.JodaReads._
 
-
 sealed trait InvitationStatus {
 
   def toEither: Either[String, InvitationStatus] = this match {

@@ -21,7 +21,6 @@ import com.google.inject.{AbstractModule, TypeLiteral}
 import javax.inject.Provider
 import org.slf4j.MDC
 import play.api.{Configuration, Environment, Logger}
-import uk.gov.hmrc.agentclientauthorisation.connectors.MicroserviceAuthConnector
 import uk.gov.hmrc.agentclientauthorisation.repository._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -29,8 +28,7 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
-
-class MicroserviceModule(val environment: Environment, val configuration: Configuration, servicesConfig: ServicesConfig)
+class MicroserviceModule(val environment: Environment, val configuration: Configuration)
     extends AbstractModule {
 
   val runModeConfiguration: Configuration = configuration
@@ -50,7 +48,6 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
     bind(classOf[HttpGet]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPut]).to(classOf[DefaultHttpClient])
     bind(classOf[HttpPost]).to(classOf[DefaultHttpClient])
-    bind(classOf[AuthConnector]).to(classOf[MicroserviceAuthConnector])
     bind(classOf[AgentCacheProvider])
     bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository])
     bind(classOf[InvitationsRepository]).to(classOf[InvitationsRepositoryImpl])
@@ -153,8 +150,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
             .toProvider(new StringServiceConfigPropertyProvider(propertyName))
 
         private class StringServiceConfigPropertyProvider(propertyName: String) extends Provider[String] {
-          override lazy val get = servicesConfig.getString(
-            propertyName)
+          override lazy val get = servicesConfig.getString(propertyName)
         }
       }
 
@@ -165,8 +161,7 @@ class MicroserviceModule(val environment: Environment, val configuration: Config
           .toProvider(new IntServiceConfigPropertyProvider(propertyName))
 
       private class IntServiceConfigPropertyProvider(propertyName: String) extends Provider[Int] {
-        override lazy val get = servicesConfig.getInt(
-          propertyName)
+        override lazy val get = servicesConfig.getInt(propertyName)
       }
     }
 

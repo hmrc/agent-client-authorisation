@@ -34,7 +34,6 @@ package uk.gov.hmrc.agentclientauthorisation
 
 import play.api.Play
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.FakeApplication
 import uk.gov.hmrc.agentclientauthorisation.wiring.MonitoringKeyMatcher
 import uk.gov.hmrc.play.test.UnitSpec
 

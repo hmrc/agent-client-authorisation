@@ -23,13 +23,14 @@ import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector, MicroserviceAuthConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -44,14 +45,14 @@ class AgencyInvitationsController @Inject()(
   knownFactsCheckService: KnownFactsCheckService,
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
+  authConnector: AuthConnector,
   agentServicesAccountConnector: AgentServicesAccountConnector,
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
   cc: ControllerComponents,
-  microserviceAuthConnector: MicroserviceAuthConnector,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, microserviceAuthConnector, cc) with HalWriter with AgentInvitationValidation
+    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation
     with AgencyInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get

@@ -25,7 +25,6 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import play.api.libs.json.JodaWrites._
 import play.api.libs.json.JodaReads._
 
-
 object InvitationRecordFormat {
 
   import play.api.libs.functional.syntax._

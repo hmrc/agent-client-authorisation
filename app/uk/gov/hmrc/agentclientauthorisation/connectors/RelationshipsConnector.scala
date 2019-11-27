@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class RelationshipsConnector @Inject()(
   @Named("relationships-baseUrl") baseUrl: URL,
   @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
-  http: HttpPut with HttpGet,
+  http: HttpClient,
   metrics: Metrics)
     extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry

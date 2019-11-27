@@ -28,6 +28,7 @@ import play.api.libs.json.{JsObject, JsPath, Reads}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -71,7 +72,7 @@ trait CitizenDetailsConnector {
 @Singleton
 class CitizenDetailsConnectorImpl @Inject()(
   @Named("citizen-details-baseUrl") baseUrl: URL,
-  http: HttpGet with HttpDelete,
+  http: HttpClient,
   metrics: Metrics)
     extends HttpAPIMonitor with CitizenDetailsConnector {
 
