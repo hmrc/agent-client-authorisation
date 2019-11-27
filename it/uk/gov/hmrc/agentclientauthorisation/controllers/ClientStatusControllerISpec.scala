@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, st
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
-import uk.gov.hmrc.agentclientauthorisation.support.{Http, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Http, MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ClientStatusControllerISpec extends UnitSpec with MongoAppAndStubs {
+class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAppAndStubs {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
   lazy val http = app.injector.instanceOf(classOf[Http])

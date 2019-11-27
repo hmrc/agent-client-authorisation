@@ -41,6 +41,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, Enrolments, PlayAuth
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
 import play.api.test.Helpers.stubControllerComponents
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -57,6 +58,7 @@ class AgencyInvitationsControllerSpec
   val authActions: AuthActions = resettingMock[AuthActions]
   val cc: ControllerComponents = stubControllerComponents()
   val metrics: Metrics = resettingMock[Metrics]
+  val appConfig: AppConfig = resettingMock[AppConfig]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   override val mockDesConnector = resettingMock[DesConnector]
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
@@ -69,7 +71,7 @@ class AgencyInvitationsControllerSpec
 
   val controller =
     new AgencyInvitationsController(
-      "http://localhost:9448",
+      appConfig,
       postcodeService,
       invitationsService,
       kfcService,

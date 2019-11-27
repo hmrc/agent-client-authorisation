@@ -23,6 +23,7 @@ import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
@@ -39,7 +40,7 @@ import scala.util.{Failure, Success, Try}
 
 @Singleton
 class AgencyInvitationsController @Inject()(
-  @Named("agent-invitations-frontend.external-url") invitationsFrontendBaseUrl: String,
+  appConfig: AppConfig,
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
   knownFactsCheckService: KnownFactsCheckService,
@@ -134,12 +135,12 @@ class AgencyInvitationsController @Inject()(
 
       case service if service == MtdIt || service == PersonalIncomeRecord =>
         agentLinkService.getInvitationUrl(invitation.arn, "personal").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
+          Some(invitation.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}")))
         }
 
       case service if service == Vat || service == Trust =>
         agentLinkService.getInvitationUrl(invitation.arn, "business").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
+          Some(invitation.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
         }
 
       case _ => Future.successful(None)
@@ -168,7 +169,8 @@ class AgencyInvitationsController @Inject()(
                                 (invites.clientType, invites.status) match {
                                   case (Some(ct), Pending) =>
                                     agentLinkService.getInvitationUrl(invites.arn, ct).map { link =>
-                                      invites.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link"))
+                                      invites.copy(clientActionUrl =
+                                        Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
                                     }
                                   case _ => Future.successful(invites)
                                 }
@@ -199,7 +201,9 @@ class AgencyInvitationsController @Inject()(
                                    (invite.clientType, invite.status) match {
                                      case (Some(clientType), Pending) =>
                                        agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
-                                         Some(invite.copy(clientActionUrl = Some(s"$invitationsFrontendBaseUrl$link")))
+                                         Some(
+                                           invite.copy(clientActionUrl =
+                                             Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
                                        }
                                      case _ => Future.successful(Some(invite))
                                    }

@@ -16,19 +16,18 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.net.URL
-
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsPath, Reads}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmail, AgencyEmailNotFound, CustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,17 +52,16 @@ trait AgentServicesAccountConnector {
 }
 
 @Singleton
-class AgentServicesAccountConnectorImpl @Inject()(
-  @Named("agent-services-account-baseUrl") baseUrl: URL,
-  http: HttpClient,
-  metrics: Metrics)
+class AgentServicesAccountConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with AgentServicesAccountConnector {
+
+  private val baseUrl: String = appConfig.agentServicesAccountBaseUrl
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getAgencyNameAgent(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor(s"ConsumedAPI-Get-AgencyName-GET") {
-      http.GET[AgencyName](new URL(baseUrl, s"/agent-services-account/agent/agency-name").toString).map(_.name)
+      http.GET[AgencyName](s"$baseUrl/agent-services-account/agent/agency-name").map(_.name)
     } recoverWith {
       case _: NotFoundException => Future failed AgencyNameNotFound()
     }
@@ -71,7 +69,7 @@ class AgentServicesAccountConnectorImpl @Inject()(
   def getAgencyNameViaClient(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-Get-AgencyNameByArn-GET") {
       http
-        .GET[AgencyName](new URL(baseUrl, s"/agent-services-account/client/agency-name/${arn.value}").toString)
+        .GET[AgencyName](s"$baseUrl/agent-services-account/client/agency-name/${arn.value}")
         .map(_.name)
     } recoverWith {
       case _: NotFoundException => Future.failed(AgencyNameNotFound())
@@ -80,7 +78,7 @@ class AgentServicesAccountConnectorImpl @Inject()(
   def getAgencyEmailBy(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
     monitor("ConsumedAPI-Get-AgencyEmailByArn-GET") {
       http
-        .GET[AgencyEmail](new URL(baseUrl, s"/agent-services-account/client/agency-email/${arn.value}").toString)
+        .GET[AgencyEmail](s"$baseUrl/agent-services-account/client/agency-email/${arn.value}")
         .map(_.email)
     } recoverWith {
       case _: NotFoundException => {
@@ -91,7 +89,7 @@ class AgentServicesAccountConnectorImpl @Inject()(
   def getTradingName(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor(s"ConsumedAPI-Get-TradingName-POST") {
       http
-        .GET[JsObject](new URL(baseUrl, s"/agent-services-account/client/trading-name/nino/${nino.value}").toString)
+        .GET[JsObject](s"$baseUrl/agent-services-account/client/trading-name/nino/${nino.value}")
         .map(obj => (obj \ "tradingName").asOpt[String])
     }.recover {
       case _: NotFoundException => None
@@ -100,8 +98,7 @@ class AgentServicesAccountConnectorImpl @Inject()(
   def getCustomerDetails(vrn: Vrn)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[CustomerDetails] =
     monitor(s"ConsumedAPI-Get-VatOrgName-POST") {
       http
-        .GET[CustomerDetails](
-          new URL(baseUrl, s"/agent-services-account/client/vat-customer-details/vrn/${vrn.value}").toString)
+        .GET[CustomerDetails](s"$baseUrl/agent-services-account/client/vat-customer-details/vrn/${vrn.value}")
     }.recover {
       case _: NotFoundException => CustomerDetails(None, None, None)
     }
@@ -109,7 +106,7 @@ class AgentServicesAccountConnectorImpl @Inject()(
   def getNinoForMtdItId(mtdItId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] =
     monitor(s"ConsumedAPI-Get-NinoForMtdItId-GET") {
       http
-        .GET[JsObject](new URL(baseUrl, s"/agent-services-account/client/mtdItId/${mtdItId.value}").toString)
+        .GET[JsObject](s"$baseUrl/agent-services-account/client/mtdItId/${mtdItId.value}")
         .map(obj => (obj \ "nino").asOpt[Nino])
     }.recover {
       case e => {

@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.net.URL
-
-import javax.inject._
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+import javax.inject._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http._
@@ -33,15 +32,14 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RelationshipsConnector @Inject()(
-  @Named("relationships-baseUrl") baseUrl: URL,
-  @Named("afi-relationships-baseUrl") afiBaseUrl: URL,
-  http: HttpClient,
-  metrics: Metrics)
+class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+
+  private val baseUrl: String = appConfig.relationshipsBaseUrl
+  private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
@@ -87,38 +85,26 @@ class RelationshipsConnector @Inject()(
       }
     }
 
-  private def trustRelationshipUrl(invitation: Invitation): URL =
-    new URL(
-      baseUrl,
-      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
-        invitation.clientId.value)}"
-    )
+  private def trustRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
+      invitation.clientId.value)}"
 
-  private def mtdItRelationshipUrl(invitation: Invitation): URL =
-    new URL(
-      baseUrl,
-      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(
-        invitation.clientId.value)}"
-    )
+  private def mtdItRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(
+      invitation.clientId.value)}"
 
-  private def mtdVatRelationshipUrl(invitation: Invitation): URL =
-    new URL(
-      baseUrl,
-      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(
-        invitation.clientId.value)}"
-    )
+  private def mtdVatRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(
+      invitation.clientId.value)}"
 
-  private def cgtRelationshipUrl(invitation: Invitation): URL =
-    new URL(
-      baseUrl,
-      s"/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(
-        invitation.clientId.value)}"
-    )
+  private def cgtRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(
+      invitation.clientId.value)}"
 
-  private def afiRelationshipUrl(invitation: Invitation): URL = {
+  private def afiRelationshipUrl(invitation: Invitation): String = {
     val arn = encodePathSegment(invitation.arn.value)
     val service = encodePathSegment(invitation.service.id)
     val clientId = encodePathSegment(invitation.clientId.value)
-    new URL(afiBaseUrl, s"/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId")
+    s"$afiBaseUrl/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId"
   }
 }
