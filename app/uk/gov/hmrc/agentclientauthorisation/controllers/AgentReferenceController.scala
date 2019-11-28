@@ -20,7 +20,7 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Provider}
 import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
@@ -47,10 +47,11 @@ class AgentReferenceController @Inject()(
   invitationsService: InvitationsService)(
   implicit
   metrics: Metrics,
+  cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, authConnector) {
+    extends AuthActions(metrics, authConnector, cc) {
 
   implicit val ec: ExecutionContext = ecp.get
 

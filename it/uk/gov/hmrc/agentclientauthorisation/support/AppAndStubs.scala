@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
 import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
@@ -29,7 +30,7 @@ import uk.gov.hmrc.play.it.Port
 import scala.concurrent.ExecutionContext
 
 trait AppAndStubs
-    extends StartAndStopWireMock with OneServerPerSuite with DataStreamStubs with MetricsTestSupport
+    extends StartAndStopWireMock with GuiceOneServerPerSuite with DataStreamStubs with MetricsTestSupport
     with Matchers {
   me: Suite with TestSuite =>
 
@@ -71,9 +72,8 @@ trait AppAndStubs
       "agent.cache.size"                                     -> 1,
       "agent.cache.expires"                                  -> "1 millis",
       "invitation.expiryDuration"                            -> "14_days",
-      "invitation-status-update-scheduler.enabled"           -> false,
-      "invitation-status-update-scheduler.interval"          -> 5,
-      "mongodb-migration.enabled"                            -> false
+      "invitation-status-update-scheduler.enabled"           -> true,
+      "invitation-status-update-scheduler.interval"          -> 5
     )
 
   override def commonStubs(): Unit = {

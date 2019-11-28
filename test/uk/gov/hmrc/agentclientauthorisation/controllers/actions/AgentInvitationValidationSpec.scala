@@ -17,12 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AgentInvitationValidationSpec
     extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {

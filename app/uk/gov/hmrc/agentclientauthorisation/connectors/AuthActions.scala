@@ -37,7 +37,7 @@ import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -47,8 +47,8 @@ case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
 @Singleton
-class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector)
-    extends HttpAPIMonitor with AuthorisedFunctions with BaseController {
+class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, cc: ControllerComponents)
+    extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 

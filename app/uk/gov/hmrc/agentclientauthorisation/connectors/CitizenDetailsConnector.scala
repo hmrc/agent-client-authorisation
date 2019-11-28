@@ -26,8 +26,10 @@ import org.joda.time.LocalDate
 import org.joda.time.format._
 import play.api.libs.json.{JsObject, JsPath, Reads}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -69,18 +71,17 @@ trait CitizenDetailsConnector {
 }
 
 @Singleton
-class CitizenDetailsConnectorImpl @Inject()(
-  @Named("citizen-details-baseUrl") baseUrl: URL,
-  http: HttpGet with HttpDelete,
-  metrics: Metrics)
+class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with CitizenDetailsConnector {
+
+  private val baseUrl = appConfig.citizenDetailsBaseUrl
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getCitizenDateOfBirth(
     nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
-      val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
+      val url = s"$baseUrl/citizen-details/nino/${nino.value}"
       http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
         case _ => None
       }
@@ -88,7 +89,7 @@ class CitizenDetailsConnectorImpl @Inject()(
 
   def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
-      val url = new URL(baseUrl, s"/citizen-details/nino/${nino.value}")
+      val url = s"$baseUrl/citizen-details/nino/${nino.value}"
       http.GET[Citizen](url.toString).recover {
         case _: NotFoundException => Citizen(None, None, None)
       }

@@ -137,13 +137,14 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+
       json.invitations.length shouldBe 5
     }
 
     "return Invitations for Agent with Services and CreatedBefore Query Params" in new TestSetup {
 
       val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
-      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
+      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now(DateTimeZone.UTC).minusDays(30)))(request)
 
       status(response) shouldBe 200
 

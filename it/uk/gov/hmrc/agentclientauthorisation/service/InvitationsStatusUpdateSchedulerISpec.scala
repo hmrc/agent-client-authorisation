@@ -3,9 +3,10 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import akka.actor.ActorSystem
 import org.joda.time.DateTime
 import org.scalatest.time.{Seconds, Span}
-import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl, ScheduleRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.domain.Nino
@@ -16,7 +17,7 @@ import scala.concurrent.Future
 import scala.util.Random
 
 class InvitationsStatusUpdateSchedulerISpec
-    extends UnitSpec with MongoAppAndStubs with MongoApp with OneServerPerSuite {
+    extends UnitSpec with MongoAppAndStubs with MongoApp with GuiceOneServerPerSuite {
 
   private lazy val invitationsRepo =
     app.injector.instanceOf[InvitationsRepositoryImpl]
@@ -25,8 +26,7 @@ class InvitationsStatusUpdateSchedulerISpec
     app.injector.instanceOf[ScheduleRepository],
     app.injector.instanceOf[InvitationsService],
     app.injector.instanceOf[ActorSystem],
-    1,
-    true
+    app.injector.instanceOf[AppConfig]
   )
 
   override implicit val patienceConfig =

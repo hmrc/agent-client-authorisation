@@ -22,6 +22,7 @@ import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.{any, eq => eqs}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
+import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
@@ -36,6 +37,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.http.HeaderCarrier
+import play.api.test.Helpers.stubControllerComponents
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -47,6 +49,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val metrics: Metrics = resettingMock[Metrics]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   val mockAgentServicesAccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
+  val cc: ControllerComponents = stubControllerComponents()
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
@@ -59,6 +62,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val agentReferenceController =
     new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService)(
       metrics,
+      cc,
       mockPlayAuthConnector,
       auditService,
       ecp)

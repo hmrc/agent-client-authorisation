@@ -1,6 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 import com.kenshoo.play.metrics.Metrics
-import play.api.mvc.{Action, AnyContent, AnyContentAsEmpty, Result}
+import play.api.mvc.{Action, AnyContent, AnyContentAsEmpty, ControllerComponents, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -14,8 +14,9 @@ class AuthActionsISpec extends BaseISpec {
 
   val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
   val metrics: Metrics = app.injector.instanceOf[Metrics]
+  val cc: ControllerComponents = app.injector.instanceOf[ControllerComponents]
 
-  object TestController extends AuthActions(metrics, authConnector) {
+  object TestController extends AuthActions(metrics, authConnector, cc) {
 
     implicit val hc = HeaderCarrier()
 

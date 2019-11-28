@@ -41,8 +41,7 @@ class MongoAgentReferenceRepositoryISpec
     new GuiceApplicationBuilder()
       .configure(mongoConfiguration)
       .configure(
-        "invitation-status-update-scheduler.enabled" -> false,
-        "mongodb-migration.enabled"                  -> false
+        "invitation-status-update-scheduler.enabled" -> false
       )
 
   lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]

@@ -22,6 +22,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import javax.inject.{Inject, Named, Singleton}
 import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
@@ -34,9 +35,11 @@ class InvitationsStatusUpdateScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
   actorSystem: ActorSystem,
-  @Named("invitation-status-update-scheduler.interval") interval: Int,
-  @Named("invitation-status-update-scheduler.enabled") enabled: Boolean
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
+
+  val interval = appConfig.invitationUpdateStatusInterval
+  val enabled = appConfig.invitationStatusUpdateEnabled
 
   if (enabled) {
     Logger(getClass).info("invitation status update scheduler is enabled.")

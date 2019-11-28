@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import java.util.UUID
 
+import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -28,8 +29,8 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -40,6 +41,7 @@ object ScheduleRecord extends ReactiveMongoFormats {
   implicit val formats: Format[ScheduleRecord] = format[ScheduleRecord]
 }
 
+@ImplementedBy(classOf[MongoScheduleRepository])
 trait ScheduleRepository {
   def read(implicit ec: ExecutionContext): Future[ScheduleRecord]
   def write(nextUid: String, nextRunAt: DateTime)(implicit ec: ExecutionContext): Future[Unit]

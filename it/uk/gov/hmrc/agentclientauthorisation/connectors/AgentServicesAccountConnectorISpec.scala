@@ -1,16 +1,24 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
+import com.kenshoo.play.metrics.Metrics
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, CustomerDetails, Individual}
 import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, AppAndStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AgentServicesAccountConnectorISpec extends UnitSpec with AppAndStubs with AgentServicesAccountStub {
 
-  val connector = app.injector.instanceOf[AgentServicesAccountConnector]
+
+  private lazy val metrics = app.injector.instanceOf[Metrics]
+  private lazy val http: HttpClient = app.injector.instanceOf[HttpClient]
+  private lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+
+  val connector: AgentServicesAccountConnector = new AgentServicesAccountConnectorImpl(appConfig, http, metrics)
 
   val arn = Arn("TARN0000001")
   val nino = Nino("AB123456A")

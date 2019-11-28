@@ -29,11 +29,13 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Reads, _}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,27 +81,26 @@ trait DesConnector {
 }
 
 @Singleton
-class DesConnectorImpl @Inject()(
-  @Named("des-baseUrl") baseUrl: URL,
-  @Named("des.authorizationToken") authorizationToken: String,
-  @Named("des.environment") environment: String,
-  httpGet: HttpGet,
-  metrics: Metrics)
+class DesConnectorImpl @Inject()(appConfig: AppConfig, httpGet: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with DesConnector {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val rawHttpReads = new RawHttpReads
 
+  private val environment: String = appConfig.desEnvironment
+  private val authorizationToken: String = appConfig.desAuthToken
+  private val baseUrl: String = appConfig.desBaseUrl
+
   def getBusinessDetails(
     nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
     getWithDesHeaders[BusinessDetails](
       "getRegistrationBusinessDetailsByNino",
-      new URL(baseUrl, s"/registration/business-details/nino/${encodePathSegment(nino.value)}").toString)
+      s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}")
 
   def getVatCustomerInformation(
     vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerInfo]] = {
-    val url = new URL(baseUrl, s"/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
-    getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url.toString)
+    val url = s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information"
+    getWithDesHeaders[VatCustomerInfo]("GetVatCustomerInformation", url)
   }
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
@@ -109,7 +110,7 @@ class DesConnectorImpl @Inject()(
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
     )
 
-    val url = new URL(baseUrl, s"/trusts/agent-known-fact-check/${utr.value}").toString
+    val url = s"$baseUrl/trusts/agent-known-fact-check/${utr.value}"
 
     httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
       response.status match {
@@ -129,7 +130,7 @@ class DesConnectorImpl @Inject()(
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
     )
 
-    val url = new URL(baseUrl, s"/subscriptions/CGT/ZCGT/${cgtRef.value}").toString
+    val url = s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}"
 
     httpGet.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
       val result = response.status match {

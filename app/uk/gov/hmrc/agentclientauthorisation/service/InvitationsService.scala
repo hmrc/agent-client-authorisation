@@ -24,6 +24,7 @@ import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
@@ -48,13 +49,13 @@ class InvitationsService @Inject()(
   desConnector: DesConnector,
   auditService: AuditService,
   emailService: EmailService,
-  @Named("invitation.expiryDuration") invitationExpiryDurationValue: String,
+  appConfig: AppConfig,
   metrics: Metrics)
     extends Monitor {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  private val invitationExpiryDuration = Duration(invitationExpiryDurationValue)
+  private val invitationExpiryDuration = appConfig.invitationExpiringDuration
 
   def translateToMtdItId(clientId: String, clientIdType: String)(
     implicit hc: HeaderCarrier,

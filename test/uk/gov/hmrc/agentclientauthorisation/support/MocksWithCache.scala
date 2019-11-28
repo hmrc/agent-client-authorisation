@@ -22,12 +22,14 @@ import org.scalamock.scalatest.MockFactory
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 trait MocksWithCache extends MockFactory {
   val mockConfig: Config = mock[Config]
   val mockConfiguration = new Configuration(mockConfig)
   val mockEnv: Environment = mock[Environment]
   implicit val mockMetrics: Metrics = mock[Metrics]
+  val mockServicesConfig: ServicesConfig = mock[ServicesConfig]
 
   val mockAgentServicesAccountConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
   val mockCitizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
@@ -39,6 +41,6 @@ trait MocksWithCache extends MockFactory {
   (mockConfig.getString(_: String)).expects("agent.cache.expires").returns("1 hour")
   (mockConfig.getBoolean(_: String)).expects("agent.cache.enabled").returns(true)
 
-  val agentCacheProvider: AgentCacheProvider = new AgentCacheProvider(mockEnv, mockConfiguration)
+  val agentCacheProvider: AgentCacheProvider = new AgentCacheProvider(mockEnv, mockConfiguration, mockServicesConfig)
 
 }
