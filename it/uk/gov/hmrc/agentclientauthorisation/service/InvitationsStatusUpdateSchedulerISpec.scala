@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.joda.time.DateTime
 import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs}
@@ -25,8 +26,7 @@ class InvitationsStatusUpdateSchedulerISpec
     app.injector.instanceOf[ScheduleRepository],
     app.injector.instanceOf[InvitationsService],
     app.injector.instanceOf[ActorSystem],
-    1,
-    true
+    app.injector.instanceOf[AppConfig]
   )
 
   override implicit val patienceConfig =

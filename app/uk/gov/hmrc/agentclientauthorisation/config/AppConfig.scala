@@ -59,6 +59,9 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val mongoMigrationEnabled: Boolean = servicesConfig.getBoolean("mongodb-migration.enabled")
 
+  val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")
+  val invitationStatusUpdateEnabled: Boolean = servicesConfig.getBoolean("invitation-status-update-scheduler.enabled")
+
   val invitationExpiringDuration: Duration =
     servicesConfig.getConfDuration("invitation.expiryDuration", Duration(14.00, TimeUnit.DAYS))
 

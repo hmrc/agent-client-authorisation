@@ -16,36 +16,55 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import javax.inject._
+import javax.inject.{Inject, Singleton}
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.functional.syntax._
+import play.api.libs.json.JodaWrites._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json.ImplicitBSONHandlers
+import reactivemongo.bson.BSONObjectID
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{AtomicUpdate, ReactiveRepository}
-import ImplicitBSONHandlers._
-import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
 
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Migration(id: String, started: DateTime, finished: Option[DateTime] = None)
-
 object Migration {
-  implicit val formats: OFormat[Migration] = Json.format[Migration]
+
+  val dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+  val jodaDateReads = Reads[DateTime](js =>
+    js.validate[String].map[DateTime](dtString => DateTime.parse(dtString, DateTimeFormat.forPattern(dateFormat))))
+
+  val jodaDateWrites: Writes[DateTime] = new Writes[DateTime] {
+    def writes(d: DateTime): JsValue = JsString(d.toString())
+  }
+
+  val migrationReads: Reads[Migration] = (
+    (JsPath \ "id").read[String] and
+      (JsPath \ "started").read[DateTime](jodaDateReads) and
+      (JsPath \ "finished").readNullable[DateTime](jodaDateReads)
+  )(Migration.apply _)
+
+  val migrationWrites: Writes[Migration] = (
+    (JsPath \ "id").write[String] and
+      (JsPath \ "started").write[DateTime](jodaDateWrites) and
+      (JsPath \ "finished").writeNullable[DateTime](jodaDateWrites)
+  )(unlift(Migration.unapply))
+
+  implicit val migrationFormats: Format[Migration] = Format(migrationReads, migrationWrites)
 }
 
+case class Migration(id: String, started: DateTime, finished: Option[DateTime] = None)
 @Singleton
-class MigrationsRepository @Inject()(mongo: ReactiveMongoComponent)
+class MigrationsRepository @Inject()(implicit mongo: ReactiveMongoComponent)
     extends ReactiveRepository[Migration, BSONObjectID](
       "migrations",
       mongo.mongoConnector.db,
-      Migration.formats,
+      implicitly[Format[Migration]],
       ReactiveMongoFormats.objectIdFormats) with StrictlyEnsureIndexes[Migration, BSONObjectID] {
 
   override def indexes: Seq[Index] =
@@ -56,10 +75,11 @@ class MigrationsRepository @Inject()(mongo: ReactiveMongoComponent)
   def tryLock(id: String)(implicit ec: ExecutionContext): Future[Unit] =
     insert(Migration(id, DateTime.now(DateTimeZone.UTC))).map(_ => ())
 
-  def markDone(id: String)(implicit ec: ExecutionContext): Future[Option[Future[FindAndModifyCommand.FindAndModifyResult]]] =
-    find("id" -> id).map(_.headOption.map(migration =>
-      collection.findAndUpdate(BSONDocument("id" -> id), bsonJson(migration.copy(finished = Some(DateTime.now(DateTimeZone.UTC)))))))
-
-  private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
-    BSONDocumentFormat.reads(writes.writes(entity)).get
+  def markDone(id: String)(implicit ec: ExecutionContext) = {
+    val selector = Json.obj("id" -> id)
+    val update = Json.obj("$set" -> Json.obj("finished" -> Some(DateTime.now(DateTimeZone.UTC))))
+    collection
+      .update(ordered = false)
+      .one(selector, update)
+  }
 }

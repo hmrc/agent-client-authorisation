@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+import com.google.inject.name.Names
 import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentCacheProvider, InvitationsStatusUpdateScheduler, RepositoryMigrationService}
 
+import scala.collection.mutable.ListBuffer
 /*
  * Copyright 2019 HM Revenue & Customs
  *
@@ -39,21 +41,25 @@ class MicroserviceModule extends Module {
 
   def bindings(environment: Environment, configuration: Configuration) = {
 
-    val optionalBindings: Seq[Option[Binding[_]]] = Seq(
-      if (configuration.underlying.getBoolean("mongodb-migration.enabled")) {
-        Some((bind(classOf[RepositoryMigrationService]).toSelf.eagerly()))
-      } else None,
-      if (configuration.underlying.getBoolean("invitation-status-update-scheduler.enabled")) {
-        Some(bind(classOf[InvitationsStatusUpdateScheduler]).toSelf.eagerly())
-      } else None
-    )
+    val optionalBindings: Seq[Binding[_]] = {
 
+      val list = ListBuffer.empty[Binding[_]]
+      if (configuration.underlying.getBoolean("mongodb-migration.enabled")) {
+        list.append(bind(classOf[RepositoryMigrationService]).toSelf.eagerly())
+      }
+
+      if (configuration.underlying.getBoolean("invitation-status-update-scheduler.enabled")) {
+        list.append(bind(classOf[InvitationsStatusUpdateScheduler]).toSelf.eagerly())
+      }
+
+      list
+    }
     Seq(
       bind(classOf[RepositoryMigrationService]).toSelf.eagerly(),
       bind(classOf[InvitationsStatusUpdateScheduler]).toSelf.eagerly(),
       bind(classOf[ScheduleRepository]).to(classOf[MongoScheduleRepository]),
       bind(classOf[AgentCacheProvider]).toSelf.eagerly(),
       bind(classOf[InvitationsRepository]).to(classOf[InvitationsRepositoryImpl])
-    ) ++ optionalBindings.flatten
+    ) ++ optionalBindings
   }
 }

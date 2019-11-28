@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, _}
 import play.api.Logger
 import reactivemongo.core.errors.DatabaseException
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, MigrationsRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,7 +29,9 @@ import scala.util.Random
 class RepositoryMigrationService @Inject()(
   invitationsRepository: InvitationsRepository,
   migrationsRepository: MigrationsRepository,
-  @Named("mongodb-migration.enabled") enabled: Boolean)(implicit ec: ExecutionContext) {
+  appConfig: AppConfig)(implicit ec: ExecutionContext) {
+
+  private val enabled = appConfig.mongoMigrationEnabled
 
   Logger(getClass).info("Repository migration service is enabled.")
 
