@@ -44,10 +44,15 @@ object AgencyName {
 @ImplementedBy(classOf[AgentServicesAccountConnectorImpl])
 trait AgentServicesAccountConnector {
   def getAgencyNameAgent(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+
   def getAgencyNameViaClient(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+
   def getAgencyEmailBy(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String]
+
   def getTradingName(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
+
   def getCustomerDetails(vrn: Vrn)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[CustomerDetails]
+
   def getNinoForMtdItId(mtdItId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]]
 }
 

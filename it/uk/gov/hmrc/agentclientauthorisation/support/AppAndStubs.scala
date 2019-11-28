@@ -73,8 +73,7 @@ trait AppAndStubs
       "agent.cache.expires"                                  -> "1 millis",
       "invitation.expiryDuration"                            -> "14_days",
       "invitation-status-update-scheduler.enabled"           -> true,
-      "invitation-status-update-scheduler.interval"          -> 5,
-      "mongodb-migration.enabled"                            -> false
+      "invitation-status-update-scheduler.interval"          -> 5
     )
 
   override def commonStubs(): Unit = {

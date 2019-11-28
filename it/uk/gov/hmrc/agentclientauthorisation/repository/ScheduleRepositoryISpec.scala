@@ -21,8 +21,7 @@ class ScheduleRepositoryISpec
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
-        "invitation-status-update-scheduler.enabled" -> false,
-        "mongodb-migration.enabled"                  -> false
+        "invitation-status-update-scheduler.enabled" -> false
       )
       .configure(mongoConfiguration)
 

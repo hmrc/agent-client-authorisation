@@ -57,8 +57,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val oldStrideEnrolment = URLDecoder.decode(getConf("old.auth.stride.enrolment"), "utf-8")
   val newStrideEnrolment = getConf("new.auth.stride.enrolment")
 
-  val mongoMigrationEnabled: Boolean = servicesConfig.getBoolean("mongodb-migration.enabled")
-
   val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")
   val invitationStatusUpdateEnabled: Boolean = servicesConfig.getBoolean("invitation-status-update-scheduler.enabled")
 

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import com.google.inject.ImplementedBy
 import javax.inject._
 import org.joda.time.{DateTime, LocalDate}
 import play.api.Logger
@@ -37,6 +38,7 @@ import play.api.libs.json.JodaReads._
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
+@ImplementedBy(classOf[InvitationsRepositoryImpl])
 trait InvitationsRepository {
   def create(
     arn: Arn,
