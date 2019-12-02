@@ -24,7 +24,6 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.http.controllers.RestFormats
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 import scala.language.existentials
 
@@ -85,31 +84,20 @@ object InvitationStatus {
 
 case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
 
-case class ClientIdMapping(
-  id: BSONObjectID,
-  canonicalClientId: String,
-  canonicalClientIdType: String,
-  suppliedClientId: String,
-  suppliedClientIdType: String)
+object StatusChangeEvent {
+  implicit val statusChangeEventFormat = new Format[StatusChangeEvent] {
+    override def reads(json: JsValue): JsResult[StatusChangeEvent] = {
+      val time = new DateTime((json \ "time").as[Long])
+      val status = InvitationStatus((json \ "status").as[String])
+      JsSuccess(StatusChangeEvent(time, status))
+    }
 
-object ClientIdMapping {
-  implicit val dateWrites = RestFormats.dateTimeWrite
-  implicit val dateReads = RestFormats.dateTimeRead
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
-  implicit val jsonWrites = new Writes[Invitation] {
-    def writes(invitation: Invitation) =
+    override def writes(o: StatusChangeEvent): JsValue =
       Json.obj(
-        "canonicalClientId"     -> invitation.clientId.value,
-        "canonicalClientIdType" -> invitation.clientId.typeId,
-        "suppliedClientId"      -> invitation.suppliedClientId.value,
-        "suppliedClientIdType"  -> invitation.suppliedClientId.typeId,
-        "created"               -> invitation.firstEvent().time,
-        "lastUpdated"           -> invitation.mostRecentEvent().time
+        "time"   -> o.time.getMillis,
+        "status" -> o.status.toString
       )
-
   }
-
-  val mongoFormats = ReactiveMongoFormats.mongoEntity(Json.format[ClientIdMapping])
 }
 
 case class Invitation(
@@ -191,10 +179,6 @@ object Invitation {
 case class AgentInvitation(service: String, clientType: Option[String], clientIdType: String, clientId: String) {
 
   lazy val getService = Service.forId(service)
-}
-
-object StatusChangeEvent {
-  implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
 }
 
 object AgentInvitation {

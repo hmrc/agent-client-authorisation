@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.google.inject.ImplementedBy
 import javax.inject._
 import org.joda.time.{DateTime, LocalDate}
-import play.api.Logger
+import play.api.libs.json.JodaReads._
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -32,8 +32,6 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
 
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -162,7 +160,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
       JsArray(createKeys.map(key => Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key))))))
 
     val dateQuery: (String, Option[JsValue]) = InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
-      Json.obj("$gte" -> DefaultJodaLocalDateWrites.writes(date))) //TODO: pre-upgrade this was JsNumber(date.toDateTimeAtStartOfDay().getMillis))) -- backward compatibility issues?
+      Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
 
     val searchOptions: Seq[(String, JsValueWrapper)] =
       Seq(serviceQuery, dateQuery)

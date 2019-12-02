@@ -15,24 +15,19 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.repository
-import org.joda.time.LocalDate
-import play.api.libs.json.{Format, Json, Writes}
+import org.joda.time.{DateTime, LocalDate}
+import play.api.libs.json.JodaReads._
+import play.api.libs.json.JodaWrites._
+import play.api.libs.json.{Format, JsValue, Json, Writes}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.{JsPath, Reads}
 
 object InvitationRecordFormat {
-
-  import play.api.libs.functional.syntax._
-  import play.api.libs.json.{JsPath, Reads}
-
-  implicit val serviceFormat = Service.format
-  implicit val statusChangeEventFormat = Json.format[StatusChangeEvent]
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
 
   def read(
     id: BSONObjectID,
@@ -70,6 +65,8 @@ object InvitationRecordFormat {
     )
   }
 
+  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
+
   val reads: Reads[Invitation] = ((JsPath \ "id").read[BSONObjectID] and
     (JsPath \ "invitationId").read[InvitationId] and
     (JsPath \ "arn").read[Arn] and
@@ -105,7 +102,7 @@ object InvitationRecordFormat {
         "detailsForEmail"      -> invitation.detailsForEmail,
         "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
-        createdKey             -> invitation.firstEvent().time,
+        createdKey             -> invitation.firstEvent().time.getMillis,
         statusKey              -> invitation.mostRecentEvent().status.toString,
         arnClientStateKey -> Seq(
           toArnClientStateKey(
