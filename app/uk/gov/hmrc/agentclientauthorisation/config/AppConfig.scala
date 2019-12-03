@@ -29,14 +29,15 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val appName = "agent-client-authorisation"
 
-  private def getConf(key: String) = servicesConfig.getString(key)
+  private def getConf(key: String) =
+    servicesConfig.getConfString(key, throw new RuntimeException(s"config $key not found"))
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)
 
   val authBaseUrl = baseUrl("auth")
 
   val desBaseUrl = baseUrl("des")
-  val desEnvironment = getConf("microservice.services.des.environment")
-  val desAuthToken = getConf("microservice.services.des.authorization-token")
+  val desEnvironment = getConf("des.environment")
+  val desAuthToken = getConf("des.authorization-token")
 
   val serviceLocatorBaseUrl = baseUrl("service-locator")
 
@@ -52,10 +53,10 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val emailBaseUrl = baseUrl("email")
 
-  val agentInvitationsFrontendExternalUrl = getConf("microservice.services.agent-invitations-frontend.external-url")
+  val agentInvitationsFrontendExternalUrl = getConf("agent-invitations-frontend.external-url")
 
-  val oldStrideEnrolment = URLDecoder.decode(getConf("old.auth.stride.enrolment"), "utf-8")
-  val newStrideEnrolment = getConf("new.auth.stride.enrolment")
+  val oldStrideEnrolment = URLDecoder.decode(servicesConfig.getString("old.auth.stride.enrolment"), "utf-8")
+  val newStrideEnrolment = servicesConfig.getString("new.auth.stride.enrolment")
 
   val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")
   val invitationStatusUpdateEnabled: Boolean = servicesConfig.getBoolean("invitation-status-update-scheduler.enabled")
