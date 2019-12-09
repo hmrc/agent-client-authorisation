@@ -61,11 +61,10 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")
   val invitationStatusUpdateEnabled: Boolean = servicesConfig.getBoolean("invitation-status-update-scheduler.enabled")
 
-  val invitationExpiringDuration: Duration =
-    servicesConfig.getConfDuration("invitation.expiryDuration", Duration(14.00, TimeUnit.DAYS))
+  val invitationExpiringDuration: Duration = servicesConfig.getDuration("invitation.expiryDuration")
 
   val agentCacheSize = servicesConfig.getInt("agent.cache.size")
-  val agentCacheExpires = servicesConfig.getConfDuration("agent.cache.expires", Duration(1.00, TimeUnit.HOURS))
+  val agentCacheExpires = servicesConfig.getDuration("agent.cache.expires")
   val agentCacheEnabled = servicesConfig.getBoolean("agent.cache.enabled")
 
 }

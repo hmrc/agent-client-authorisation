@@ -71,7 +71,7 @@ trait AppAndStubs
       "Prod.auditing.consumer.baseUri.port"                  -> wiremockPort,
       "agent.cache.size"                                     -> 1,
       "agent.cache.expires"                                  -> "1 millis",
-      "invitation.expiryDuration"                            -> "14_days",
+      "invitation.expiryDuration"                            -> "14 days",
       "invitation-status-update-scheduler.enabled"           -> true,
       "invitation-status-update-scheduler.interval"          -> 5
     )
