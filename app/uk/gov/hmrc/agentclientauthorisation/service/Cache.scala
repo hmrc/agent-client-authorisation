@@ -22,7 +22,9 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.{CgtSubscriptionResponse, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, TrustResponse, VatCustomerDetails}
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration._
@@ -99,4 +101,30 @@ class AgentCacheProvider @Inject()(
   val cgtSubscriptionCache: Cache[CgtSubscriptionResponse] =
     if (cacheEnabled) new LocalCaffeineCache[CgtSubscriptionResponse]("cgtSubscription", cacheSize, cacheExpires)
     else new DoNotCache[CgtSubscriptionResponse]
+
+  val agencyDetailsCache: Cache[Option[AgentDetailsDesResponse]] =
+    if (cacheEnabled)
+      new LocalCaffeineCache[Option[AgentDetailsDesResponse]]("AgencyEmailFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[AgentDetailsDesResponse]]
+
+  val clientNinoCache: Cache[Option[Nino]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[Nino]]("ClientNinoFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[Nino]]
+
+  val clientMtdItIdCache: Cache[Option[MtdItId]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[MtdItId]]("ClientMtdItIdFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[MtdItId]]
+
+  val businessNameCache: Cache[Option[String]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[String]]("BusinessNameFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[String]]
+
+  val tradingNameCache: Cache[Option[String]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[String]]("TradingNameFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[String]]
+
+  val vatCustomerDetailsCache: Cache[Option[VatCustomerDetails]] =
+    if (cacheEnabled)
+      new LocalCaffeineCache[Option[VatCustomerDetails]]("VatCustomerDetailsFromDES", cacheSize, cacheExpires)
+    else new DoNotCache[Option[VatCustomerDetails]]
 }

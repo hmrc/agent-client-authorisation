@@ -17,8 +17,13 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.auth.core
+import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.domain.{Nino, SaAgentReference}
+import uk.gov.hmrc.http.SessionKeys
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -366,6 +371,78 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
     this
   }
 
+  def isLoggedIn = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody("{}")))
+    this
+  }
+
+  def authorisedAsValidClient[A](request: FakeRequest[A], mtdItId: String): FakeRequest[A] =
+    authenticatedClient(request)
+
+  def authorisedAsValidAgent[A](request: FakeRequest[A], arn: String): FakeRequest[A] =
+    authenticatedAgent(request, Enrolment("HMRC-AS-AGENT", "AgentReferenceNumber", arn))
+
+  def authenticatedClient[A](request: FakeRequest[A]): FakeRequest[A] = {
+    givenAuthorisedFor(
+      """
+        |{"authorise" : [ {
+        |"$or" : [ {
+        |"identifiers" : [ ],
+        |"state" : "Activated",
+        |"enrolment" : "HMRC-MTD-IT"
+        |}, {
+        |"identifiers" : [ ],
+        |"state" : "Activated",
+        |"enrolment" : "HMRC-NI"
+        |}, {
+        |"identifiers" : [ ],
+        |"state" : "Activated",
+        |"enrolment" : "HMRC-MTD-VAT"
+        |} ]},
+        | {"authProviders" :
+        | [ "GovernmentGateway" ]
+        | } ],
+        | "retrieve" : [ ]
+        | }""".stripMargin,
+      "{}"
+    )
+    request.withSession(SessionKeys.authToken -> "Bearer XYZ")
+  }
+
+  case class Enrolment(serviceName: String, identifierName: String, identifierValue: String)
+
+  def authenticatedAgent[A](request: FakeRequest[A], enrolment: Enrolment): FakeRequest[A] = {
+    givenAuthorisedFor(
+      s"""
+         |{
+         |  "authorise": [
+         |    { "identifiers":[], "state":"Activated", "enrolment": "${enrolment.serviceName}" },
+         |    { "authProviders": ["GovernmentGateway"] }
+         |  ],
+         |  "retrieve":["authorisedEnrolments"]
+         |}
+           """.stripMargin,
+      s"""
+         |{
+         |"authorisedEnrolments": [
+         |  { "key":"${enrolment.serviceName}", "identifiers": [
+         |    {"key":"${enrolment.identifierName}", "value": "${enrolment.identifierValue}"}
+         |  ]}
+         |]}
+          """.stripMargin
+    )
+    request.withSession(SessionKeys.authToken -> "Bearer XYZ")
+  }
+
+  def givenAuthorisedFor(payload: String, responseBody: String): StubMapping =
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .withRequestBody(equalToJson(payload, true, true))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(responseBody)))
 }
 
 trait StrideAuthStubs extends BasicUserAuthStubs{

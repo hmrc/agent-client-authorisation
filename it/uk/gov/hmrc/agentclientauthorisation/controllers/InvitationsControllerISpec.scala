@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
-import uk.gov.hmrc.agentclientauthorisation.support.{AgentServicesAccountStub, Http, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support.{DesStubs, Http, MongoAppAndStubs, Resource}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with AgentServicesAccountStub {
+class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with DesStubs {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
   lazy val http = app.injector.instanceOf(classOf[Http])
@@ -37,7 +37,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Age
     "return 200 OK with the invitation if found" in {
 
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody("{}")))
-      givenGetAgencyNameAgentStub
+      givenGetAgencyDetailsStub(Arn("TARN0000001"))
 
       val invitation = Invitation.createNew(
         Arn("TARN0000001"),

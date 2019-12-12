@@ -24,7 +24,7 @@ import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
@@ -47,7 +47,6 @@ class AgencyInvitationsController @Inject()(
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
   authConnector: AuthConnector,
-  agentServicesAccountConnector: AgentServicesAccountConnector,
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,

@@ -19,25 +19,26 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Provider
 import org.joda.time.LocalDate
-import org.mockito.ArgumentMatchers.{any, eq => eqs}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
+import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
-import uk.gov.hmrc.agentclientauthorisation.model.{InvitationInfo, InvitationStatus, Pending, Service}
+import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.auth.core.authorise.Predicate
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
-import play.api.test.Helpers.stubControllerComponents
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.agentclientauthorisation.model
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -48,16 +49,17 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val mockInvitationsService: InvitationsService = resettingMock[InvitationsService]
   val metrics: Metrics = resettingMock[Metrics]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
-  val mockAgentServicesAccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val cc: ControllerComponents = stubControllerComponents()
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
+  val mockDesConnector = resettingMock[DesConnector]
+
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
 
   val mockAgentLinkService: AgentLinkService =
-    new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, auditService, metrics)
 
   val agentReferenceController =
     new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService)(
@@ -119,9 +121,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
-      when(
-        mockAgentServicesAccountConnector.getAgencyNameViaClient(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some("anne-mari")))
+      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(
+          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("anne-mari"), Some("email")))))))
 
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))

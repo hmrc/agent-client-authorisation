@@ -25,7 +25,9 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
+import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentclientauthorisation.model.AgentDetailsDesResponse
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
@@ -38,15 +40,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
   val mockAgentReferenceRepository: MongoAgentReferenceRepository = mock[MongoAgentReferenceRepository]
-  val mockAgentServicesAccountConnector: AgentServicesAccountConnector = mock[AgentServicesAccountConnector]
   val auditService: AuditService = mock[AuditService]
   val metrics: Metrics = new Metrics {
     override def defaultRegistry: MetricRegistry = new MetricRegistry()
     override def toJson: String = ""
   }
+  val mockDesConnector: DesConnector = mock[DesConnector]
 
   val service =
-    new AgentLinkService(mockAgentReferenceRepository, mockAgentServicesAccountConnector, auditService, metrics)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, auditService, metrics)
 
   val ninoAsString: String = nino1.value
 
@@ -65,8 +67,9 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future successful Some(agentReferenceRecord))
-      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some("stan-lee")))
+      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(
+          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("stan-lee"), Some("email")))))))
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any[ExecutionContext]))
         .thenReturn(Future.successful(()))
 
@@ -79,8 +82,9 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext])).thenReturn(Future successful None)
       when(mockAgentReferenceRepository.create(any[AgentReferenceRecord])(any[ExecutionContext]))
         .thenReturn(Future successful 1)
-      when(mockAgentServicesAccountConnector.getAgencyNameAgent(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some("stan-lee")))
+      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(
+          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("stan-lee"), Some("email")))))))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 

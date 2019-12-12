@@ -78,7 +78,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     testClients.foreach(client => await(createInvitation(arn, client)))
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
-    givenGetAgencyNameAgentStub
+    givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
   }
 
   "GET /agencies/:arn/invitations/sent" should {
@@ -267,7 +267,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     s"return 200 get Invitation for ${testClient.service}" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+      givenGetAgencyDetailsStub(arn, Some("my-agency"), Some("email"))
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
@@ -294,7 +294,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     s"return 200 get invitation Accepted for ${testClient.service} for no clientType and Skip Add ClientActionUrl" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      givenGetAgencyNameAgentStub
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
       val invitation: Invitation = await(createInvitation(arn, testClient.copy[T](clientType = None)))
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")

@@ -47,8 +47,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val citizenDetailsBaseUrl = baseUrl("citizen-details")
 
-  val agentServicesAccountBaseUrl = baseUrl("agent-services-account")
-
   val niExemptionRegistrationBaseUrl = baseUrl("ni-exemption-registration")
 
   val emailBaseUrl = baseUrl("email")
