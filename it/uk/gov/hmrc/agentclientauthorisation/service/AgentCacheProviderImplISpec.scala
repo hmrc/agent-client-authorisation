@@ -43,7 +43,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
     }
   }
 
-  "AgentCacheProvider.agencyNameCache" should {
+  "AgentCacheProvider.agencyDetailsCache" should {
     "work as expected" in {
 
       givenAuditConnector()

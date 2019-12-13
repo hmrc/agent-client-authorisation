@@ -104,7 +104,7 @@ class AgentCacheProvider @Inject()(
 
   val agencyDetailsCache: Cache[Option[AgentDetailsDesResponse]] =
     if (cacheEnabled)
-      new LocalCaffeineCache[Option[AgentDetailsDesResponse]]("AgencyEmailFromDES", cacheSize, cacheExpires)
+      new LocalCaffeineCache[Option[AgentDetailsDesResponse]]("AgencyDetailsFromDES", cacheSize, cacheExpires)
     else new DoNotCache[Option[AgentDetailsDesResponse]]
 
   val clientNinoCache: Cache[Option[Nino]] =

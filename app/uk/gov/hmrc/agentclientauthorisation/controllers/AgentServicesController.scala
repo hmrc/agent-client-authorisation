@@ -53,17 +53,13 @@ class AgentServicesController @Inject()(
 
   def getAgencyNameBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     if (Arn.isValid(arn.value)) {
-      withBasicAuth {
-        getAgencyName(arn)
-      }
+      getAgencyName(arn)
     } else errorResponse(BAD_REQUEST, "Invalid Arn")
   }
 
   def getAgencyEmailBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     if (Arn.isValid(arn.value)) {
-      withBasicAuth {
-        getAgencyEmail(arn)
-      }
+      getAgencyEmail(arn)
     } else errorResponse(BAD_REQUEST, "Invalid Arn")
   }
 
