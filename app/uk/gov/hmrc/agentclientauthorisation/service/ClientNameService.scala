@@ -18,19 +18,18 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.Inject
 import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.Service
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Citizen, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.{CustomerDetailsNotFound, NinoNotFound, Service, VatCustomerDetails}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ClientNameNotFound() extends Exception
 
 class ClientNameService @Inject()(
-  agentServicesAccountConnector: AgentServicesAccountConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
   desConnector: DesConnector,
   agentCacheProvider: AgentCacheProvider) {
@@ -51,29 +50,39 @@ class ClientNameService @Inject()(
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    agentServicesAccountConnector.getNinoForMtdItId(mtdItId).flatMap {
-      case Some(nino) =>
-        agentServicesAccountConnector
-          .getTradingName(nino)
+    desConnector
+      .getNinoFor(mtdItId)
+      .flatMap { maybeNino =>
+        val nino = maybeNino.getOrElse(throw NinoNotFound())
+        desConnector
+          .getTradingNameForNino(nino)
           .flatMap {
-            case name if name.isDefined => Future successful name
-            case None                   => getCitizenName(nino)
+            case Some(n) if n.nonEmpty => Future.successful(Some(n))
+            case _                     => getCitizenName(nino)
           }
-      case None => throw new Exception(s"No corresponding Nino for this MtdItId: $mtdItId")
-    }
+      }
+      .recover {
+        case e => {
+          Logger(getClass).error(s"Unable to translate MtdItId: ${e.getMessage}")
+          None
+        }
+      }
 
   def getCitizenName(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    getCitizenRecord(nino).map(_.name)
-
-  def getCitizenRecord(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
-    citizenDetailsConnector.getCitizenDetails(nino)
+    citizenDetailsConnector.getCitizenDetails(nino).map(_.name)
 
   def getVatName(vrn: Vrn)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    agentServicesAccountConnector.getCustomerDetails(vrn).map { customerDetails =>
-      customerDetails.tradingName
-        .orElse(customerDetails.organisationName)
-        .orElse(customerDetails.individual.map(_.name))
-    }
+    desConnector
+      .getVatCustomerDetails(vrn)
+      .map { maybeCustomerDetails =>
+        val customerDetails = maybeCustomerDetails.getOrElse(VatCustomerDetails(None, None, None))
+        customerDetails.tradingName
+          .orElse(customerDetails.organisationName)
+          .orElse(customerDetails.individual.map(_.name))
+      }
+      .recover {
+        case _: NotFoundException => None
+      }
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     trustCache(utr.value) {

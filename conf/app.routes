@@ -34,3 +34,18 @@ GET         /status                                                             
 # Invitations
 # --------------------------------
 GET         /invitations/:invitationId                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.InvitationsController.getInvitationById(invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
+
+# Agent Services Account migrated routes
+GET         /agent/agency-name                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentAgencyName
+GET         /agent/agency-email                                                               @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentAgencyEmail
+POST        /client/agency-names/utr                                                          @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyNamesUtrs
+GET         /client/business-name/utr/:utr                                                    @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getBusinessNameUtr(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
+POST        /client/business-names/utr                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getBusinessNamesUtrs
+GET         /client/agency-name/utr/:utr                                                      @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyNameClientWithUtr(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
+GET         /client/agency-name/:arn                                                          @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyNameBy(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+GET         /client/agency-email/:arn                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyEmailBy(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+POST        /client/agency-names                                                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyNames
+GET         /client/mtdItId/:mtdItId                                                          @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getNinoForMtdItId(mtdItId: uk.gov.hmrc.agentmtdidentifiers.model.MtdItId)
+GET         /client/nino/:nino                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getMtdItIdForNino(nino: uk.gov.hmrc.domain.Nino)
+GET         /client/trading-name/nino/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getTradingNameForNino(nino: uk.gov.hmrc.domain.Nino)
+GET         /client/vat-customer-details/vrn/:vrn                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getVatCustomerDetails(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)

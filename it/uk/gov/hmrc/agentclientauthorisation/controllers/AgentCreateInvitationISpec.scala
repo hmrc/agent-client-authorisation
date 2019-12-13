@@ -18,8 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.connectors.AgencyNameNotFound
-import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, TrustName, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 
@@ -34,9 +33,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
     "return 201 Created with link to invitation in headers" when {
       "service is ITSA" in {
         givenAuditConnector()
-        givenGetAgencyNameViaClientStub(arn)
         givenTradingName(nino, "Trade Pears")
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         givenNinoForMtdItId(mtdItId, nino)
 
         givenAuthorisedAsAgent(arn)
@@ -58,8 +56,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
         givenCitizenDetailsAreKnownFor(nino.value, "19122019")
-        givenGetAgencyNameViaClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
         val
         requestBody = Json.parse(
@@ -80,8 +77,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
         givenClientDetailsForVat(vrn)
-        givenGetAgencyNameViaClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
         val requestBody = Json.parse(
           """{
@@ -100,8 +96,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
 
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenGetAgencyNameViaClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         getTrustName(utr, response = trustNameJson)
 
         val requestBody = Json.parse(
@@ -119,8 +114,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "service is CapitalGains" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenGetAgencyNameViaClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
 
         val requestBody = Json.parse(
@@ -141,8 +135,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
     "throw exception when adding DetailsForEmail Failed" when {
       "Agency Email not found" in {
         givenAuditConnector()
-        givenNotFoundAgencyEmailAgentStub(arn)
-        givenGetAgencyNameViaClientStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), None)
         givenNinoForMtdItId(mtdItId, nino)
 
         givenAuthorisedAsAgent(arn)
@@ -163,8 +156,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "Agency Name not found" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenAgencyNameNotFoundClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, None, Some("email"))
 
         val
         requestBody = Json.parse(
@@ -181,8 +173,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
       "Client Name not found" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
-        givenGetAgencyNameViaClientStub(arn)
-        givenGetAgencyEmailAgentStub(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
         val requestBody = Json.parse(
           """{

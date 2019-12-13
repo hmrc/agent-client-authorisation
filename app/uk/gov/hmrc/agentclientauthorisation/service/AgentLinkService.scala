@@ -20,11 +20,13 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
+import org.checkerframework.checker.units.qual.s
 import play.api.Logger
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.AgentServicesAccountConnector
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, MongoAgentReferenceRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
+import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -32,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AgentLinkService @Inject()(
   agentReferenceRecordRepository: AgentReferenceRepository,
-  agentServicesAccountConnector: AgentServicesAccountConnector,
+  desConnector: DesConnector,
   auditService: AuditService,
   metrics: Metrics)
     extends Monitor {
@@ -43,15 +45,23 @@ class AgentLinkService @Inject()(
 
   def getInvitationUrl(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
-      normalisedAgentName <- agentServicesAccountConnector.getAgencyNameAgent.map(name => normaliseAgentName(name.get))
-      record              <- fetchOrCreateRecord(arn, normalisedAgentName)
+      normalisedAgentName <- desConnector
+                              .getAgencyDetails(arn)
+                              .map(
+                                _.flatMap(_.agencyDetails.flatMap(_.agencyName))
+                                  .map(normaliseAgentName)
+                                  .getOrElse(throw AgencyNameNotFound()))
+      record <- fetchOrCreateRecord(arn, normalisedAgentName)
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
   def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
-      normalisedName <- agentServicesAccountConnector
-                         .getAgencyNameViaClient(arn)
-                         .map(name => normaliseAgentName(name.get))
+      normalisedName <- desConnector
+                         .getAgencyDetails(arn)
+                         .map(
+                           _.flatMap(_.agencyDetails.flatMap(_.agencyName))
+                             .map(normaliseAgentName)
+                             .getOrElse(throw AgencyNameNotFound()))
       record <- fetchOrCreateRecord(arn, normalisedName)
     } yield record
 

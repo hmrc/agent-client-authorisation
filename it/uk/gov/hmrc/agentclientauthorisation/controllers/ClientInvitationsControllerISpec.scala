@@ -65,8 +65,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   trait AddEmailSupportStub {
-    givenGetAgencyEmailAgentStub(arn)
-    givenGetAgencyNameViaClientStub(arn)
+    givenGetAgencyDetailsStub(arn)
     givenNinoForMtdItId(mtdItId, nino)
     givenTradingName(nino, "Trade Pears")
     givenCitizenDetailsAreKnownFor(nino.value, "19122019")

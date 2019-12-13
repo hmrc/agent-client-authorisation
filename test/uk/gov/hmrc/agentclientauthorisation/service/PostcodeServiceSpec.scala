@@ -20,6 +20,7 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.connectors._
+import uk.gov.hmrc.agentclientauthorisation.model.{BusinessAddressDetails, BusinessData, BusinessDetails}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId

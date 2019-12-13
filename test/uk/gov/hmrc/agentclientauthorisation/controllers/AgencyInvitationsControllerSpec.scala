@@ -24,11 +24,14 @@ import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json._
+import play.api.mvc.Results._
 import play.api.mvc.{AnyContent, ControllerComponents, Request}
-import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.FakeRequest
+import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
+import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, AuthActions, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
@@ -37,11 +40,11 @@ import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
 import play.api.test.Helpers.stubControllerComponents
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -52,7 +55,6 @@ class AgencyInvitationsControllerSpec
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val multiInvitationsService: AgentLinkService = resettingMock[AgentLinkService]
-  val agentServicesaccountConnector: AgentServicesAccountConnector = resettingMock[AgentServicesAccountConnector]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
   val authActions: AuthActions = resettingMock[AuthActions]
@@ -78,7 +80,6 @@ class AgencyInvitationsControllerSpec
       multiInvitationsService,
       mockDesConnector,
       mockPlayAuthConnector,
-      agentServicesaccountConnector,
       agentCacheProvider
     )(metrics, cc, ecp) {}
 

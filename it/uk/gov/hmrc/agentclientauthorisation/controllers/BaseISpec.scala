@@ -1,5 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -11,6 +12,7 @@ class BaseISpec extends
   StrideAuthStubs with
   TestDataSupport with
   DesStubs with
-  AgentServicesAccountStub with
   CitizenDetailsStub with
-  ACRStubs
+  ACRStubs with
+  ScalaFutures
+

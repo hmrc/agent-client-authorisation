@@ -78,21 +78,21 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       "effectiveRegistrationDate is present" in {
         hasVatCustomerDetails(clientVrn, "2017-04-01", isEffectiveRegistrationDatePresent = true)
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
       }
 
       "effectiveRegistrationDate is not present" in {
         hasVatCustomerDetails(clientVrn, "2017-04-01", isEffectiveRegistrationDatePresent = false)
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
 
       "there is no approvedInformation" in {
         hasVatCustomerDetailsWithNoApprovedInformation(clientVrn)
 
-        val vatCustomerInfo = await(connector.getVatCustomerInformation(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
     }
@@ -100,14 +100,14 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     "return None if the VAT client is not subscribed" in {
       hasNoVatCustomerDetails(clientVrn)
 
-      await(connector.getVatCustomerInformation(clientVrn)) shouldBe None
+      await(connector.getVatRegDate(clientVrn)) shouldBe None
     }
 
     "record metrics for each call" in {
       hasVatCustomerDetails(clientVrn, "2017-04-01", true)
 
-      await(connector.getVatCustomerInformation(clientVrn)).get
-      await(connector.getVatCustomerInformation(clientVrn))
+      await(connector.getVatRegDate(clientVrn)).get
+      await(connector.getVatRegDate(clientVrn))
 
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetVatCustomerInformation-GET")
     }
@@ -116,7 +116,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       failsVatCustomerDetails(clientVrn, withStatus = 502)
 
       assertThrows[Upstream5xxResponse] {
-        await(connector.getVatCustomerInformation(clientVrn))
+        await(connector.getVatRegDate(clientVrn))
       }
     }
   }

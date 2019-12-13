@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgentServicesAccountConnector, Citizen, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.Citizen
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.MocksWithCache
 import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
@@ -24,18 +24,14 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO Convert to ISpec Maybe
 class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   val clientNameService =
-    new ClientNameService(
-      mockAgentServicesAccountConnector,
-      mockCitizenDetailsConnector,
-      mockDesConnector,
-      agentCacheProvider)
+    new ClientNameService(mockCitizenDetailsConnector, mockDesConnector, agentCacheProvider)
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
@@ -55,14 +51,14 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   "getClientNameByService" should {
     "get the trading name if the service is ITSA" in {
-      (mockAgentServicesAccountConnector
-        .getNinoForMtdItId(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getNinoFor(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(mtdItId, *, *)
         .returning(Future(Some(nino)))
-      (mockAgentServicesAccountConnector
-        .getTradingName(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getTradingNameForNino(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
-        .returns(Some("Mr Tradington"))
+        .returns(Future(Some("Mr Tradington")))
       val result = await(clientNameService.getClientNameByService(mtdItId.value, Service.MtdIt))
 
       result shouldBe Some("Mr Tradington")
@@ -77,10 +73,10 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       result shouldBe Some("Henry Hoover")
     }
     "get the vat name if the service is VAT" in {
-      (mockAgentServicesAccountConnector
-        .getCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
-        .returns(Future(CustomerDetails(None, None, Some("Trady name"))))
+        .returns(Future(Some(VatCustomerDetails(None, None, Some("Trady name")))))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
 
       result shouldBe Some("Trady name")
@@ -88,14 +84,14 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   }
   "getItsaTradingName" should {
     "get the citizen name if there is no trading name" in {
-      (mockAgentServicesAccountConnector
-        .getNinoForMtdItId(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getNinoFor(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(mtdItId, *, *)
         .returning(Future(Some(nino)))
-      (mockAgentServicesAccountConnector
-        .getTradingName(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getTradingNameForNino(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
-        .returns(None)
+        .returns(Future(Some("")))
       (mockCitizenDetailsConnector
         .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
@@ -107,24 +103,30 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   }
   "getVatName" should {
     "get the organisation name if there is no trading name" in {
-      (mockAgentServicesAccountConnector
-        .getCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
         .returns(
           Future(
-            CustomerDetails(
-              Some("Organisy name"),
-              Some(Individual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))),
-              None)))
+            Some(
+              VatCustomerDetails(
+                Some("Organisy name"),
+                Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))),
+                None))))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Organisy name")
     }
     "get the individual name if there is no trading name or organisation name" in {
-      (mockAgentServicesAccountConnector
-        .getCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
+      (mockDesConnector
+        .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
-        .returns(Future(
-          CustomerDetails(None, Some(Individual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None)))
+        .returns(
+          Future(
+            Some(
+              VatCustomerDetails(
+                None,
+                Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))),
+                None))))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Miss Marilyn M Monroe")
     }

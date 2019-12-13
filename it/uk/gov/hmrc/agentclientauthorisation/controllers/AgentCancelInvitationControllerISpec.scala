@@ -62,7 +62,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
   trait StubSetup {
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
-    givenGetAgencyNameAgentStub
+    givenGetAgencyDetailsStub(arn)
   }
 
   def runSuccessfulCancelledInvitation[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
@@ -92,7 +92,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
 
       givenAuditConnector()
       givenAuthorisedAsAgent(arn2)
-      givenGetAgencyNameAgentStub
+      givenGetAgencyDetailsStub(arn2)
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 

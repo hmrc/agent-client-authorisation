@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import javax.inject.{Inject, Singleton}
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
+import uk.gov.hmrc.agentclientauthorisation.model.VatRegDate
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -31,13 +32,13 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
   def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[Boolean]] =
-    desConnector.getVatCustomerInformation(clientVrn).map {
-      case Some(VatCustomerInfo(Some(effectiveRegistrationDate)))
+    desConnector.getVatRegDate(clientVrn).map {
+      case Some(VatRegDate(Some(effectiveRegistrationDate)))
           if effectiveRegistrationDate == suppliedVatRegistrationDate =>
         Some(true)
-      case Some(VatCustomerInfo(Some(_))) =>
+      case Some(VatRegDate(Some(_))) =>
         Some(false)
-      case Some(VatCustomerInfo(None)) =>
+      case Some(VatRegDate(None)) =>
         None
       case None =>
         None

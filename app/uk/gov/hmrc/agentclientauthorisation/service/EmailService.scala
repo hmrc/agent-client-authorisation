@@ -15,11 +15,11 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.service
-import javax.inject.{Inject, Named}
-import play.api.{Logger, LoggerLike}
+import javax.inject.Inject
 import play.api.i18n.{Lang, Langs, MessagesApi}
+import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AgencyNameNotFound, AgentServicesAccountConnector, EmailConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -31,7 +31,7 @@ import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmailService @Inject()(
-  asaConnector: AgentServicesAccountConnector,
+  desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
   invitationsRepository: InvitationsRepository,
@@ -46,13 +46,17 @@ class EmailService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[DetailsForEmail] =
     for {
-      agencyEmail <- asaConnector.getAgencyEmailBy(arn)
-      agencyName <- asaConnector.getAgencyNameViaClient(arn).map {
-                     case Some(name) => name
-                     case _ =>
-                       getLogger.warn(s"Name not found in Agent Record for: ${arn.value} to send email")
-                       throw new AgencyNameNotFound
-                   }
+      agencyRecordDetails <- desConnector
+                              .getAgencyDetails(arn)
+                              .map {
+                                case Some(details) => details
+                                case _ =>
+                                  getLogger.warn(s"Agency Record details not found for: ${arn.value}")
+                                  throw AgencyEmailNotFound()
+                              }
+      agencyName = agencyRecordDetails.agencyDetails.flatMap(_.agencyName).getOrElse(throw AgencyNameNotFound())
+      agencyEmail = agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail).getOrElse(throw AgencyEmailNotFound())
+
       clientName <- clientNameService.getClientNameByService(clientId.value, service).map {
                      case Some(name) => name
                      case _ =>
