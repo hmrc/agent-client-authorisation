@@ -22,7 +22,6 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, _}
 import play.utils.UriEncoding
@@ -38,7 +37,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, NotFoundExcepti
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 @ImplementedBy(classOf[DesConnectorImpl])
 trait DesConnector {
@@ -204,10 +202,6 @@ class DesConnectorImpl @Inject()(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
     monitor(s"ConsumedAPI-DES-$apiName-GET") {
-      httpClient.doGet(url).onComplete {
-        case Success(value) => Logger.warn(s"response from DES is ${value.body}")
-        case Failure(ex)    => Logger.warn(s"future failed with $ex")
-      }
       httpClient.GET[Option[T]](url)(implicitly[HttpReads[Option[T]]], desHeaderCarrier, ec)
     }
   }
