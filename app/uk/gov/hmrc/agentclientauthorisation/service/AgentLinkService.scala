@@ -50,7 +50,7 @@ class AgentLinkService @Inject()(
                               .map(
                                 _.flatMap(_.agencyDetails.flatMap(_.agencyName))
                                   .map(normaliseAgentName)
-                                  .getOrElse(throw AgencyNameNotFound()))
+                                  .getOrElse(throw AgencyNameNotFound(s"for $arn")))
       record <- fetchOrCreateRecord(arn, normalisedAgentName)
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
@@ -61,7 +61,7 @@ class AgentLinkService @Inject()(
                          .map(
                            _.flatMap(_.agencyDetails.flatMap(_.agencyName))
                              .map(normaliseAgentName)
-                             .getOrElse(throw AgencyNameNotFound()))
+                             .getOrElse(throw AgencyNameNotFound(s"for $arn")))
       record <- fetchOrCreateRecord(arn, normalisedName)
     } yield record
 

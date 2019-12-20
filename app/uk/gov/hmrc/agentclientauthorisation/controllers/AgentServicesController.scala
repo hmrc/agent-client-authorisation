@@ -209,7 +209,7 @@ class AgentServicesController @Inject()(
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
       .map {
         case Some(name) => name
-        case None       => throw AgencyNameNotFound()
+        case None       => throw AgencyNameNotFound(s"for $identifier")
       }
 
   private def businessNameFor(utr: Utr)(implicit hc: HeaderCarrier): Future[String] = {

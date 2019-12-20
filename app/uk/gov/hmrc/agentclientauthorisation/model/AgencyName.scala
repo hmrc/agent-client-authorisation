@@ -20,7 +20,7 @@ import play.api.libs.json.{JsPath, Reads}
 
 case class AgencyName(name: Option[String])
 
-case class AgencyNameNotFound() extends Exception
+case class AgencyNameNotFound(message: String) extends Exception
 
 object AgencyName {
   implicit val nameReads: Reads[AgencyName] =
