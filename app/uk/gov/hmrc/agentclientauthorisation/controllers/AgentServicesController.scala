@@ -206,10 +206,15 @@ class AgentServicesController @Inject()(
   private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[String] =
     desConnector
       .getAgencyDetails(identifier)
-      .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
+      .map { r =>
+        Logger.warn(s"response from des for agency name is $r")
+        r.flatMap(_.agencyDetails.flatMap(_.agencyName))
+      }
       .map {
         case Some(name) => name
-        case None       => throw AgencyNameNotFound()
+        case None =>
+          Logger.warn(s"no agency name found for $identifier")
+          throw AgencyNameNotFound()
       }
 
   private def businessNameFor(utr: Utr)(implicit hc: HeaderCarrier): Future[String] = {
