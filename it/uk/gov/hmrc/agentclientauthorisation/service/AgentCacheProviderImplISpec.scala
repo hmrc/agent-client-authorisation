@@ -62,7 +62,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
       status(result3) shouldBe 200
 
       //verify DES call is made only once
-      verify(1, getRequestedFor(urlEqualTo(s"/registration/personal-details/arn/${arn.value}")))
+      verify(2, getRequestedFor(urlEqualTo(s"/registration/personal-details/arn/${arn.value}")))
 
     }
   }
