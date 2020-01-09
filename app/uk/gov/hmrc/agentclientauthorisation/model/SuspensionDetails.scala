@@ -16,14 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, OFormat}
 
-case class AgentDetailsDesResponse(agencyDetails: Option[AgencyDetails], suspensionDetails: Option[SuspensionDetails])
+case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[String]])
 
-case class AgencyDetails(agencyName: Option[String], agencyEmail: Option[String])
-
-object AgentDetailsDesResponse {
-  implicit val agencyDetailsRead: Reads[AgencyDetails] = Json.reads
-
-  implicit val agentRecordDetailsRead: Reads[AgentDetailsDesResponse] = Json.reads
+object SuspensionDetails {
+  implicit val formats: OFormat[SuspensionDetails] = Json.format
 }

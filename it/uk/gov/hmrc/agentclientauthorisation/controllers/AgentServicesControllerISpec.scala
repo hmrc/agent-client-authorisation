@@ -8,7 +8,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.{VatCustomerDetails, VatIndividual}
+import uk.gov.hmrc.agentclientauthorisation.model.{SuspensionDetails, VatCustomerDetails, VatIndividual}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
@@ -46,6 +46,12 @@ class AgentServicesControllerISpec extends BaseISpec {
       .get()
       .futureValue
 
+  def getCurrentSuspensionDetails: WSResponse =
+    wsClient
+    .url(s"$url/agent/suspension-details")
+    .get()
+    .futureValue
+
   def getAgencyNameFor(arn: Arn): WSResponse =
     wsClient
       .url(s"$url/client/agency-name/${arn.value}")
@@ -55,6 +61,12 @@ class AgentServicesControllerISpec extends BaseISpec {
   def getAgencyEmailFor(arn: Arn): WSResponse =
     wsClient
       .url(s"$url/client/agency-email/${arn.value}")
+      .get()
+      .futureValue
+
+  def getSuspensionDetailsFor(arn: Arn): WSResponse =
+    wsClient
+      .url(s"$url/client/suspension-details/${arn.value}")
       .get()
       .futureValue
 
@@ -220,6 +232,34 @@ class AgentServicesControllerISpec extends BaseISpec {
     }
   }
 
+  "GET /agent/suspension-details" should {
+    "return Ok and suspension details after successful response" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESRespondsWithValidData(arn, "ACME")
+
+      val result = getCurrentSuspensionDetails
+      result.status shouldBe OK
+      result.json shouldBe Json.toJson(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
+    }
+
+    "return NoContent after successful response but there are no suspensionDetails" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESRespondsWithoutValidData(arn)
+
+      val result = getCurrentSuspensionDetails
+      result.status shouldBe NO_CONTENT
+    }
+
+    "return an exception when there is an unsuccessful response" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESReturnsError(arn, BAD_GATEWAY)
+
+      val result = getCurrentSuspensionDetails
+      result.status shouldBe BAD_GATEWAY
+      (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+    }
+  }
+
   "GET /client/agency-name/:arn" should {
     "return Ok and data after successful response" in {
       isLoggedIn
@@ -284,6 +324,41 @@ class AgentServicesControllerISpec extends BaseISpec {
 
     "return BadRequest when receiving an invalid Arn" in {
       val result = getAgencyEmailFor(Arn("InvalidArn[][][][][]["))
+      result.status shouldBe BAD_REQUEST
+      (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
+      (result.json \ "message").get.as[String] shouldBe "Invalid Arn"
+    }
+  }
+
+  "GET /client/agent-suspension/:arn" should {
+    "return Ok and data after successful response" in {
+      isLoggedIn
+      givenDESRespondsWithValidData(arn, "ACME")
+
+      val result = getSuspensionDetailsFor(arn)
+      result.status shouldBe OK
+      result.json shouldBe Json.toJson(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
+    }
+
+    "return NoContent after successful response but there are no suspension details" in {
+      isLoggedIn
+      givenDESRespondsWithoutValidData(arn)
+
+      val result = getSuspensionDetailsFor(arn)
+      result.status shouldBe NO_CONTENT
+    }
+
+    "return an exception when there is an unsuccessful response" in {
+      isLoggedIn
+      givenDESReturnsError(arn, BAD_GATEWAY)
+
+      val result = getSuspensionDetailsFor(arn)
+      result.status shouldBe BAD_GATEWAY
+      (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+    }
+
+    "return BadRequest when receiving an invalid Arn" in {
+      val result = getSuspensionDetailsFor(Arn("InvalidArn[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
       (result.json \ "message").get.as[String] shouldBe "Invalid Arn"

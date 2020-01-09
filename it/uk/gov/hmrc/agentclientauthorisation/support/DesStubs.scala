@@ -299,6 +299,13 @@ trait DesStubs {
        |      "agencyName" : "$agencyName",
        |      "agencyEmail" : "abc@xyz.com"
        |   },
+       |   "suspensionDetails": {
+       |     "suspensionStatus": true,
+       |     "regimes": [
+       |       "ITSA",
+       |       "VATC"
+       |     ]
+       |   },
        |   "organisation" : {
        |      "organisationName" : "CT AGENT 183",
        |      "isAGroup" : false,

@@ -28,7 +28,7 @@ import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending, SuspensionDetails}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
@@ -123,7 +123,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
       when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(
-          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("anne-mari"), Some("email")))))))
+          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("anne-mari"), Some("email"))), Some(SuspensionDetails(suspensionStatus = false, None))))))
 
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
