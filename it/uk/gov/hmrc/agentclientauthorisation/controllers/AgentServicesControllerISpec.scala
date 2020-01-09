@@ -358,7 +358,7 @@ class AgentServicesControllerISpec extends BaseISpec {
     }
 
     "return BadRequest when receiving an invalid Arn" in {
-      val result = getAgencyEmailFor(Arn("InvalidArn[][][][][]["))
+      val result = getSuspensionDetailsFor(Arn("InvalidArn[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
       (result.json \ "message").get.as[String] shouldBe "Invalid Arn"
