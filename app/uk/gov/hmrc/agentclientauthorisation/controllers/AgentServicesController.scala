@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
 import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
+import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
@@ -51,6 +52,10 @@ class AgentServicesController @Inject()(
     getAgencyEmail(arn)
   }
 
+  def getCurrentSuspensionDetails: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    getAgencySuspensionDetails(arn)
+  }
+
   def getAgencyNameBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     if (Arn.isValid(arn.value)) {
       getAgencyName(arn)
@@ -60,6 +65,12 @@ class AgentServicesController @Inject()(
   def getAgencyEmailBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     if (Arn.isValid(arn.value)) {
       getAgencyEmail(arn)
+    } else errorResponse(BAD_REQUEST, "Invalid Arn")
+  }
+
+  def getSuspensionDetailsBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
+    if (Arn.isValid(arn.value)) {
+      getAgencySuspensionDetails(arn)
     } else errorResponse(BAD_REQUEST, "Invalid Arn")
   }
 
@@ -233,6 +244,15 @@ class AgentServicesController @Inject()(
       .map {
         case Some(email) => Ok(Json.obj("agencyEmail" -> email))
         case None        => NoContent
+      }
+
+  private def getAgencySuspensionDetails(arn: Arn)(implicit hc: HeaderCarrier) =
+    desConnector
+      .getAgencyDetails(arn)
+      .map(details => details.flatMap(_.suspensionDetails))
+      .map {
+        case Some(suspensionDetails) => Ok(Json.toJson(suspensionDetails))
+        case None                    => NoContent
       }
 
   private def errorResponse(code: Int, message: String): Future[Result] = {

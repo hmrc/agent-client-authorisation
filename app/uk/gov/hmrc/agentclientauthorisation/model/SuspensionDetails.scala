@@ -15,10 +15,11 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.model
-import play.api.libs.json.{Format, Json}
 
-case class DetailsForEmail(agencyEmail: String, agencyName: String, clientName: String)
+import play.api.libs.json.{Json, OFormat}
 
-object DetailsForEmail {
-  implicit val format: Format[DetailsForEmail] = Json.format[DetailsForEmail]
+case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[String]])
+
+object SuspensionDetails {
+  implicit val formats: OFormat[SuspensionDetails] = Json.format
 }
