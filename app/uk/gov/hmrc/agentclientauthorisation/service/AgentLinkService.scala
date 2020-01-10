@@ -118,4 +118,8 @@ class AgentLinkService @Inject()(
 
   private def normaliseAgentName(agentName: String) =
     agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
+
+  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
+    agentReferenceRecordRepository.removeAgentReferencesForGiven(arn)
+
 }

@@ -55,4 +55,4 @@ GET         /client/vat-customer-details/vrn/:vrn                               
 # Stride Routes
 # --------------------------------
 
-DELETE      /remove/agent/:arn/records                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.StrideInvitationController.removeAllInvitationsAndReferenceForArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+DELETE      /agent/:arn/terminate                                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.removeAllInvitationsAndReferenceForArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)

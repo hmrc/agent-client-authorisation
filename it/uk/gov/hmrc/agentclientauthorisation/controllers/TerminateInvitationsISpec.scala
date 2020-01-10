@@ -7,34 +7,59 @@ import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{ControllerComponents, Result}
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.genericServiceUnavailable
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericServiceUnavailable, genericBadRequest}
+import uk.gov.hmrc.agentclientauthorisation.service._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class StrideInvitationsControllerISpec extends BaseISpec {
+class TerminateInvitationsISpec extends BaseISpec {
 
   implicit val mat = app.injector.instanceOf[Materializer]
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
-  lazy val controller = app.injector.instanceOf(classOf[StrideInvitationController])
+  lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
   val appConfig = app.injector.instanceOf(classOf[AppConfig])
   val authConnector = app.injector.instanceOf(classOf[AuthConnector])
+  val postcodeService = app.injector.instanceOf(classOf[PostcodeService])
+  val desConnector = app.injector.instanceOf(classOf[DesConnector])
+  val auditService = app.injector.instanceOf(classOf[AuditService])
+  val knownFactsCheckService = app.injector.instanceOf(classOf[KnownFactsCheckService])
+  val relationshipConnector = app.injector.instanceOf(classOf[RelationshipsConnector])
+  val emailService = app.injector.instanceOf(classOf[EmailService])
+  val agentCacheProvider = app.injector.instanceOf(classOf[AgentCacheProvider])
+
   implicit val metrics = app.injector.instanceOf(classOf[Metrics])
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
   implicit val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
   }
 
+  def agentLinkService(agentReferenceRepository: AgentReferenceRepository) =
+    new AgentLinkService(agentReferenceRepository, desConnector, auditService, metrics)
+
+  def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
+    new InvitationsService(invitationsRepository, agentLinkService(agentReferenceRepository), relationshipConnector, desConnector, auditService, emailService, appConfig, metrics)
+
   def testFailedController(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
-    new StrideInvitationController(appConfig, invitationsRepository, testFailedAgentReferenceRepo, authConnector)
+    new AgencyInvitationsController(
+      appConfig,
+      postcodeService,
+      testInvitationsService(invitationsRepository, agentReferenceRepository),
+      knownFactsCheckService,
+      agentLinkService(agentReferenceRepository),
+      desConnector,
+      authConnector,
+      agentCacheProvider)
 
   val jsonDeletedRecords = Json.obj("arn" -> arn.value, "InvitationsDeleted" -> 5, "ReferencesDeleted" -> 1)
   val jsonNoDeletedRecords = Json.obj("arn" -> arn.value, "InvitationsDeleted" -> 0, "ReferencesDeleted" -> 0)
@@ -73,7 +98,7 @@ class StrideInvitationsControllerISpec extends BaseISpec {
   }
 
   "/remove-agent-invitations" should {
-    val request = FakeRequest("DELETE", "/remove/agent/:arn/records")
+    val request = FakeRequest("DELETE", "/agent/:arn/terminate")
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
@@ -100,6 +125,15 @@ class StrideInvitationsControllerISpec extends BaseISpec {
 
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
+    }
+
+    "return 400 for invalid arn" in {
+      givenOnlyStrideStub("caat", "123ABC")
+      val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(Arn("MARN01"))(request))
+
+      status(response) shouldBe 400
+
+      jsonBodyOf(response).as[JsObject] shouldBe jsonBodyOf(genericBadRequest(s"Invalid Arn given by Stride user: MARN01"))
     }
 
     /*

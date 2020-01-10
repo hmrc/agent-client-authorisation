@@ -25,7 +25,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericServiceUnavailable, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -265,5 +265,26 @@ class AgencyInvitationsController @Inject()(
         }
       }
     }
+  }
+
+  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = onlyStride { implicit request =>
+    if (Arn.isValid(arn.value)) {
+      (for {
+        invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
+        referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
+      } yield
+        Ok(
+          Json
+            .obj(
+              "arn"                -> arn.value,
+              "InvitationsDeleted" -> invitationsDeleted,
+              "ReferencesDeleted"  -> referencesDeleted)))
+        .recover {
+          case e => {
+            Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
+            genericServiceUnavailable(e.getMessage)
+          }
+        }
+    } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
   }
 }
