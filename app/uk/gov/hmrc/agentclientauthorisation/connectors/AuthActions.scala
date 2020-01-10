@@ -158,6 +158,16 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       } recover handleFailure
     }
 
+  def onlyStride[T](body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
+    Action.async { implicit request =>
+      authorised().retrieve(credentials) {
+        case Some(creds) if creds.providerType == "PrivilegedApplication" => body(request)
+        case e =>
+          Logger(getClass).warn(s"Non-Stride User Access. Credential Found: ${e.map(_.providerType)}")
+          Future successful GenericForbidden
+      }
+    }
+
   def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(
     agentResponse: Result)(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))

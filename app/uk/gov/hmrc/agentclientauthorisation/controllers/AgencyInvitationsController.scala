@@ -129,22 +129,6 @@ class AgencyInvitationsController @Inject()(
     "InvitationId" -> invitation.invitationId.value
   )
 
-  private def addLinkToInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
-    invitation.service match {
-
-      case service if service == MtdIt || service == PersonalIncomeRecord =>
-        agentLinkService.getInvitationUrl(invitation.arn, "personal").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}")))
-        }
-
-      case service if service == Vat || service == Trust =>
-        agentLinkService.getInvitationUrl(invitation.arn, "business").map { link =>
-          Some(invitation.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
-        }
-
-      case _ => Future.successful(None)
-    }
-
   private def toListOfServices(servicesOpt: Option[String]) =
     servicesOpt match {
       case Some(string) => string.replace(" ", "").split(",").map(Service(_)).toSeq

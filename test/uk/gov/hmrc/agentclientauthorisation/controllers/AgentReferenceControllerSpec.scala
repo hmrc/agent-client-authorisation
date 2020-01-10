@@ -122,8 +122,11 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
       when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(
-          Some(AgentDetailsDesResponse(Option(model.AgencyDetails(Some("anne-mari"), Some("email"))), Some(SuspensionDetails(suspensionStatus = false, None))))))
+        .thenReturn(
+          Future.successful(
+            Some(AgentDetailsDesResponse(
+              Option(model.AgencyDetails(Some("anne-mari"), Some("email"))),
+              Some(SuspensionDetails(suspensionStatus = false, None))))))
 
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))

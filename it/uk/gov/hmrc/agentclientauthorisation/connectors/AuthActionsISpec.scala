@@ -36,6 +36,11 @@ class AuthActionsISpec extends BaseISpec {
       super.onlyForAgents {
         _ => _ => Future.successful(Ok)
       }
+
+    val testOnlyForStride: Action[AnyContent] =
+      super.onlyStride {
+        _ => Future.successful(Ok)
+      }
   }
 
   class LoggedInUser(forStride: Boolean, forClient: Boolean) {
@@ -150,6 +155,24 @@ class AuthActionsISpec extends BaseISpec {
       val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride("SAUTR", utr.value, strideRoles)(request)
 
       status(result) shouldBe 400
+    }
+  }
+
+  "onlyStride" should {
+    "return 200 for successful stride login" in {
+      givenOnlyStrideStub("caat", "123ABC")
+      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+
+      val result: Future[Result] = TestController.testOnlyForStride(request)
+      status(result) shouldBe 200
+    }
+
+    "return 403 if non-stride login" in {
+      isLoggedIn
+      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+
+      val result: Future[Result] = TestController.testOnlyForStride(request)
+      status(result) shouldBe 403
     }
   }
 

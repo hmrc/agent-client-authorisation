@@ -51,3 +51,8 @@ GET         /client/mtdItId/:mtdItId                                            
 GET         /client/nino/:nino                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getMtdItIdForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/trading-name/nino/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getTradingNameForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/vat-customer-details/vrn/:vrn                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getVatCustomerDetails(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
+
+# Stride Routes
+# --------------------------------
+
+DELETE      /remove/agent/:arn/records                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.StrideInvitationController.removeAllInvitationsAndReferenceForArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)

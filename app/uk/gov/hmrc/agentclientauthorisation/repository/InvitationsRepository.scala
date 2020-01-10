@@ -75,6 +75,8 @@ trait InvitationsRepository {
   def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit]
 
   def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit]
+
+  def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
 }
 
 @Singleton
@@ -258,5 +260,10 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
         if (result.ok) ()
         else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
     }
+  }
+
+  override def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
+    val query = Json.obj("arn" -> arn.value)
+    collection.delete().one(query).map(_.n)
   }
 }
