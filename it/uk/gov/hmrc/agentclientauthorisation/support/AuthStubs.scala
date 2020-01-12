@@ -474,7 +474,7 @@ trait StrideAuthStubs extends BasicUserAuthStubs{
                                         |  "authorise": [
                                         |    { "authProviders": ["PrivilegedApplication"] }
                                         |  ],
-                                        |  "retrieve":[]
+                                        |  "retrieve":["allEnrolments"]
                                         |}""".stripMargin,
           true, true))
         .willReturn(

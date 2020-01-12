@@ -37,8 +37,8 @@ class AuthActionsISpec extends BaseISpec {
         _ => _ => Future.successful(Ok)
       }
 
-    val testOnlyForStride: Action[AnyContent] =
-      super.onlyStride {
+    def testOnlyForStride(strideRole: String): Action[AnyContent] =
+      super.onlyStride(strideRole) {
         _ => Future.successful(Ok)
       }
   }
@@ -163,14 +163,22 @@ class AuthActionsISpec extends BaseISpec {
       givenOnlyStrideStub("caat", "123ABC")
       implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
 
-      val result: Future[Result] = TestController.testOnlyForStride(request)
+      val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 200
+    }
+
+    "return 401 for incorrect stride login" in {
+      givenOnlyStrideStub("maintain-agent-relationships", "123ABC")
+      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+
+      val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
+      status(result) shouldBe 401
     }
 
     "return 403 if non-stride login" in {
       implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
 
-      val result: Future[Result] = TestController.testOnlyForStride(request)
+      val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 403
     }
   }

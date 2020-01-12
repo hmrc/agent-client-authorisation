@@ -158,10 +158,14 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       } recover handleFailure
     }
 
-  def onlyStride(body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
+  def onlyStride(strideRole: String)(body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
-      authorised(AuthProviders(PrivilegedApplication)) {
+      authorised(AuthProviders(PrivilegedApplication)).retrieve(allEnrolments) {
+        case allEnrols if allEnrols.enrolments.map(_.key).contains(strideRole) =>
         body(request)
+        case e =>
+          Logger(getClass).warn(s"Unauthorized Discovered during Stride Authentication: ${e.enrolments.map(_.key)}")
+          Future successful Unauthorized
       }.recover {
         case e =>
           Logger(getClass).warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")

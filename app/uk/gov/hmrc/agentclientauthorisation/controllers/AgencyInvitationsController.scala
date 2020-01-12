@@ -267,7 +267,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = onlyStride { implicit request =>
+  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
     if (Arn.isValid(arn.value)) {
       (for {
         invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
