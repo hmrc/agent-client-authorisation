@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
-import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
@@ -158,13 +158,14 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       } recover handleFailure
     }
 
-  def onlyStride[T](body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
+  def onlyStride(body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
-      authorised().retrieve(credentials) {
-        case Some(creds) if creds.providerType == "PrivilegedApplication" => body(request)
+      authorised(AuthProviders(PrivilegedApplication)) {
+        body(request)
+      }.recover {
         case e =>
-          Logger(getClass).warn(s"Non-Stride User Access. Credential Found: ${e.map(_.providerType)}")
-          Future successful GenericForbidden
+          Logger(getClass).warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
+          GenericForbidden
       }
     }
 

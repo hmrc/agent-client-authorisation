@@ -168,7 +168,6 @@ class AuthActionsISpec extends BaseISpec {
     }
 
     "return 403 if non-stride login" in {
-      isLoggedIn
       implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testOnlyForStride(request)

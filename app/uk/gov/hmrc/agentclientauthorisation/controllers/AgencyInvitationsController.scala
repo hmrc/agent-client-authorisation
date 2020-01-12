@@ -25,7 +25,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericServiceUnavailable, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -282,7 +282,7 @@ class AgencyInvitationsController @Inject()(
         .recover {
           case e => {
             Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
-            genericServiceUnavailable(e.getMessage)
+            genericInternalServerError(e.getMessage)
           }
         }
     } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")

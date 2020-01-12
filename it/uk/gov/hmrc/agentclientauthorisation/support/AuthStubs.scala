@@ -462,25 +462,34 @@ trait StrideAuthStubs extends BasicUserAuthStubs{
                    |    "providerId": "$strideUserId",
                    |    "providerType": "PrivilegedApplication"
                    |  }
-                   |}
-       """.stripMargin)))
+                   |}""".stripMargin)))
     this
   }
 
   def givenOnlyStrideStub(strideRole: String, strideUserId: String): StrideAuthStubs = {
     stubFor(
       post(urlEqualTo("/auth/authorise"))
+        .withRequestBody(equalToJson(s"""
+                                        |{
+                                        |  "authorise": [
+                                        |    { "authProviders": ["PrivilegedApplication"] }
+                                        |  ],
+                                        |  "retrieve":[]
+                                        |}""".stripMargin,
+          true, true))
         .willReturn(
           aResponse()
             .withStatus(200)
             .withBody(s"""
                          |{
+                         |"allEnrolments": [{
+                         |  "key": "$strideRole"
+                         |	}],
                          |  "optionalCredentials": {
                          |    "providerId": "$strideUserId",
                          |    "providerType": "PrivilegedApplication"
                          |  }
-                         |}
-       """.stripMargin)
+                         |}""".stripMargin)
         ))
     this
   }

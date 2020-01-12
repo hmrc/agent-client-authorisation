@@ -14,7 +14,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericServiceUnavailable, genericBadRequest}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericInternalServerError, genericBadRequest}
 import uk.gov.hmrc.agentclientauthorisation.service._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -141,20 +141,20 @@ class TerminateInvitationsISpec extends BaseISpec {
      */
     "return 503 if removing all invitations but failed to remove references" in new TestSetup {
       val response: Result = await(testFailedController(invitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
-      status(response) shouldBe 503
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericServiceUnavailable("Unable to Remove References for given Agent"))
+      status(response) shouldBe 500
+      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to Remove References for given Agent"))
     }
 
     "return 503 if removing all references but failed to remove invitations" in new TestSetup {
       val response: Result = await(testFailedController(testFailedInvitationsRepo, agentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
-      status(response) shouldBe 503
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericServiceUnavailable("Unable to remove Invitations for TARN0000001"))
+      status(response) shouldBe 500
+      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
     }
 
     "return 503 if failed to remove all invitations and references" in new TestSetup {
       val response: Result = await(testFailedController(testFailedInvitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
-      status(response) shouldBe 503
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericServiceUnavailable("Unable to remove Invitations for TARN0000001"))
+      status(response) shouldBe 500
+      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
     }
   }
 

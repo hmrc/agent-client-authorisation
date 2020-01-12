@@ -84,6 +84,6 @@ object ErrorResults {
 
   def genericBadRequest(message: String): Result = BadRequest(toJson(ErrorBody("BAD_REQUEST", message)))
 
-  def genericServiceUnavailable(message: String): Result =
-    ServiceUnavailable(toJson(ErrorBody("SERVICE_UNAVAILABLE", message)))
+  def genericInternalServerError(message: String): Result =
+    InternalServerError(toJson(ErrorBody("INTERNAL_SERVER_ERROR", message)))
 }
