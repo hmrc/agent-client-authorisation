@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
-import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
@@ -156,6 +156,21 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
           Logger(getClass).warn(s"No Creds Found: $e")
           Future successful GenericForbidden
       } recover handleFailure
+    }
+
+  def onlyStride(strideRole: String)(body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
+    Action.async { implicit request =>
+      authorised(AuthProviders(PrivilegedApplication)).retrieve(allEnrolments) {
+        case allEnrols if allEnrols.enrolments.map(_.key).contains(strideRole) =>
+        body(request)
+        case e =>
+          Logger(getClass).warn(s"Unauthorized Discovered during Stride Authentication: ${e.enrolments.map(_.key)}")
+          Future successful Unauthorized
+      }.recover {
+        case e =>
+          Logger(getClass).warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
+          GenericForbidden
+      }
     }
 
   def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(

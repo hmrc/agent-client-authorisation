@@ -82,4 +82,8 @@ object ErrorResults {
   val GenericForbidden: Result = Forbidden(
     toJson(ErrorBody("NO_PERMISSION", "The logged in user is not permitted to perform the operation.")))
 
+  def genericBadRequest(message: String): Result = BadRequest(toJson(ErrorBody("BAD_REQUEST", message)))
+
+  def genericInternalServerError(message: String): Result =
+    InternalServerError(toJson(ErrorBody("INTERNAL_SERVER_ERROR", message)))
 }

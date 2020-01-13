@@ -1,11 +1,15 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model
+import org.joda.time.{DateTime, LocalDate}
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait TestDataSupport {
 
@@ -77,5 +81,78 @@ trait TestDataSupport {
 
   val apiClients = List(itsaClient, vatClient)
 
+  /*
+    Note this is just example of Mongo Failures. Not Actual ones for the error messages given
+   */
+  val testFailedInvitationsRepo = new InvitationsRepository {
+    override def create(arn: Arn,
+                        clientType: Option[String],
+                        service: Service,
+                        clientId: ClientId,
+                        suppliedClientId: ClientId,
+                        detailsForEmail: Option[DetailsForEmail],
+                        startDate: DateTime,
+                        expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] =
+      Future failed new Exception ("Unable to Create Invitation")
 
+    override def update(invitation: Invitation,
+                        status: InvitationStatus,
+                        updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation] =
+      Future failed new Exception ("Unable to Update Invitation")
+
+    override def findByInvitationId(invitationId: InvitationId)(
+      implicit ec: ExecutionContext): Future[Option[Invitation]] =
+      Future failed new Exception ("Unable to Find Invitation by ID")
+
+    override def findInvitationsBy(arn: Option[Arn],
+                                   services: Seq[Service],
+                                   clientId: Option[String],
+                                   status: Option[InvitationStatus],
+                                   createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[Invitation]] =
+      Future failed new Exception("Unable to Find Invitations")
+
+    override def findInvitationInfoBy(arn: Option[Arn],
+                                      service: Option[Service],
+                                      clientId: Option[String],
+                                      status: Option[InvitationStatus],
+                                      createdOnOrAfter: Option[LocalDate])(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
+      Future failed new Exception("Unable to Find Invitation Information")
+
+    override def findInvitationInfoBy(arn: Arn,
+                                      clientIdTypeAndValues: Seq[(String, String)],
+                                      status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
+      Future failed new Exception("Unable to Find Invitation Information")
+
+    override def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit] =
+      Future failed new Exception("Unable to Find Invitation Information")
+
+    override def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit] =
+      Future failed new Exception("Unable to Refresh Information")
+
+    override def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] =
+      Future failed new Exception("Unable to remove Email Details")
+
+    override def removeAllInvitationsForAgent(arn: Arn)(implicit ec:  ExecutionContext): Future[Int] =
+      Future failed new Exception(s"Unable to remove Invitations for ${arn.value}")
+  }
+
+  /*
+  :Note this is just example of Mongo Failures. Not Actual ones for the error messages given
+   */
+  val testFailedAgentReferenceRepo = new AgentReferenceRepository {
+    override def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
+      Future failed new Exception("Unable to create Agent Reference Record")
+
+    override def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]] =
+      Future failed new Exception("Unable to Find Record by UID")
+
+    override def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]] =
+      Future failed new Exception("Unable to Find Record by Arn")
+
+    override def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit] =
+      Future failed new Exception("Unable to Update Agent Name")
+
+    override def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
+      Future failed new Exception(s"Unable to Remove References for given Agent")
+  }
 }

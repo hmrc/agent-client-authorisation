@@ -255,4 +255,7 @@ class InvitationsService @Inject()(
     if (invitation.events.isEmpty) 0
     else
       System.currentTimeMillis() - invitation.firstEvent().time.getMillis
+
+  def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
+    invitationsRepository.removeAllInvitationsForAgent(arn)
 }

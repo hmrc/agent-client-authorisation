@@ -49,6 +49,7 @@ trait AgentReferenceRepository {
   def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
   def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
   def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit]
+  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
 }
 
 @Singleton
@@ -90,5 +91,10 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
       .update(ordered = false)
       .one(Json.obj("uid" -> uid), Json.obj("$addToSet" -> Json.obj("normalisedAgentNames" -> newAgentName)))
       .map(_ => ())
+
+  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
+    val query = Json.obj("arn" -> arn.value)
+    collection.delete().one(query).map(_.n)
+  }
 
 }
