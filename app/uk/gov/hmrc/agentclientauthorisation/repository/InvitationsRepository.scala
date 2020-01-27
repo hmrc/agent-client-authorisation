@@ -177,7 +177,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
       .find[JsObject, JsObject](query, None)
       .sort(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)))
       .cursor[Invitation](ReadPreference.primaryPreferred)
-      .collect[List](1000, Cursor.FailOnError[List[Invitation]]())
+      .collect[List](-1, Cursor.FailOnError[List[Invitation]]())
   }
 
   def findInvitationInfoBy(

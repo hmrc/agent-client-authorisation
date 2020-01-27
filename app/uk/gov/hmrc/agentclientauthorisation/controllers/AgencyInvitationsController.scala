@@ -267,24 +267,25 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
-    if (Arn.isValid(arn.value)) {
-      (for {
-        invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
-        referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
-      } yield
-        Ok(
-          Json
-            .obj(
-              "arn"                -> arn.value,
-              "InvitationsDeleted" -> invitationsDeleted,
-              "ReferencesDeleted"  -> referencesDeleted)))
-        .recover {
-          case e => {
-            Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
-            genericInternalServerError(e.getMessage)
+  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] =
+    onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
+      if (Arn.isValid(arn.value)) {
+        (for {
+          invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
+          referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
+        } yield
+          Ok(
+            Json
+              .obj(
+                "arn"                -> arn.value,
+                "InvitationsDeleted" -> invitationsDeleted,
+                "ReferencesDeleted"  -> referencesDeleted)))
+          .recover {
+            case e => {
+              Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
+              genericInternalServerError(e.getMessage)
+            }
           }
-        }
-    } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
-  }
+      } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
+    }
 }
