@@ -367,6 +367,16 @@ trait DesStubs {
       |}
     """.stripMargin
 
+  val terminatedResponseBody =
+    """
+      |{
+      |   "code" : "AGENT_TERMINATED",
+      |   "reason" : "Some reason"
+      |}
+    """.stripMargin
+
+
+
   def givenDESReturnsError(
                             identifier: TaxIdentifier,
                             responseCode: Int,
