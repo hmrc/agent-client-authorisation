@@ -53,7 +53,7 @@ class ClientStatusController @Inject()(
                  else
                    clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
                      for {
-                       nonSuspendedInvitationInfoList <- invitationsService.getSuspendedInvitations(identifiers)
+                       nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
                        hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
                        hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships

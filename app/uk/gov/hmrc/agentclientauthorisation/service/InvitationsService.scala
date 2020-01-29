@@ -211,7 +211,7 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
-  def getSuspendedInvitations(identifiers: Seq[(Service, String)])(
+  def getNonSuspendedInvitations(identifiers: Seq[(Service, String)])(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Seq[List[InvitationInfo]]] = {
 
