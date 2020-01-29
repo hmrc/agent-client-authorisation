@@ -211,6 +211,28 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
+  def getSuspendedInvitations(identifiers: Seq[(Service, String)])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Seq[List[InvitationInfo]]] = {
+
+    def isArnSuspendedForService(arn: Arn, service: Service): Future[Option[Boolean]] =
+      desConnector
+        .getAgencyDetails(arn)
+        .map(details =>
+          details.map(_.suspensionDetails.getOrElse(SuspensionDetails.notSuspended)).map { sd =>
+            sd.isRegimeSuspended(service)
+        })
+
+    for {
+      invitations <- Future.sequence(identifiers.map {
+                      case (service, clientId) =>
+                        findInvitationsInfoBy(service = Some(service), clientId = Some(clientId))
+                    })
+      invs <- Future.sequence(invitations.flatMap(invs =>
+               invs.map(inv => isArnSuspendedForService(inv.arn, inv.service).map(isSuspended => (invs, isSuspended)))))
+    } yield invs.filter(!_._2.getOrElse(false)).map(_._1)
+  }
+
   def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository

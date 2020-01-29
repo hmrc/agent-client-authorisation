@@ -187,7 +187,12 @@ object AgentInvitation {
   def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
 }
 
-case class InvitationInfo(invitationId: InvitationId, expiryDate: LocalDate, status: InvitationStatus)
+case class InvitationInfo(
+  invitationId: InvitationId,
+  expiryDate: LocalDate,
+  status: InvitationStatus,
+  arn: Arn,
+  service: Service)
 
 object InvitationInfo {
   implicit val format = Json.format[InvitationInfo]

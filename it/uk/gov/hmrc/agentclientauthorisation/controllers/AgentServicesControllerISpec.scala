@@ -235,7 +235,7 @@ class AgentServicesControllerISpec extends BaseISpec {
   "GET /agent/suspension-details" should {
     "return Ok and suspension details after successful response" in {
       givenAuthorisedAsAgent(arn)
-      givenDESRespondsWithValidData(arn, "ACME")
+      givenDESRespondsWithValidData(arn, "ACME", SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
 
       val result = getCurrentSuspensionDetails
       result.status shouldBe OK
@@ -333,7 +333,7 @@ class AgentServicesControllerISpec extends BaseISpec {
   "GET /client/agent-suspension/:arn" should {
     "return Ok and data after successful response" in {
       isLoggedIn
-      givenDESRespondsWithValidData(arn, "ACME")
+      givenDESRespondsWithValidData(arn, "ACME", SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
 
       val result = getSuspensionDetailsFor(arn)
       result.status shouldBe OK

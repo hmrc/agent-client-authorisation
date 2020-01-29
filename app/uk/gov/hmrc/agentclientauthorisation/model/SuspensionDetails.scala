@@ -17,9 +17,28 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.{Json, OFormat}
+import Service._
 
-case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[String]])
+case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[String]]) {
+
+  //PERSONAL-INCOME-RECORD service has no enrolment / regime so cannot be suspended
+  private val validSuspensionRegimes = Set("ITSA", "VATC", "TRS", "CGT")
+
+  val suspendedRegimes: Set[String] =
+    this.regimes.fold(Set.empty[String])(rs => if (rs.contains("ALL")) validSuspensionRegimes else rs)
+
+  private val serviceToRegime: Map[Service, String] =
+    Map(MtdIt -> "ITSA", Vat -> "VATC", Trust -> "TRS", CapitalGains -> "CGT", PersonalIncomeRecord -> "PIR")
+
+  def isRegimeSuspended(service: Service): Boolean = {
+    val regime = serviceToRegime(service)
+    suspendedRegimes.contains(regime)
+  }
+
+}
 
 object SuspensionDetails {
   implicit val formats: OFormat[SuspensionDetails] = Json.format
+
+  val notSuspended = SuspensionDetails(suspensionStatus = false, None)
 }

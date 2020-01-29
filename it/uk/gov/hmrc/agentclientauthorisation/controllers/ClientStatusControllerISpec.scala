@@ -20,15 +20,15 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, st
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, Http, MongoAppAndStubs, Resource}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs, Http, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAppAndStubs {
+class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAppAndStubs with DesStubs {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
   lazy val http = app.injector.instanceOf(classOf[Http])
@@ -139,6 +139,39 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
+    "return 200 OK indicating client has no pending invitations if she has one for ITSA and agent is suspended for ITSA" in {
+      givenAuditConnector()
+      givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
+      givenDESRespondsWithValidData(Arn("TARN0000001"), "agency name", SuspensionDetails(suspensionStatus = true, Some(Set("ITSA"))))
+
+      stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """{"allEnrolments":[{"key":"HMRC-MTD-IT","identifiers":[{"key":"MTDITID","value":"KQFL80195230075"}]}]}""")))
+
+      val invitation1 = Invitation.createNew(
+        Arn("TARN0000001"),
+        Some("personal"),
+        Service.PersonalIncomeRecord,
+        ClientIdentifier(Nino("AB835673D")),
+        ClientIdentifier(Nino("AB835673D")),
+        None,
+        DateTime.now,
+        LocalDate.now.plusDays(14)
+      )
+      await(repo.insert(invitation1))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
     "return 200 OK indicating client has no pending invitations when none exist" in {
 
       givenAuditConnector()
@@ -218,6 +251,41 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       val json = response.json
       (json \ "hasPendingInvitations").as[Boolean] shouldBe false
       (json \ "hasInvitationsHistory").as[Boolean] shouldBe true
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe false
+    }
+
+    "return 200 OK indicating client has no invitation history when existing ones has expired and agent is suspended" in {
+      givenAuditConnector()
+      givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
+      givenDESRespondsWithValidData(Arn("TARN0000001"), "agency name", SuspensionDetails(suspensionStatus = true, Some(Set("VATC"))))
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val invitation2 = Invitation.createNew(
+        Arn("TARN0000002"),
+        Some("personal"),
+        Service.Vat,
+        ClientIdentifier(Vrn("101747696")),
+        ClientIdentifier(Vrn("101747696")),
+        None,
+        DateTime.now.minusDays(15),
+        LocalDate.now.minusDays(5)
+      )
+      await(repo.insert(invitation2))
+      await(repo.update(invitation2, Expired, DateTime.now()))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe false
       (json \ "hasExistingRelationships").as[Boolean] shouldBe false
     }
 
