@@ -102,13 +102,14 @@ class AgentServicesController @Inject()(
 
           if (validationResult) {
             withBasicAuth {
-              val agencyDetails = arns.map { arn =>
-                agencyNameFor(Arn(arn)).map(AgencyNameByArn(arn, _))
+              val agencyDetails: Set[Future[Option[AgencyNameByArn]]] = arns.map { arn =>
+                agencyNameFor(Arn(arn)).map(nameOpts => nameOpts.map(name => AgencyNameByArn(arn, name)))
               }
 
               Future
                 .sequence(agencyDetails)
-                .map(details => Ok(Json.toJson(details.filterNot(_.agencyName == "AGENT_TERMINATED"))))
+                .map(_.flatten)
+                .map(details => Ok(Json.toJson(details)))
             }
           } else
             errorResponse(BAD_REQUEST, s"Invalid Arns: (${arns.mkString(",")})")
@@ -127,11 +128,13 @@ class AgentServicesController @Inject()(
           if (validationResult) {
             withBasicAuth {
               val agencyDetails = utrs.map { utr =>
-                agencyNameFor(Utr(utr)).map(AgencyNameByUtr(utr, _))
+                agencyNameFor(Utr(utr)).map(nameOpts => nameOpts.map(name => AgencyNameByUtr(utr, name)))
               }
+
               Future
                 .sequence(agencyDetails)
-                .map(details => Ok(Json.toJson(details.filterNot(_.agencyName == "AGENT_TERMINATED"))))
+                .map(_.flatten)
+                .map(details => Ok(Json.toJson(details)))
             }
           } else
             errorResponse(BAD_REQUEST, "Invalid Utr")
@@ -221,14 +224,10 @@ class AgentServicesController @Inject()(
     }
   }
 
-  private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[String] =
+  private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[Option[String]] =
     desConnector
       .getAgencyDetails(identifier)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
-      .map {
-        case Some(name) => name
-        case None       => throw AgencyNameNotFound(s"for $identifier")
-      }
 
   private def businessNameFor(utr: Utr)(implicit hc: HeaderCarrier): Future[String] = {
     val defaultName = ""

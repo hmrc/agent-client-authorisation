@@ -142,12 +142,11 @@ class DesConnectorImpl @Inject()(
     ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
     agentCacheProvider
       .agencyDetailsCache(agentIdentifier.value) {
-        getWithDesHeaders[AgentDetailsDesResponse]("GetAgentRecord", getAgentRecordUrl(agentIdentifier))
-      }
-      .recover {
-        case e if e.getMessage.contains("AGENT_TERMINATED") =>
-          Logger(getClass).warn(s"Discovered a Termination: $e")
-          Some(AgentDetailsDesResponse(Some(AgencyDetails(Some("AGENT_TERMINATED"), None)), None))
+        getWithDesHeaders[AgentDetailsDesResponse]("GetAgentRecord", getAgentRecordUrl(agentIdentifier)).recover {
+          case e if e.getMessage.contains("AGENT_TERMINATED") =>
+            Logger(getClass).warn(s"Discovered a Termination: $e")
+            None
+        }
       }
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =

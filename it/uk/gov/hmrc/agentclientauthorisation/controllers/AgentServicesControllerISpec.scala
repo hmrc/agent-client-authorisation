@@ -137,13 +137,13 @@ class AgentServicesControllerISpec extends BaseISpec {
         Json.obj("utr" -> "4000000009", "agencyName" -> "Other name"))
     }
 
-    "return error when there is no name" in {
+    "return OK when there is no name" in {
       isLoggedIn
       authorisedAsValidClient(req, mtdItId.value)
       givenDESRespondsWithoutValidData(utr)
 
       val result = getUtrAgencyNames(Seq(utr))
-      result.status shouldBe INTERNAL_SERVER_ERROR
+      result.status shouldBe OK
     }
 
     "return an exception when there is an unsuccessful response" in {
@@ -422,12 +422,12 @@ class AgentServicesControllerISpec extends BaseISpec {
       result.json shouldBe Json.arr(Json.obj("arn" -> arn.value, "agencyName" -> "ACME"))
     }
 
-    "return error when there is no name" in {
+    "return OK when there is no name" in {
       isLoggedIn
       givenDESRespondsWithoutValidData(arn)
 
       val result = getAgencyNames(Seq(arn))
-      result.status shouldBe INTERNAL_SERVER_ERROR
+      result.status shouldBe OK
     }
 
     "return an exception when there is an unsuccessful response" in {
