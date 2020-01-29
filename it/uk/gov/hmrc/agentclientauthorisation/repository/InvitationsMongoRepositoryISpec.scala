@@ -399,14 +399,14 @@ class InvitationsMongoRepositoryISpec
         await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "AB523456A"), Some(Pending)))
       result1 shouldBe Seq(
         invitations
-          .map(invitation => InvitationInfo(invitation.invitationId, invitation.expiryDate, Pending))
+          .map(invitation => InvitationInfo(invitation.invitationId, invitation.expiryDate, Pending, Arn(arn), Service.MtdIt))
           .apply(4))
 
       val result2: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "AB523456B"), Some(Pending)))
       result2 shouldBe Seq(
         invitations
-          .map(invitation => InvitationInfo(invitation.invitationId, invitation.expiryDate, Pending))
+          .map(invitation => InvitationInfo(invitation.invitationId, invitation.expiryDate, Pending, Arn(arn), Service.MtdIt))
           .apply(4))
     }
 
@@ -449,15 +449,15 @@ class InvitationsMongoRepositoryISpec
 
       val result1: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "ABCD123456C"), Some(Pending)))
-      result1 shouldBe Seq(InvitationInfo(itsaInvitation.invitationId, itsaInvitation.expiryDate, Pending))
+      result1 shouldBe Seq(InvitationInfo(itsaInvitation.invitationId, itsaInvitation.expiryDate, Pending, Arn(arn), Service.MtdIt))
 
       val result2: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("NINO" -> "AB123456B"), Some(Pending)))
-      result2 shouldBe Seq(InvitationInfo(pirInvitation.invitationId, pirInvitation.expiryDate, Pending))
+      result2 shouldBe Seq(InvitationInfo(pirInvitation.invitationId, pirInvitation.expiryDate, Pending, Arn(arn), Service.PersonalIncomeRecord))
 
       val result3: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("VRN" -> "442820662"), Some(Pending)))
-      result3 shouldBe Seq(InvitationInfo(vatInvitation.invitationId, vatInvitation.expiryDate, Pending))
+      result3 shouldBe Seq(InvitationInfo(vatInvitation.invitationId, vatInvitation.expiryDate, Pending, Arn(arn), Service.Vat))
 
       await(repository.update(itsaInvitation, Rejected, DateTime.now()))
       await(repository.update(pirInvitation, Rejected, DateTime.now()))
@@ -465,15 +465,15 @@ class InvitationsMongoRepositoryISpec
 
       val result1Rejected: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "ABCD123456C"), Some(Rejected)))
-      result1Rejected shouldBe Seq(InvitationInfo(itsaInvitation.invitationId, itsaInvitation.expiryDate, Rejected))
+      result1Rejected shouldBe Seq(InvitationInfo(itsaInvitation.invitationId, itsaInvitation.expiryDate, Rejected,  Arn(arn), Service.MtdIt))
 
       val result2Rejected: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("NINO" -> "AB123456B"), Some(Rejected)))
-      result2Rejected shouldBe Seq(InvitationInfo(pirInvitation.invitationId, pirInvitation.expiryDate, Rejected))
+      result2Rejected shouldBe Seq(InvitationInfo(pirInvitation.invitationId, pirInvitation.expiryDate, Rejected,  Arn(arn), Service.PersonalIncomeRecord))
 
       val result3Rejected: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq("VRN" -> "442820662"), Some(Rejected)))
-      result3Rejected shouldBe Seq(InvitationInfo(vatInvitation.invitationId, vatInvitation.expiryDate, Rejected))
+      result3Rejected shouldBe Seq(InvitationInfo(vatInvitation.invitationId, vatInvitation.expiryDate, Rejected,  Arn(arn), Service.Vat))
     }
   }
 

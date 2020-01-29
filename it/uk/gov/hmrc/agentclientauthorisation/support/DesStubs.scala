@@ -20,7 +20,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.{Scenario, StubMapping}
+import play.api.libs.json.Json
 import play.utils.UriEncoding
+import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
@@ -262,13 +264,13 @@ trait DesStubs {
     this
   }
 
-  def givenDESRespondsWithValidData(identifier: TaxIdentifier, agencyName: String): StubMapping =
+  def givenDESRespondsWithValidData(identifier: TaxIdentifier, agencyName: String, suspensionDetails: SuspensionDetails = SuspensionDetails.notSuspended): StubMapping =
     stubFor(
       get(urlEqualTo(
         s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .willReturn(aResponse()
           .withStatus(200)
-          .withBody(personalDetailsResponseBodyWithValidData(agencyName))))
+          .withBody(personalDetailsResponseBodyWithValidData(agencyName, suspensionDetails))))
 
   def givenDESRespondsWithoutValidData(identifier: TaxIdentifier): StubMapping =
     stubFor(
@@ -278,7 +280,7 @@ trait DesStubs {
           .withStatus(200)
           .withBody(personalDetailsResponseBodyWithoutValidData)))
 
-  def personalDetailsResponseBodyWithValidData(agencyName: String) =
+  def personalDetailsResponseBodyWithValidData(agencyName: String, suspensionDetails: SuspensionDetails) =
     s"""
        |{
        |   "isAnOrganisation" : true,
@@ -299,13 +301,7 @@ trait DesStubs {
        |      "agencyName" : "$agencyName",
        |      "agencyEmail" : "abc@xyz.com"
        |   },
-       |   "suspensionDetails": {
-       |     "suspensionStatus": true,
-       |     "regimes": [
-       |       "ITSA",
-       |       "VATC"
-       |     ]
-       |   },
+       |   "suspensionDetails": ${Json.toJson(suspensionDetails).toString()},
        |   "organisation" : {
        |      "organisationName" : "CT AGENT 183",
        |      "isAGroup" : false,

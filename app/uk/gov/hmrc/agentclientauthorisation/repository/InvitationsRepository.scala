@@ -218,17 +218,28 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
 
     collection
-      .find(query, Some(Json.obj("invitationId" -> 1, "expiryDate" -> 1, InvitationRecordFormat.statusKey -> 1)))
+      .find(
+        query,
+        Some(
+          Json.obj(
+            "invitationId"                   -> 1,
+            "expiryDate"                     -> 1,
+            InvitationRecordFormat.statusKey -> 1,
+            "arn"                            -> 1,
+            "service"                        -> 1)))
       .cursor[JsObject](ReadPreference.primaryPreferred)
       .collect[List](1000, Cursor.FailOnError[List[JsObject]]())
       .map(
-        _.map((x: JsValue) => (x \ "invitationId", x \ "expiryDate", x \ InvitationRecordFormat.statusKey))
+        _.map((x: JsValue) =>
+          (x \ "invitationId", x \ "expiryDate", x \ InvitationRecordFormat.statusKey, x \ "arn", x \ "service"))
           .map(
             properties =>
               InvitationInfo(
                 properties._1.as[InvitationId],
                 properties._2.as[LocalDate],
-                properties._3.as[InvitationStatus])))
+                properties._3.as[InvitationStatus],
+                properties._4.as[Arn],
+                properties._5.as[Service])))
   }
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =

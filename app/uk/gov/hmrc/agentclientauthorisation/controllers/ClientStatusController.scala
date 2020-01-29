@@ -53,15 +53,9 @@ class ClientStatusController @Inject()(
                  else
                    clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
                      for {
-                       invitationsInfoList <- Future.sequence(identifiers.map {
-                                               case (service, clientId) =>
-                                                 invitationsService
-                                                   .findInvitationsInfoBy(
-                                                     service = Some(service),
-                                                     clientId = Some(clientId))
-                                             })
-                       hasPendingInvitations = invitationsInfoList.exists(_.exists(_.status == Pending))
-                       hasInvitationsHistory = invitationsInfoList.exists(_.exists(_.status != Pending))
+                       nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
+                       hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
+                       hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
                                                        .map(_.nonEmpty)
                                                        .recover {

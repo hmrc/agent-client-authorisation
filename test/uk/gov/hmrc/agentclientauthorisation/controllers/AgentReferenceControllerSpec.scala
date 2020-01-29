@@ -28,7 +28,7 @@ import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending, SuspensionDetails}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending, Service, SuspensionDetails}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
@@ -39,6 +39,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAu
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.arn
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -153,9 +154,12 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
           val expiryDate = LocalDate.now()
 
-          val invitationIdAndExpiryDate1 = InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending)
-          val invitationIdAndExpiryDate2 = InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending)
-          val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
+          val invitationIdAndExpiryDate1 =
+            InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending, arn, Service.MtdIt)
+          val invitationIdAndExpiryDate2 =
+            InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending, arn, Service.PersonalIncomeRecord)
+          val invitationIdAndExpiryDate3 =
+            InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat)
 
           val listOfInvitations =
             List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
@@ -188,7 +192,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val expiryDate = LocalDate.now()
 
-        val invitationIdAndExpiryDate3 = InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending)
+        val invitationIdAndExpiryDate3 =
+          InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat)
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
