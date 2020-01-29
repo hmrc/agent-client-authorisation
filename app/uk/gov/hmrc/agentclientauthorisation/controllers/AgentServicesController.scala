@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -102,11 +102,14 @@ class AgentServicesController @Inject()(
 
           if (validationResult) {
             withBasicAuth {
-              val agencyDetails = arns.map { arn =>
-                agencyNameFor(Arn(arn)).map(AgencyNameByArn(arn, _))
+              val agencyDetails: Set[Future[Option[AgencyNameByArn]]] = arns.map { arn =>
+                agencyNameFor(Arn(arn)).map(nameOpts => nameOpts.map(name => AgencyNameByArn(arn, name)))
               }
 
-              Future.sequence(agencyDetails).map(details => Ok(Json.toJson(details)))
+              Future
+                .sequence(agencyDetails)
+                .map(_.flatten)
+                .map(details => Ok(Json.toJson(details)))
             }
           } else
             errorResponse(BAD_REQUEST, s"Invalid Arns: (${arns.mkString(",")})")
@@ -125,9 +128,13 @@ class AgentServicesController @Inject()(
           if (validationResult) {
             withBasicAuth {
               val agencyDetails = utrs.map { utr =>
-                agencyNameFor(Utr(utr)).map(AgencyNameByUtr(utr, _))
+                agencyNameFor(Utr(utr)).map(nameOpts => nameOpts.map(name => AgencyNameByUtr(utr, name)))
               }
-              Future.sequence(agencyDetails).map(details => Ok(Json.toJson(details)))
+
+              Future
+                .sequence(agencyDetails)
+                .map(_.flatten)
+                .map(details => Ok(Json.toJson(details)))
             }
           } else
             errorResponse(BAD_REQUEST, "Invalid Utr")
@@ -152,6 +159,9 @@ class AgentServicesController @Inject()(
                   .recover {
                     case e: NotFoundException =>
                       Logger(getClass).warn("An error happened when trying to get business name for a utr", e)
+                      defaultName
+                    case e if e.getMessage.contains("AGENT_TERMINATED") =>
+                      Logger(getClass).warn("Termination Found when trying to get business name for a utr", e)
                       defaultName
                   }
                   .map(BusinessNameByUtr(utr, _))
@@ -214,14 +224,10 @@ class AgentServicesController @Inject()(
     }
   }
 
-  private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[String] =
+  private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[Option[String]] =
     desConnector
       .getAgencyDetails(identifier)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
-      .map {
-        case Some(name) => name
-        case None       => throw AgencyNameNotFound(s"for $identifier")
-      }
 
   private def businessNameFor(utr: Utr)(implicit hc: HeaderCarrier): Future[String] = {
     val defaultName = ""

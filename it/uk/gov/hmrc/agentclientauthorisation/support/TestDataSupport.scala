@@ -15,6 +15,7 @@ trait TestDataSupport {
 
   val arn: Arn = Arn("TARN0000001")
   val arn2: Arn = Arn("TARN0000002")
+  val arn3: Arn = Arn("JARN3069344")
 
   val personal = Some("personal")
   val business = Some("business")

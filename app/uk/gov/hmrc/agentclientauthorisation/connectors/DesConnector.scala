@@ -22,6 +22,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, _}
 import play.utils.UriEncoding
@@ -139,9 +140,14 @@ class DesConnectorImpl @Inject()(
   def getAgencyDetails(agentIdentifier: TaxIdentifier)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
-    agentCacheProvider.agencyDetailsCache(agentIdentifier.value) {
-      getWithDesHeaders[AgentDetailsDesResponse]("GetAgentRecord", getAgentRecordUrl(agentIdentifier))
-    }
+    agentCacheProvider
+      .agencyDetailsCache(agentIdentifier.value) {
+        getWithDesHeaders[AgentDetailsDesResponse]("GetAgentRecord", getAgentRecordUrl(agentIdentifier)).recover {
+          case e if e.getMessage.contains("AGENT_TERMINATED") =>
+            Logger(getClass).warn(s"Discovered a Termination: $e")
+            None
+        }
+      }
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     for {

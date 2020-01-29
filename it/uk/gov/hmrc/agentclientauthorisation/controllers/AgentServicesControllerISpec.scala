@@ -137,13 +137,13 @@ class AgentServicesControllerISpec extends BaseISpec {
         Json.obj("utr" -> "4000000009", "agencyName" -> "Other name"))
     }
 
-    "return error when there is no name" in {
+    "return OK when there is no name" in {
       isLoggedIn
       authorisedAsValidClient(req, mtdItId.value)
       givenDESRespondsWithoutValidData(utr)
 
       val result = getUtrAgencyNames(Seq(utr))
-      result.status shouldBe INTERNAL_SERVER_ERROR
+      result.status shouldBe OK
     }
 
     "return an exception when there is an unsuccessful response" in {
@@ -412,12 +412,22 @@ class AgentServicesControllerISpec extends BaseISpec {
       result.json shouldBe Json.arr(Json.obj("arn" -> arn.value, "agencyName" -> "ACME"))
     }
 
-    "return error when there is no name" in {
+    "return Ok when one agent is ok but the other is terminated" in {
+      isLoggedIn
+      givenDESRespondsWithValidData(arn, "ACME")
+      givenDESReturnsError(arn3, 500, terminatedResponseBody)
+
+      val result = getAgencyNames(Seq(arn, arn3))
+      result.status shouldBe OK
+      result.json shouldBe Json.arr(Json.obj("arn" -> arn.value, "agencyName" -> "ACME"))
+    }
+
+    "return OK when there is no name" in {
       isLoggedIn
       givenDESRespondsWithoutValidData(arn)
 
       val result = getAgencyNames(Seq(arn))
-      result.status shouldBe INTERNAL_SERVER_ERROR
+      result.status shouldBe OK
     }
 
     "return an exception when there is an unsuccessful response" in {
@@ -588,6 +598,14 @@ class AgentServicesControllerISpec extends BaseISpec {
 
         val result = getUtrBusinessNames(Seq(utr, Utr("4000000009")))
         result.status shouldBe OK
+      }
+
+      s"return ok but one of the agents discovered is terminated for $isIndividual" in {
+        isLoggedIn
+        givenDESRespondsWithRegistrationData(utr, isIndividual)
+        givenDESReturnsErrorForRegistration(Utr("4000000009"), INTERNAL_SERVER_ERROR, terminatedResponseBody)
+
+        getUtrBusinessNames(Seq(utr, Utr("4000000009"))).status shouldBe OK
       }
 
       s"Error thrown by Des on one of the UTRs $isIndividual" in {
