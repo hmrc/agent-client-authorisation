@@ -413,7 +413,7 @@ class InvitationsMongoRepositoryISpec
         await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "AB623456B"), None))
       result3 shouldBe Seq(
         invitations
-          .map(inv => InvitationInfo(inv.invitationId, inv.expiryDate, inv.status))
+          .map(inv => InvitationInfo(inv.invitationId, inv.expiryDate, inv.status, Arn(arn), Service.MtdIt))
           .apply(5))
     }
 
