@@ -27,7 +27,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -74,10 +74,8 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     })
 
   def write(newUid: String, newRunAt: DateTime)(implicit ec: ExecutionContext): Future[Unit] =
-    collection
-      .findAndUpdate(
-        selector = BSONDocument(),
-        update = BSONDocument(
-          "$set" -> BSONDocument("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt))))
-      .map(_.lastError.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
+    findAndUpdate(
+      Json.obj(),
+      Json.obj("$set" -> Json.obj("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
+    ).map(_.lastError.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
 }
