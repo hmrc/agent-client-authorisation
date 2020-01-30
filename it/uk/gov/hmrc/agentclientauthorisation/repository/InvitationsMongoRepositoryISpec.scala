@@ -408,6 +408,13 @@ class InvitationsMongoRepositoryISpec
         invitations
           .map(invitation => InvitationInfo(invitation.invitationId, invitation.expiryDate, Pending, Arn(arn), Service.MtdIt))
           .apply(4))
+
+      val result3: Seq[InvitationInfo] =
+        await(repository.findInvitationInfoBy(Arn(arn), Seq("MTDITID" -> "AB623456B"), None))
+      result3 shouldBe Seq(
+        invitations
+          .map(inv => InvitationInfo(inv.invitationId, inv.expiryDate, inv.status))
+          .apply(5))
     }
 
     "find pending invitations, reject them and then find them again" in {

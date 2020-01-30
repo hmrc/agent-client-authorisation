@@ -202,12 +202,25 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
   def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
 
-    val keys = clientIdTypeAndValues.map {
-      case (clientIdType, clientIdValue) =>
-        InvitationRecordFormat
-          .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.getOrElse("").toString)
+    val query = status match {
+      case None => {
+        val keys = clientIdTypeAndValues.map {
+          case (clientIdType, clientIdValue) =>
+            InvitationRecordFormat
+              .toArnClientKey(arn, clientIdValue)
+        }
+        Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Json.obj("$in" -> keys))
+      }
+      case Some(status) => {
+        val keys = clientIdTypeAndValues.map {
+          case (clientIdType, clientIdValue) =>
+            InvitationRecordFormat
+              .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.toString)
+        }
+        Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
+      }
     }
-    val query = Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
+
     findInvitationInfoBySearch(query)
   }
 
