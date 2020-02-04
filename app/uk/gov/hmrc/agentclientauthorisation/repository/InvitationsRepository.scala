@@ -51,6 +51,8 @@ trait InvitationsRepository {
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation]
 
+  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation]
+
   def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]]
 
   def findInvitationsBy(
@@ -140,6 +142,26 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                       }
                   case None =>
                     throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
+                }
+    } yield updated
+
+  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
+    for {
+      invitationOpt <- findById(invitation.id)
+      modifiedOpt = invitationOpt.map(i => i.copy(isRelationshipEnded = true))
+      updated <- modifiedOpt match {
+                  case Some(modified) =>
+                    collection
+                      .update(ordered = false)
+                      .one(BSONDocument(ID -> invitation.id), bsonJson(modified))
+                      .map { result =>
+                        if (result.ok) modified
+                        else
+                          throw new Exception(
+                            s"Invitation ${invitation.invitationId.value} update to set isRelationshipEnded to true has failed")
+                      }
+                  case None =>
+                    throw new Exception(s"Invitiation ${invitation.invitationId.value} not found")
                 }
     } yield updated
 
