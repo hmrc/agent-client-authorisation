@@ -110,6 +110,7 @@ case class Invitation(
   suppliedClientId: ClientId,
   expiryDate: LocalDate,
   detailsForEmail: Option[DetailsForEmail],
+  isRelationshipEnded: Boolean = false,
   clientActionUrl: Option[String],
   events: List[StatusChangeEvent]) {
 
@@ -169,6 +170,7 @@ object Invitation {
           "status"               -> invitation.status,
           "invitationId"         -> invitation.invitationId.value,
           "detailsForEmail"      -> invitation.detailsForEmail,
+          "isRelationshipEnded"  -> invitation.isRelationshipEnded,
           "clientActionUrl"      -> invitation.clientActionUrl
         )
     }

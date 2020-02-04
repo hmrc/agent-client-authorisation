@@ -101,6 +101,9 @@ trait TestDataSupport {
                         updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation] =
       Future failed new Exception ("Unable to Update Invitation")
 
+    override def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
+      Future failed new Exception ("Unable to set isRelationshipEnded = true")
+
     override def findByInvitationId(invitationId: InvitationId)(
       implicit ec: ExecutionContext): Future[Option[Invitation]] =
       Future failed new Exception ("Unable to Find Invitation by ID")
