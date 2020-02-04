@@ -261,6 +261,13 @@ class InvitationsService @Inject()(
             Right(invitation)
           }
         }
+      case Accepted if status == Cancelled =>
+        monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
+          invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
+            Logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
+            Right(invitation)
+          }
+        }
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
     }
 
