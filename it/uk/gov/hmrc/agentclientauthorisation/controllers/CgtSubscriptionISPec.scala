@@ -89,7 +89,7 @@ class CgtSubscriptionISPec extends BaseISpec {
         .toString() shouldBe """[{"code":"INVALID_REGIME","reason":"some message"},{"code":"INVALID_IDType","reason":"some other message"}]"""
     }
 
-    "handle 404 from DES" in {
+    "handle any other from DES" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 404, notFoundJson)

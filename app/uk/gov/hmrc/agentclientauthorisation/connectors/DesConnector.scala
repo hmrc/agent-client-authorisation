@@ -95,14 +95,9 @@ class DesConnectorImpl @Inject()(
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
-    val desHeaderCarrier = hc.copy(
-      authorization = Some(Authorization(s"Bearer $authorizationToken")),
-      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
-    )
-
     val url = s"$baseUrl/trusts/agent-known-fact-check/${utr.value}"
 
-    httpClient.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
+    httpClient.GET[HttpResponse](url)(rawHttpReads, addDesHeaders, ec).map { response =>
       response.status match {
         case 200 => TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
         case 400 | 404 =>
@@ -115,18 +110,13 @@ class DesConnectorImpl @Inject()(
   def getCgtSubscription(
     cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse] = {
 
-    val desHeaderCarrier = hc.copy(
-      authorization = Some(Authorization(s"Bearer $authorizationToken")),
-      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
-    )
-
     val url = s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}"
 
-    httpClient.GET[HttpResponse](url)(rawHttpReads, desHeaderCarrier, ec).map { response =>
+    httpClient.GET[HttpResponse](url)(rawHttpReads, addDesHeaders, ec).map { response =>
       val result = response.status match {
         case 200 =>
           Right(response.json.as[CgtSubscription])
-        case 400 | 404 =>
+        case _ =>
           (response.json \ "failures").asOpt[Seq[DesError]] match {
             case Some(e) => Left(CgtError(response.status, e))
             case None    => Left(CgtError(response.status, Seq(response.json.as[DesError])))
@@ -136,6 +126,12 @@ class DesConnectorImpl @Inject()(
       CgtSubscriptionResponse(result)
     }
   }
+
+  private def addDesHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
+    hc.copy(
+      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
+    )
 
   def getAgencyDetails(agentIdentifier: TaxIdentifier)(
     implicit hc: HeaderCarrier,
