@@ -258,9 +258,13 @@ class AgencyInvitationsController @Inject()(
         cgtSubscription.response match {
           case Right(sub) => Ok(Json.toJson(sub))
           case Left(cgtError) =>
+            val json = Json.toJson(cgtError.errors)
             cgtError.httpResponseCode match {
-              case 400 => BadRequest(Json.toJson(cgtError.errors))
-              case 404 => NotFound(Json.toJson(cgtError.errors))
+              case 400 => BadRequest(json)
+              case 404 => NotFound(json)
+              case c =>
+                Logger.warn(s"unexpected status $c from DES, error: ${cgtError.errors}")
+                InternalServerError(json)
             }
         }
       }
