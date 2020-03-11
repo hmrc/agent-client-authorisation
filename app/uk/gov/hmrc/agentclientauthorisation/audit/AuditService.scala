@@ -32,7 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object AgentClientInvitationEvent extends Enumeration {
-  val AgentClientInvitationResponse, AgentClientRelationshipCreated = Value
+  val AgentClientInvitationResponse, AgentClientRelationshipCreated, TerminateMtdAgentInvitationRecords = Value
   type AgentClientInvitationEvent = Value
 }
 
@@ -52,6 +52,26 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "clientIdType"         -> clientIdentifierType(clientId),
         "clientId"             -> clientId.value,
         "service"              -> service.id
+      )
+    )
+
+  def sendTerminateMtdAgentsInvitationRecords(
+    arn: Arn,
+    status: String,
+    credId: String,
+    failureReason: Option[String] = None)(
+    implicit hc: HeaderCarrier,
+    request: Request[Any],
+    ec: ExecutionContext): Future[Unit] =
+    auditEvent(
+      AgentClientInvitationEvent.TerminateMtdAgentInvitationRecords,
+      "terminate-mtd-agents-invitation-records",
+      Seq(
+        "agentReferenceNumber" -> arn.value,
+        "status"               -> status,
+        "credId"               -> credId,
+        "authProvider"         -> "PrivilegedApplication",
+        "failureReason"        -> failureReason.getOrElse("")
       )
     )
 

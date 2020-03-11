@@ -44,7 +44,9 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
 import play.api.test.Helpers.stubControllerComponents
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -63,6 +65,8 @@ class AgencyInvitationsControllerSpec
   val appConfig: AppConfig = resettingMock[AppConfig]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   override val mockDesConnector = resettingMock[DesConnector]
+  val auditConnector: AuditConnector = resettingMock[AuditConnector]
+  val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
   val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
     override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
@@ -80,6 +84,7 @@ class AgencyInvitationsControllerSpec
       multiInvitationsService,
       mockDesConnector,
       mockPlayAuthConnector,
+      auditService,
       agentCacheProvider
     )(metrics, cc, ecp) {}
 
