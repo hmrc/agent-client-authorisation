@@ -62,18 +62,32 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     failureReason: Option[String] = None)(
     implicit hc: HeaderCarrier,
     request: Request[Any],
-    ec: ExecutionContext): Future[Unit] =
+    ec: ExecutionContext): Future[Unit] = {
+
+    val details = failureReason match {
+      case Some(fr) =>
+        Seq(
+          "agentReferenceNumber" -> arn.value,
+          "status"               -> status,
+          "credId"               -> credId,
+          "authProvider"         -> "PrivilegedApplication",
+          "failureReason"        -> fr
+        )
+      case None =>
+        Seq(
+          "agentReferenceNumber" -> arn.value,
+          "status"               -> status,
+          "credId"               -> credId,
+          "authProvider"         -> "PrivilegedApplication"
+        )
+    }
+
     auditEvent(
       AgentClientInvitationEvent.TerminateMtdAgentInvitationRecords,
       "terminate-mtd-agents-invitation-records",
-      Seq(
-        "agentReferenceNumber" -> arn.value,
-        "status"               -> status,
-        "credId"               -> credId,
-        "authProvider"         -> "PrivilegedApplication",
-        "failureReason"        -> failureReason.getOrElse("")
-      )
+      details
     )
+  }
 
   def sendInvitationExpired(
     invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Future[Unit] =
