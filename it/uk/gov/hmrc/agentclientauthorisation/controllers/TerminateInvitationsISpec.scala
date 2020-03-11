@@ -59,6 +59,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       agentLinkService(agentReferenceRepository),
       desConnector,
       authConnector,
+      auditService,
       agentCacheProvider)
 
   val jsonDeletedRecords = Json.obj("arn" -> arn.value, "InvitationsDeleted" -> 5, "ReferencesDeleted" -> 1)

@@ -23,6 +23,7 @@ import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
@@ -47,6 +48,7 @@ class AgencyInvitationsController @Inject()(
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
   authConnector: AuthConnector,
+  auditService: AuditService,
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
@@ -272,24 +274,26 @@ class AgencyInvitationsController @Inject()(
   }
 
   def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] =
-    onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
+    onlyStride(appConfig.terminationStrideEnrolment) { implicit request => creds =>
       if (Arn.isValid(arn.value)) {
         (for {
           invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
           referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
-        } yield
+        } yield {
+          auditService.sendTerminateMtdAgentsInvitationRecords(arn, "Success", creds.providerId)
           Ok(
             Json
               .obj(
                 "arn"                -> arn.value,
                 "InvitationsDeleted" -> invitationsDeleted,
-                "ReferencesDeleted"  -> referencesDeleted)))
-          .recover {
-            case e => {
-              Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
-              genericInternalServerError(e.getMessage)
-            }
+                "ReferencesDeleted"  -> referencesDeleted))
+        }).recover {
+          case e => {
+            auditService.sendTerminateMtdAgentsInvitationRecords(arn, "Failed", creds.providerId, Some(e.getMessage))
+            Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
+            genericInternalServerError(e.getMessage)
           }
+        }
       } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
     }
 }
