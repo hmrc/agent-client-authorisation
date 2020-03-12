@@ -77,5 +77,5 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     findAndUpdate(
       Json.obj(),
       Json.obj("$set" -> Json.obj("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
-    ).map(_.lastError.foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
+    ).map(_.lastError.flatMap(_.err).foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
 }
