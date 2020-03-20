@@ -39,7 +39,6 @@ class AuthActionsISpec extends BaseISpec {
 
     def testOnlyForStride(strideRole: String): Action[AnyContent] =
       super.onlyStride(strideRole) { _ =>
-        _ =>
           Future.successful(Ok)
       }
   }
