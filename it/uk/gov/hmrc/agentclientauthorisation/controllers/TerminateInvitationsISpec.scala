@@ -62,8 +62,8 @@ class TerminateInvitationsISpec extends BaseISpec {
       auditService,
       agentCacheProvider)
 
-  val jsonDeletedRecords = Json.obj("arn" -> arn.value, "InvitationsDeleted" -> 5, "ReferencesDeleted" -> 1)
-  val jsonNoDeletedRecords = Json.obj("arn" -> arn.value, "InvitationsDeleted" -> 0, "ReferencesDeleted" -> 0)
+  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 5), DeletionCount(appConfig.appName, "agent-reference", 1))))
+  val jsonNoDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 0), DeletionCount(appConfig.appName, "agent-reference", 0))))
 
   def createInvitation(arn: Arn,
                        testClient: TestClient[_],

@@ -274,22 +274,21 @@ class AgencyInvitationsController @Inject()(
   }
 
   def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] =
-    onlyStride(appConfig.terminationStrideEnrolment) { implicit request => creds =>
+    onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
       if (Arn.isValid(arn.value)) {
         (for {
           invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
           referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
         } yield {
-          auditService.sendTerminateMtdAgentsInvitationRecords(arn, "Success", creds.providerId)
           Ok(
-            Json
-              .obj(
-                "arn"                -> arn.value,
-                "InvitationsDeleted" -> invitationsDeleted,
-                "ReferencesDeleted"  -> referencesDeleted))
+            Json.toJson[TerminationResponse](
+              TerminationResponse(
+                Seq(
+                  DeletionCount(appConfig.appName, "invitations", invitationsDeleted),
+                  DeletionCount(appConfig.appName, "agent-reference", referencesDeleted)
+                ))))
         }).recover {
           case e => {
-            auditService.sendTerminateMtdAgentsInvitationRecords(arn, "Failed", creds.providerId, Some(e.getMessage))
             Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
             genericInternalServerError(e.getMessage)
           }
