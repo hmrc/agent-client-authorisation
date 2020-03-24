@@ -37,7 +37,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -76,25 +76,24 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       } recover handleFailure
   }
 
+  val basicAuthHeader: Regex = "Basic (.+)".r
+  val decodedAuth: Regex = "(.+):(.+)".r
+
   private def decodeFromBase64(encodedString: String): String =
     try {
       new String(Base64.getDecoder.decode(encodedString), UTF_8)
     } catch { case _: Throwable => "" }
 
-  def getBasicAuth(headers: Headers): Option[BasicAuthentication] = {
-    val basicAuthHeader: Regex = "Basic (.+)".r
-    val decodedAuth: Regex = "(.+):(.+)".r
-
-    headers.get(AUTHORIZATION) match {
+  def withBasicAuth(expectedAuth: BasicAuthentication)(body: => Future[Result])(
+    implicit request: Request[_]): Future[Result] =
+    request.headers.get(HeaderNames.authorisation) match {
       case Some(basicAuthHeader(encodedAuthHeader)) =>
         decodeFromBase64(encodedAuthHeader) match {
-          case decodedAuth(username, password) =>
-            Some(BasicAuthentication(username, password))
-          case _ => None
+          case decodedAuth(username, password) if (BasicAuthentication(username, password) == expectedAuth) => body
+          case _                                                                                            => Future successful Unauthorized
         }
-      case _ => None
+      case _ => Future successful Unauthorized
     }
-  }
 
   def withBasicAuth[A](body: => Future[Result])(
     implicit
