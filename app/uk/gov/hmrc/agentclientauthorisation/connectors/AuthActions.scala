@@ -17,6 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Base64
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
@@ -35,12 +37,13 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, confidenceLevel, credentials}
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import scala.util.matching.Regex
 
 case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
 
@@ -72,6 +75,34 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         case _ => Future successful GenericUnauthorized
       } recover handleFailure
   }
+
+  val basicAuthHeader: Regex = "Basic (.+)".r
+  val decodedAuth: Regex = "(.+):(.+)".r
+
+  private def decodeFromBase64(encodedString: String): String =
+    try {
+      new String(Base64.getDecoder.decode(encodedString), UTF_8)
+    } catch { case _: Throwable => "" }
+
+  def withBasicAuth(expectedAuth: BasicAuthentication)(body: => Future[Result])(
+    implicit request: Request[_]): Future[Result] =
+    request.headers.get(HeaderNames.authorisation) match {
+      case Some(basicAuthHeader(encodedAuthHeader)) =>
+        decodeFromBase64(encodedAuthHeader) match {
+          case decodedAuth(username, password) =>
+            if (BasicAuthentication(username, password) == expectedAuth) body
+            else {
+              Logger.warn("Authorization header found in the request but invalid username or password")
+              Future successful Unauthorized
+            }
+          case _ =>
+            Logger.warn("Authorization header found in the request but its not in the expected format")
+            Future successful Unauthorized
+        }
+      case _ =>
+        Logger.warn("No Authorization header found in the request for agent termination")
+        Future successful Unauthorized
+    }
 
   def withBasicAuth[A](body: => Future[Result])(
     implicit

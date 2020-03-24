@@ -273,8 +273,8 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] =
-    onlyStride(appConfig.terminationStrideEnrolment) { implicit request =>
+  def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth(appConfig.expectedAuth) {
       if (Arn.isValid(arn.value)) {
         (for {
           invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
@@ -295,4 +295,5 @@ class AgencyInvitationsController @Inject()(
         }
       } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
     }
+  }
 }

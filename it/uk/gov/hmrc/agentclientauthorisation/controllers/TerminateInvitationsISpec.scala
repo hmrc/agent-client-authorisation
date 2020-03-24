@@ -1,4 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Base64
+
 import akka.stream.Materializer
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Provider
@@ -14,8 +17,9 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericInternalServerError, genericBadRequest}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.service._
+import uk.gov.hmrc.http.HeaderNames
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -98,8 +102,10 @@ class TerminateInvitationsISpec extends BaseISpec {
     givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
   }
 
+  def basicAuth(string: String): String = Base64.getEncoder.encodeToString(string.getBytes(UTF_8))
+
   "/remove-agent-invitations" should {
-    val request = FakeRequest("DELETE", "/agent/:arn/terminate")
+    val request = FakeRequest("DELETE", "/agent/:arn/terminate").withHeaders(HeaderNames.authorisation -> s"Basic ${basicAuth("username:password")}")
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
@@ -117,7 +123,6 @@ class TerminateInvitationsISpec extends BaseISpec {
     }
 
     "return 200 no invitations and references to remove" in {
-      givenOnlyStrideStub("caat", "123ABC")
       val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(arn)(request))
 
       status(response) shouldBe 200
@@ -129,7 +134,6 @@ class TerminateInvitationsISpec extends BaseISpec {
     }
 
     "return 400 for invalid arn" in {
-      givenOnlyStrideStub("caat", "123ABC")
       val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(Arn("MARN01"))(request))
 
       status(response) shouldBe 400
@@ -140,19 +144,19 @@ class TerminateInvitationsISpec extends BaseISpec {
     /*
       Note: this is just example of Mongo Failures. Not Actual ones for the error messages given
      */
-    "return 503 if removing all invitations but failed to remove references" in new TestSetup {
+    "return 500 if removing all invitations but failed to remove references" in new TestSetup {
       val response: Result = await(testFailedController(invitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
       status(response) shouldBe 500
       jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to Remove References for given Agent"))
     }
 
-    "return 503 if removing all references but failed to remove invitations" in new TestSetup {
+    "return 500 if removing all references but failed to remove invitations" in new TestSetup {
       val response: Result = await(testFailedController(testFailedInvitationsRepo, agentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
       status(response) shouldBe 500
       jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
     }
 
-    "return 503 if failed to remove all invitations and references" in new TestSetup {
+    "return 500 if failed to remove all invitations and references" in new TestSetup {
       val response: Result = await(testFailedController(testFailedInvitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
       status(response) shouldBe 500
       jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
