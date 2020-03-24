@@ -20,6 +20,7 @@ import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
 
 import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.agentclientauthorisation.model.BasicAuthentication
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration.Duration
@@ -65,5 +66,12 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val agentCacheSize = servicesConfig.getInt("agent.cache.size")
   val agentCacheExpires = servicesConfig.getDuration("agent.cache.expires")
   val agentCacheEnabled = servicesConfig.getBoolean("agent.cache.enabled")
+
+  def expectedAuth: BasicAuthentication = {
+    val username = servicesConfig.getString("agent-termination.username")
+    val password = servicesConfig.getString("agent-termination.password")
+
+    BasicAuthentication(username, password)
+  }
 
 }

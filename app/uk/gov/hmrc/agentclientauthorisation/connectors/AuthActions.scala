@@ -17,6 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.net.URL
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Base64
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
@@ -41,6 +43,7 @@ import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import scala.util.matching.Regex
 
 case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
 
@@ -71,6 +74,26 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
           }
         case _ => Future successful GenericUnauthorized
       } recover handleFailure
+  }
+
+  private def decodeFromBase64(encodedString: String): String =
+    try {
+      new String(Base64.getDecoder.decode(encodedString), UTF_8)
+    } catch { case _: Throwable => "" }
+
+  def getBasicAuth(headers: Headers): Option[BasicAuthentication] = {
+    val basicAuthHeader: Regex = "Basic (.+)".r
+    val decodedAuth: Regex = "(.+):(.+)".r
+
+    headers.get(AUTHORIZATION) match {
+      case Some(basicAuthHeader(encodedAuthHeader)) =>
+        decodeFromBase64(encodedAuthHeader) match {
+          case decodedAuth(username, password) =>
+            Some(BasicAuthentication(username, password))
+          case _ => None
+        }
+      case _ => None
+    }
   }
 
   def withBasicAuth[A](body: => Future[Result])(
