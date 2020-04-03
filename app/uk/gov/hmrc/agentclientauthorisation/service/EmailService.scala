@@ -52,14 +52,14 @@ class EmailService @Inject()(
                                 case Some(details) => details
                                 case _ =>
                                   getLogger.warn(s"Agency Record details not found for: ${arn.value}")
-                                  throw AgencyEmailNotFound(s"for $arn")
+                                  throw AgencyEmailNotFound(arn)
                               }
       agencyName = agencyRecordDetails.agencyDetails
         .flatMap(_.agencyName)
-        .getOrElse(throw AgencyNameNotFound(s"for $arn"))
+        .getOrElse(throw AgencyNameNotFound(arn))
       agencyEmail = agencyRecordDetails.agencyDetails
         .flatMap(_.agencyEmail)
-        .getOrElse(throw AgencyEmailNotFound(s"for $arn"))
+        .getOrElse(throw AgencyEmailNotFound(arn))
 
       clientName <- clientNameService.getClientNameByService(clientId.value, service).map {
                      case Some(name) => name
