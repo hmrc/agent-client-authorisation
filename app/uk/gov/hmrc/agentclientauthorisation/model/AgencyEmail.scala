@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 import play.api.libs.json.{JsPath, Reads}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 case class AgencyEmail(email: String)
 
-case class AgencyEmailNotFound(message: String) extends Exception
+case class AgencyEmailNotFound(arn: Arn) extends RuntimeException(s"AgencyEmail not found for Arn: ${arn.value}")
 
 object AgencyEmail {
   implicit val nameReads: Reads[AgencyEmail] =

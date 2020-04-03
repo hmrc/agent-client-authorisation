@@ -64,10 +64,6 @@ class AgentReferenceController @Inject()(
           Logger(getClass).warn(s"Agent Reference Record not found for: $uid")
           NotFound
       }
-      .recoverWith {
-        case e =>
-          Future failed new Exception(s"Something has gone wrong for: $uid. Error found: ${e.getMessage}")
-      }
   }
 
   def getAgentReferenceRecordByArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
@@ -75,10 +71,6 @@ class AgentReferenceController @Inject()(
       .getRecord(arn)
       .map { multiInvitationRecord =>
         Ok(Json.toJson(SimplifiedAgentRefRecord(multiInvitationRecord)))
-      }
-      .recoverWith {
-        case e =>
-          Future failed new Exception(s"Something has gone wrong for: ${arn.value}. Error found: ${e.getMessage}")
       }
   }
 

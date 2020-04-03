@@ -20,7 +20,6 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
-import org.checkerframework.checker.units.qual.s
 import play.api.Logger
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
@@ -45,25 +44,23 @@ class AgentLinkService @Inject()(
 
   def getInvitationUrl(arn: Arn, clientType: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[String] =
     for {
-      normalisedAgentName <- desConnector
-                              .getAgencyDetails(arn)
-                              .map(
-                                _.flatMap(_.agencyDetails.flatMap(_.agencyName))
-                                  .map(normaliseAgentName)
-                                  .getOrElse(throw AgencyNameNotFound(s"for $arn")))
-      record <- fetchOrCreateRecord(arn, normalisedAgentName)
+      normalisedAgentName <- agencyName(arn)
+      record              <- fetchOrCreateRecord(arn, normalisedAgentName)
     } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
 
   def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
-      normalisedName <- desConnector
-                         .getAgencyDetails(arn)
-                         .map(
-                           _.flatMap(_.agencyDetails.flatMap(_.agencyName))
-                             .map(normaliseAgentName)
-                             .getOrElse(throw AgencyNameNotFound(s"for $arn")))
-      record <- fetchOrCreateRecord(arn, normalisedName)
+      normalisedName <- agencyName(arn)
+      record         <- fetchOrCreateRecord(arn, normalisedName)
     } yield record
+
+  private def agencyName(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
+    desConnector
+      .getAgencyDetails(arn)
+      .map(
+        _.flatMap(_.agencyDetails.flatMap(_.agencyName))
+          .map(normaliseAgentName)
+          .getOrElse(throw AgencyNameNotFound(arn)))
 
   def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(
     implicit hc: HeaderCarrier,
