@@ -156,7 +156,12 @@ class InvitationsService @Inject()(
 
   def setRelationshipEnded(
     invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
-    invitationsRepository.setRelationshipEnded(invitation)
+    monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
+      invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
+        Logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
+        invitation
+      }
+    }
 
   def rejectInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext,
