@@ -20,9 +20,9 @@ import play.api.libs.json.Json.reads
 import play.api.libs.json.Reads
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 
-case class BusinessDetails(businessData: Array[BusinessData], mtdbsa: Option[MtdItId])
+case class BusinessDetails(businessData: Seq[BusinessData], mtdbsa: Option[MtdItId])
 
-case class BusinessData(businessAddressDetails: BusinessAddressDetails)
+case class BusinessData(businessAddressDetails: Option[BusinessAddressDetails])
 
 case class BusinessAddressDetails(countryCode: String, postalCode: Option[String])
 
