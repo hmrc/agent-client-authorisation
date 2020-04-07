@@ -102,6 +102,20 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
+  def setRelationshipEnded(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
+    implicit request => implicit arn =>
+      forThisAgency(givenArn) {
+        invitationsService.findInvitation(invitationId) flatMap {
+          case Some(i) if i.arn == givenArn =>
+            invitationsService.setRelationshipEnded(i) map { _ =>
+              NoContent
+            }
+          case None => Future successful InvitationNotFound
+          case _    => Future successful NoPermissionOnAgency
+        }
+      }
+  }
+
   private def localWithJsonBody(f: AgentInvitation => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
