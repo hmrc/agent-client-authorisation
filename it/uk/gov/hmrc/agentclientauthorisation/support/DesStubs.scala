@@ -71,6 +71,34 @@ trait DesStubs {
     this
   }
 
+  def hasABusinessPartnerRecordWithNoBusinessAddressDetails(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingName": "Surname DADTN",
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}
+              """.stripMargin)))
+    this
+  }
+
   def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))

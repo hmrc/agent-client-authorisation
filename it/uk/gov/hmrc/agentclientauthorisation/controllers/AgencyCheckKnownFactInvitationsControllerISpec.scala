@@ -73,6 +73,16 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
       result shouldBe postcodeRequired("HMRC-MTD-IT")
     }
 
+    "return 403 if there is no businessAddressDetails present in the DES response" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasABusinessPartnerRecordWithNoBusinessAddressDetails(nino)
+
+      val result = await(controller.checkKnownFactItsa(nino, postcode)(request))
+
+      result shouldBe PostcodeDoesNotMatch
+    }
+
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)

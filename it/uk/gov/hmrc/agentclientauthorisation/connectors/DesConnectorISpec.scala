@@ -33,8 +33,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val response = await(connector.getBusinessDetails(nino)).get
 
-      response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
+      response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
       response.mtdbsa shouldBe None
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
@@ -54,8 +54,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val response = await(connector.getBusinessDetails(nino)).get
 
-      response.businessData.head.businessAddressDetails.countryCode shouldBe "GB"
-      response.businessData.head.businessAddressDetails.postalCode shouldBe Some("AA11AA")
+      response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
+      response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
       response.mtdbsa shouldBe Some(mtdItId1)
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }

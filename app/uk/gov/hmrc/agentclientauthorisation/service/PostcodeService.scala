@@ -49,16 +49,18 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
     ec: ExecutionContext): Future[Option[Result]] = {
     // we can use head here due to the guard on the array size in the case statement but these are not a general purpose functions
     def postcodeMatches(details: BusinessDetails, postcode: String) =
-      details.businessData.head.businessAddressDetails.postalCode.map(normalise).contains(normalise(postcode))
+      details.businessData.head.businessAddressDetails
+        .flatMap(_.postalCode.map(normalise))
+        .contains(normalise(postcode))
 
     def isUkAddress(details: BusinessDetails) =
-      details.businessData.head.businessAddressDetails.countryCode.toUpperCase == "GB"
+      details.businessData.head.businessAddressDetails.map(_.countryCode.toUpperCase).contains("GB")
 
     desConnector.getBusinessDetails(Nino(clientIdentifier)).map {
       case Some(details) if details.businessData.length != 1                           => Some(PostcodeDoesNotMatch)
       case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => None
       case Some(details) if postcodeMatches(details, postcode) =>
-        Some(nonUkAddress(details.businessData.head.businessAddressDetails.countryCode))
+        details.businessData.head.businessAddressDetails.map(_.countryCode).map(nonUkAddress)
       case Some(_) => Some(PostcodeDoesNotMatch)
       case None    => Some(ClientRegistrationNotFound)
     }
