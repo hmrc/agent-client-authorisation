@@ -154,6 +154,15 @@ class InvitationsService @Inject()(
         case Success(_) => reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
       }
 
+  def setRelationshipEnded(
+    invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
+    monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
+      invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
+        Logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
+        invitation
+      }
+    }
+
   def rejectInvitation(invitation: Invitation)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
@@ -258,13 +267,6 @@ class InvitationsService @Inject()(
         monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
           invitationsRepository.update(invitation, status, timestamp) map { invitation =>
             Logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
-            Right(invitation)
-          }
-        }
-      case Accepted if status == Cancelled =>
-        monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
-          invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
-            Logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
             Right(invitation)
           }
         }
