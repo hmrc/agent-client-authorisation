@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.domain.{Nino, SaAgentReference}
-import uk.gov.hmrc.http.SessionKeys
+import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 
 trait WiremockAware {
   def wiremockBaseUrl: String
@@ -254,6 +254,35 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
     this
   }
 
+  def givenClientNotMTDVat(vrn: Vrn) = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse().withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "optionalCredentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "confidenceLevel":300,
+                     |  "affinityGroup": "Individual",
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-VATVAR-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "VATREGNO",
+                     |          "value": "${vrn.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
+       """.stripMargin)))
+
+    this
+  }
+
 
   def givenClientTrust(utr: Utr) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
@@ -374,6 +403,64 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
   def isLoggedIn = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse().withStatus(200).withBody("{}")))
     this
+  }
+
+  def authorisedAsValidClientWithAffinityGroup[A](request: FakeRequest[A], clientVatEnrolKey: String, clientITEnrolKey: String)(implicit hc: HeaderCarrier): FakeRequest[A] =
+    authenticatedClientAffinityGroup(request, clientVatEnrolKey, clientITEnrolKey)
+
+  def authenticatedClientAffinityGroup[A](request: FakeRequest[A], vatEnrolKey: String, itEnrolKey: String, confidenceLevel: Int = 200)(implicit hc: HeaderCarrier): FakeRequest[A] = {
+    givenAuthorisedFor(
+      payload = """
+        |{
+        |"authorise" : [ {
+        | "authProviders" : [ "GovernmentGateway" ]
+        |}, {
+        |"$or" : [ {
+        | "affinityGroup" : "Individual"
+        |},{
+        | "affinityGroup" : "Organisation"
+        |}]
+        |}],
+        |"retrieve" : [ "affinityGroup", "confidenceLevel",
+        |"allEnrolments" ]
+        | }""".stripMargin,
+      responseBody = s"""
+         |{
+         |"affinityGroup" : "Individual",
+         |"confidenceLevel" : $confidenceLevel,
+         |"allEnrolments":
+         |[
+         |  {
+         |    "key" : "$vatEnrolKey",
+         |    "identifiers": [
+         |      {"key":"VRN", "value": "101747696"}
+         |      ]
+         |  },
+         |  {
+         |    "key" : "$itEnrolKey",
+         |    "identifiers" : [
+         |    {"key":"NINO", "value": "AB123456A"}
+         |    ]
+         |  },
+         |  {
+         |    "key" : "HMRC-CGT-PD",
+         |    "identifiers" : [
+         |    {"key":"CGTPDRef", "value": "XMCGTP123456789"}
+         |    ]
+         |  },
+         |  {
+         |    "key" : "HMRC-NI",
+         |    "identifiers" : [
+         |    {"key":"NINO", "value": "AB123456A"}
+         |    ]
+         |  }
+         |]
+         |}""".stripMargin
+    )
+    request.withSession(
+      SessionKeys.authToken -> "Bearer XYZ",
+      SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse("ClientSession123456")
+    )
   }
 
   def authorisedAsValidClient[A](request: FakeRequest[A], mtdItId: String): FakeRequest[A] =

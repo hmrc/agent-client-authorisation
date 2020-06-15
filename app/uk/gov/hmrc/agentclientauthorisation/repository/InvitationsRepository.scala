@@ -69,8 +69,10 @@ trait InvitationsRepository {
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]]
 
-  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationInfo]]
+  def findInvitationInfoBy(
+    arn: Arn,
+    clientIdTypeAndValues: Seq[(String, String, String)],
+    status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]]
 
   def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit]
 
@@ -221,21 +223,23 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     findInvitationInfoBySearch(query)
   }
 
-  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+  def findInvitationInfoBy(
+    arn: Arn,
+    clientIdTypeAndValues: Seq[(String, String, String)],
+    status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
 
     val query = status match {
       case None => {
         val keys = clientIdTypeAndValues.map {
-          case (clientIdType, clientIdValue) =>
+          case (serviceName, clientIdType, clientIdValue) =>
             InvitationRecordFormat
-              .toArnClientKey(arn, clientIdValue)
+              .toArnClientKey(arn, clientIdValue, serviceName)
         }
         Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Json.obj("$in" -> keys))
       }
       case Some(status) => {
         val keys = clientIdTypeAndValues.map {
-          case (clientIdType, clientIdValue) =>
+          case (serviceName, clientIdType, clientIdValue) =>
             InvitationRecordFormat
               .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.toString)
         }

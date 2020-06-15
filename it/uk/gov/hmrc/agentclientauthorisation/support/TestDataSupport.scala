@@ -123,7 +123,7 @@ trait TestDataSupport {
       Future failed new Exception("Unable to Find Invitation Information")
 
     override def findInvitationInfoBy(arn: Arn,
-                                      clientIdTypeAndValues: Seq[(String, String)],
+                                      clientIdTypeAndValues: Seq[(String, String, String)],
                                       status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
       Future failed new Exception("Unable to Find Invitation Information")
 

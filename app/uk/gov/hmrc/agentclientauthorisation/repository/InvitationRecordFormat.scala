@@ -127,8 +127,8 @@ object InvitationRecordFormat {
   def toArnClientStateKey(arn: String, clientIdType: String, clientIdValue: String, status: String): String =
     s"${arn.toLowerCase}~${clientIdType.toLowerCase}~${clientIdValue.toLowerCase.replaceAll(" ", "")}~${status.toLowerCase}"
 
-  def toArnClientKey(arn: Arn, clientIdValue: String): String =
-    s"${arn.value.toLowerCase}~${clientIdValue.toLowerCase.replaceAll(" ", "")}"
+  def toArnClientKey(arn: Arn, clientIdValue: String, serviceName: String): String =
+    s"${arn.value.toLowerCase}~${clientIdValue.toLowerCase.replaceAll(" ", "")}~${serviceName.toLowerCase}"
 
   def createArnClientServiceStateKeys(inv: Invitation): Seq[String] =
     variants(inv.arn, inv.clientId.value, inv.service, inv.mostRecentEvent().status)(toArnClientServiceStateKey) ++

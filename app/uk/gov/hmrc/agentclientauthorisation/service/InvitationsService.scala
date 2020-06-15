@@ -142,7 +142,7 @@ class InvitationsService @Inject()(
     }
   }
 
-  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String)], status: Option[InvitationStatus])(
+  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
