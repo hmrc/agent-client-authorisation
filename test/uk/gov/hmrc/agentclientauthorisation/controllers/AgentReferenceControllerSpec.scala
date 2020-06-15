@@ -35,7 +35,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, Reset
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolment, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.model
@@ -170,7 +170,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           when(
             mockInvitationsService.findInvitationsInfoBy(
               any[Arn],
-              any[Seq[(String, String)]],
+              any[Seq[(String, String, String)]],
               any[Option[InvitationStatus]])(any[ExecutionContext]))
             .thenReturn(
               Future successful List(
@@ -200,7 +200,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(
           mockInvitationsService.findInvitationsInfoBy(
             any[Arn],
-            any[Seq[(String, String)]],
+            any[Seq[(String, String, String)]],
             any[Option[InvitationStatus]])(any[ExecutionContext]))
           .thenReturn(Future successful listOfInvitations)
 
@@ -245,7 +245,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(
           mockInvitationsService.findInvitationsInfoBy(
             any[Arn],
-            any[Seq[(String, String)]],
+            any[Seq[(String, String, String)]],
             any[Option[InvitationStatus]])(any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
@@ -267,7 +267,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(
           mockInvitationsService.findInvitationsInfoBy(
             any[Arn],
-            any[Seq[(String, String)]],
+            any[Seq[(String, String, String)]],
             any[Option[InvitationStatus]])(any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 

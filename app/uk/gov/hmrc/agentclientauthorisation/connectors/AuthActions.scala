@@ -227,16 +227,28 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       case p                           => Future.successful(handleFailure(request)(p))
     }
 
-  protected def withMultiEnrolledClient[A](body: Seq[(String, String)] => Future[Result])(
+  private def supportedServiceName(key: String): Option[String] =
+    Service.supportedServices.find(_.enrolmentKey == key).map(_.id)
+
+  protected def withMultiEnrolledClient[A](body: Seq[(String, String, String)] => Future[Result])(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext,
     request: Request[_]): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(affinityGroup and confidenceLevel and allEnrolments) {
         case Some(affinity) ~ confidence ~ enrols =>
-          val clientIdTypePlusIds: Seq[(String, String)] = enrols.enrolments.map { enrolment =>
-            (enrolment.identifiers.head.key, enrolment.identifiers.head.value.replaceAll(" ", ""))
-          }.toSeq
+          val clientIdTypePlusIds: Seq[(String, String, String)] =
+            enrols.enrolments
+              .filter(enrol => Service.supportedServices.map(_.enrolmentKey).contains(enrol.key))
+              .map { supportedEnrol =>
+                (
+                  supportedServiceName(supportedEnrol.key).getOrElse(
+                    throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
+                  supportedEnrol.identifiers.head.key,
+                  supportedEnrol.identifiers.head.value.replaceAll(" ", "")
+                )
+              }
+              .toSeq
 
           (affinity, confidence) match {
             case (Individual, cl) if cl >= L200 => body(clientIdTypePlusIds)
