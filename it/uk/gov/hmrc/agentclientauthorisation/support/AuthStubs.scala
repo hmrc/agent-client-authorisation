@@ -254,36 +254,6 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
     this
   }
 
-  def givenClientNotMTDVat(vrn: Vrn) = {
-    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
-      .willReturn(aResponse().withStatus(200)
-        .withBody(s"""
-                     |{
-                     |  "optionalCredentials":{
-                     |    "providerId": "12345",
-                     |    "providerType": "GovernmentGateway"
-                     |  },
-                     |  "confidenceLevel":300,
-                     |  "affinityGroup": "Individual",
-                     |  "allEnrolments": [
-                     |    {
-                     |      "key": "HMRC-VATVAR-ORG",
-                     |      "identifiers": [
-                     |        {
-                     |          "key": "VATREGNO",
-                     |          "value": "${vrn.value}"
-                     |        }
-                     |      ],
-                     |      "state": "Activated"
-                     |    }
-                     |  ]
-                     |}
-       """.stripMargin)))
-
-    this
-  }
-
-
   def givenClientTrust(utr: Utr) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse().withStatus(200)
