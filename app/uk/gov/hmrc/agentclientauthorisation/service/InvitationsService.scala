@@ -251,7 +251,10 @@ class InvitationsService @Inject()(
             if (invitation.expiryDate.isBefore(LocalDate.now())) {
               invitationsRepository
                 .update(invitation, Expired, DateTime.now())
-                .flatMap(invitation => emailService.sendExpiredEmail(invitation))
+                .flatMap(invitation => {
+                  Logger.info(s"invitation expired id:${invitation.invitationId.value}")
+                  emailService.sendExpiredEmail(invitation)
+                })
             }
           }
         }
