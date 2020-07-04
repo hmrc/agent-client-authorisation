@@ -36,7 +36,7 @@ def testDeps(scope: String) = Seq(
   "org.mockito" % "mockito-core" % "2.27.0" % scope,
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % scope,
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.14.0-play-26" % scope,
-  "com.github.tomakehurst" % "wiremock-jre8" % "2.23.2" % scope,
+  "com.github.tomakehurst" % "wiremock-jre8" % "2.27.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
   "org.scalamock" %% "scalamock" % "4.1.0" % scope

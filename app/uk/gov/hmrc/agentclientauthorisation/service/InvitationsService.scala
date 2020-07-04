@@ -34,7 +34,6 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
-import scala.concurrent.duration.Duration
 import scala.util.Success
 
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
@@ -252,7 +251,7 @@ class InvitationsService @Inject()(
               invitationsRepository
                 .update(invitation, Expired, DateTime.now())
                 .flatMap(invitation => {
-                  Logger.info(s"invitation expired id:${invitation.invitationId.value}")
+                  Logger(getClass).info(s"invitation expired id:${invitation.invitationId.value}")
                   emailService.sendExpiredEmail(invitation)
                 })
             }

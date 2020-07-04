@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -34,6 +34,7 @@ import scala.util.Random
 class InvitationsStatusUpdateScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
+  analyticsService: PlatformAnalyticsService,
   actorSystem: ActorSystem,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
@@ -47,6 +48,7 @@ class InvitationsStatusUpdateScheduler @Inject()(
       new TaskActor(
         scheduleRepository,
         invitationsService,
+        analyticsService,
         interval
       )
     })
@@ -60,8 +62,11 @@ class InvitationsStatusUpdateScheduler @Inject()(
 
 }
 
-class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
-  implicit ec: ExecutionContext)
+class TaskActor(
+  scheduleRepository: ScheduleRepository,
+  invitationsService: InvitationsService,
+  analyticsService: PlatformAnalyticsService,
+  repeatInterval: Int)(implicit ec: ExecutionContext)
     extends Actor {
 
   def receive = {
@@ -81,7 +86,9 @@ class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: Invi
                   .scheduleOnce(delay, self, newUid)
                 Logger(getClass)
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
-                invitationsService.findAndUpdateExpiredInvitations()
+                invitationsService
+                  .findAndUpdateExpiredInvitations()
+                  .map(_ => analyticsService.reportExpiredInvitations())
               })
           } else {
             val dateTime = if (runAt.isBefore(now)) now else runAt

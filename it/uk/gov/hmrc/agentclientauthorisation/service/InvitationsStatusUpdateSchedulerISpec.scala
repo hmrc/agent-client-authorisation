@@ -25,6 +25,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val scheduler = new InvitationsStatusUpdateScheduler(
     app.injector.instanceOf[ScheduleRepository],
     app.injector.instanceOf[InvitationsService],
+    app.injector.instanceOf[PlatformAnalyticsService],
     app.injector.instanceOf[ActorSystem],
     app.injector.instanceOf[AppConfig]
   )

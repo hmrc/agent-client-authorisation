@@ -74,4 +74,9 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
     BasicAuthentication(username, password)
   }
 
+  val platformAnalyticsBaseUrl = baseUrl("platform-analytics")
+  val gaTrackingId: String = servicesConfig.getString("google-analytics.token")
+  val gaClientId: String = servicesConfig.getString("google-analytics.clientId")
+  val gaBatchSize: Int = servicesConfig.getInt("google-analytics.batchSize")
+
 }
