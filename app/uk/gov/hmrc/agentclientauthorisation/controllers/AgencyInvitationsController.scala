@@ -67,6 +67,7 @@ class AgencyInvitationsController @Inject()(
       val invitationJson: Option[JsValue] = request.body.asJson
       localWithJsonBody(
         { agentInvitation =>
+          implicit val originHeader: Option[String] = request.headers.get("Origin")
           val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
           checkForErrors(agentInvitation.copy(clientId = normalizedClientId))
             .flatMap(_.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
@@ -125,9 +126,8 @@ class AgencyInvitationsController @Inject()(
     }
 
   private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(
-    implicit request: Request[_],
+    implicit originHeader: Option[String],
     hc: HeaderCarrier): Future[Result] = {
-    val origin = request.headers.get("Origin").getOrElse("unknown")
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
       case MtdIt =>
@@ -138,7 +138,7 @@ class AgencyInvitationsController @Inject()(
         Future successful ClientRegistrationNotFound
       case Some(taxId) =>
         invitationsService
-          .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId, origin)
+          .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId, originHeader)
           .map(invitation => Created.withHeaders(location(invitation): _*))
     }
   }

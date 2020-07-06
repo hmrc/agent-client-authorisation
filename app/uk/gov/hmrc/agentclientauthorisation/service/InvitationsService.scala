@@ -75,7 +75,7 @@ class InvitationsService @Inject()(
     service: Service,
     clientId: ClientId,
     suppliedClientId: ClientId,
-    origin: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
+    originHeader: Option[String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
@@ -91,7 +91,7 @@ class InvitationsService @Inject()(
                          Some(detailsForEmail),
                          startDate,
                          expiryDate,
-                         origin)
+                         originHeader)
       } yield {
         Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
         invitation

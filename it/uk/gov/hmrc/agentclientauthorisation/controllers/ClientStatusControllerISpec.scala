@@ -55,7 +55,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation1))
 
@@ -70,7 +70,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation2))
 
@@ -83,7 +83,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now,
-        "origin"
+        None
       )
       await(repo.insert(invitation3))
 
@@ -117,7 +117,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation1))
 
@@ -130,7 +130,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation2))
 
@@ -164,7 +164,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation1))
 
@@ -199,7 +199,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
       await(repo.insert(invitation))
 
@@ -234,7 +234,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now.minusDays(14),
         LocalDate.now,
-        "origin"
+        None
       )
       await(repo.insert(invitation1))
       await(repo.update(invitation1, Expired, DateTime.now()))
@@ -248,7 +248,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now.minusDays(15),
         LocalDate.now.minusDays(5),
-        "origin"
+        None
       )
       await(repo.insert(invitation2))
       await(repo.update(invitation2, Expired, DateTime.now()))
@@ -284,7 +284,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now.minusDays(15),
         LocalDate.now.minusDays(5),
-        "origin"
+        None
       )
       await(repo.insert(invitation2))
       await(repo.update(invitation2, Expired, DateTime.now()))
@@ -320,7 +320,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         None,
         DateTime.now,
         LocalDate.now.plusDays(14),
-        "origin"
+        None
       )
 
       await(repo.insert(invitation))

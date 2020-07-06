@@ -151,7 +151,7 @@ class AgencyInvitationsControllerSpec
           any[Service](),
           any[ClientIdentifier.ClientId],
           any[ClientIdentifier.ClientId],
-          any[String])(any[HeaderCarrier], any[ExecutionContext]))
+          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))

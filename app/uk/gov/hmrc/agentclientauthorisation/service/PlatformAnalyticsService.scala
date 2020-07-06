@@ -83,7 +83,7 @@ class PlatformAnalyticsService @Inject()(
       action = s"$action",
       label = s"${i.service.id.toLowerCase}",
       dimensions = List(
-        DimensionValue(7, i.clientType.getOrElse("client type not defined")),
+        DimensionValue(7, i.clientType.getOrElse("unknown")),
         DimensionValue(8, i.invitationId.value),
         DimensionValue(9, i.origin.getOrElse("unknown"))
       )

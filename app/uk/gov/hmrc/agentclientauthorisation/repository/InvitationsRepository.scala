@@ -47,7 +47,7 @@ trait InvitationsRepository {
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
     expiryDate: LocalDate,
-    origin: String)(implicit ec: ExecutionContext): Future[Invitation]
+    origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation]
@@ -122,7 +122,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
     expiryDate: LocalDate,
-    origin: String)(implicit ec: ExecutionContext): Future[Invitation] = {
+    origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation] = {
     val invitation =
       Invitation
         .createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)

@@ -46,7 +46,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
       LocalDate.now().plusDays(14),
-    "origin")
+      None)
   }
 
   trait TestSetup {

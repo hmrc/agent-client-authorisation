@@ -81,7 +81,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
       LocalDate.now().plusDays(14),
-    "unknown")
+      None)
   }
 
   val codetable = "ABCDEFGHJKLMNOPRSTUWXYZ123456789"

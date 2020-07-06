@@ -69,7 +69,7 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
       None,
       now.minusDays(14),
       now.toLocalDate,
-    "origin")
+      Some("origin header"))
   }
 
   trait TestSetup {

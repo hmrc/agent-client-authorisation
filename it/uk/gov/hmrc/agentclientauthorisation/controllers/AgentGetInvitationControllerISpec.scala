@@ -71,7 +71,8 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
-      LocalDate.now().plusDays(14), "origin")
+      LocalDate.now().plusDays(14),
+      None)
   }
 
   trait TestSetup {
@@ -221,7 +222,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           None,
           DateTime.now(),
           LocalDate.now(),
-          "origin"))
+          None))
 
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
 
@@ -244,7 +245,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           None,
           DateTime.now(),
           LocalDate.now(),
-          "origin")
+          None)
       )
 
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")

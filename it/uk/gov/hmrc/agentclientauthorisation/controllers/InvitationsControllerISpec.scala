@@ -48,7 +48,7 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Des
         None,
         DateTime.now,
         LocalDate.now,
-        "unknown"
+        None
       )
 
       await(repo.insert(invitation))

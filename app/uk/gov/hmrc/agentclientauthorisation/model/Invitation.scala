@@ -138,7 +138,7 @@ object Invitation {
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
     expiryDate: LocalDate,
-    origin: String): Invitation =
+    origin: Option[String]): Invitation =
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
@@ -149,7 +149,7 @@ object Invitation {
       expiryDate = expiryDate,
       detailsForEmail = detailsForEmail,
       clientActionUrl = None,
-      origin = Some(origin),
+      origin = origin,
       events = List(StatusChangeEvent(startDate, Pending))
     )
 

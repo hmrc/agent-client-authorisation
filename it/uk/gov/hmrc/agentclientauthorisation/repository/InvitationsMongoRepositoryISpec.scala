@@ -420,7 +420,7 @@ class InvitationsMongoRepositoryISpec
             None,
             now,
             now.plusDays(14).toLocalDate,
-          "unknown")
+            None)
 
       await(Future.sequence(invitations.map(repository.insert)))
 
@@ -457,7 +457,7 @@ class InvitationsMongoRepositoryISpec
         None,
         now,
         now.plusDays(14).toLocalDate,
-      "unknown")
+        None)
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
@@ -468,7 +468,7 @@ class InvitationsMongoRepositoryISpec
         None,
         now,
         now.plusDays(14).toLocalDate,
-      "unknown")
+      None)
 
       val vatInvitation = Invitation
         .createNew(
@@ -480,7 +480,7 @@ class InvitationsMongoRepositoryISpec
           None,
           now,
           now.plusDays(14).toLocalDate,
-        "unknown")
+        None)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
@@ -528,7 +528,7 @@ class InvitationsMongoRepositoryISpec
         None,
         now,
         now.plusDays(14).toLocalDate,
-      "unknown")
+      None)
 
       val pirInvitation = Invitation.createNew(
         Arn(arn),
@@ -539,7 +539,7 @@ class InvitationsMongoRepositoryISpec
         None,
         now,
         now.plusDays(14).toLocalDate,
-      "unknown")
+      None)
 
       val vatInvitation = Invitation
         .createNew(
@@ -551,7 +551,7 @@ class InvitationsMongoRepositoryISpec
           None,
           now,
           now.plusDays(14).toLocalDate,
-        "unknown")
+        None)
 
       await(repository.insert(itsaInvitation))
       await(repository.insert(pirInvitation))
@@ -575,7 +575,7 @@ class InvitationsMongoRepositoryISpec
       Some(dfe),
       now,
       now.plusDays(14).toLocalDate,
-      "unknown")
+      None)
 
       await(repository.insert(itsaInvitation))
 
@@ -603,7 +603,7 @@ class InvitationsMongoRepositoryISpec
           None,
           startDate,
           startDate.plusDays(20).toLocalDate,
-        "unknown")
+        None)
     })
 
   private def addInvitation(startDate: DateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
