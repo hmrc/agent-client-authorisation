@@ -25,6 +25,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val scheduler = new InvitationsStatusUpdateScheduler(
     app.injector.instanceOf[ScheduleRepository],
     app.injector.instanceOf[InvitationsService],
+    app.injector.instanceOf[PlatformAnalyticsService],
     app.injector.instanceOf[ActorSystem],
     app.injector.instanceOf[AppConfig]
   )
@@ -51,7 +52,8 @@ class InvitationsStatusUpdateSchedulerISpec
             MtdItId(s"AB${i}23456A"),
             None,
             now.minusDays(Random.nextInt(15)),
-            now.minusDays(Random.nextInt(5) + 1).toLocalDate
+            now.minusDays(Random.nextInt(5) + 1).toLocalDate,
+            None
           )
 
       val activeInvitations: Seq[Invitation] = for (i <- 1 to 5)
@@ -64,7 +66,8 @@ class InvitationsStatusUpdateSchedulerISpec
             MtdItId(s"AB${i}23456A"),
             None,
             now.plusDays(Random.nextInt(15)),
-            now.plusDays(Random.nextInt(5)).toLocalDate
+            now.plusDays(Random.nextInt(5)).toLocalDate,
+            None
           )
 
       await(Future.sequence(expiredInvitations.map(invitationsRepo.insert)))

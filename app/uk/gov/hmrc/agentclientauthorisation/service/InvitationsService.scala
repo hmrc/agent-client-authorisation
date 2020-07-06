@@ -34,7 +34,6 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
-import scala.concurrent.duration.Duration
 import scala.util.Success
 
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
@@ -70,9 +69,13 @@ class InvitationsService @Inject()(
       case _ => Future successful None
     }
 
-  def create(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Invitation] = {
+  def create(
+    arn: Arn,
+    clientType: Option[String],
+    service: Service,
+    clientId: ClientId,
+    suppliedClientId: ClientId,
+    originHeader: Option[String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
@@ -87,7 +90,8 @@ class InvitationsService @Inject()(
                          suppliedClientId,
                          Some(detailsForEmail),
                          startDate,
-                         expiryDate)
+                         expiryDate,
+                         originHeader)
       } yield {
         Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
         invitation
@@ -252,7 +256,7 @@ class InvitationsService @Inject()(
               invitationsRepository
                 .update(invitation, Expired, DateTime.now())
                 .flatMap(invitation => {
-                  Logger.info(s"invitation expired id:${invitation.invitationId.value}")
+                  Logger(getClass).info(s"invitation expired id:${invitation.invitationId.value}")
                   emailService.sendExpiredEmail(invitation)
                 })
             }

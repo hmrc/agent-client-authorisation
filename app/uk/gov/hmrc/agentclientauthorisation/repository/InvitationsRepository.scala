@@ -46,7 +46,8 @@ trait InvitationsRepository {
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
-    expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation]
+    expiryDate: LocalDate,
+    origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation]
@@ -120,9 +121,11 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
-    expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] = {
+    expiryDate: LocalDate,
+    origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation] = {
     val invitation =
-      Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate)
+      Invitation
+        .createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)
     insert(invitation).map(_ => invitation)
   }
 

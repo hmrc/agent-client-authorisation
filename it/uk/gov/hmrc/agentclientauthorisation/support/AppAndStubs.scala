@@ -60,8 +60,10 @@ trait AppAndStubs
       "microservice.services.des.port"                       -> wiremockPort,
       "microservice.services.ni-exemption-registration.host" -> wiremockHost,
       "microservice.services.ni-exemption-registration.port" -> wiremockPort,
-      "microservice.services.email.host" -> wiremockHost,
-      "microservice.services.email.port" -> wiremockPort,
+      "microservice.services.email.host"                     -> wiremockHost,
+      "microservice.services.email.port"                     -> wiremockPort,
+      "microservice.services.platform-analytics.host"        -> wiremockHost,
+      "microservice.services.platform-analytics.port"        -> wiremockPort,
       "auditing.enabled"                                     -> true,
       "auditing.consumer.baseUri.host"                       -> wiremockHost,
       "auditing.consumer.baseUri.port"                       -> wiremockPort,
@@ -71,7 +73,10 @@ trait AppAndStubs
       "agent.cache.expires"                                  -> "1 millis",
       "invitation.expiryDuration"                            -> "14 days",
       "invitation-status-update-scheduler.enabled"           -> true,
-      "invitation-status-update-scheduler.interval"          -> 5
+      "invitation-status-update-scheduler.interval"          -> 20,
+      "google-analytics.batchSize"                           -> 2,
+      "google-analytics.token"                               -> "token",
+      "google-analytics.clientId"                           -> "clientId"
     )
 
   override def commonStubs(): Unit = {

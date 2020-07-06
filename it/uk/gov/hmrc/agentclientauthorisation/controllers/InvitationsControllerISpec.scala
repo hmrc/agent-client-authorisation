@@ -47,7 +47,8 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Des
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now
+        LocalDate.now,
+        None
       )
 
       await(repo.insert(invitation))

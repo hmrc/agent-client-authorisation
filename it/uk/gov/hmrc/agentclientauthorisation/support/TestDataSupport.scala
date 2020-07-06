@@ -27,8 +27,18 @@ trait TestDataSupport {
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
+  val nino3: Nino = Nino("AB123456C")
+  val nino4: Nino = Nino("AB123456D")
+  val nino5: Nino = Nino("AB123457B")
+  val nino6: Nino = Nino("AB183456B")
   val mtdItId = MtdItId("ABCDEF123456789")
   val mtdItId2 = MtdItId("TUWXYZ123456789")
+  val mtdItId3 = MtdItId("TBWXYZ123456789")
+  val mtdItId4 = MtdItId("TUWXYZ123456789")
+  val mtdItId5 = MtdItId("TIWXYZ123456789")
+  val mtdItId6 = MtdItId("TOWXYZ123456789")
+
+
   val vrn = Vrn("101747696")
   val vrn2 = Vrn("121747696")
 
@@ -93,7 +103,8 @@ trait TestDataSupport {
                         suppliedClientId: ClientId,
                         detailsForEmail: Option[DetailsForEmail],
                         startDate: DateTime,
-                        expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] =
+                        expiryDate: LocalDate,
+                        origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation] =
       Future failed new Exception ("Unable to Create Invitation")
 
     override def update(invitation: Invitation,
