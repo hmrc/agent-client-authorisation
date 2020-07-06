@@ -32,7 +32,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
-      LocalDate.now().plusDays(14))
+      LocalDate.now().plusDays(14),
+    "origin")
   }
 
   def createEmailInfo(dfe: DetailsForEmail,

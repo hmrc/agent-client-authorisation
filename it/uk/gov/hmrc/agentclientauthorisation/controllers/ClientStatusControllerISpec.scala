@@ -54,7 +54,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation1))
 
@@ -68,7 +69,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation2))
 
@@ -80,7 +82,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now
+        LocalDate.now,
+        "origin"
       )
       await(repo.insert(invitation3))
 
@@ -113,7 +116,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation1))
 
@@ -125,7 +129,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation2))
 
@@ -158,7 +163,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation1))
 
@@ -192,7 +198,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673C")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
       await(repo.insert(invitation))
 
@@ -226,7 +233,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now.minusDays(14),
-        LocalDate.now
+        LocalDate.now,
+        "origin"
       )
       await(repo.insert(invitation1))
       await(repo.update(invitation1, Expired, DateTime.now()))
@@ -239,7 +247,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now.minusDays(15),
-        LocalDate.now.minusDays(5)
+        LocalDate.now.minusDays(5),
+        "origin"
       )
       await(repo.insert(invitation2))
       await(repo.update(invitation2, Expired, DateTime.now()))
@@ -274,7 +283,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Vrn("101747696")),
         None,
         DateTime.now.minusDays(15),
-        LocalDate.now.minusDays(5)
+        LocalDate.now.minusDays(5),
+        "origin"
       )
       await(repo.insert(invitation2))
       await(repo.update(invitation2, Expired, DateTime.now()))
@@ -309,7 +319,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14)
+        LocalDate.now.plusDays(14),
+        "origin"
       )
 
       await(repo.insert(invitation))

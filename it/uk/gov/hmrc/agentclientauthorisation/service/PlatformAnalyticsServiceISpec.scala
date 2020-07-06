@@ -68,7 +68,8 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
       testClient.suppliedClientId,
       None,
       now.minusDays(14),
-      now.toLocalDate)
+      now.toLocalDate,
+    "origin")
   }
 
   trait TestSetup {

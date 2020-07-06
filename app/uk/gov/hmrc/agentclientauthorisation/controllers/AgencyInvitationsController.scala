@@ -22,7 +22,7 @@ import org.joda.time.LocalDate
 import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
@@ -124,7 +124,10 @@ class AgencyInvitationsController @Inject()(
       case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
-  private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier): Future[Result] = {
+  private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(
+    implicit request: Request[_],
+    hc: HeaderCarrier): Future[Result] = {
+    val origin = request.headers.get("Origin").getOrElse("unknown")
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
       case MtdIt =>
@@ -135,7 +138,7 @@ class AgencyInvitationsController @Inject()(
         Future successful ClientRegistrationNotFound
       case Some(taxId) =>
         invitationsService
-          .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId)
+          .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId, origin)
           .map(invitation => Created.withHeaders(location(invitation): _*))
     }
   }

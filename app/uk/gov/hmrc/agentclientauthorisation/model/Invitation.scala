@@ -112,6 +112,7 @@ case class Invitation(
   detailsForEmail: Option[DetailsForEmail],
   isRelationshipEnded: Boolean = false,
   clientActionUrl: Option[String],
+  origin: Option[String] = None,
   events: List[StatusChangeEvent]) {
 
   def firstEvent(): StatusChangeEvent =
@@ -136,7 +137,8 @@ object Invitation {
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
     startDate: DateTime,
-    expiryDate: LocalDate): Invitation =
+    expiryDate: LocalDate,
+    origin: String): Invitation =
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
@@ -147,6 +149,7 @@ object Invitation {
       expiryDate = expiryDate,
       detailsForEmail = detailsForEmail,
       clientActionUrl = None,
+      origin = Some(origin),
       events = List(StatusChangeEvent(startDate, Pending))
     )
 
@@ -171,7 +174,8 @@ object Invitation {
           "invitationId"         -> invitation.invitationId.value,
           "detailsForEmail"      -> invitation.detailsForEmail,
           "isRelationshipEnded"  -> invitation.isRelationshipEnded,
-          "clientActionUrl"      -> invitation.clientActionUrl
+          "clientActionUrl"      -> invitation.clientActionUrl,
+          "origin"               -> invitation.origin
         )
     }
   }

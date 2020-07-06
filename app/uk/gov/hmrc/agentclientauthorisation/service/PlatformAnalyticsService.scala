@@ -51,9 +51,9 @@ class PlatformAnalyticsService @Inject()(
       }
   }
 
-  def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders =
-      Seq("Expired-Invitation-Batch-Size" -> s"${invitations.size}"))
+  private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
+    implicit val hc: HeaderCarrier = HeaderCarrier(
+      extraHeaders = Seq("Expired-Invitation-Batch-Size" -> s"${invitations.size}"))
     connector.sendEvent(
       AnalyticsRequest(
         gaClientId = clientId,
@@ -61,7 +61,7 @@ class PlatformAnalyticsService @Inject()(
         events = invitations.map(i => createEventFor(i))))
   }
 
-  def createEventFor(i: Invitation): Event =
+  private def createEventFor(i: Invitation): Event =
     i.status match {
       case Pending    => makeAuthRequestEvent("create", i)
       case Accepted   => makeAuthRequestEvent("accept", i)
@@ -84,7 +84,8 @@ class PlatformAnalyticsService @Inject()(
       label = s"${i.service.id.toLowerCase}",
       dimensions = List(
         DimensionValue(7, i.clientType.getOrElse("client type not defined")),
-        DimensionValue(8, i.invitationId.value)
+        DimensionValue(8, i.invitationId.value),
+        DimensionValue(9, i.origin.getOrElse("unknown"))
       )
     )
 

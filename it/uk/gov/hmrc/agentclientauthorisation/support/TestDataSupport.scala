@@ -103,7 +103,8 @@ trait TestDataSupport {
                         suppliedClientId: ClientId,
                         detailsForEmail: Option[DetailsForEmail],
                         startDate: DateTime,
-                        expiryDate: LocalDate)(implicit ec: ExecutionContext): Future[Invitation] =
+                        expiryDate: LocalDate,
+                        origin: String)(implicit ec: ExecutionContext): Future[Invitation] =
       Future failed new Exception ("Unable to Create Invitation")
 
     override def update(invitation: Invitation,

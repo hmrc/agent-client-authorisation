@@ -52,7 +52,8 @@ class InvitationsStatusUpdateSchedulerISpec
             MtdItId(s"AB${i}23456A"),
             None,
             now.minusDays(Random.nextInt(15)),
-            now.minusDays(Random.nextInt(5) + 1).toLocalDate
+            now.minusDays(Random.nextInt(5) + 1).toLocalDate,
+            "unknown"
           )
 
       val activeInvitations: Seq[Invitation] = for (i <- 1 to 5)
@@ -65,7 +66,8 @@ class InvitationsStatusUpdateSchedulerISpec
             MtdItId(s"AB${i}23456A"),
             None,
             now.plusDays(Random.nextInt(15)),
-            now.plusDays(Random.nextInt(5)).toLocalDate
+            now.plusDays(Random.nextInt(5)).toLocalDate,
+            "unknown"
           )
 
       await(Future.sequence(expiredInvitations.map(invitationsRepo.insert)))

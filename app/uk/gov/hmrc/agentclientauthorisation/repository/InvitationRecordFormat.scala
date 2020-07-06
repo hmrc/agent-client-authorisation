@@ -43,6 +43,7 @@ object InvitationRecordFormat {
     detailsForEmail: Option[DetailsForEmail],
     isRelationshipEnded: Boolean = false,
     clientActionUrl: Option[String],
+    origin: Option[String] = None,
     events: List[StatusChangeEvent]): Invitation = {
 
     val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(14).toLocalDate)
@@ -63,6 +64,7 @@ object InvitationRecordFormat {
       detailsForEmail,
       isRelationshipEnded,
       None,
+      origin,
       events
     )
   }
@@ -82,6 +84,7 @@ object InvitationRecordFormat {
     (JsPath \ "detailsForEmail").readNullable[DetailsForEmail] and
     (JsPath \ "isRelationshipEnded").readWithDefault[Boolean](false) and
     (JsPath \ "clientActionUrl").readNullable[String] and
+    (JsPath \ "origin").readNullable[String] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
 
   val arnClientStateKey = "_arnClientStateKey"
@@ -106,6 +109,7 @@ object InvitationRecordFormat {
         "isRelationshipEnded"  -> invitation.isRelationshipEnded,
         "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
+        "origin"               -> invitation.origin,
         createdKey             -> invitation.firstEvent().time.getMillis,
         statusKey              -> invitation.mostRecentEvent().status.toString,
         arnClientStateKey -> Seq(
