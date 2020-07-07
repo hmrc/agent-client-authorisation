@@ -41,6 +41,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val relationshipConnector = app.injector.instanceOf(classOf[RelationshipsConnector])
   val emailService = app.injector.instanceOf(classOf[EmailService])
   val agentCacheProvider = app.injector.instanceOf(classOf[AgentCacheProvider])
+  val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
 
   implicit val metrics = app.injector.instanceOf(classOf[Metrics])
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
@@ -52,7 +53,7 @@ class TerminateInvitationsISpec extends BaseISpec {
     new AgentLinkService(agentReferenceRepository, desConnector, auditService, metrics)
 
   def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
-    new InvitationsService(invitationsRepository, agentLinkService(agentReferenceRepository), relationshipConnector, desConnector, auditService, emailService, appConfig, metrics)
+    new InvitationsService(invitationsRepository, agentLinkService(agentReferenceRepository), relationshipConnector, analyticsService, desConnector, auditService, emailService, appConfig, metrics)
 
   def testFailedController(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
     new AgencyInvitationsController(

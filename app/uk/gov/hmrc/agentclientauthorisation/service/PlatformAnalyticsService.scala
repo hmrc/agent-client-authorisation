@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import akka.Done
 import com.google.inject.{Inject, Singleton}
 import org.joda.time.DateTime
+import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -49,6 +50,11 @@ class PlatformAnalyticsService @Inject()(
         _.grouped(batchSize)
           .foreach(group => sendAnalyticsRequest(group))
       }
+  }
+
+  def reportAuthorisationRequestCreated(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
+    Logger(getClass).info(s"sending analytics event for authorisation request created id: ${i.id.stringify}")
+    sendAnalyticsRequest(List(i))
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {

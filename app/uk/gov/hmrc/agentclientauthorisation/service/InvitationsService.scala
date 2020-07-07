@@ -45,6 +45,7 @@ class InvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
   agentLinkService: AgentLinkService,
   relationshipsConnector: RelationshipsConnector,
+  analyticsService: PlatformAnalyticsService,
   desConnector: DesConnector,
   auditService: AuditService,
   emailService: EmailService,
@@ -92,6 +93,7 @@ class InvitationsService @Inject()(
                          startDate,
                          expiryDate,
                          originHeader)
+        _ <- analyticsService.reportAuthorisationRequestCreated(invitation)
       } yield {
         Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
         invitation

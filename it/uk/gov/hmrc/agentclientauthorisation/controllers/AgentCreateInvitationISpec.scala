@@ -21,8 +21,9 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
+import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
 
-class AgentCreateInvitationISpec extends BaseISpec {
+class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
 
   lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
@@ -39,6 +40,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
 
         givenAuthorisedAsAgent(arn)
         hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
+        givenPlatformAnalyticsRequestSent(true)
 
         val requestBody = Json.parse(
           """{
@@ -50,6 +52,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
       }
 
       "service is PIR" in {
@@ -57,6 +61,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuthorisedAsAgent(arn)
         givenCitizenDetailsAreKnownFor(nino.value, "19122019")
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenPlatformAnalyticsRequestSent(true)
 
         val
         requestBody = Json.parse(
@@ -71,6 +76,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
         response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
       }
 
       "service is VAT" in {
@@ -78,6 +85,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuthorisedAsAgent(arn)
         givenClientDetailsForVat(vrn)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenPlatformAnalyticsRequestSent(true)
 
         val requestBody = Json.parse(
           """{
@@ -89,6 +97,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
       }
 
       "service is Trust" in {
@@ -98,6 +108,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuthorisedAsAgent(arn)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         getTrustName(utr, response = trustNameJson)
+        givenPlatformAnalyticsRequestSent(true)
 
         val requestBody = Json.parse(
           """{
@@ -109,6 +120,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
       }
 
       "service is CapitalGains" in {
@@ -116,6 +129,7 @@ class AgentCreateInvitationISpec extends BaseISpec {
         givenAuthorisedAsAgent(arn)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
+        givenPlatformAnalyticsRequestSent(true)
 
         val requestBody = Json.parse(
           s"""
@@ -129,6 +143,8 @@ class AgentCreateInvitationISpec extends BaseISpec {
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
         status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
       }
     }
 
