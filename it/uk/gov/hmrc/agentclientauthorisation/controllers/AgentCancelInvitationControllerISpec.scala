@@ -22,14 +22,14 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
-import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitation
+import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AgentCancelInvitationControllerISpec extends BaseISpec {
+class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 
   lazy val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
@@ -74,6 +74,8 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 
+      givenPlatformAnalyticsRequestSent(true)
+
       val response = controller.cancelInvitation(arn, invitation.invitationId)(request)
       status(response) shouldBe 204
 
@@ -83,6 +85,8 @@ class AgentCancelInvitationControllerISpec extends BaseISpec {
       val invitationStatus = jsonBodyOf(updatedInvitation).as[TestHalResponseInvitation].status
 
       invitationStatus shouldBe Cancelled.toString
+
+      verifyAnalyticsRequestSent(1)
     }
   }
 
