@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import akka.Done
 import com.google.inject.{Inject, Singleton}
 import org.joda.time.DateTime
+import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -39,6 +40,9 @@ class PlatformAnalyticsService @Inject()(
   private val batchSize = appConfig.gaBatchSize
   private val clientId = appConfig.gaClientId
   private val trackingId = appConfig.gaTrackingId
+  private val clientTypeIndex = appConfig.gaClientTypeIndex
+  private val invitationIdIndex = appConfig.gaInvitationIdIndex
+  private val originIndex = appConfig.gaOriginIndex
 
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] = {
     val expiredWithin = interval.seconds.toMillis
@@ -49,6 +53,11 @@ class PlatformAnalyticsService @Inject()(
         _.grouped(batchSize)
           .foreach(group => sendAnalyticsRequest(group))
       }
+  }
+
+  def reportAuthorisationRequestCreated(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
+    Logger(getClass).info(s"sending analytics event for authorisation request created id: ${i.id.stringify}")
+    sendAnalyticsRequest(List(i))
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
@@ -83,9 +92,9 @@ class PlatformAnalyticsService @Inject()(
       action = s"$action",
       label = s"${i.service.id.toLowerCase}",
       dimensions = List(
-        DimensionValue(7, i.clientType.getOrElse("unknown")),
-        DimensionValue(8, i.invitationId.value),
-        DimensionValue(9, i.origin.getOrElse("unknown"))
+        DimensionValue(clientTypeIndex, i.clientType.getOrElse("unknown")),
+        DimensionValue(invitationIdIndex, i.invitationId.value),
+        DimensionValue(originIndex, i.origin.getOrElse("unknown"))
       )
     )
 
