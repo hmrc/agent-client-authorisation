@@ -139,7 +139,10 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       actionInvitation(
         clientId,
         invitationId,
-        invitation => invitationsService.rejectInvitation(invitation)
+        invitation =>
+          invitationsService.rejectInvitation(invitation).andThen {
+            case Success(Right(x)) => analyticsService.reportSingleEventAnalyticsRequest(x)
+        }
       )
     }
 

@@ -163,13 +163,14 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     s"reject via $journey ${client.urlIdentifier} ${client.service.id} invitation for ${client.clientId.value} as expected with ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
         givenEmailSent(createEmailInfo(dfe(client.clientName), "client_rejected_authorisation_request", client.service))
-
+        givenPlatformAnalyticsRequestSent(true)
       val invitation: Invitation = await(createInvitation(arn, client))
         val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
       val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Rejected))(getResult))
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       testInvitationOpt.map(_.status) shouldBe Some(Rejected.toString)
+      verifyAnalyticsRequestSent(1)
     }
 
     s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
