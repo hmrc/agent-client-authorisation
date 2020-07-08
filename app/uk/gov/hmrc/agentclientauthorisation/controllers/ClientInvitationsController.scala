@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{Invitation
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PlatformAnalyticsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
@@ -41,6 +41,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
+  analyticsService: PlatformAnalyticsService,
   ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
@@ -122,7 +123,9 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
         invitation =>
           invitationsService.acceptInvitation(invitation).andThen {
             case Success(Right(x)) =>
-              auditService.sendAgentClientRelationshipCreated(invitationId.value, x.arn, clientId, invitation.service)
+              auditService
+                .sendAgentClientRelationshipCreated(invitationId.value, x.arn, clientId, invitation.service)
+                .map(_ => analyticsService.reportSingleEventAnalyticsRequest(x))
         }
       )
     }
