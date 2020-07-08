@@ -40,6 +40,9 @@ class PlatformAnalyticsService @Inject()(
   private val batchSize = appConfig.gaBatchSize
   private val clientId = appConfig.gaClientId
   private val trackingId = appConfig.gaTrackingId
+  private val clientTypeIndex = appConfig.gaClientTypeIndex
+  private val invitationIdIndex = appConfig.gaInvitationIdIndex
+  private val originIndex = appConfig.gaOriginIndex
 
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] = {
     val expiredWithin = interval.seconds.toMillis
@@ -89,9 +92,9 @@ class PlatformAnalyticsService @Inject()(
       action = s"$action",
       label = s"${i.service.id.toLowerCase}",
       dimensions = List(
-        DimensionValue(7, i.clientType.getOrElse("unknown")),
-        DimensionValue(8, i.invitationId.value),
-        DimensionValue(9, i.origin.getOrElse("unknown"))
+        DimensionValue(clientTypeIndex, i.clientType.getOrElse("unknown")),
+        DimensionValue(invitationIdIndex, i.invitationId.value),
+        DimensionValue(originIndex, i.origin.getOrElse("unknown"))
       )
     )
 

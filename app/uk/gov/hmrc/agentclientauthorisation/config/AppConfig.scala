@@ -78,5 +78,8 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaTrackingId: String = servicesConfig.getString("google-analytics.token")
   val gaClientId: String = servicesConfig.getString("google-analytics.clientId")
   val gaBatchSize: Int = servicesConfig.getInt("google-analytics.batchSize")
+  val gaClientTypeIndex: Int = servicesConfig.getInt("google-analytics.clientTypeIndex")
+  val gaInvitationIdIndex: Int = servicesConfig.getInt("google-analytics.invitationIdIndex")
+  val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
 
 }
