@@ -41,7 +41,6 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
-  analyticsService: PlatformAnalyticsService,
   ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
@@ -125,7 +124,6 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
             case Success(Right(x)) =>
               auditService
                 .sendAgentClientRelationshipCreated(invitationId.value, x.arn, clientId, invitation.service)
-                .map(_ => analyticsService.reportSingleEventAnalyticsRequest(x))
         }
       )
     }
@@ -139,10 +137,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       actionInvitation(
         clientId,
         invitationId,
-        invitation =>
-          invitationsService.rejectInvitation(invitation).andThen {
-            case Success(Right(x)) => analyticsService.reportSingleEventAnalyticsRequest(x)
-        }
+        invitation => invitationsService.rejectInvitation(invitation)
       )
     }
 

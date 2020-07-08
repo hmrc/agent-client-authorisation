@@ -137,8 +137,12 @@ class InvitationsService @Inject()(
         for {
           result <- changeInvitationStatusAndRecover
           _ <- result match {
-                case Right(invite) => emailService.sendAcceptedEmail(invite)
-                case Left(_)       => Future.successful(())
+                case Right(invite) => {
+                  emailService
+                    .sendAcceptedEmail(invite)
+                    .map(_ => analyticsService.reportSingleEventAnalyticsRequest(invite))
+                }
+                case Left(_) => Future.successful(())
               }
         } yield {
           result
@@ -157,7 +161,13 @@ class InvitationsService @Inject()(
     hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
-        case Success(_) => reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
+        case Success(result) => {
+          reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
+          result match {
+            case Right(i) => analyticsService.reportSingleEventAnalyticsRequest(i)
+            case Left(_)  => Future.successful(())
+          }
+        }
       }
 
   def setRelationshipEnded(
@@ -180,8 +190,12 @@ class InvitationsService @Inject()(
     for {
       result <- changeStatus
       _ <- result match {
-            case Right(invite) => emailService.sendRejectedEmail(invite)
-            case Left(_)       => Future.successful(())
+            case Right(invite) => {
+              emailService
+                .sendRejectedEmail(invite)
+                .map(_ => analyticsService.reportSingleEventAnalyticsRequest(invite))
+            }
+            case Left(_) => Future.successful(())
           }
     } yield result
   }
