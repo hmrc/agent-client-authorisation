@@ -93,7 +93,7 @@ class InvitationsService @Inject()(
                          startDate,
                          expiryDate,
                          originHeader)
-        _ <- analyticsService.reportAuthorisationRequestCreated(invitation)
+        _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
       } yield {
         Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
         invitation

@@ -15,7 +15,7 @@ import uk.gov.hmrc.domain.TaxIdentifier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs with EmailStub {
+class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs with EmailStub with PlatformAnalyticsStubs {
 
   val controller: ClientInvitationsController = app.injector.instanceOf[ClientInvitationsController]
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
@@ -102,6 +102,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
+      givenPlatformAnalyticsRequestSent(true)
 
       val invitation: Invitation = await(createInvitation(arn, client))
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
@@ -109,6 +110,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Accepted))(getResult))
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       testInvitationOpt.map(_.status) shouldBe Some(Accepted.toString)
+      verifyAnalyticsRequestSent(1)
     }
 
     s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
