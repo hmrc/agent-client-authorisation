@@ -107,32 +107,13 @@ class InvitationsService @Inject()(
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
-        def changeInvitationStatusAndRecover: Future[Either[StatusUpdateFailure, Invitation]] = {
-          val createRelationship: Future[Unit] = invitation.service match {
-            case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
-            case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
-            case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
-            case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
-            case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
-          }
-          createRelationship
-            .flatMap(
-              _ =>
-                changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-                  .andThen {
-                    case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
-                })
-            .recoverWith {
-              case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
-                Logger.warn(
-                  s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
-                changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-                  .andThen {
-                    case Success(_) =>
-                      reportHistogramValue("Duration-Invitation-Accepted-Again", durationOf(invitation))
-                  }
-            }
-        }
+        def changeInvitationStatusAndRecover: Future[Either[StatusUpdateFailure, Invitation]] =
+          createRelationship(invitation, acceptedDate).flatMap(
+            _ =>
+              changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+                .andThen {
+                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+              })
 
         for {
           result <- changeInvitationStatusAndRecover
@@ -149,6 +130,24 @@ class InvitationsService @Inject()(
         }
 
       case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
+    }
+  }
+
+  private def createRelationship(invitation: Invitation, acceptedDate: DateTime)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext) = {
+    val createRelationship: Future[Unit] = invitation.service match {
+      case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
+      case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
+      case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
+      case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
+      case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
+    }
+
+    createRelationship.recover {
+      case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
+        Logger.warn(
+          s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
     }
   }
 
