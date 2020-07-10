@@ -20,9 +20,8 @@ import akka.Done
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.model.{AnalyticsRequest, DimensionValue, Event}
+import uk.gov.hmrc.agentclientauthorisation.model.AnalyticsRequest
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -37,18 +36,12 @@ trait PlatformAnalyticsConnector {
 class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient)
     extends PlatformAnalyticsConnector {
 
-  val serviceUrl: String = appConfig.platformAnalyticsBaseUrl
+  val serviceUrl: String = s"${appConfig.platformAnalyticsBaseUrl}/platform-analytics/event"
 
-  private implicit val dimensionWrites = Json.writes[DimensionValue]
-  private implicit val eventWrites = Json.writes[Event]
-  private implicit val analyticsWrites = Json.writes[AnalyticsRequest]
-
-  def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
-    val url = s"$serviceUrl/platform-analytics/event"
-    http.POST[AnalyticsRequest, HttpResponse](url, request).map(_ => Done).recover {
+  def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] =
+    http.POST[AnalyticsRequest, HttpResponse](serviceUrl, request).map(_ => Done).recover {
       case e: Throwable =>
-        Logger(getClass).error(s"Couldn't send analytics event $e")
+        Logger(getClass).warn(s"Couldn't send analytics event: $e")
         Done
     }
-  }
 }

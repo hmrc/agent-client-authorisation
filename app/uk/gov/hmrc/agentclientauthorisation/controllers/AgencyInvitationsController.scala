@@ -93,7 +93,7 @@ class AgencyInvitationsController @Inject()(
       forThisAgency(givenArn) {
         invitationsService.findInvitation(invitationId) flatMap {
           case Some(i) if i.arn == givenArn =>
-            invitationsService.cancelInvitation(i) map {
+            invitationsService.cancelInvitation(i.copy(origin = request.headers.get("Origin"))) map {
               case Right(_)                          => NoContent
               case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
             }

@@ -61,8 +61,8 @@ class PlatformAnalyticsService @Inject()(
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier(
-      extraHeaders = Seq("Expired-Invitation-Batch-Size" -> s"${invitations.size}"))
+    implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders =
+      Seq("Expired-Invitation-Batch-Size" -> s"${invitations.size}")) //TODO why did we hardcoded "Expired" here ?
     connector.sendEvent(
       AnalyticsRequest(
         gaClientId = clientId,
@@ -72,12 +72,12 @@ class PlatformAnalyticsService @Inject()(
 
   private def createEventFor(i: Invitation): Event =
     i.status match {
-      case Pending    => makeAuthRequestEvent("create", i)
-      case Accepted   => makeAuthRequestEvent("accept", i)
-      case Rejected   => makeAuthRequestEvent("decline", i)
-      case Expired    => makeAuthRequestEvent("expired", i)
-      case Cancelled  => makeAuthRequestEvent("cancel", i)
-      case s: Unknown => makeAuthRequestEvent("unknown", i)
+      case Pending    => makeAuthRequestEvent("authorisation request", "created", i)
+      case Accepted   => makeAuthRequestEvent("authorisation request", "accepted", i)
+      case Rejected   => makeAuthRequestEvent("authorisation request", "declined", i)
+      case Expired    => makeAuthRequestEvent("authorisation request", "expired", i)
+      case Cancelled  => makeAuthRequestEvent("invitation", "cancelled", i)
+      case s: Unknown => makeAuthRequestEvent("authorisation request", "unknown", i)
     }
 
   /* google-analytics assigned index numbers for custom dimensions (TSR-18085):
@@ -86,11 +86,11 @@ class PlatformAnalyticsService @Inject()(
    Agent Auth Request Origin *index 9*
    */
 
-  private def makeAuthRequestEvent(action: String, i: Invitation): Event =
+  private def makeAuthRequestEvent(category: String, action: String, i: Invitation): Event =
     Event(
-      category = "authorisation request",
-      action = s"$action",
-      label = s"${i.service.id.toLowerCase}",
+      category = category,
+      action = action,
+      label = i.service.id.toLowerCase,
       dimensions = List(
         DimensionValue(clientTypeIndex, i.clientType.getOrElse("unknown")),
         DimensionValue(invitationIdIndex, i.invitationId.value),
