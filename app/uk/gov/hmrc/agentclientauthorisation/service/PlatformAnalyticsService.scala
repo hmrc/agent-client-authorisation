@@ -49,9 +49,13 @@ class PlatformAnalyticsService @Inject()(
     repository
       .findInvitationsBy(status = Some(Expired))
       .map(_.filter(_.mostRecentEvent().time.withDurationAdded(expiredWithin, 1).compareTo(DateTime.now) == 1))
-      .map {
-        _.grouped(batchSize)
-          .foreach(group => sendAnalyticsRequest(group))
+      .map { expired =>
+        Logger(getClass).info(s"sending GA events for expired invitations (total size: ${expired.size})")
+        expired
+          .grouped(batchSize)
+          .foreach { group =>
+            sendAnalyticsRequest(group)
+          }
       }
   }
 
