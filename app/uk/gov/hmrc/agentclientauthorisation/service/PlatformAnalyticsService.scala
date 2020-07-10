@@ -56,7 +56,7 @@ class PlatformAnalyticsService @Inject()(
   }
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
-    Logger(getClass).info(s"sending analytics event for authorisation request id: ${i.id.stringify}")
+    Logger(getClass).info(s"sending GA event for invitation: ${i.id.stringify} with status: ${i.status}")
     sendAnalyticsRequest(List(i))
   }
 
