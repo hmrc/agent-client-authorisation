@@ -265,19 +265,25 @@ class InvitationsService @Inject()(
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
-        .map { invitations =>
-          invitations.foreach { invitation =>
-            if (invitation.expiryDate.isBefore(LocalDate.now())) {
-              invitationsRepository
-                .update(invitation, Expired, DateTime.now())
-                .flatMap(invitation => {
-                  Logger(getClass).info(s"invitation expired id:${invitation.invitationId.value}")
-                  emailService.sendExpiredEmail(invitation)
-                })
-            }
+        .map(invs => invs.filter(_.expiryDate.isBefore(LocalDate.now())))
+        .flatMap { invitations =>
+          val result = invitations
+            .map(updateToExpiredAndSendEmail(_))
+            .map(_.map(identity))
+
+          Future.sequence(result).map { _ =>
+            ()
           }
         }
     }
+
+  private def updateToExpiredAndSendEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] =
+    invitationsRepository
+      .update(invitation, Expired, DateTime.now())
+      .flatMap(invitation => {
+        Logger(getClass).info(s"invitation expired id:${invitation.invitationId.value}")
+        emailService.sendExpiredEmail(invitation)
+      })
 
   private def changeInvitationStatus(
     invitation: Invitation,
