@@ -65,8 +65,8 @@ class PlatformAnalyticsService @Inject()(
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders =
-      Seq("Expired-Invitation-Batch-Size" -> s"${invitations.size}")) //TODO why did we hardcoded "Expired" here ?
+    implicit val hc: HeaderCarrier = HeaderCarrier(
+      extraHeaders = Seq("AuthorisationRequestSendEvent-Batch-Size" -> s"${invitations.size}"))
     connector.sendEvent(
       AnalyticsRequest(
         gaClientId = clientId,
@@ -80,15 +80,9 @@ class PlatformAnalyticsService @Inject()(
       case Accepted   => makeAuthRequestEvent("authorisation request", "accepted", i)
       case Rejected   => makeAuthRequestEvent("authorisation request", "declined", i)
       case Expired    => makeAuthRequestEvent("authorisation request", "expired", i)
-      case Cancelled  => makeAuthRequestEvent("invitation", "cancelled", i)
+      case Cancelled  => makeAuthRequestEvent("authorisation request", "cancelled", i)
       case s: Unknown => makeAuthRequestEvent("authorisation request", "unknown", i)
     }
-
-  /* google-analytics assigned index numbers for custom dimensions (TSR-18085):
-   Agent Client Type *index 7*
-   Agent invitation ID *index 8*
-   Agent Auth Request Origin *index 9*
-   */
 
   private def makeAuthRequestEvent(category: String, action: String, i: Invitation): Event =
     Event(
