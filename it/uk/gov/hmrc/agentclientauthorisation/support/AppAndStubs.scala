@@ -64,6 +64,7 @@ trait AppAndStubs
       "microservice.services.email.port"                     -> wiremockPort,
       "microservice.services.platform-analytics.host"        -> wiremockHost,
       "microservice.services.platform-analytics.port"        -> wiremockPort,
+      "microservice.services.platform-analytics.throttling-calls-per-second"        -> 0,
       "auditing.enabled"                                     -> true,
       "auditing.consumer.baseUri.host"                       -> wiremockHost,
       "auditing.consumer.baseUri.port"                       -> wiremockPort,

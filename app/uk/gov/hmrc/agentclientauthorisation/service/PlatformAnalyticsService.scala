@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.Done
+import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -24,39 +25,57 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.clusterworkthrottling.{Rate, ThrottledWorkItemProcessor}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 @Singleton
 class PlatformAnalyticsService @Inject()(
   repository: InvitationsRepository,
   connector: PlatformAnalyticsConnector,
-  appConfig: AppConfig) {
+  appConfig: AppConfig,
+  actorSystem: ActorSystem) {
 
   private val interval = appConfig.invitationUpdateStatusInterval
+  private val expiredWithin = interval.seconds.toMillis
   private val batchSize = appConfig.gaBatchSize
   private val clientId = appConfig.gaClientId
   private val trackingId = appConfig.gaTrackingId
   private val clientTypeIndex = appConfig.gaClientTypeIndex
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
   private val originIndex = appConfig.gaOriginIndex
+  private val throttleCallsPerSec = appConfig.gaThrottlingCallsPerSecond
 
-  def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] = {
-    val expiredWithin = interval.seconds.toMillis
+  private val throttler =
+    new ThrottledWorkItemProcessor("GAEventThrottler", actorSystem, Some(Rate.parse(s"$throttleCallsPerSec / second"))) {
+      override def instanceCount: Int = 1
+    }
+
+  def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     repository
       .findInvitationsBy(status = Some(Expired))
-      .map(_.filter(_.mostRecentEvent().time.withDurationAdded(expiredWithin, 1).compareTo(DateTime.now) == 1))
+      .map(_.filter(isExpiredWithIn))
       .map { expired =>
         Logger(getClass).info(s"sending GA events for expired invitations (total size: ${expired.size})")
         expired
           .grouped(batchSize)
-          .foreach { group =>
-            sendAnalyticsRequest(group)
+          .foreach { batch =>
+            throttleSendRequest(batch)
           }
       }
+
+  private def isExpiredWithIn(invitation: Invitation): Boolean =
+    invitation.mostRecentEvent().time.withDurationAdded(expiredWithin, 1).compareTo(DateTime.now) == 1
+
+  private def throttleSendRequest(batch: List[Invitation])(implicit ec: ExecutionContext) = {
+    Logger(getClass).info(s"sending throttling GA event for invitation batch with size: ${batch.size}")
+    throttler.throttledStartingFrom(DateTime.now) {
+      sendAnalyticsRequest(batch)
+    }
   }
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
