@@ -26,7 +26,8 @@ lazy val compileDeps = Seq(
   "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.3.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-26",
   "uk.gov.hmrc" %% "play-hal" % "1.9.0-play-26",
-  "com.typesafe.play" %% "play-json-joda" % "2.6.10"
+  "com.typesafe.play" %% "play-json-joda" % "2.6.10",
+  "uk.gov.hmrc" %% "cluster-work-throttling" % "6.6.0-play-26"
 
 )
 

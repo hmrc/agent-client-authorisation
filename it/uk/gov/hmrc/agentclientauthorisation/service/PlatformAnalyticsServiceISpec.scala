@@ -1,5 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import akka.actor.ActorSystem
 import org.joda.time.DateTime
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -29,10 +30,13 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
   val intervalMillis = appConfig.invitationUpdateStatusInterval.seconds.toMillis
   val batchSize = appConfig.gaBatchSize
 
+  private val actorSystem = app.injector.instanceOf[ActorSystem]
+
   private lazy val service = new PlatformAnalyticsService(
     invitationsRepo,
     analyticsConnector,
-    appConfig
+    appConfig,
+    actorSystem
   )
 
   private def expireInvitations(i:List[Invitation], recently: Boolean): List[String] = {

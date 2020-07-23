@@ -9,6 +9,8 @@
 
     <logger name="uk.gov.hmrc.audit.handler.DatastreamHandler" level="WARN" />
 
+    <logger name="uk.gov.hmrc.clusterworkthrottling" level="INFO"/>
+
     <root level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </root>

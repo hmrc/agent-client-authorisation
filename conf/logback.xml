@@ -55,6 +55,8 @@
 
     <logger name="uk.gov.hmrc.agentclientauthorisation.repository" level="ERROR"/>
 
+    <logger name="uk.gov.hmrc.clusterworkthrottling" level="INFO"/>
+
     <logger name="akka" level="ERROR"/>
 
     <logger name="reactivemongo" level="ERROR"/>
@@ -69,7 +71,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
     </root>
