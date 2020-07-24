@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Named, Provider, Singleton}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
+import javax.inject.{Inject, Provider, Singleton}
+import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{Invitation
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, PlatformAnalyticsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}

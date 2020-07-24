@@ -40,7 +40,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.arn
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
@@ -55,10 +55,6 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val auditService: AuditService = new AuditService(auditConnector)
   val mockDesConnector = resettingMock[DesConnector]
 
-  val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
-    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
-  }
-
   val mockAgentLinkService: AgentLinkService =
     new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, auditService, metrics)
 
@@ -68,7 +64,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       cc,
       mockPlayAuthConnector,
       auditService,
-      ecp)
+      global)
 
   private def clientAuthStub(returnValue: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments])
     : OngoingStubbing[Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]] =

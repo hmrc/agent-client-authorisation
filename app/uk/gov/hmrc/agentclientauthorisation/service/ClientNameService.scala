@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.Inject
 import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.connectors.{Citizen, CitizenDetailsConnector, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{CustomerDetailsNotFound, NinoNotFound, Service, VatCustomerDetails}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
+import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, Service, VatCustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}

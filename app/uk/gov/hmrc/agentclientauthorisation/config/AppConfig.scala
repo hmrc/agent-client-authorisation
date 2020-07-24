@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.config
 
 import java.net.URLDecoder
-import java.util.concurrent.TimeUnit
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.agentclientauthorisation.model.BasicAuthentication
@@ -81,6 +80,4 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaClientTypeIndex: Int = servicesConfig.getInt("google-analytics.clientTypeIndex")
   val gaInvitationIdIndex: Int = servicesConfig.getInt("google-analytics.invitationIdIndex")
   val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
-  val gaThrottlingCallsPerSecond: Int = servicesConfig.getInt("google-analytics.throttling-calls-per-second")
-
 }
