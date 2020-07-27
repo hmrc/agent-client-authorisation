@@ -6,14 +6,14 @@ import org.joda.time.DateTime
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
+import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ScheduleRepositoryISpec
-    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp {
+    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp with MetricsTestSupport{
 
   override implicit lazy val mongoConnectorForTest: MongoConnector =
     MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
@@ -31,6 +31,7 @@ class ScheduleRepositoryISpec
 
   override def beforeEach() {
     super.beforeEach()
+    givenCleanMetricRegistry()
     await(repo.ensureIndexes)
     ()
   }

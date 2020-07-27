@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.net.URL
-
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
 import org.joda.time.LocalDate
 import org.joda.time.format._
-import play.api.libs.json.{JsObject, JsPath, Reads}
+import play.api.libs.json.{JsPath, Reads}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.domain.Nino

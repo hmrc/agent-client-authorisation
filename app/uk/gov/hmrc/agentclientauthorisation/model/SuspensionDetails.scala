@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.{Json, OFormat}
-import Service._
+import uk.gov.hmrc.agentclientauthorisation.model.Service._
 
 case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[String]]) {
 

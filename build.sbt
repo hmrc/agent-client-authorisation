@@ -1,6 +1,6 @@
 import play.core.PlayVersion
 import sbt.Tests.{Group, SubProcess}
-import sbt.{IntegrationTest, inConfig}
+import sbt.{CrossVersion, IntegrationTest, inConfig}
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
@@ -19,28 +19,27 @@ lazy val scoverageSettings = {
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.1.0",
-  "uk.gov.hmrc" %% "auth-client" % "2.30.0-play-26",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.17.0-play-26",
-  "com.github.blemale" %% "scaffeine" % "2.6.0",
-  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.3.0",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-26",
-  "uk.gov.hmrc" %% "play-hal" % "1.9.0-play-26",
-  "com.typesafe.play" %% "play-json-joda" % "2.6.10",
-  "uk.gov.hmrc" %% "cluster-work-throttling" % "6.6.0-play-26"
-
+  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "2.24.0",
+  "uk.gov.hmrc" %% "auth-client" % "3.0.0-play-27",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.19.0-play-27",
+  "com.github.blemale" %% "scaffeine" % "4.0.1",
+  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.4.0",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-27",
+  "uk.gov.hmrc" %% "play-hal" % "2.1.0-play-27",
+  "com.typesafe.play" %% "play-json-joda" % "2.7.4"
+  //"uk.gov.hmrc" % "cluster-work-throttling_2.11" % "6.6.0-play-26"
 )
 
 def testDeps(scope: String) = Seq(
   "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-26" % scope,
   "org.scalatest" %% "scalatest" % "3.0.8" % scope,
   "org.mockito" % "mockito-core" % "2.27.0" % scope,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % scope,
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.14.0-play-26" % scope,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope,
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.21.0-play-27" % scope,
   "com.github.tomakehurst" % "wiremock-jre8" % "2.27.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-  "org.scalamock" %% "scalamock" % "4.1.0" % scope
+  "org.scalamock" %% "scalamock" % "4.4.0" % scope
 )
 
 def tmpMacWorkaround(): Seq[ModuleID] =
@@ -52,7 +51,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "agent-client-authorisation",
     organization := "uk.gov.hmrc",
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.12.10",
     PlayKeys.playDefaultPort := 9432,
     resolvers := Seq(
       Resolver.bintrayRepo("hmrc", "releases"),
@@ -61,6 +60,10 @@ lazy val root = (project in file("."))
       Resolver.jcenterRepo
     ),
     libraryDependencies ++= tmpMacWorkaround() ++ compileDeps ++ testDeps("test") ++ testDeps("it"),
+    libraryDependencies ++= Seq(
+      compilerPlugin("com.github.ghik" % "silencer-plugin" % "1.4.4" cross CrossVersion.full),
+      "com.github.ghik" % "silencer-lib" % "1.4.4" % Provided cross CrossVersion.full
+    ),
     publishingSettings,
     scoverageSettings,
     unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
@@ -69,7 +72,7 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Compile := true,
     scalafmtOnCompile in Test := true,
     scalacOptions ++= Seq(
-      "-Xfatal-warnings",
+     // "-Xfatal-warnings",
       "-Xlint:-missing-interpolator,_",
       "-Yno-adapted-args",
       "-Ywarn-value-discard",
@@ -77,7 +80,8 @@ lazy val root = (project in file("."))
       "-deprecation",
       "-feature",
       "-unchecked",
-      "-language:implicitConversions")
+      "-language:implicitConversions",
+      "-P:silencer:pathFilters=Routes.scala")
   )
   .configs(IntegrationTest)
   .settings(
@@ -87,15 +91,8 @@ lazy val root = (project in file("."))
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,
     parallelExecution in IntegrationTest := false,
-    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     scalafmtOnCompile in IntegrationTest := true
   )
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 
 inConfig(IntegrationTest)(scalafmtCoreSettings)
-
-def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] = {
-  tests.map { test =>
-    Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq(s"-Dtest.name=${test.name}"))))
-  }
-}

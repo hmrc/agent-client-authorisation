@@ -1,6 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.actor.ActorSystem
+import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -31,6 +32,7 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
   val batchSize = appConfig.gaBatchSize
 
   private val actorSystem = app.injector.instanceOf[ActorSystem]
+  private implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
   private lazy val service = new PlatformAnalyticsService(
     invitationsRepo,

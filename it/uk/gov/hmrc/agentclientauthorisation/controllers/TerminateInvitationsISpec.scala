@@ -45,9 +45,6 @@ class TerminateInvitationsISpec extends BaseISpec {
 
   implicit val metrics = app.injector.instanceOf(classOf[Metrics])
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
-  implicit val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
-    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
-  }
 
   def agentLinkService(agentReferenceRepository: AgentReferenceRepository) =
     new AgentLinkService(agentReferenceRepository, desConnector, auditService, metrics)

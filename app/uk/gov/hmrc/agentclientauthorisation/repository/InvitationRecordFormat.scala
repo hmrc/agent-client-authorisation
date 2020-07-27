@@ -15,17 +15,16 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.repository
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.LocalDate
+import play.api.libs.functional.syntax._
 import play.api.libs.json.JodaReads._
 import play.api.libs.json.JodaWrites._
-import play.api.libs.json.{Format, JsValue, Json, Writes}
+import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import play.api.libs.functional.syntax._
-import play.api.libs.json.{JsPath, Reads}
 
 object InvitationRecordFormat {
 

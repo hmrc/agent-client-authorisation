@@ -50,10 +50,8 @@ class AgentReferenceController @Inject()(
   cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
-  ecp: Provider[ExecutionContextExecutor])
+  val ec: ExecutionContext)
     extends AuthActions(metrics, authConnector, cc) {
-
-  implicit val ec: ExecutionContext = ecp.get
 
   def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
     agentReferenceRecordRepository

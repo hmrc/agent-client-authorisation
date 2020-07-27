@@ -58,7 +58,7 @@ class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit
   private val underlying: com.github.blemale.scaffeine.Cache[String, T] =
     Scaffeine()
       .recordStats()
-      .expireAfterWrite(expires)
+      .expireAfterWrite(FiniteDuration(expires.toMillis, MILLISECONDS))
       .maximumSize(size)
       .build[String, T]()
 

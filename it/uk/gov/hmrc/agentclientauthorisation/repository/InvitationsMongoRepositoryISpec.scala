@@ -29,7 +29,7 @@ import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
+import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
@@ -40,7 +40,7 @@ import scala.concurrent.Future
 
 class InvitationsMongoRepositoryISpec
     extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside with MockitoSugar
-    with MongoApp {
+    with MongoApp with MetricsTestSupport {
 
   override implicit lazy val mongoConnectorForTest: MongoConnector =
     MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
@@ -108,6 +108,7 @@ class InvitationsMongoRepositoryISpec
 
   override def beforeEach() {
     super.beforeEach()
+    givenCleanMetricRegistry()
     await(repository.ensureIndexes)
     ()
   }

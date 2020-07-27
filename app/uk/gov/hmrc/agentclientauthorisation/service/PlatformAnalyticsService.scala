@@ -18,6 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.pattern.after
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -25,20 +28,19 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
-import uk.gov.hmrc.clusterworkthrottling.{Rate, ThrottledWorkItemProcessor}
 import uk.gov.hmrc.http.HeaderCarrier
-
+import scala.language.postfixOps
 import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.postfixOps
+import scala.util.Random
 
 @Singleton
 class PlatformAnalyticsService @Inject()(
   repository: InvitationsRepository,
   connector: PlatformAnalyticsConnector,
   appConfig: AppConfig,
-  actorSystem: ActorSystem) {
+  actorSystem: ActorSystem)(implicit mat: Materializer) {
 
   private val interval = appConfig.invitationUpdateStatusInterval
   private val expiredWithin = interval.seconds.toMillis
@@ -48,12 +50,6 @@ class PlatformAnalyticsService @Inject()(
   private val clientTypeIndex = appConfig.gaClientTypeIndex
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
   private val originIndex = appConfig.gaOriginIndex
-  private val throttleCallsPerSec = appConfig.gaThrottlingCallsPerSecond
-
-  private val throttler =
-    new ThrottledWorkItemProcessor("GAEventThrottler", actorSystem, Some(Rate.parse(s"$throttleCallsPerSec / second"))) {
-      override def instanceCount: Int = 1
-    }
 
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     repository
@@ -61,10 +57,12 @@ class PlatformAnalyticsService @Inject()(
       .map(_.filter(isExpiredWithIn))
       .map { expired =>
         Logger(getClass).info(s"sending GA events for expired invitations (total size: ${expired.size})")
-        expired
-          .grouped(batchSize)
-          .foreach { batch =>
-            throttleSendRequest(batch)
+        val batches = expired.grouped(batchSize)
+        Source
+          .fromIterator(() => batches)
+          .mapAsync(parallelism = 1)(throttleSendRequest)
+          .runForeach { _ =>
+            ()
           }
       }
 
@@ -73,9 +71,11 @@ class PlatformAnalyticsService @Inject()(
 
   private def throttleSendRequest(batch: List[Invitation])(implicit ec: ExecutionContext) = {
     Logger(getClass).info(s"sending throttling GA event for invitation batch with size: ${batch.size}")
-    throttler.throttledStartingFrom(DateTime.now) {
-      sendAnalyticsRequest(batch)
-    }
+    val delay = Random.nextInt(200)
+    for {
+      result <- sendAnalyticsRequest(batch)
+      _      <- after(delay milliseconds, actorSystem.scheduler)(Future.successful(()))
+    } yield result
   }
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
@@ -95,17 +95,17 @@ class PlatformAnalyticsService @Inject()(
 
   private def createEventFor(i: Invitation): Event =
     i.status match {
-      case Pending    => makeAuthRequestEvent("authorisation request", "created", i)
-      case Accepted   => makeAuthRequestEvent("authorisation request", "accepted", i)
-      case Rejected   => makeAuthRequestEvent("authorisation request", "declined", i)
-      case Expired    => makeAuthRequestEvent("authorisation request", "expired", i)
-      case Cancelled  => makeAuthRequestEvent("authorisation request", "cancelled", i)
-      case s: Unknown => makeAuthRequestEvent("authorisation request", "unknown", i)
+      case Pending    => makeAuthRequestEvent("created", i)
+      case Accepted   => makeAuthRequestEvent("accepted", i)
+      case Rejected   => makeAuthRequestEvent("declined", i)
+      case Expired    => makeAuthRequestEvent("expired", i)
+      case Cancelled  => makeAuthRequestEvent("cancelled", i)
+      case s: Unknown => makeAuthRequestEvent("unknown", i)
     }
 
-  private def makeAuthRequestEvent(category: String, action: String, i: Invitation): Event =
+  private def makeAuthRequestEvent(action: String, i: Invitation): Event =
     Event(
-      category = category,
+      category = "authorisation request",
       action = action,
       label = i.service.id.toLowerCase,
       dimensions = List(

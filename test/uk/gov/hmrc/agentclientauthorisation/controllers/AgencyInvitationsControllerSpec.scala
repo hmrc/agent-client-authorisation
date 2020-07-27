@@ -47,7 +47,7 @@ import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AgencyInvitationsControllerSpec
@@ -68,9 +68,6 @@ class AgencyInvitationsControllerSpec
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
-  val ecp: Provider[ExecutionContextExecutor] = new Provider[ExecutionContextExecutor] {
-    override def get(): ExecutionContextExecutor = concurrent.ExecutionContext.Implicits.global
-  }
 
   val jsonBody = Json.parse(
     s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
@@ -86,7 +83,7 @@ class AgencyInvitationsControllerSpec
       mockPlayAuthConnector,
       auditService,
       agentCacheProvider
-    )(metrics, cc, ecp) {}
+    )(metrics, cc, global) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(

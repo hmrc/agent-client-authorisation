@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Random
+import scala.util.{Failure, Random, Success}
 
 @Singleton
 class InvitationsStatusUpdateScheduler @Inject()(
@@ -88,7 +88,15 @@ class TaskActor(
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
                 invitationsService
                   .findAndUpdateExpiredInvitations()
-                  .map(_ => analyticsService.reportExpiredInvitations())
+                  .onComplete {
+                    case Success(_) =>
+                      analyticsService.reportExpiredInvitations()
+                    case Failure(ex) =>
+                      Logger(getClass)
+                        .warn(s"Invitation status update job failed", ex)
+                      Logger(getClass)
+                        .warn(s"Not running analytics on expired invitations due to below error", ex)
+                  }
               })
           } else {
             val dateTime = if (runAt.isBefore(now)) now else runAt

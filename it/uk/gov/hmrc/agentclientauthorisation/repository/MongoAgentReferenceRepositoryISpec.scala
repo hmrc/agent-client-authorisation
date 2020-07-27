@@ -21,7 +21,7 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, ResetMongoBeforeTest}
+import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MongoAgentReferenceRepositoryISpec
-    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp {
+    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp with MetricsTestSupport {
 
   override implicit lazy val mongoConnectorForTest: MongoConnector =
     MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
@@ -50,6 +50,7 @@ class MongoAgentReferenceRepositoryISpec
 
   override def beforeEach() {
     super.beforeEach()
+    givenCleanMetricRegistry()
     await(repository.ensureIndexes)
     ()
   }
