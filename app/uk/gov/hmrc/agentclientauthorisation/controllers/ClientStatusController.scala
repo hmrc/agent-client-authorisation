@@ -20,7 +20,6 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
@@ -39,7 +38,6 @@ class ClientStatusController @Inject()(
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
-  auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, authConnector, cc) {
 

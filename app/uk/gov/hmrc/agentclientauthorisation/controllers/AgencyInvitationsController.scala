@@ -36,7 +36,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -59,6 +59,8 @@ class AgencyInvitationsController @Inject()(
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
+
+  private val logger = Logger(getClass)
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
@@ -102,7 +104,7 @@ class AgencyInvitationsController @Inject()(
   }
 
   def setRelationshipEnded(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
+    _ => implicit arn =>
       forThisAgency(givenArn) {
         invitationsService.findInvitation(invitationId) flatMap {
           case Some(i) if i.arn == givenArn =>
@@ -222,16 +224,15 @@ class AgencyInvitationsController @Inject()(
       Future successful NoPermissionOnAgency
     else block
 
-  def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
-      postcodeService.postCodeMatches(nino.value, postcode.replaceAll("\\s", "")).map {
-        case Some(error) => error
-        case None        => NoContent
-      }
+  def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents { implicit request => _ =>
+    postcodeService.postCodeMatches(nino.value, postcode.replaceAll("\\s", "")).map {
+      case Some(error) => error
+      case None        => NoContent
+    }
   }
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
+    implicit request => _ =>
       knownFactsCheckService
         .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
         .map {
@@ -241,17 +242,17 @@ class AgencyInvitationsController @Inject()(
         }
         .recover {
           case e if e.getMessage.contains("MIGRATION") => {
-            Logger(getClass).warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
+            logger.warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
             Locked
           }
           case e =>
-            Logger(getClass).warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
+            logger.warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
             BadGateway
         }
   }
 
   def checkKnownFactIrv(nino: Nino, dateOfBirth: LocalDate): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
+    implicit request => _ =>
       knownFactsCheckService.clientDateOfBirthMatches(nino, dateOfBirth).map {
         case Some(true)  => NoContent
         case Some(false) => DateOfBirthDoesNotMatch
@@ -280,7 +281,7 @@ class AgencyInvitationsController @Inject()(
               case 400 => BadRequest(json)
               case 404 => NotFound(json)
               case c =>
-                Logger.warn(s"unexpected status $c from DES, error: ${cgtError.errors}")
+                logger.warn(s"unexpected status $c from DES, error: ${cgtError.errors}")
                 InternalServerError(json)
             }
         }
@@ -304,7 +305,7 @@ class AgencyInvitationsController @Inject()(
                 ))))
         }).recover {
           case e => {
-            Logger(getClass).warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
+            logger.warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
             genericInternalServerError(e.getMessage)
           }
         }

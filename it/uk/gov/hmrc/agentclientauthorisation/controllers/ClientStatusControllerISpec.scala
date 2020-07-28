@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, post, stubFor, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs, Http, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse

@@ -17,23 +17,21 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.Provider
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json._
+import play.api.mvc.ControllerComponents
 import play.api.mvc.Results._
-import play.api.mvc.{AnyContent, ControllerComponents, Request}
 import play.api.test.FakeRequest
-import play.api.mvc.Results.{Accepted => AcceptedResponse, _}
 import play.api.test.Helpers.stubControllerComponents
-import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegments
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
@@ -43,12 +41,10 @@ import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
-import play.api.test.Helpers.stubControllerComponents
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgencyInvitationsControllerSpec
     extends MocksWithCache with AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach
@@ -99,21 +95,18 @@ class AgencyInvitationsControllerSpec
     when(
       invitationsService
         .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(
-          any[HeaderCarrier],
           any[ExecutionContext]))
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
         .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(
-          any[HeaderCarrier],
           any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
         .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(
-          any[HeaderCarrier],
           any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
@@ -123,7 +116,7 @@ class AgencyInvitationsControllerSpec
         eqs(Seq(Service.MtdIt)),
         any[Option[String]],
         eqs(Some(Accepted)),
-        eqs(None))(any[HeaderCarrier], any[ExecutionContext]))
+        eqs(None))(any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
     ()
   }
@@ -196,9 +189,9 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
+          .findInvitation(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful Some(inviteCreated))
-      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext], any[HeaderCarrier]))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext]))
         .thenReturn(Future successful Right(cancelledInvite))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -214,9 +207,9 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[AnyContent]]))
+          .findInvitation(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful Some(inviteCreated))
-      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext], any[HeaderCarrier]))
+      when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[ExecutionContext]))
         .thenReturn(Future successful Left(StatusUpdateFailure(Accepted, "already accepted")))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -229,7 +222,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
+          .findInvitation(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -375,39 +368,4 @@ class AgencyInvitationsControllerSpec
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
     }
   }
-
-  private def invitationLink(agencyInvitationsSent: JsValue, idx: Int): String =
-    (embeddedInvitations(agencyInvitationsSent)(idx) \ "_links" \ "self" \ "href").as[String]
-
-  private def invitationsSize(agencyInvitationsSent: JsValue): Int =
-    embeddedInvitations(agencyInvitationsSent).value.size
-
-  private def embeddedInvitations(agencyInvitationsSent: JsValue): JsArray =
-    (agencyInvitationsSent \ "_embedded" \ "invitations").as[JsArray]
-
-  private def expectedAgencySentInvitationLink(arn: Arn, invitationId: InvitationId) =
-    encodePathSegments(
-      // TODO I would expect the links to start with "/agent-client-authorisation", however it appears they don't and that is not the focus of what I'm testing at the moment
-      // "agent-client-authorisation",
-      "agencies",
-      arn.value,
-      "invitations",
-      "sent",
-      invitationId.value
-    )
-
-  private def anInvitation(arn: Arn = arn) =
-    TestConstants.defaultInvitation
-      .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn)
-
-  private def aFutureOptionInvitation(arn: Arn = arn) =
-    Future successful Some(anInvitation(arn))
-
-  private def whenFindingAnInvitation() =
-    when(
-      invitationsService
-        .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier], any[Request[AnyContent]]))
-
-  private def whenAnInvitationIsCancelled(implicit ec: ExecutionContext) =
-    when(invitationsService.cancelInvitation(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
 }

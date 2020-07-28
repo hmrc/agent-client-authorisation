@@ -20,8 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.auth.core
-import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 

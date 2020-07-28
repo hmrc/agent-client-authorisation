@@ -22,7 +22,6 @@ import javax.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
 import play.api.Logger
 import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
@@ -34,9 +33,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class AgentLinkService @Inject()(
   agentReferenceRecordRepository: AgentReferenceRepository,
   desConnector: DesConnector,
-  auditService: AuditService,
   metrics: Metrics)
     extends Monitor {
+
+  private val logger = Logger(getClass)
 
   val codetable = "ABCDEFGHJKLMNOPRSTUWXYZ123456789"
 
@@ -63,8 +63,7 @@ class AgentLinkService @Inject()(
           .getOrElse(throw AgencyNameNotFound(arn)))
 
   def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[AgentReferenceRecord] =
+    implicit ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
       recordOpt <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
@@ -92,7 +91,7 @@ class AgentLinkService @Inject()(
       .create(newRecord)
       .map { result =>
         if (result == 1) {
-          Logger.info(s"""Created multi invitation record with uid: $uid""")
+          logger.info(s"""Created multi invitation record with uid: $uid""")
           newRecord
         } else
           throw new Exception("Unexpected failure of agent-reference db record creation")
@@ -105,7 +104,7 @@ class AgentLinkService @Inject()(
               .map(_.getOrElse(
                 throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
           else if (counter <= 3) {
-            Logger.error(s"""Duplicate uid happened $uid, will try again""")
+            logger.error(s"""Duplicate uid happened $uid, will try again""")
             create(arn, normalisedAgentName, counter + 1)
           } else
             Future.failed(e)

@@ -17,10 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import javax.inject.Inject
-import play.api.Play.current
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-import play.api.mvc.Results
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.http.ws.WSHttpResponse
 

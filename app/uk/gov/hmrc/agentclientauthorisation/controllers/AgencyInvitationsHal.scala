@@ -48,7 +48,7 @@ trait AgencyInvitationsHal {
     }.toVector
 
   def toHalResource(invitation: Invitation): HalResource = {
-    var links = HalLinks(
+    val links = HalLinks(
       Vector(
         HalLink(
           "self",

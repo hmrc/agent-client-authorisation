@@ -1,9 +1,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import uk.gov.hmrc.domain.TaxIdentifier
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.domain.TaxIdentifier
 
 trait ACRStubs {
 

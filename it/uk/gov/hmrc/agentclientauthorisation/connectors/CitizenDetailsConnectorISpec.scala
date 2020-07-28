@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import org.joda.time.{IllegalFieldValueException, LocalDate}
+import org.joda.time.LocalDate
+import org.joda.time.format._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CitizenDetailsStub}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.BadRequestException
 import uk.gov.hmrc.play.test.UnitSpec
-import org.joda.time.format._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

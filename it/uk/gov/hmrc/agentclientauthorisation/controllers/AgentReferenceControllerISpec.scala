@@ -3,10 +3,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.Service.Vat
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, Pending}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

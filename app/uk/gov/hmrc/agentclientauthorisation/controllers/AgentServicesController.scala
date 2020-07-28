@@ -24,12 +24,11 @@ import play.api.{Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
-import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,6 +39,8 @@ class AgentServicesController @Inject()(
   desConnector: DesConnector,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, authConnector, cc) {
+
+  private val logger = Logger(getClass)
 
   implicit val erFormats: OFormat[ErrorResponse] = Json.format
 
@@ -157,10 +158,10 @@ class AgentServicesController @Inject()(
                 businessNameFor(Utr(utr))
                   .recover {
                     case e: NotFoundException =>
-                      Logger(getClass).warn("An error happened when trying to get business name for a utr", e)
+                      logger.warn("An error happened when trying to get business name for a utr", e)
                       defaultName
                     case e if e.getMessage.contains("AGENT_TERMINATED") =>
-                      Logger(getClass).warn("Termination Found when trying to get business name for a utr", e)
+                      logger.warn("Termination Found when trying to get business name for a utr", e)
                       defaultName
                   }
                   .map(BusinessNameByUtr(utr, _))
@@ -180,7 +181,7 @@ class AgentServicesController @Inject()(
         .map {
           case Some(nino) => Ok(Json.obj("nino" -> nino.value))
           case None =>
-            Logger.warn("Nino not found for given MtdItId")
+            logger.warn("Nino not found for given MtdItId")
             NotFound
         }
     }
@@ -193,7 +194,7 @@ class AgentServicesController @Inject()(
         .map {
           case Some(mtdItId) => Ok(Json.obj("mtdItId" -> mtdItId.value))
           case None =>
-            Logger.warn("MtdItId not found for given nino")
+            logger.warn("MtdItId not found for given nino")
             NotFound
         }
     }
@@ -206,7 +207,7 @@ class AgentServicesController @Inject()(
         .map {
           case Some(tn) => Ok(Json.obj("tradingName" -> tn))
           case None =>
-            Logger.warn("Trading name not found for given nino")
+            logger.warn("Trading name not found for given nino")
             NotFound
         }
     }
@@ -217,7 +218,7 @@ class AgentServicesController @Inject()(
       desConnector.getVatCustomerDetails(vrn).map {
         case Some(cd) => Ok(Json.toJson(cd))
         case None =>
-          Logger.warn("CustomerDetails not found for given vrn")
+          logger.warn("CustomerDetails not found for given vrn")
           NotFound
       }
     }
