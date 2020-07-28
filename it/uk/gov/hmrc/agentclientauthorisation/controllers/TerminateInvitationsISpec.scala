@@ -1,10 +1,10 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
+
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Base64
 
 import akka.stream.Materializer
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.Provider
 import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.{JsObject, Json}
@@ -13,16 +13,16 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
+import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
-import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.http.HeaderNames
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 
 class TerminateInvitationsISpec extends BaseISpec {
 
@@ -47,10 +47,10 @@ class TerminateInvitationsISpec extends BaseISpec {
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
 
   def agentLinkService(agentReferenceRepository: AgentReferenceRepository) =
-    new AgentLinkService(agentReferenceRepository, desConnector, auditService, metrics)
+    new AgentLinkService(agentReferenceRepository, desConnector, metrics)
 
   def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
-    new InvitationsService(invitationsRepository, agentLinkService(agentReferenceRepository), relationshipConnector, analyticsService, desConnector, auditService, emailService, appConfig, metrics)
+    new InvitationsService(invitationsRepository, relationshipConnector, analyticsService, desConnector, emailService, appConfig, metrics)
 
   def testFailedController(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
     new AgencyInvitationsController(

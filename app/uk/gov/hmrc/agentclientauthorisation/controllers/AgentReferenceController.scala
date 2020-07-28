@@ -17,11 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Provider}
+import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
@@ -29,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, Invitatio
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 case class SimplifiedAgentRefRecord(uid: String, arn: Arn, normalisedAgentName: String)
 
@@ -49,11 +48,10 @@ class AgentReferenceController @Inject()(
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
-  auditService: AuditService,
   val ec: ExecutionContext)
     extends AuthActions(metrics, authConnector, cc) {
 
-  def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
+  def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { _ =>
     agentReferenceRecordRepository
       .findBy(uid)
       .map {

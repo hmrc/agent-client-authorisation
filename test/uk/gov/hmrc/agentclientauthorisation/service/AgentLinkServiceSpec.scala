@@ -48,7 +48,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
   val mockDesConnector: DesConnector = mock[DesConnector]
 
   val service =
-    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, auditService, metrics)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics)
 
   val ninoAsString: String = nino1.value
 

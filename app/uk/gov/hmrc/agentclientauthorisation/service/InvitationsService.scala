@@ -21,9 +21,7 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logger
-import play.api.mvc.Request
 import uk.gov.hmrc.agentclientauthorisation._
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
@@ -43,17 +41,17 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class InvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
-  agentLinkService: AgentLinkService,
   relationshipsConnector: RelationshipsConnector,
   analyticsService: PlatformAnalyticsService,
   desConnector: DesConnector,
-  auditService: AuditService,
   emailService: EmailService,
   appConfig: AppConfig,
   metrics: Metrics)
     extends Monitor {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
+
+  private val logger = Logger(getClass)
 
   private val invitationExpiryDuration = appConfig.invitationExpiringDuration
 
@@ -146,7 +144,7 @@ class InvitationsService @Inject()(
 
     createRelationship.recover {
       case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
-        Logger.warn(
+        logger.warn(
           s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
     }
   }
@@ -156,8 +154,7 @@ class InvitationsService @Inject()(
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] =
+    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
         case Success(result) => {
@@ -169,11 +166,10 @@ class InvitationsService @Inject()(
         }
       }
 
-  def setRelationshipEnded(
-    invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
+  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
     monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
       invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
-        Logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
+        logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
         invitation
       }
     }
@@ -199,10 +195,7 @@ class InvitationsService @Inject()(
     } yield result
   }
 
-  def findInvitation(invitationId: InvitationId)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    request: Request[Any]): Future[Option[Invitation]] =
+  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
       invitationsRepository.findByInvitationId(invitationId)
     }
@@ -218,9 +211,7 @@ class InvitationsService @Inject()(
     services: Seq[Service] = Seq.empty[Service],
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[List[Invitation]] = {
+    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
     val csvServices: Seq[String] = if (services.nonEmpty) services.map(s => s"-${s.id}") else Seq("")
     monitor(s"Repository-List-Invitations-Sent$csvServices") {
       invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
@@ -281,7 +272,7 @@ class InvitationsService @Inject()(
     invitationsRepository
       .update(invitation, Expired, DateTime.now())
       .flatMap(invitation => {
-        Logger(getClass).info(s"invitation expired id:${invitation.invitationId.value}")
+        logger.info(s"invitation expired id:${invitation.invitationId.value}")
         emailService.sendExpiredEmail(invitation)
       })
 
@@ -294,7 +285,7 @@ class InvitationsService @Inject()(
       case Pending =>
         monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
           invitationsRepository.update(invitation, status, timestamp) map { invitation =>
-            Logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
+            logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
             Right(invitation)
           }
         }

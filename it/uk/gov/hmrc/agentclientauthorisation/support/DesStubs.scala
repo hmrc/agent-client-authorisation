@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CgtRef, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 trait DesStubs {

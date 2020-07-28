@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.Provider
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -28,20 +27,20 @@ import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, InvitationInfo, InvitationStatus, Pending, Service, SuspensionDetails}
+import uk.gov.hmrc.agentclientauthorisation.model
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolment, Enrolments, PlayAuthConnector}
+import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.arn
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMockitoSugar with TestData {
 
@@ -56,14 +55,13 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val mockDesConnector = resettingMock[DesConnector]
 
   val mockAgentLinkService: AgentLinkService =
-    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, auditService, metrics)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics)
 
   val agentReferenceController =
     new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService)(
       metrics,
       cc,
       mockPlayAuthConnector,
-      auditService,
       global)
 
   private def clientAuthStub(returnValue: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments])

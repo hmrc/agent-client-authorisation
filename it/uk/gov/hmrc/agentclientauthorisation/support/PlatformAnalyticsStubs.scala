@@ -1,6 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalToJson, matchingJsonPath, post, postRequestedFor, stubFor, urlPathEqualTo, urlPathMatching, verify}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}

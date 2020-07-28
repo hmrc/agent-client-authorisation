@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,8 +45,7 @@ trait AgentInvitationValidation extends Results {
           s"""Unsupported clientIdType "${invite.clientIdType}", for service type "${invite.service}""""))
   }
 
-  def checkForErrors(
-    agentInvitation: AgentInvitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] =
+  def checkForErrors(agentInvitation: AgentInvitation)(implicit ec: ExecutionContext): Future[Option[Result]] =
     Seq(supportedService, supportedClientIdType, hasValidClientId)
       .foldLeft(Future.successful[Option[Result]](None))((acc, validation) =>
         acc.flatMap {

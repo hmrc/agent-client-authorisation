@@ -42,7 +42,7 @@ trait Monitor {
   private def timerName[T](serviceName: String): String =
     s"Timer-$serviceName"
 
-  def reportHistogramValue[T](name: String, value: Long)(implicit ec: ExecutionContext): Unit =
+  def reportHistogramValue[T](name: String, value: Long): Unit =
     kenshooRegistry.getHistograms
       .getOrDefault(histogramName(name), kenshooRegistry.histogram(histogramName(name)))
       .update(value)

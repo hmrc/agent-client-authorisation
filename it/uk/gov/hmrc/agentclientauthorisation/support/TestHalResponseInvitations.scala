@@ -1,8 +1,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.agentclientauthorisation.model.DetailsForEmail
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
-import play.api.libs.functional.syntax._
 
 
 case class TestHalResponseInvitations(invitations: List[TestHalResponseInvitation])

@@ -37,6 +37,8 @@ class ClientNameService @Inject()(
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
 
+  private val logger = Logger(getClass)
+
   def getClientNameByService(clientId: String, service: Service)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[String]] =
@@ -63,7 +65,7 @@ class ClientNameService @Inject()(
       }
       .recover {
         case e => {
-          Logger(getClass).error(s"Unable to translate MtdItId: ${e.getMessage}")
+          logger.error(s"Unable to translate MtdItId: ${e.getMessage}")
           None
         }
       }
@@ -90,7 +92,7 @@ class ClientNameService @Inject()(
     }.map(_.response).map {
       case Right(trustName) => Some(trustName.name)
       case Left(invalidTrust) =>
-        Logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
+        logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
         None
     }
 
@@ -104,7 +106,7 @@ class ClientNameService @Inject()(
           case Left(individualName) => Some(s"${individualName.firstName} ${individualName.lastName}")
         }
       case Left(e) =>
-        Logger(getClass).warn(s"Error occcured when getting CGT Name")
+        logger.warn(s"Error occcured when getting CGT Name")
         None
     }
 }

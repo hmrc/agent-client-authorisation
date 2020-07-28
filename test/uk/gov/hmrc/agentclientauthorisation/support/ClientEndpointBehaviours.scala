@@ -58,7 +58,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] =
     when(
       invitationsService
-        .findInvitation(eqs(invitationId))(any[ExecutionContext], any[HeaderCarrier], any[Request[Any]]))
+        .findInvitation(eqs(invitationId))(any[ExecutionContext]))
 
   def noInvitation: Future[None.type] = Future successful None
 

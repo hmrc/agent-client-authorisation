@@ -39,10 +39,9 @@ import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.postfixOps
 import scala.util.matching.Regex
 
 case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
@@ -62,6 +61,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   private val agentEnrol = "HMRC-AS-AGENT"
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
+
+  private val logger = Logger(getClass)
 
   def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
     implicit request ⇒
@@ -92,23 +93,20 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
           case decodedAuth(username, password) =>
             if (BasicAuthentication(username, password) == expectedAuth) body
             else {
-              Logger.warn("Authorization header found in the request but invalid username or password")
+              logger.warn("Authorization header found in the request but invalid username or password")
               Future successful Unauthorized
             }
           case _ =>
-            Logger.warn("Authorization header found in the request but its not in the expected format")
+            logger.warn("Authorization header found in the request but its not in the expected format")
             Future successful Unauthorized
         }
       case _ =>
-        Logger.warn("No Authorization header found in the request for agent termination")
+        logger.warn("No Authorization header found in the request for agent termination")
         Future successful Unauthorized
     }
 
-  def withBasicAuth[A](body: => Future[Result])(
-    implicit
-    request: Request[A],
-    hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] = authorised() { body }
+  def withBasicAuth[A](body: => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+    authorised() { body }
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
@@ -177,7 +175,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
                 case "PrivilegedApplication" if hasRequiredStrideRole(enrolments, strideRoles) =>
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
                 case e =>
-                  Logger(getClass).warn(
+                  logger.warn(
                     s"ProviderType found: $e or hasRequiredEnrolmentMatchingIdentifier: ${hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId)}")
                   Future successful GenericForbidden
               }
@@ -197,12 +195,12 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
           case allEnrols if allEnrols.enrolments.map(_.key).contains(strideRole) =>
             body(request)
           case e =>
-            Logger(getClass).warn(s"Unauthorized Discovered during Stride Authentication: ${e.enrolments.map(_.key)}")
+            logger.warn(s"Unauthorized Discovered during Stride Authentication: ${e.enrolments.map(_.key)}")
             Future successful Unauthorized
         }
         .recover {
           case e =>
-            Logger(getClass).warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
+            logger.warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
             GenericForbidden
         }
     }
@@ -224,7 +222,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         action(identifiers)
       } recoverWith {
       case _: UnsupportedAffinityGroup => Future.successful(agentResponse) //return default status for agents
-      case p                           => Future.successful(handleFailure(request)(p))
+      case p                           => Future.successful(handleFailure(p))
     }
 
   private def supportedServiceName(key: String): Option[String] =
@@ -232,8 +230,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
 
   protected def withMultiEnrolledClient[A](body: Seq[(String, String, String)] => Future[Result])(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext,
-    request: Request[_]): Future[Result] =
+    ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(affinityGroup and confidenceLevel and allEnrolments) {
         case Some(affinity) ~ confidence ~ enrols =>
@@ -261,20 +258,20 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   def extractEnrolmentData(enrolls: Set[Enrolment], enrolKey: String, enrolId: String): Option[String] =
     enrolls.find(_.key == enrolKey).flatMap(_.getIdentifier(enrolId)).map(_.value)
 
-  def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
+  def handleFailure: PartialFunction[Throwable, Result] = {
     case _: NoActiveSession ⇒
       GenericUnauthorized
 
     case _: InsufficientEnrolments ⇒
-      Logger.warn(s"Logged in user does not have required enrolments")
+      logger.warn(s"Logged in user does not have required enrolments")
       GenericForbidden
 
     case _: UnsupportedAuthProvider ⇒
-      Logger.warn(s"user logged in with unsupported auth provider")
+      logger.warn(s"user logged in with unsupported auth provider")
       GenericForbidden
 
     case _: UnsupportedAffinityGroup ⇒
-      Logger.warn(s"user logged in with unsupported AffinityGroup")
+      logger.warn(s"user logged in with unsupported AffinityGroup")
       GenericForbidden
   }
 }

@@ -102,7 +102,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     }
 
   def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
+    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { _ => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(currentUser.taxIdentifier))
@@ -143,8 +143,6 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    request: Request[Any],
     authTaxId: ClientIdentifier[T]): Future[Result] =
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
@@ -169,9 +167,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
     action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    request: Request[Any]): Future[Result] =
+    implicit ec: ExecutionContext): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation) map {
@@ -182,15 +178,15 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       case _    => Future successful NoPermissionOnClient
     }
 
-  private def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(
-    block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: ClientIdentifier[T]): Future[Result] =
+  private def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(block: => Future[Result])(
+    implicit authTaxId: ClientIdentifier[T]): Future[Result] =
     if (authTaxId.value.replaceAll("\\s", "") != taxId.value.replaceAll("\\s", ""))
       Future successful NoPermissionOnClient
     else
       block
 
-  private def forThisClientOrStride[T <: TaxIdentifier](taxId: ClientIdentifier[T])(
-    block: => Future[Result])(implicit ec: ExecutionContext, authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+  private def forThisClientOrStride[T <: TaxIdentifier](taxId: ClientIdentifier[T])(block: => Future[Result])(
+    implicit authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     authTaxId match {
       case None => block
       case Some(authTaxIdentifier)
