@@ -268,20 +268,33 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
             "expiryDate"                     -> 1,
             InvitationRecordFormat.statusKey -> 1,
             "arn"                            -> 1,
-            "service"                        -> 1)))
+            "service"                        -> 1,
+            "isRelationshipEnded"            -> 1,
+            "events"                         -> 1))
+      )
       .cursor[JsObject](ReadPreference.primaryPreferred)
       .collect[List](1000, Cursor.FailOnError[List[JsObject]]())
       .map(
-        _.map((x: JsValue) =>
-          (x \ "invitationId", x \ "expiryDate", x \ InvitationRecordFormat.statusKey, x \ "arn", x \ "service"))
-          .map(
-            properties =>
-              InvitationInfo(
-                properties._1.as[InvitationId],
-                properties._2.as[LocalDate],
-                properties._3.as[InvitationStatus],
-                properties._4.as[Arn],
-                properties._5.as[Service])))
+        _.map(
+          (x: JsValue) =>
+            (
+              x \ "invitationId",
+              x \ "expiryDate",
+              x \ InvitationRecordFormat.statusKey,
+              x \ "arn",
+              x \ "service",
+              (x \ "isRelationshipEnded").orElse(JsDefined(JsBoolean(false))),
+              x \ "events"))
+          .map(properties =>
+            InvitationInfo(
+              properties._1.as[InvitationId],
+              properties._2.as[LocalDate],
+              properties._3.as[InvitationStatus],
+              properties._4.as[Arn],
+              properties._5.as[Service],
+              properties._6.as[Boolean],
+              properties._7.as[List[StatusChangeEvent]]
+          )))
   }
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
