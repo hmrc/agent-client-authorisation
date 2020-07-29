@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import java.time.LocalDateTime
+
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.LocalDate
+import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -147,13 +149,35 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
           val expiryDate = LocalDate.now()
+          val eventTime = DateTime.now()
 
           val invitationIdAndExpiryDate1 =
-            InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending, arn, Service.MtdIt)
+            InvitationInfo(
+              InvitationId("ABERULMHCKKW3"),
+              expiryDate,
+              Pending,
+              arn,
+              Service.MtdIt,
+              false,
+              List(StatusChangeEvent(eventTime, Pending)))
           val invitationIdAndExpiryDate2 =
-            InvitationInfo(InvitationId("B9SCS2T4NZBAX"), expiryDate, Pending, arn, Service.PersonalIncomeRecord)
+            InvitationInfo(
+              InvitationId("B9SCS2T4NZBAX"),
+              expiryDate,
+              Pending,
+              arn,
+              Service.PersonalIncomeRecord,
+              false,
+              List(StatusChangeEvent(eventTime, Pending)))
           val invitationIdAndExpiryDate3 =
-            InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat)
+            InvitationInfo(
+              InvitationId("CZTW1KY6RTAAT"),
+              expiryDate,
+              Pending,
+              arn,
+              Service.Vat,
+              false,
+              List(StatusChangeEvent(eventTime, Pending)))
 
           val listOfInvitations =
             List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
@@ -187,7 +211,14 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val expiryDate = LocalDate.now()
 
         val invitationIdAndExpiryDate3 =
-          InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat)
+          InvitationInfo(
+            InvitationId("CZTW1KY6RTAAT"),
+            expiryDate,
+            Pending,
+            arn,
+            Service.Vat,
+            false,
+            List(StatusChangeEvent(DateTime.now(), Pending)))
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
