@@ -18,9 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.pattern.after
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -29,11 +27,11 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnecto
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import scala.language.postfixOps
+
 import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
+import scala.language.postfixOps
 
 @Singleton
 class PlatformAnalyticsService @Inject()(
@@ -51,35 +49,26 @@ class PlatformAnalyticsService @Inject()(
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
   private val originIndex = appConfig.gaOriginIndex
 
+  val logger = Logger(getClass)
+
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     repository
       .findInvitationsBy(status = Some(Expired))
       .map(_.filter(isExpiredWithIn))
       .map { expired =>
-        Logger(getClass).info(s"sending GA events for expired invitations (total size: ${expired.size})")
-        val batches = expired.grouped(batchSize)
-        Source
-          .fromIterator(() => batches)
-          .mapAsync(parallelism = 1)(throttleSendRequest)
-          .runForeach { _ =>
-            ()
+        logger.info(s"sending GA events for expired invitations (total size: ${expired.size})")
+        expired
+          .grouped(batchSize)
+          .foreach { batch =>
+            sendAnalyticsRequest(batch)
           }
       }
 
   private def isExpiredWithIn(invitation: Invitation): Boolean =
     invitation.mostRecentEvent().time.withDurationAdded(expiredWithin, 1).compareTo(DateTime.now) == 1
 
-  private def throttleSendRequest(batch: List[Invitation])(implicit ec: ExecutionContext) = {
-    Logger(getClass).info(s"sending throttling GA event for invitation batch with size: ${batch.size}")
-    val delay = Random.nextInt(200)
-    for {
-      result <- sendAnalyticsRequest(batch)
-      _      <- after(delay milliseconds, actorSystem.scheduler)(Future.successful(()))
-    } yield result
-  }
-
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
-    Logger(getClass).info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status}")
+    logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status}")
     sendAnalyticsRequest(List(i))
   }
 

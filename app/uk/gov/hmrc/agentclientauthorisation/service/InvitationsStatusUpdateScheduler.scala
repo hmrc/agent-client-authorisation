@@ -88,15 +88,7 @@ class TaskActor(
                   .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
                 invitationsService
                   .findAndUpdateExpiredInvitations()
-                  .onComplete {
-                    case Success(_) =>
-                      analyticsService.reportExpiredInvitations()
-                    case Failure(ex) =>
-                      Logger(getClass)
-                        .warn(s"Invitation status update job failed", ex)
-                      Logger(getClass)
-                        .warn(s"Not running analytics on expired invitations due to below error", ex)
-                  }
+                  .map(_ => analyticsService.reportExpiredInvitations())
               })
           } else {
             val dateTime = if (runAt.isBefore(now)) now else runAt
