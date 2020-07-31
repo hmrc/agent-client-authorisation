@@ -258,13 +258,8 @@ class InvitationsService @Inject()(
         .findInvitationsBy(status = Some(Pending))
         .map(invs => invs.filter(_.expiryDate.isBefore(LocalDate.now())))
         .flatMap { invitations =>
-          val result = invitations
-            .map(updateToExpiredAndSendEmail(_))
-            .map(_.map(identity))
-
-          Future.sequence(result).map { _ =>
-            ()
-          }
+          val result = invitations.map(updateToExpiredAndSendEmail)
+          Future.sequence(result).map(_ => ())
         }
     }
 
