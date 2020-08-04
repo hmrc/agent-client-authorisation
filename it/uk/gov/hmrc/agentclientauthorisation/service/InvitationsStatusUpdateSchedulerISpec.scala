@@ -31,7 +31,7 @@ class InvitationsStatusUpdateSchedulerISpec
   )
 
   override implicit val patienceConfig =
-    PatienceConfig(scaled(Span(30, Seconds)), scaled(Span(5, Seconds)))
+    PatienceConfig(scaled(Span(60, Seconds)), scaled(Span(5, Seconds)))
 
   "InvitationsStatusUpdateScheduler" should {
 
