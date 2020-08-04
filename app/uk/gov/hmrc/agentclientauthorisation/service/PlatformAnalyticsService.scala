@@ -20,7 +20,6 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
-import org.joda.time.DateTime
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
@@ -53,8 +52,7 @@ class PlatformAnalyticsService @Inject()(
 
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     repository
-      .findInvitationsBy(status = Some(Expired))
-      .map(_.filter(isExpiredWithIn))
+      .getExpiredInvitationsForGA(expiredWithin: Long)
       .map { expired =>
         logger.info(s"sending GA events for expired invitations (total size: ${expired.size})")
         expired
@@ -63,9 +61,6 @@ class PlatformAnalyticsService @Inject()(
             sendAnalyticsRequest(batch)
           }
       }
-
-  private def isExpiredWithIn(invitation: Invitation): Boolean =
-    invitation.mostRecentEvent().time.withDurationAdded(expiredWithin, 1).compareTo(DateTime.now) == 1
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
     logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status}")

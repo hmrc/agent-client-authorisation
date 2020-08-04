@@ -82,6 +82,8 @@ trait InvitationsRepository {
   def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit]
 
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
+
+  def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]]
 }
 
 @Singleton
@@ -331,5 +333,18 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
   override def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
     val query = Json.obj("arn" -> arn.value)
     collection.delete().one(query).map(_.n)
+  }
+
+  override def getExpiredInvitationsForGA(expiredWithin: Long)(
+    implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    println(DateTime.now().getMillis - expiredWithin)
+    val query = Json.obj(
+      "events.status" -> JsString("Expired"),
+      "events.time"   -> Json.obj("$gte" -> JsNumber(DateTime.now().getMillis - expiredWithin)))
+    collection
+      .find[JsObject, JsObject](query, None)
+      .sort(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)))
+      .cursor[Invitation](ReadPreference.primaryPreferred)
+      .collect[List](-1, Cursor.FailOnError[List[Invitation]]())
   }
 }
