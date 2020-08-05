@@ -52,7 +52,7 @@ class PlatformAnalyticsService @Inject()(
 
   def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     repository
-      .getExpiredInvitationsForGA(expiredWithin: Long)
+      .getExpiredInvitationsForGA(expiredWithin)
       .map { expired =>
         logger.info(s"sending GA events for expired invitations (total size: ${expired.size})")
         expired

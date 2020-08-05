@@ -337,7 +337,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
 
   override def getExpiredInvitationsForGA(expiredWithin: Long)(
     implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    println(DateTime.now().getMillis - expiredWithin)
     val query = Json.obj(
       "events.status" -> JsString("Expired"),
       "events.time"   -> Json.obj("$gte" -> JsNumber(DateTime.now().getMillis - expiredWithin)))
