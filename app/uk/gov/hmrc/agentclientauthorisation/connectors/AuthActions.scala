@@ -247,10 +247,16 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
               }
               .toSeq
 
+          //APB-4856: Clients with only CGT enrol dont need to go through IV and they should be allowed same as if they have CL >= L200
+          val isCgtOnlyClient: Boolean = {
+            val enrolKeys: Set[String] = enrols.enrolments.map(_.key)
+            enrolKeys.intersect(Service.supportedServices.map(_.enrolmentKey).toSet) == Set(Service.HMRCCGTPD)
+          }
+
           (affinity, confidence) match {
-            case (Individual, cl) if cl >= L200 => body(clientIdTypePlusIds)
-            case (Organisation, _)              => body(clientIdTypePlusIds)
-            case _                              => Future successful GenericForbidden
+            case (Individual, cl) if cl >= L200 || isCgtOnlyClient => body(clientIdTypePlusIds)
+            case (Organisation, _)                                 => body(clientIdTypePlusIds)
+            case _                                                 => Future successful GenericForbidden
           }
         case _ => Future successful GenericUnauthorized
       } recover handleFailure
