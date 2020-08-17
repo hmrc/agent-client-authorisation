@@ -100,8 +100,7 @@ class PlatformAnalyticsService @Inject()(
         DimensionValue(clientTypeIndex, i.clientType.getOrElse("unknown")),
         DimensionValue(invitationIdIndex, i.invitationId.value),
         DimensionValue(originIndex, i.origin.getOrElse("unknown"))
-      ),
-      userId = None
+      )
     )
 
   // platform analytics will make a client ID from the session ID but when there is no session make a clientId from a UUID
