@@ -87,9 +87,9 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
       invitationStatus shouldBe Cancelled.toString
 
       val event = Event("authorisation request", "cancelled", testClient.service.id.toLowerCase,
-        Seq(DimensionValue(7, testClient.clientType.getOrElse("personal")), DimensionValue(8, invitation.invitationId.value), DimensionValue(9, "unknown")))
+        Seq(DimensionValue(7, testClient.clientType.getOrElse("personal")), DimensionValue(8, invitation.invitationId.value), DimensionValue(9, "unknown")), None)
 
-      verifyAnalyticsRequestSent(1, List(event))
+      verifySingleEventAnalyticsRequestSent(List(event))
     }
   }
 

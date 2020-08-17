@@ -154,7 +154,8 @@ class InvitationsService @Inject()(
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
         case Success(result) => {

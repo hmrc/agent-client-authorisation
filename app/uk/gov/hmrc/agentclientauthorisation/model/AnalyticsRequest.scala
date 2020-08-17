@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
+import java.net.URL
+
 import play.api.libs.json.{Json, OWrites}
 
 case class DimensionValue(index: Int, value: String)
@@ -24,13 +26,18 @@ object DimensionValue {
   implicit val dimensionWrites: OWrites[DimensionValue] = Json.writes[DimensionValue]
 }
 
-case class Event(category: String, action: String, label: String, dimensions: Seq[DimensionValue])
+case class Event(
+  category: String,
+  action: String,
+  label: String,
+  dimensions: Seq[DimensionValue],
+  userId: Option[String])
 
 object Event {
   implicit val eventWrites: OWrites[Event] = Json.writes[Event]
 }
 
-case class AnalyticsRequest(gaClientId: String, gaTrackingId: String, events: Seq[Event])
+case class AnalyticsRequest(gaClientId: Option[String], gaTrackingId: Option[String], events: List[Event])
 
 object AnalyticsRequest {
   implicit val analyticsWrites: OWrites[AnalyticsRequest] = Json.writes[AnalyticsRequest]

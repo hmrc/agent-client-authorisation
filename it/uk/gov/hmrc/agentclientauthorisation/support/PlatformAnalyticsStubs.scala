@@ -17,13 +17,12 @@ trait PlatformAnalyticsStubs extends Eventually {
   private implicit val dimensionWrites = Json.writes[DimensionValue]
   private implicit val eventWrites = Json.writes[Event]
 
-  def verifyAnalyticsRequestSent(count: Int, events: List[Event]): Unit =
+  def verifySingleEventAnalyticsRequestSent(events: List[Event]): Unit =
     eventually {
       verify(
-        count,
+        1,
         postRequestedFor(urlPathEqualTo(platformAnalyticsUrl))
           .withRequestBody(similarToJson(s"""{
-                                            |  "gaClientId": "clientId",
                                             |  "gaTrackingId": "token",
                                             |  "events": ${Json.toJson(events)}
                                             |}"""))
