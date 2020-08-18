@@ -30,7 +30,7 @@ object Event {
   implicit val eventWrites: OWrites[Event] = Json.writes[Event]
 }
 
-case class AnalyticsRequest(gaClientId: String, gaTrackingId: String, events: Seq[Event])
+case class AnalyticsRequest(gaClientId: Option[String], gaTrackingId: Option[String], events: List[Event])
 
 object AnalyticsRequest {
   implicit val analyticsWrites: OWrites[AnalyticsRequest] = Json.writes[AnalyticsRequest]

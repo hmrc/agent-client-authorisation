@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import java.util.UUID
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer
@@ -27,6 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.util.hashing.{MurmurHash3 => MH3}
 import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,7 +45,6 @@ class PlatformAnalyticsService @Inject()(
   private val interval = appConfig.invitationUpdateStatusInterval
   private val expiredWithin = interval.seconds.toMillis
   private val batchSize = appConfig.gaBatchSize
-  private val clientId = appConfig.gaClientId
   private val trackingId = appConfig.gaTrackingId
   private val clientTypeIndex = appConfig.gaClientTypeIndex
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
@@ -58,24 +60,26 @@ class PlatformAnalyticsService @Inject()(
         expired
           .grouped(batchSize)
           .foreach { batch =>
-            sendAnalyticsRequest(batch)
+            sendAnalyticsRequest(batch, Some(makeGAClientId))(
+              HeaderCarrier(extraHeaders = Seq("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
+              ec)
           }
       }
 
-  def reportSingleEventAnalyticsRequest(i: Invitation)(implicit ec: ExecutionContext): Future[Done] = {
+  def reportSingleEventAnalyticsRequest(
+    i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
     logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status}")
-    sendAnalyticsRequest(List(i))
+    sendAnalyticsRequest(List(i), None)
   }
 
-  private def sendAnalyticsRequest(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Done] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier(
-      extraHeaders = Seq("AuthorisationRequestSendEvent-Batch-Size" -> s"${invitations.size}"))
+  private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Done] =
     connector.sendEvent(
       AnalyticsRequest(
         gaClientId = clientId,
-        gaTrackingId = trackingId,
+        gaTrackingId = Some(trackingId),
         events = invitations.map(i => createEventFor(i))))
-  }
 
   private def createEventFor(i: Invitation): Event =
     i.status match {
@@ -98,5 +102,15 @@ class PlatformAnalyticsService @Inject()(
         DimensionValue(originIndex, i.origin.getOrElse("unknown"))
       )
     )
+
+  // platform analytics will make a client ID from the session ID but when there is no session make a clientId from a UUID
+  private def makeGAClientId: String = {
+    val uuid = UUID.randomUUID().toString
+    MH3.stringHash(uuid, MH3.stringSeed).abs.toString match {
+      case uuidHash =>
+        "GA.1." + (uuidHash + "000000000")
+          .substring(0, 9) + "." + ("0000000000" + uuidHash).substring(uuidHash.length, 10 + uuidHash.length).reverse
+    }
+  }
 
 }
