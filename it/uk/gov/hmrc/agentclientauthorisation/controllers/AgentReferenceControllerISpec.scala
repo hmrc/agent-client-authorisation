@@ -72,18 +72,18 @@ class AgentReferenceControllerISpec extends BaseISpec {
       jsonBodyOf(response).as[List[InvitationInfo]].size shouldBe 4
     }
 
-    "return invitation info for services that are supported by the client's enrolments - has VATDEC-ORG and IR-SA enrolments" in new TestSetup {
+    "return invitation info for services that are supported by the client's enrolments - has VATDEC-ORG and IT enrolment" in new TestSetup {
 
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
       await(agentReferenceRepo.insert(agentReferenceRecord))
 
-      val response = controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "IR-SA"))
+      val response = controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
 
       status(response) shouldBe 200
 
-      jsonBodyOf(response).as[List[InvitationInfo]].size shouldBe 2
+      jsonBodyOf(response).as[List[InvitationInfo]].size shouldBe 3
     }
   }
 
