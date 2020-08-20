@@ -108,7 +108,7 @@ class PlatformAnalyticsService @Inject()(
     val uuid = UUID.randomUUID().toString
     MH3.stringHash(uuid, MH3.stringSeed).abs.toString match {
       case uuidHash =>
-        "GA.1." + (uuidHash + "000000000")
+        "GA1.1." + (uuidHash + "000000000")
           .substring(0, 9) + "." + ("0000000000" + uuidHash).substring(uuidHash.length, 10 + uuidHash.length).reverse
     }
   }
