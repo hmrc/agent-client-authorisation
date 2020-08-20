@@ -238,7 +238,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
         val keys = clientIdTypeAndValues.map {
           case (serviceName, clientIdType, clientIdValue) =>
             InvitationRecordFormat
-              .toArnClientKey(arn, clientIdValue)
+              .toArnClientKey(arn, clientIdValue, serviceName)
         }
         Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Json.obj("$in" -> keys))
       }
