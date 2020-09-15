@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
+import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -114,9 +115,9 @@ class EmailService @Inject()(
       Seq(agencyEmail),
       templateId,
       Map(
-        "agencyName"   -> agencyName,
-        "clientName"   -> clientName,
-        "expiryPeriod" -> appConfig.invitationExpiringDuration.toString,
+        "agencyName" -> agencyName,
+        "clientName" -> clientName,
+        "expiryDate" -> DateUtils.displayDate(invitation.expiryDate),
         "service" -> (invitation.service.id match {
           case HMRCMTDIT   => messagesApi(s"service.$HMRCMTDIT")
           case HMRCPIR     => messagesApi(s"service.$HMRCPIR")
