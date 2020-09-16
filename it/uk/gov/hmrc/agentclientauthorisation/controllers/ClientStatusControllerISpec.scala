@@ -54,7 +54,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation1))
@@ -69,7 +69,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation2))
@@ -116,7 +116,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation1))
@@ -129,7 +129,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation2))
@@ -163,7 +163,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation1))
@@ -198,7 +198,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673C")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
       await(repo.insert(invitation))
@@ -232,7 +232,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now.minusDays(14),
+        DateTime.now.minusDays(21),
         LocalDate.now,
         None
       )
@@ -319,7 +319,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         None,
         DateTime.now,
-        LocalDate.now.plusDays(14),
+        LocalDate.now.plusDays(21),
         None
       )
 

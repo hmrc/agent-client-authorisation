@@ -73,7 +73,7 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
       testClient.clientId,
       testClient.suppliedClientId,
       None,
-      now.minusDays(14),
+      now.minusDays(21),
       now.toLocalDate,
       Some("origin header"))
   }
