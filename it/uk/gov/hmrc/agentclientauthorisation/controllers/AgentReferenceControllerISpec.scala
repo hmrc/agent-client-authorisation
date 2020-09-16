@@ -44,7 +44,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
-      LocalDate.now().plusDays(14),
+      LocalDate.now().plusDays(21),
       None)
   }
 

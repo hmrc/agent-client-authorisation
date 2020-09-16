@@ -45,7 +45,7 @@ object InvitationRecordFormat {
     origin: Option[String] = None,
     events: List[StatusChangeEvent]): Invitation = {
 
-    val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(14).toLocalDate)
+    val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(21).toLocalDate)
 
     val clientIdType = clientIdTypeOp.getOrElse {
       if (Nino.isValid(clientId)) NinoType.id else MtdItIdType.id

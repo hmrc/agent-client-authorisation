@@ -44,7 +44,7 @@ Invitations can have one of the following status:
 |Pending|Default status when an invitation has been created|
 |Accepted|Allows Agent to be authorised to act on behalf of a client|
 |Rejected|Prevents Agent being authorised to act on a client's behalf|
-|Expired|Client did not respond to the Agent's Invitation within 14 days|
+|Expired|Client did not respond to the Agent's Invitation within 21 days|
 |Cancelled|Agent cancels the invitation they sent out, preventing a client from responding|
 
 Note: Invitations with "Pending" status is the only editable status.

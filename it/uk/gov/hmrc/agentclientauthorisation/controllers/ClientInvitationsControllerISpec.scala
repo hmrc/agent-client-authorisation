@@ -32,7 +32,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
       DateTime.now(DateTimeZone.UTC),
-      LocalDate.now().plusDays(14),
+      LocalDate.now().plusDays(21),
       None)
   }
 
@@ -52,7 +52,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       templateId,
       Map("agencyName"   -> s"${dfe.agencyName}",
         "clientName"   -> s"${dfe.clientName}",
-        "expiryPeriod" -> "14 days",
+        "expiryPeriod" -> "21 days",
         "service"      -> s"$serviceText"))
   }
 

@@ -420,7 +420,7 @@ class InvitationsMongoRepositoryISpec
             MtdItId(s"AB${i}23456A"),
             None,
             now,
-            now.plusDays(14).toLocalDate,
+            now.plusDays(21).toLocalDate,
             None)
 
       await(Future.sequence(invitations.map(repository.insert)))
@@ -457,7 +457,7 @@ class InvitationsMongoRepositoryISpec
         MtdItId("ABCD123456C"),
         None,
         now,
-        now.plusDays(14).toLocalDate,
+        now.plusDays(21).toLocalDate,
         None)
 
       val pirInvitation = Invitation.createNew(
@@ -468,7 +468,7 @@ class InvitationsMongoRepositoryISpec
         Nino("AB123456A"),
         None,
         now,
-        now.plusDays(14).toLocalDate,
+        now.plusDays(21).toLocalDate,
       None)
 
       val vatInvitation = Invitation
@@ -480,7 +480,7 @@ class InvitationsMongoRepositoryISpec
           Vrn("442820662"),
           None,
           now,
-          now.plusDays(14).toLocalDate,
+          now.plusDays(21).toLocalDate,
         None)
 
       await(repository.insert(itsaInvitation))
@@ -529,7 +529,7 @@ class InvitationsMongoRepositoryISpec
         MtdItId("ABCD123456C"),
         None,
         now,
-        now.plusDays(14).toLocalDate,
+        now.plusDays(21).toLocalDate,
       None)
 
       val pirInvitation = Invitation.createNew(
@@ -540,7 +540,7 @@ class InvitationsMongoRepositoryISpec
         Nino("AB123456A"),
         None,
         now,
-        now.plusDays(14).toLocalDate,
+        now.plusDays(21).toLocalDate,
       None)
 
       val vatInvitation = Invitation
@@ -552,7 +552,7 @@ class InvitationsMongoRepositoryISpec
           Vrn("442820662"),
           None,
           now,
-          now.plusDays(14).toLocalDate,
+          now.plusDays(21).toLocalDate,
         None)
 
       await(repository.insert(itsaInvitation))
@@ -576,7 +576,7 @@ class InvitationsMongoRepositoryISpec
       MtdItId("ABCD123456C"),
       Some(dfe),
       now,
-      now.plusDays(14).toLocalDate,
+      now.plusDays(21).toLocalDate,
       None)
 
       await(repository.insert(itsaInvitation))
