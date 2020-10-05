@@ -25,8 +25,6 @@ import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.http.controllers.RestFormats
 
-import scala.language.existentials
-
 sealed trait InvitationStatus {
 
   def toEither: Either[String, InvitationStatus] = this match {

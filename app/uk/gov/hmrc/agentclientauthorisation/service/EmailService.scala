@@ -79,13 +79,7 @@ class EmailService @Inject()(
           _ <- {
             val emailInfo: EmailInformation =
               emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
-            emailConnector
-              .sendEmail(emailInfo)
-              .recoverWith {
-                case e =>
-                  getLogger.warn("sending email failed", e)
-                  Future.successful(())
-              }
+            emailConnector.sendEmail(emailInfo)
           }
           _ <- invitationsRepository.removeEmailDetails(invitation)
         } yield ()

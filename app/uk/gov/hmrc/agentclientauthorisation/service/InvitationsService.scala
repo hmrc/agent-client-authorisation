@@ -20,7 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-import play.api.Logger
+import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
@@ -47,11 +47,9 @@ class InvitationsService @Inject()(
   emailService: EmailService,
   appConfig: AppConfig,
   metrics: Metrics)
-    extends Monitor {
+    extends Monitor with Logging {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-
-  private val logger = Logger(getClass)
 
   private val invitationExpiryDuration = appConfig.invitationExpiringDuration
 
@@ -93,7 +91,7 @@ class InvitationsService @Inject()(
                          originHeader)
         _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
       } yield {
-        Logger info s"""Created invitation with id: "${invitation.id.stringify}"."""
+        logger.info(s"""Created invitation with id: "${invitation.id.stringify}".""")
         invitation
       }
     }

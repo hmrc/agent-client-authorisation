@@ -479,8 +479,8 @@ class AgentServicesControllerISpec extends BaseISpec {
       givenDesReturnsServiceUnavailable()
 
       val result = getClientNino(mtdItId)
-      result.status shouldBe BAD_GATEWAY
-      (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+      result.status shouldBe SERVICE_UNAVAILABLE
+      (result.json \ "statusCode").get.as[Int] shouldBe SERVICE_UNAVAILABLE
     }
   }
 
@@ -507,8 +507,8 @@ class AgentServicesControllerISpec extends BaseISpec {
       givenDesReturnsServiceUnavailable()
 
       val result = getClientMtdItId(nino)
-      result.status shouldBe BAD_GATEWAY
-      (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+      result.status shouldBe SERVICE_UNAVAILABLE
+      (result.json \ "statusCode").get.as[Int] shouldBe SERVICE_UNAVAILABLE
     }
   }
 
@@ -563,7 +563,6 @@ class AgentServicesControllerISpec extends BaseISpec {
         val result = getUtrBusinessName(Utr("4000000009"))
         result.status shouldBe NOT_FOUND
         (result.json \ "statusCode").get.as[Int] shouldBe NOT_FOUND
-        (result.json \ "message").get.as[String] shouldBe "No business record was matched for the specified UTR"
       }
     }
   }
@@ -605,7 +604,7 @@ class AgentServicesControllerISpec extends BaseISpec {
         givenDESRespondsWithRegistrationData(utr, isIndividual)
         givenDESReturnsErrorForRegistration(Utr("4000000009"), INTERNAL_SERVER_ERROR, terminatedResponseBody)
 
-        getUtrBusinessNames(Seq(utr, Utr("4000000009"))).status shouldBe OK
+        getUtrBusinessNames(Seq(utr, Utr("4000000009"))).status shouldBe INTERNAL_SERVER_ERROR
       }
 
       s"Error thrown by Des on one of the UTRs $isIndividual" in {

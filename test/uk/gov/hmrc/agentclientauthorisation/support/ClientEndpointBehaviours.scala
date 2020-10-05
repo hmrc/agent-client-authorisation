@@ -22,7 +22,6 @@ import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
-import play.api.mvc.Request
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions

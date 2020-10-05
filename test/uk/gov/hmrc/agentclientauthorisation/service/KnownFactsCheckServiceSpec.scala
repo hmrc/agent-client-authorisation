@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.VatRegDate
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -91,9 +91,9 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val vatRegDateSupplied = LocalDate.parse("2001-02-03")
 
       when(desConnector.getVatRegDate(clientVrn))
-        .thenReturn(Future failed Upstream5xxResponse("error", 502, 503))
+        .thenReturn(Future failed UpstreamErrorResponse("error", 502, 503))
 
-      assertThrows[Upstream5xxResponse] {
+      assertThrows[UpstreamErrorResponse] {
         await(service.clientVatRegistrationDateMatches(clientVrn, vatRegDateSupplied))
       }
     }
@@ -136,9 +136,9 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val dateOfBirthSupplied = LocalDate.parse("03022001", format)
 
       when(citizenDetailsConnector.getCitizenDateOfBirth(clientNino))
-        .thenReturn(Future failed Upstream5xxResponse("error", 502, 503))
+        .thenReturn(Future failed UpstreamErrorResponse("error", 502, 503))
 
-      assertThrows[Upstream5xxResponse] {
+      assertThrows[UpstreamErrorResponse] {
         await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied))
       }
     }

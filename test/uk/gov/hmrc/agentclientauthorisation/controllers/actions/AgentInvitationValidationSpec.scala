@@ -20,8 +20,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AgentInvitationValidationSpec
@@ -29,9 +29,6 @@ class AgentInvitationValidationSpec
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", Some("personal"), "ni", "AA123456A")
   private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", Some("business"), "vrn", "101747641")
-  private val validPirInvite: AgentInvitation =
-    AgentInvitation("PERSONAL-INCOME-RECORD", Some("personal"), "ni", "AA123456A")
-  private implicit val hc = HeaderCarrier()
 
   private implicit class ResultChecker(r: Result) {
     def is(r1: Result) = {

@@ -23,7 +23,7 @@ import java.util.Base64
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
-import play.api.Logger
+import play.api.{Logger, Logging}
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
@@ -50,7 +50,7 @@ case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest
 
 @Singleton
 class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, cc: ControllerComponents)
-    extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions {
+    extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions with Logging {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -61,8 +61,6 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   private val agentEnrol = "HMRC-AS-AGENT"
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
-
-  private val logger = Logger(getClass)
 
   def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
     implicit request ⇒

@@ -16,12 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import java.nio.charset.StandardCharsets.UTF_8
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.{Scenario, StubMapping}
 import play.api.libs.json.Json
-import play.utils.UriEncoding
 import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -735,18 +732,6 @@ trait DesStubs {
             .withBody(body)))
   }
 
-  def givenAgencyNameNotFoundClientStub(arn: Arn) =
-    stubFor(
-      get(urlEqualTo(s"/registration/personal-details/arn/${encodePathSegment(arn.value)}"))
-        .willReturn(aResponse()
-          .withStatus(404)))
-
-  def givenAgencyNameNotFoundAgentStub(arn: Arn) =
-    stubFor(
-      get(urlEqualTo(s"/registration/personal-details/arn/${encodePathSegment(arn.value)}"))
-        .willReturn(aResponse()
-          .withStatus(404)))
-
   def givenTradingName(nino: Nino, tradingName: String) =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/$nino"))
@@ -819,7 +804,4 @@ trait DesStubs {
             .withStatus(404)
         )
     )
-
-  private def encodePathSegment(pathSegment: String): String =
-    UriEncoding.encodePathSegment(pathSegment, UTF_8.name)
 }

@@ -255,12 +255,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     findInvitationInfoBySearch(query)
   }
 
-  private def findInvitationInfoBySearch(query: JsObject)(
-    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
-
-    implicit val domainFormatImplicit: Format[Invitation] = InvitationRecordFormat.mongoFormat
-    implicit val idFormatImplicit: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
-
+  private def findInvitationInfoBySearch(query: JsObject)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     collection
       .find(
         query,
@@ -297,7 +292,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               properties._6.as[Boolean],
               properties._7.as[List[StatusChangeEvent]]
           )))
-  }
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
     BSONDocumentFormat.reads(writes.writes(entity)).get

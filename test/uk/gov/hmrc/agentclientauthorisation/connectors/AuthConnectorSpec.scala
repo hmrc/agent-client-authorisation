@@ -51,10 +51,10 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
   private type ClientAuthAction = Request[AnyContent] => ClientId => Future[Result]
 
-  val agentAction: AgentAuthAction = { implicit request => implicit arn =>
+  val agentAction: AgentAuthAction = { _ => _ =>
     Future successful Ok
   }
-  val clientAction: ClientAuthAction = { implicit request => implicit clientId =>
+  val clientAction: ClientAuthAction = { _ => _ =>
     Future successful Ok
   }
 

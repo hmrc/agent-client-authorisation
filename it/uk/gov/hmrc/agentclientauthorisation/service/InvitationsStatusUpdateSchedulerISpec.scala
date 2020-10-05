@@ -9,7 +9,6 @@ import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,9 +35,6 @@ class InvitationsStatusUpdateSchedulerISpec
   "InvitationsStatusUpdateScheduler" should {
 
     val arn = Arn("AARN0000002")
-    val mtdItId = MtdItId("ABCDEF123456789")
-    val nino = Nino("AB123456C")
-    val mtdItIdType = "MTDITID"
 
     "update status of all Pending invitations to Expired if they are expired" in {
       val now = DateTime.now()

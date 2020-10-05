@@ -40,7 +40,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -77,7 +77,6 @@ class AgencyInvitationsControllerSpec
       multiInvitationsService,
       mockDesConnector,
       mockPlayAuthConnector,
-      auditService,
       agentCacheProvider
     )(metrics, cc, global) {}
 
@@ -317,7 +316,7 @@ class AgencyInvitationsControllerSpec
       when(
         kfcService
           .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future failed Upstream4xxResponse("MIGRATION", 403, 423))
+        .thenReturn(Future failed UpstreamErrorResponse("MIGRATION", 403, 423))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe Locked
 

@@ -20,7 +20,6 @@ import java.util.UUID
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -33,14 +32,13 @@ import scala.util.hashing.{MurmurHash3 => MH3}
 import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.postfixOps
 
 @Singleton
 class PlatformAnalyticsService @Inject()(
   repository: InvitationsRepository,
   connector: PlatformAnalyticsConnector,
   appConfig: AppConfig,
-  actorSystem: ActorSystem)(implicit mat: Materializer) {
+  actorSystem: ActorSystem) {
 
   private val interval = appConfig.invitationUpdateStatusInterval
   private val expiredWithin = interval.seconds.toMillis

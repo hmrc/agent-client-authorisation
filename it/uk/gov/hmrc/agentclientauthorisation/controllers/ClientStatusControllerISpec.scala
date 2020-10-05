@@ -39,6 +39,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       givenAuditConnector()
       givenClientHasNoActiveRelationships
       givenClientHasNoActiveAfiRelationships
+      givenGetAgencyDetailsStub(Arn("TARN0000001"))
+      givenGetAgencyDetailsStub(Arn("TARN0000002"))
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
@@ -102,6 +104,7 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       givenAuditConnector()
       givenClientHasNoActiveRelationships
       givenClientHasNoActiveAfiRelationships
+      givenGetAgencyDetailsStub(Arn("TARN0000001"))
 
       stubFor(post(urlPathEqualTo(s"/auth/authorise")).willReturn(aResponse()
         .withStatus(200)
@@ -218,6 +221,8 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       givenAuditConnector()
       givenClientHasNoActiveRelationships
       givenClientHasNoActiveAfiRelationships
+      givenGetAgencyDetailsStub(Arn("TARN0000001"))
+      givenGetAgencyDetailsStub(Arn("TARN0000002"))
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(
