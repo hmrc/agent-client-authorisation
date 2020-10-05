@@ -22,14 +22,17 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
 import org.joda.time.LocalDate
 import org.joda.time.format._
+import play.api.Logging
+import play.api.http.Status
 import play.api.libs.json.{JsPath, Reads}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HttpClient, _}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class CitizenDateOfBirth(dateOfBirth: Option[LocalDate])
 
@@ -65,12 +68,13 @@ object Citizen {
 trait CitizenDetailsConnector {
   def getCitizenDateOfBirth(
     nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]]
+
   def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen]
 }
 
 @Singleton
 class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
-    extends HttpAPIMonitor with CitizenDetailsConnector {
+    extends HttpAPIMonitor with CitizenDetailsConnector with Logging {
 
   private val baseUrl = appConfig.citizenDetailsBaseUrl
 
@@ -80,16 +84,24 @@ class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClie
     nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = s"$baseUrl/citizen-details/nino/${nino.value}"
-      http.GET[Option[CitizenDateOfBirth]](url.toString).recover {
-        case _ => None
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case Status.OK => Try(response.json.asOpt[CitizenDateOfBirth]).getOrElse(None)
+          case _         => None
+        }
       }
     }
 
   def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = s"$baseUrl/citizen-details/nino/${nino.value}"
-      http.GET[Citizen](url.toString).recover {
-        case _: NotFoundException => Citizen(None, None, None)
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case Status.OK        => response.json.as[Citizen]
+          case Status.NOT_FOUND => Citizen(None, None, None)
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error during 'getCitizenDetails', statusCode=$other", other)
+        }
       }
     }
 }

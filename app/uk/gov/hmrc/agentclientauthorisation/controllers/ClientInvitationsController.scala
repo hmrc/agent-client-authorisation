@@ -85,7 +85,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   def getInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     validateClientId(clientIdType, clientId) match {
       case Right((service, taxIdentifier)) =>
-        onlyForClients(service, getType(clientIdType)) { implicit request => implicit authTaxId =>
+        onlyForClients(service, getType(clientIdType)) { _ => implicit authTaxId =>
           getInvitation(ClientIdentifier(taxIdentifier), invitationId)
         }
 
@@ -131,7 +131,6 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   private def rejectInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    request: Request[Any],
     authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(clientId) {
       actionInvitation(

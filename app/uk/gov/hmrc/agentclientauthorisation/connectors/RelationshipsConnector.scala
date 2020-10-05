@@ -20,6 +20,8 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import org.joda.time.DateTime
+import play.api.Logging
+import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -27,13 +29,15 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
-    extends HttpAPIMonitor {
+    extends HttpAPIMonitor with HttpErrorFunctions with Logging {
+
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -43,12 +47,26 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation).toString, "") map (_ => ())
+      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation), "").map { response =>
+        response.status match {
+          case status if is2xx(status) => ()
+          case other =>
+            logger.warn(s"unexpected error during 'createMtdItRelationship', statusCode=$other")
+            ()
+        }
+      }
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation).toString, "") map (_ => ())
+      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation), "").map { response =>
+        response.status match {
+          case status if is2xx(status) => ()
+          case other =>
+            logger.warn(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
+            ()
+        }
+      }
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
@@ -56,32 +74,66 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     ec: ExecutionContext): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation).toString, body) map (_ => ())
+      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body).map { response =>
+        response.status match {
+          case status if is2xx(status) => ()
+          case other =>
+            logger.warn(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
+            ()
+        }
+      }
     }
   }
 
   def createTrustRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Trust-PUT") {
-      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation).toString, "") map (_ => ())
+      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation), "").map { response =>
+        response.status match {
+          case status if is2xx(status) => ()
+          case other =>
+            logger.warn(s"unexpected error during 'createTrustRelationship', statusCode=$other")
+            ()
+        }
+      }
     }
 
   def createCapitalGainsRelationship(
     invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
-      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation).toString, "") map (_ => ())
+      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation), "").map { response =>
+        response.status match {
+          case status if is2xx(status) => ()
+          case other =>
+            logger.warn(s"unexpected error during 'createCapitalGainsRelationship', statusCode=$other")
+            ()
+        }
+      }
     }
 
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
-      http.GET[Map[String, Seq[Arn]]](url)
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case status if is2xx(status) => response.json.as[Map[String, Seq[Arn]]]
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error during 'getActiveRelationships', statusCode=$other", other)
+        }
+      }
     }
 
   def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[JsObject]] =
     monitor(s"ConsumedAPI-AgentFiRelationship-GetActive-GET") {
       val url = s"$afiBaseUrl/agent-fi-relationship/relationships/active"
-      http.GET[Seq[JsObject]](url).recover {
-        case _: NotFoundException => Seq()
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case status if is2xx(status) => response.json.as[Seq[JsObject]]
+          case Status.NOT_FOUND        => Seq.empty
+          case other =>
+            throw UpstreamErrorResponse(
+              s"unexpected error during 'getActiveAfiRelationships', statusCode=$other",
+              other)
+        }
       }
     }
 

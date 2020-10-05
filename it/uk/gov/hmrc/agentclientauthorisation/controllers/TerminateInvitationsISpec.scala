@@ -61,7 +61,6 @@ class TerminateInvitationsISpec extends BaseISpec {
       agentLinkService(agentReferenceRepository),
       desConnector,
       authConnector,
-      auditService,
       agentCacheProvider)
 
   val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 5), DeletionCount(appConfig.appName, "agent-reference", 1))))

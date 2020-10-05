@@ -21,7 +21,6 @@ import java.util.UUID
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.json.Json.format
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -68,7 +67,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
         val record = ScheduleRecord(UUID.randomUUID().toString, DateTime.now())
         insert(record).map(_ => record).recoverWith {
           case NonFatal(error) =>
-            Logger(getClass).warn(s"Creating RecoveryRecord failed: ${error.getMessage}")
+            logger.warn(s"Creating RecoveryRecord failed: ${error.getMessage}")
             Future.failed(error)
         }
     })
@@ -77,5 +76,5 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
     findAndUpdate(
       Json.obj(),
       Json.obj("$set" -> Json.obj("uid" -> newUid, "runAt" -> ReactiveMongoFormats.dateTimeWrite.writes(newRunAt)))
-    ).map(_.lastError.flatMap(_.err).foreach(error => Logger.warn(s"Updating uid and runAt failed with error: $error")))
+    ).map(_.lastError.flatMap(_.err).foreach(error => logger.warn(s"Updating uid and runAt failed with error: $error")))
 }

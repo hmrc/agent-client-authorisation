@@ -19,11 +19,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import org.joda.time.LocalDate
-import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
-import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
@@ -48,7 +46,6 @@ class AgencyInvitationsController @Inject()(
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
   authConnector: AuthConnector,
-  auditService: AuditService,
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
@@ -59,8 +56,6 @@ class AgencyInvitationsController @Inject()(
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
-
-  private val logger = Logger(getClass)
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {

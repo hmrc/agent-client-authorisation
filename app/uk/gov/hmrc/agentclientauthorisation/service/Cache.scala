@@ -20,7 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment, Logger, Logging}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, TrustResponse, VatCustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
@@ -51,7 +51,7 @@ class DoNotCache[T] extends Cache[T] {
 }
 
 class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit metrics: Metrics)
-    extends KenshooCacheMetrics with Cache[T] {
+    extends KenshooCacheMetrics with Cache[T] with Logging {
 
   val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -70,7 +70,7 @@ class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit
       case None =>
         body.andThen {
           case Success(v) =>
-            Logger(getClass).info(s"Missing $name cache hit, storing new value.")
+            logger.debug(s"Missing $name cache hit, storing new value.")
             record("Count-" + name + "-from-source")
             underlying.put(key, v)
         }

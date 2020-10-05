@@ -156,9 +156,7 @@ class InvitationsMongoRepositoryISpec
     "set isRelationshipEnded flag to be true" in {
 
       val created = addInvitation(now, invitationITSA)
-      val updated = update(created, Accepted, now)
       val ended   = setRelationshipEnded(created)
-
 
       inside(ended) {
         case Invitation(created.id, _, _, _, _, _, _, _, _, isRelationshipEnded, _, _, _) =>

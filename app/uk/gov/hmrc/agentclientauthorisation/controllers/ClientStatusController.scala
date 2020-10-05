@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.C
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentCacheProvider, InvitationsService}
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.http.Upstream4xxResponse
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -57,14 +57,14 @@ class ClientStatusController @Inject()(
                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
                                                        .map(_.nonEmpty)
                                                        .recover {
-                                                         case _: Upstream4xxResponse => false
+                                                         case _: UpstreamErrorResponse => false
                                                        }
                        hasExistingRelationships <- if (hasExistingAfiRelationships) Future.successful(true)
                                                   else
                                                     relationshipsConnector.getActiveRelationships
                                                       .map(_.nonEmpty)
                                                       .recover {
-                                                        case _: Upstream4xxResponse => false
+                                                        case _: UpstreamErrorResponse => false
                                                       }
                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
                    }

@@ -22,9 +22,8 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json.Reads._
-import play.api.libs.json.{JsObject, _}
 import play.utils.UriEncoding
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -33,9 +32,9 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.logging.Authorization
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, NotFoundException}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -73,36 +72,53 @@ class DesConnectorImpl @Inject()(
   agentCacheProvider: AgentCacheProvider,
   httpClient: HttpClient,
   metrics: Metrics)
-    extends HttpAPIMonitor with DesConnector {
+    extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-
-  private val rawHttpReads = new RawHttpReads
 
   private val environment: String = appConfig.desEnvironment
   private val authorizationToken: String = appConfig.desAuthToken
   private val baseUrl: String = appConfig.desBaseUrl
 
   def getBusinessDetails(
-    nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] =
-    getWithDesHeaders[BusinessDetails](
-      "getRegistrationBusinessDetailsByNino",
-      s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}")
+    nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
+    val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
+    getWithDesHeaders("getRegistrationBusinessDetailsByNino", url).map { response =>
+      response.status match {
+        case status if is2xx(status) => response.json.asOpt[BusinessDetails]
+        case status if is4xx(status) => None
+        case other =>
+          throw UpstreamErrorResponse(s"unexpected error during 'getBusinessDetails', statusCode=$other", other, other)
+      }
+    }
+  }
 
   def getVatRegDate(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatRegDate]] = {
     val url = s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information"
-    getWithDesHeaders[VatRegDate]("GetVatCustomerInformation", url)
+    getWithDesHeaders("GetVatCustomerInformation", url).map { response =>
+      response.status match {
+        case status if is2xx(status) => response.json.asOpt[VatRegDate]
+        case status if is4xx(status) => None
+        case other =>
+          throw UpstreamErrorResponse(s"unexpected error during 'getVatRegDate', statusCode=$other", other, other)
+      }
+    }
   }
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
     val url = s"$baseUrl/trusts/agent-known-fact-check/${utr.value}"
 
-    httpClient.GET[HttpResponse](url)(rawHttpReads, addDesHeaders, ec).map { response =>
+    getWithDesHeaders("getTrustName", url).map { response =>
       response.status match {
-        case 200 => TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
-        case 400 | 404 =>
+        case status if is2xx(status) =>
+          TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
+        case status if is4xx(status) =>
           TrustResponse(Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
-        case _ => throw new RuntimeException(s"unexpected status during retrieving TrustName, error=${response.body}")
+        case other =>
+          throw UpstreamErrorResponse(
+            s"unexpected status during retrieving TrustName, error=${response.body}",
+            other,
+            other)
       }
     }
   }
@@ -112,7 +128,7 @@ class DesConnectorImpl @Inject()(
 
     val url = s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}"
 
-    httpClient.GET[HttpResponse](url)(rawHttpReads, addDesHeaders, ec).map { response =>
+    getWithDesHeaders("getCgtSubscription", url).map { response =>
       val result = response.status match {
         case 200 =>
           Right(response.json.as[CgtSubscription])
@@ -127,46 +143,72 @@ class DesConnectorImpl @Inject()(
     }
   }
 
-  private def addDesHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
-    hc.copy(
-      authorization = Some(Authorization(s"Bearer $authorizationToken")),
-      extraHeaders = hc.extraHeaders :+ "Environment" -> environment :+ "CorrelationId" -> UUID.randomUUID().toString
-    )
-
   def getAgencyDetails(agentIdentifier: TaxIdentifier)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
     agentCacheProvider
       .agencyDetailsCache(agentIdentifier.value) {
-        getWithDesHeaders[AgentDetailsDesResponse]("GetAgentRecord", getAgentRecordUrl(agentIdentifier)).recover {
-          case e if e.getMessage.contains("AGENT_TERMINATED") =>
-            Logger(getClass).warn(s"Discovered a Termination: $e")
-            None
+        getWithDesHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier)).map { response =>
+          response.status match {
+            case status if is2xx(status) => response.json.asOpt[AgentDetailsDesResponse]
+            case status if is4xx(status) => None
+            case _ if response.body.contains("AGENT_TERMINATED") =>
+              logger.warn(s"Discovered a Termination for agent: $agentIdentifier")
+              None
+            case other =>
+              throw UpstreamErrorResponse(
+                s"unexpected response during 'getAgencyDetails', status: $other, response: ${response.body}",
+                other,
+                other)
+          }
         }
       }
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    for {
-      responseOpt <- getRegistration(utr)
-      response = responseOpt match {
-        case Some(res) => res
-        case None      => throw new NotFoundException("Registration record not found")
+    monitor("ConsumedAPI-DES-GetAgentRegistration-POST") {
+      val url = s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}"
+      httpClient.POST[DesRegistrationRequest, HttpResponse](url, DesRegistrationRequest(isAnAgent = false)).map {
+        response =>
+          response.status match {
+            case status if is2xx(status) =>
+              val isIndividual = (response.json \ "isAnIndividual").as[Boolean]
+              if (isIndividual) {
+                (response.json \ "individual").asOpt[Individual].flatMap(_.name)
+              } else {
+                (response.json \ "organisation" \ "organisationName").asOpt[String]
+              }
+
+            case other =>
+              throw UpstreamErrorResponse(s"unexpected error during 'getBusinessName', statusCode=$other", other, other)
+          }
       }
-    } yield if (response.isAnIndividual) response.individual.flatMap(_.name) else response.organisationName
+    }
 
   def getNinoFor(mtdbsa: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
     val url = s"$baseUrl/registration/business-details/mtdbsa/${UriEncoding.encodePathSegment(mtdbsa.value, "UTF-8")}"
     agentCacheProvider.clientNinoCache(mtdbsa.value) {
-      getWithDesHeaders[NinoDesResponse]("GetRegistrationBusinessDetailsByMtdbsa", url)
-        .map(_.map(_.nino))
+      getWithDesHeaders("GetRegistrationBusinessDetailsByMtdbsa", url).map { response =>
+        response.status match {
+          case status if is2xx(status) => response.json.asOpt[NinoDesResponse].map(_.nino)
+          case status if is4xx(status) => None
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error during 'getNinoFor', statusCode=$other", other, other)
+        }
+      }
     }
   }
 
   def getMtdIdFor(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
     val url = s"$baseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
     agentCacheProvider.clientMtdItIdCache(nino.value) {
-      getWithDesHeaders[MtdItIdDesResponse]("GetRegistrationBusinessDetailsByNino", url)
-        .map(_.map(_.mtdbsa))
+      getWithDesHeaders("GetRegistrationBusinessDetailsByNino", url).map { response =>
+        response.status match {
+          case status if is2xx(status) => response.json.asOpt[MtdItIdDesResponse].map(_.mtdbsa)
+          case status if is4xx(status) => None
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error during 'getMtdIdFor', statusCode=$other", other, other)
+        }
+      }
     }
   }
 
@@ -174,12 +216,17 @@ class DesConnectorImpl @Inject()(
     val url =
       s"$baseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
     agentCacheProvider.tradingNameCache(nino.value) {
-      getWithDesHeaders[JsObject]("GetTradingNameByNino", url).map(
-        obj =>
-          obj.flatMap { o =>
-            ((o \ "businessData")(0) \ "tradingName").asOpt[String]
+      getWithDesHeaders("GetTradingNameByNino", url).map { response =>
+        response.status match {
+          case status if is2xx(status) => ((response.json \ "businessData")(0) \ "tradingName").asOpt[String]
+          case status if is4xx(status) => None
+          case other =>
+            throw UpstreamErrorResponse(
+              s"unexpected error during 'getTradingNameForNino', statusCode=$other",
+              other,
+              other)
         }
-      )
+      }
     }
   }
 
@@ -187,24 +234,33 @@ class DesConnectorImpl @Inject()(
     vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]] = {
     val url = s"$baseUrl/vat/customer/vrn/${UriEncoding.encodePathSegment(vrn.value, "UTF-8")}/information"
     agentCacheProvider.vatCustomerDetailsCache(vrn.value) {
-      getWithDesHeaders[JsObject]("GetVatOrganisationNameByVrn", url)
-        .map(
-          obj =>
-            obj.flatMap { o =>
-              (o \ "approvedInformation" \ "customerDetails").asOpt[VatCustomerDetails]
-          }
-        )
+      getWithDesHeaders("GetVatOrganisationNameByVrn", url).map { response =>
+        response.status match {
+          case status if is2xx(status) =>
+            (response.json \ "approvedInformation" \ "customerDetails").asOpt[VatCustomerDetails]
+          case status if is4xx(status) => None
+          case other =>
+            throw UpstreamErrorResponse(
+              s"unexpected error during 'getVatCustomerDetails', statusCode=$other",
+              other,
+              other)
+        }
+      }
     }
   }
 
-  private def getWithDesHeaders[T: HttpReads](apiName: String, url: String)(
+  private def getWithDesHeaders(apiName: String, url: String)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[T]] = {
+    ec: ExecutionContext): Future[HttpResponse] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
-      extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
+      extraHeaders =
+        hc.extraHeaders :+
+          "Environment"   -> environment :+
+          "CorrelationId" -> UUID.randomUUID().toString
+    )
     monitor(s"ConsumedAPI-DES-$apiName-GET") {
-      httpClient.GET[Option[T]](url)(implicitly[HttpReads[Option[T]]], desHeaderCarrier, ec)
+      httpClient.GET[HttpResponse](url)(implicitly[HttpReads[HttpResponse]], desHeaderCarrier, ec)
     }
   }
 
@@ -218,27 +274,5 @@ class DesConnectorImpl @Inject()(
         s"$baseUrl/registration/personal-details/utr/$encodedUtr"
       case _ =>
         throw new Exception(s"The client identifier $agentId is not supported.")
-    }
-
-  private def getRegistration(
-    utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[DesRegistrationResponse]] =
-    monitor("ConsumedAPI-DES-GetAgentRegistration-POST") {
-      val url = s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}"
-      httpClient.POST[DesRegistrationRequest, Option[JsValue]](url, DesRegistrationRequest(isAnAgent = false))(
-        implicitly[Writes[DesRegistrationRequest]],
-        implicitly[HttpReads[Option[JsValue]]],
-        hc.copy(
-          authorization = Some(Authorization(s"Bearer $authorizationToken")),
-          extraHeaders = hc.extraHeaders :+ "Environment" -> environment),
-        ec
-      )
-    }.map {
-      case Some(r) =>
-        Some(
-          DesRegistrationResponse(
-            (r \ "isAnIndividual").as[Boolean],
-            (r \ "organisation" \ "organisationName").asOpt[String],
-            (r \ "individual").asOpt[Individual]))
-      case _ => None
     }
 }

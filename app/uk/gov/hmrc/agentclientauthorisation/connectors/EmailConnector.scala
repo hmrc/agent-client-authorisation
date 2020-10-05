@@ -15,15 +15,17 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
+
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.Inject
+import play.api.Logging
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,7 +35,7 @@ trait EmailConnector {
 }
 
 class EmailConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
-    extends HttpAPIMonitor with EmailConnector {
+    extends HttpAPIMonitor with EmailConnector with HttpErrorFunctions with Logging {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -43,6 +45,13 @@ class EmailConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metri
     monitor(s"Send-Email-${emailInformation.templateId}") {
       http
         .POST[EmailInformation, HttpResponse](s"$baseUrl/hmrc/email", emailInformation)
-        .map(_ => ())
+        .map { response =>
+          response.status match {
+            case status if is2xx(status) => ()
+            case other =>
+              logger.warn(s"unexpected status from email service, status: $other")
+              ()
+          }
+        }
     }
 }

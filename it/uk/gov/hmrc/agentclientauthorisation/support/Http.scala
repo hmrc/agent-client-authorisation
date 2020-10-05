@@ -20,7 +20,6 @@ import javax.inject.Inject
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.http.ws.WSHttpResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -47,9 +46,9 @@ class Http @Inject()(wsClient: WSClient) {
     request.delete()
   }
 
-  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): WSHttpResponse =
+  private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): HttpResponse =
     await(
-      fun(wsClient.url(url).withHttpHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(new WSHttpResponse(_)))
+      fun(wsClient.url(url).withHttpHeaders(hc.headers: _*).withRequestTimeout(20000 milliseconds)).map(wsr => HttpResponse(wsr.status, wsr.body)))
 
   private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
 

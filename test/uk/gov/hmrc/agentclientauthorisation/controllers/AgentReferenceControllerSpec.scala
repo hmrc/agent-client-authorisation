@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.time.LocalDateTime
-
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.any

@@ -19,11 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import akka.Done
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
+import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.AnalyticsRequest
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,14 +34,17 @@ trait PlatformAnalyticsConnector {
 
 @Singleton
 class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient)
-    extends PlatformAnalyticsConnector {
+    extends PlatformAnalyticsConnector with HttpErrorFunctions with Logging {
 
   val serviceUrl: String = s"${appConfig.platformAnalyticsBaseUrl}/platform-analytics/event"
 
   def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] =
-    http.POST[AnalyticsRequest, HttpResponse](serviceUrl, request).map(_ => Done).recover {
-      case e: Throwable =>
-        Logger(getClass).warn(s"Couldn't send analytics event: $e")
-        Done
+    http.POST[AnalyticsRequest, HttpResponse](serviceUrl, request).map { response =>
+      response.status match {
+        case status if is2xx(status) => Done
+        case other =>
+          logger.warn(s"Couldn't send analytics event, response status: $other")
+          Done
+      }
     }
 }

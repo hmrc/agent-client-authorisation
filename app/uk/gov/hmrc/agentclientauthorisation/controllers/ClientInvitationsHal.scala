@@ -115,6 +115,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitations("UTR", clientId.value, status)
       case clientId @ ClientIdentifier(CgtRef(_)) =>
         routes.ClientInvitationsController.getInvitations("CGTPDRef", clientId.value, status)
+      case other =>
+        throw new RuntimeException(s"'toHalResource' not yet implemented for $other ")
     }
 
     val links = Vector(HalLink("self", link.url)) ++ invitationLinks(invitations)

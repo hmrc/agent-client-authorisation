@@ -20,7 +20,7 @@ import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
-import uk.gov.hmrc.http.Upstream5xxResponse
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -115,7 +115,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     "throw Upstream5xxResponse if DES is unavailable" in {
       failsVatCustomerDetails(clientVrn, withStatus = 502)
 
-      assertThrows[Upstream5xxResponse] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.getVatRegDate(clientVrn))
       }
     }

@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
+import play.api.Environment
 import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
-import play.api.{Environment, Logger}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
@@ -39,8 +39,6 @@ class AgentServicesController @Inject()(
   desConnector: DesConnector,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, authConnector, cc) {
-
-  private val logger = Logger(getClass)
 
   implicit val erFormats: OFormat[ErrorResponse] = Json.format
 

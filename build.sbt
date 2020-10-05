@@ -1,5 +1,4 @@
 import play.core.PlayVersion
-import sbt.Tests.{Group, SubProcess}
 import sbt.{CrossVersion, IntegrationTest, inConfig}
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
@@ -72,7 +71,7 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Compile := true,
     scalafmtOnCompile in Test := true,
     scalacOptions ++= Seq(
-     // "-Xfatal-warnings",
+      "-Xfatal-warnings",
       "-Xlint:-missing-interpolator,_",
       "-Yno-adapted-args",
       "-Ywarn-value-discard",
@@ -94,5 +93,6 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in IntegrationTest := true
   )
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .disablePlugins(JUnitXmlReportPlugin)
 
 inConfig(IntegrationTest)(scalafmtCoreSettings)
