@@ -109,6 +109,7 @@ case class Invitation(
   expiryDate: LocalDate,
   detailsForEmail: Option[DetailsForEmail],
   isRelationshipEnded: Boolean = false,
+  relationshipEndedBy: Option[String] = None,
   clientActionUrl: Option[String],
   origin: Option[String] = None,
   events: List[StatusChangeEvent]) {
@@ -172,6 +173,7 @@ object Invitation {
           "invitationId"         -> invitation.invitationId.value,
           "detailsForEmail"      -> invitation.detailsForEmail,
           "isRelationshipEnded"  -> invitation.isRelationshipEnded,
+          "relationshipEndedBy"  -> invitation.relationshipEndedBy,
           "clientActionUrl"      -> invitation.clientActionUrl,
           "origin"               -> invitation.origin
         )
@@ -198,6 +200,7 @@ case class InvitationInfo(
   arn: Arn,
   service: Service,
   isRelationshipEnded: Boolean = false,
+  relationshipEndedBy: Option[String] = None,
   events: List[StatusChangeEvent])
 
 object InvitationInfo {

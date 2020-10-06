@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.repository
+
 import org.joda.time.LocalDate
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JodaReads._
@@ -41,6 +42,7 @@ object InvitationRecordFormat {
     expiryDateOp: Option[LocalDate],
     detailsForEmail: Option[DetailsForEmail],
     isRelationshipEnded: Boolean = false,
+    relationshipEndedBy: Option[String] = None,
     clientActionUrl: Option[String],
     origin: Option[String] = None,
     events: List[StatusChangeEvent]): Invitation = {
@@ -62,6 +64,7 @@ object InvitationRecordFormat {
       expiryDate,
       detailsForEmail,
       isRelationshipEnded,
+      relationshipEndedBy,
       None,
       origin,
       events
@@ -82,6 +85,7 @@ object InvitationRecordFormat {
     (JsPath \ "expiryDate").readNullable[LocalDate] and
     (JsPath \ "detailsForEmail").readNullable[DetailsForEmail] and
     (JsPath \ "isRelationshipEnded").readWithDefault[Boolean](false) and
+    (JsPath \ "relationshipEndedBy").readNullable[String] and
     (JsPath \ "clientActionUrl").readNullable[String] and
     (JsPath \ "origin").readNullable[String] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
@@ -106,6 +110,7 @@ object InvitationRecordFormat {
         "events"               -> invitation.events,
         "detailsForEmail"      -> invitation.detailsForEmail,
         "isRelationshipEnded"  -> invitation.isRelationshipEnded,
+        "relationshipEndedBy"  -> invitation.relationshipEndedBy,
         "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
         "origin"               -> invitation.origin,

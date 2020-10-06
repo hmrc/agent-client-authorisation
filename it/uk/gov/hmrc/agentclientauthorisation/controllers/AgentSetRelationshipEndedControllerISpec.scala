@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -72,34 +72,16 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 
-      val response = controller.setRelationshipEnded(arn, invitation.invitationId)(request)
+      val response = controller.setRelationshipEnded(invitation.invitationId, "Client")(request)
 
       status(response) shouldBe 204
     }
   }
 
-  def runUnsuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
-
-    s"return NoPermissionOnAgency when the logged in arn doesn't not match the invitation for ${testClient.service}" in {
-      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/relationship-ended")
-
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn2)
-      givenGetAgencyDetailsStub(arn2)
-
-      val invitation: Invitation = await(createInvitation(arn, testClient))
-
-      val response = controller.setRelationshipEnded(arn2, invitation.invitationId)(request)
-
-      await(response) shouldBe NoPermissionOnAgency
-    }
-  }
-
-  "PUT /agencies/:arn/invitations/sent/:invitationId/relationship-ended" should {
+  "PUT /invitations/:invitationId/relationship-ended" should {
 
     uiClients.foreach { client =>
       runSuccessfulSetRelationshipEnded(client)
-      runUnsuccessfulSetRelationshipEnded(client)
     }
 
     "return InvitationNotFound when there is no invitation to setRelationshipEnded" in {
@@ -107,7 +89,7 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 
-      val response = controller.setRelationshipEnded(arn, InvitationId("A7GJRTMY4DS3T"))(request)
+      val response = controller.setRelationshipEnded(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
 
       await(response) shouldBe InvitationNotFound
     }

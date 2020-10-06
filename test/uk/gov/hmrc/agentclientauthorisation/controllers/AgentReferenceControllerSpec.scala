@@ -157,6 +157,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               arn,
               Service.MtdIt,
               false,
+              None,
               List(StatusChangeEvent(eventTime, Pending)))
           val invitationIdAndExpiryDate2 =
             InvitationInfo(
@@ -166,6 +167,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               arn,
               Service.PersonalIncomeRecord,
               false,
+              None,
               List(StatusChangeEvent(eventTime, Pending)))
           val invitationIdAndExpiryDate3 =
             InvitationInfo(
@@ -175,6 +177,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               arn,
               Service.Vat,
               false,
+              None,
               List(StatusChangeEvent(eventTime, Pending)))
 
           val listOfInvitations =
@@ -216,6 +219,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             arn,
             Service.Vat,
             false,
+            None,
             List(StatusChangeEvent(DateTime.now(), Pending)))
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)

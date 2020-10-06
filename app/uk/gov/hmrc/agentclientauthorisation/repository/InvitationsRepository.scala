@@ -52,7 +52,7 @@ trait InvitationsRepository {
   def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
     implicit ec: ExecutionContext): Future[Invitation]
 
-  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation]
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation]
 
   def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]]
 
@@ -152,10 +152,10 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                 }
     } yield updated
 
-  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     for {
       invitationOpt <- findById(invitation.id)
-      modifiedOpt = invitationOpt.map(i => i.copy(isRelationshipEnded = true))
+      modifiedOpt = invitationOpt.map(i => i.copy(isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
       updated <- modifiedOpt match {
                   case Some(modified) =>
                     collection
@@ -281,6 +281,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               x \ "arn",
               x \ "service",
               (x \ "isRelationshipEnded").orElse(JsDefined(JsBoolean(false))),
+              (x \ "relationshipEndedBy").orElse(JsDefined(JsNull)),
               x \ "events"))
           .map(properties =>
             InvitationInfo(
@@ -290,7 +291,8 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               properties._4.as[Arn],
               properties._5.as[Service],
               properties._6.as[Boolean],
-              properties._7.as[List[StatusChangeEvent]]
+              properties._7.asOpt[String],
+              properties._8.as[List[StatusChangeEvent]]
           )))
 
   private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =

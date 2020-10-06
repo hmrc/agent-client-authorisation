@@ -165,9 +165,9 @@ class InvitationsService @Inject()(
         }
       }
 
-  def setRelationshipEnded(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] =
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
-      invitationsRepository.setRelationshipEnded(invitation) map { invitation =>
+      invitationsRepository.setRelationshipEnded(invitation, endedBy) map { invitation =>
         logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
         invitation
       }

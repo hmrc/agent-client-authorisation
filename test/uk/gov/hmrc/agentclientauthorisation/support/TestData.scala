@@ -55,6 +55,7 @@ trait TestData {
       None,
       false,
       None,
+      None,
       events = List(StatusChangeEvent(now(), Pending))
     ),
     Invitation(
@@ -69,6 +70,7 @@ trait TestData {
       None,
       false,
       None,
+      None,
       events = List(StatusChangeEvent(now(), Accepted))
     ),
     Invitation(
@@ -82,6 +84,7 @@ trait TestData {
       now().toLocalDate.plusDays(100),
       None,
       false,
+      None,
       None,
       events = List(StatusChangeEvent(now(), Pending))
     )
