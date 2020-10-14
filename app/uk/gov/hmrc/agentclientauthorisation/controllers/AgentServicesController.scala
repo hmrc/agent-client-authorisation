@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -85,7 +85,8 @@ class AgentServicesController @Inject()(
       withBasicAuth {
         businessNameFor(utr).map(name => Ok(Json.obj("businessName" -> name)))
       }.recoverWith {
-        case e: NotFoundException => errorResponse(NOT_FOUND, "No business record was matched for the specified UTR")
+        case e: UpstreamErrorResponse if e.statusCode == 404 =>
+          errorResponse(NOT_FOUND, "No business record was matched for the specified UTR")
       }
     } else errorResponse(BAD_REQUEST, "Invalid Utr")
   }
@@ -155,7 +156,7 @@ class AgentServicesController @Inject()(
               val businessRecord = utrs.map { utr =>
                 businessNameFor(Utr(utr))
                   .recover {
-                    case e: NotFoundException =>
+                    case e: UpstreamErrorResponse if e.statusCode == 404 =>
                       logger.warn("An error happened when trying to get business name for a utr", e)
                       defaultName
                     case e if e.getMessage.contains("AGENT_TERMINATED") =>

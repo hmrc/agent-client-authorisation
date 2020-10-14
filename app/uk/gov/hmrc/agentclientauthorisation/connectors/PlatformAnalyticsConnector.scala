@@ -32,7 +32,6 @@ import scala.util.control.NonFatal
 trait PlatformAnalyticsConnector {
   def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done]
 }
-
 @Singleton
 class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient)
     extends PlatformAnalyticsConnector with HttpErrorFunctions with Logging {
@@ -40,16 +39,19 @@ class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpC
   val serviceUrl: String = s"${appConfig.platformAnalyticsBaseUrl}/platform-analytics/event"
 
   def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] =
-    http.POST[AnalyticsRequest, HttpResponse](serviceUrl, request).map { response =>
-      response.status match {
-        case status if is2xx(status) => Done
-        case other =>
-          logger.warn(s"Couldn't send analytics event, response status: $other")
+    http
+      .POST[AnalyticsRequest, HttpResponse](serviceUrl, request)
+      .map { response =>
+        response.status match {
+          case status if is2xx(status) => Done
+          case other =>
+            logger.warn(s"Couldn't send analytics event, response status: $other")
+            Done
+        }
+      }
+      .recover {
+        case NonFatal(ex) =>
+          logger.warn(s"Couldn't send analytics event, error: $ex")
           Done
       }
-    }.recover {
-      case NonFatal(ex) =>
-        logger.warn(s"Couldn't send analytics event, error: $ex")
-        Done
-    }
 }
