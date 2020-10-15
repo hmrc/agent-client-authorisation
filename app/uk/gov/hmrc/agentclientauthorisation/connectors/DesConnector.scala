@@ -24,6 +24,7 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.libs.json.Reads._
+import play.api.libs.json.Writes
 import play.utils.UriEncoding
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -167,8 +168,14 @@ class DesConnectorImpl @Inject()(
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-DES-GetAgentRegistration-POST") {
       val url = s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}"
-      httpClient.POST[DesRegistrationRequest, HttpResponse](url, DesRegistrationRequest(isAnAgent = false)).map {
-        response =>
+      httpClient
+        .POST[DesRegistrationRequest, HttpResponse](url, DesRegistrationRequest(isAnAgent = false))(
+          implicitly[Writes[DesRegistrationRequest]],
+          implicitly[HttpReads[HttpResponse]],
+          desHeaders,
+          ec
+        )
+        .map { response =>
           response.status match {
             case status if is2xx(status) =>
               val isIndividual = (response.json \ "isAnIndividual").as[Boolean]
@@ -181,7 +188,7 @@ class DesConnectorImpl @Inject()(
             case other =>
               throw UpstreamErrorResponse(s"unexpected error during 'getBusinessName', statusCode=$other", other, other)
           }
-      }
+        }
     }
 
   def getNinoFor(mtdbsa: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
@@ -248,6 +255,11 @@ class DesConnectorImpl @Inject()(
       }
     }
   }
+
+  private def desHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
+    hc.copy(
+      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
 
   private def getWithDesHeaders(apiName: String, url: String)(
     implicit hc: HeaderCarrier,
