@@ -38,6 +38,7 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.logging.Authorization
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 @ImplementedBy(classOf[DesConnectorImpl])
 trait DesConnector {
@@ -114,7 +115,9 @@ class DesConnectorImpl @Inject()(
         case status if is2xx(status) =>
           TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
         case status if is4xx(status) =>
-          TrustResponse(Left(InvalidTrust((response.json \ "code").as[String], (response.json \ "reason").as[String])))
+          val invalidTrust = Try(((response.json \ "code").as[String], (response.json \ "reason").as[String])).toEither
+            .fold(ex => InvalidTrust(status.toString, ex.getMessage), t => InvalidTrust(t._1, t._2))
+          TrustResponse(Left(invalidTrust))
         case other =>
           throw UpstreamErrorResponse(
             s"unexpected status during retrieving TrustName, error=${response.body}",
