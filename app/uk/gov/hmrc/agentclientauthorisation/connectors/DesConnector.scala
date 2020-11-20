@@ -87,7 +87,10 @@ class DesConnectorImpl @Inject()(
     getWithDesHeaders("getRegistrationBusinessDetailsByNino", url).map { response =>
       response.status match {
         case status if is2xx(status) => response.json.asOpt[BusinessDetails]
-        case status if is4xx(status) => None
+        case status if is4xx(status) => {
+          logger.warn(s"4xx response for getBusinessDetails ${response.body}")
+          None
+        }
         case other =>
           throw UpstreamErrorResponse(s"unexpected error during 'getBusinessDetails', statusCode=$other", other, other)
       }
@@ -99,7 +102,10 @@ class DesConnectorImpl @Inject()(
     getWithDesHeaders("GetVatCustomerInformation", url).map { response =>
       response.status match {
         case status if is2xx(status) => response.json.asOpt[VatRegDate]
-        case status if is4xx(status) => None
+        case status if is4xx(status) => {
+          logger.warn(s"4xx response for getVatRegDate ${response.body}")
+          None
+        }
         case other =>
           throw UpstreamErrorResponse(s"unexpected error during 'getVatRegDate', statusCode=$other", other, other)
       }
@@ -116,7 +122,10 @@ class DesConnectorImpl @Inject()(
           TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
         case status if is4xx(status) =>
           val invalidTrust = Try(((response.json \ "code").as[String], (response.json \ "reason").as[String])).toEither
-            .fold(ex => InvalidTrust(status.toString, ex.getMessage), t => InvalidTrust(t._1, t._2))
+            .fold(ex => {
+              logger.error(s"${response.body}, ${ex.getMessage}")
+              InvalidTrust(status.toString, ex.getMessage)
+            }, t => InvalidTrust(t._1, t._2))
           TrustResponse(Left(invalidTrust))
         case other =>
           throw UpstreamErrorResponse(
@@ -200,7 +209,10 @@ class DesConnectorImpl @Inject()(
       getWithDesHeaders("GetRegistrationBusinessDetailsByMtdbsa", url).map { response =>
         response.status match {
           case status if is2xx(status) => response.json.asOpt[NinoDesResponse].map(_.nino)
-          case status if is4xx(status) => None
+          case status if is4xx(status) => {
+            logger.warn(s"4xx response from getNinoFor ${response.body}")
+            None
+          }
           case other =>
             throw UpstreamErrorResponse(s"unexpected error during 'getNinoFor', statusCode=$other", other, other)
         }
@@ -214,7 +226,10 @@ class DesConnectorImpl @Inject()(
       getWithDesHeaders("GetRegistrationBusinessDetailsByNino", url).map { response =>
         response.status match {
           case status if is2xx(status) => response.json.asOpt[MtdItIdDesResponse].map(_.mtdbsa)
-          case status if is4xx(status) => None
+          case status if is4xx(status) => {
+            logger.warn(s"4xx response from getMtdItIdFor ${response.body}")
+            None
+          }
           case other =>
             throw UpstreamErrorResponse(s"unexpected error during 'getMtdIdFor', statusCode=$other", other, other)
         }
@@ -229,7 +244,10 @@ class DesConnectorImpl @Inject()(
       getWithDesHeaders("GetTradingNameByNino", url).map { response =>
         response.status match {
           case status if is2xx(status) => ((response.json \ "businessData")(0) \ "tradingName").asOpt[String]
-          case status if is4xx(status) => None
+          case status if is4xx(status) => {
+            logger.warn(s"4xx response from getTradingNameForNino ${response.body}")
+            None
+          }
           case other =>
             throw UpstreamErrorResponse(
               s"unexpected error during 'getTradingNameForNino', statusCode=$other",
@@ -248,7 +266,10 @@ class DesConnectorImpl @Inject()(
         response.status match {
           case status if is2xx(status) =>
             (response.json \ "approvedInformation" \ "customerDetails").asOpt[VatCustomerDetails]
-          case status if is4xx(status) => None
+          case status if is4xx(status) => {
+            logger.warn(s"4xx response from getVatCustomerDetails ${response.body}")
+            None
+          }
           case other =>
             throw UpstreamErrorResponse(
               s"unexpected error during 'getVatCustomerDetails', statusCode=$other",
