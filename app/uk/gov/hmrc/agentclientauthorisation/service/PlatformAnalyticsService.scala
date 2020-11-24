@@ -66,7 +66,9 @@ class PlatformAnalyticsService @Inject()(
 
   def reportSingleEventAnalyticsRequest(
     i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
-    logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status}")
+    logger.info(
+      s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
+        .getOrElse("origin_not_set")}")
     sendAnalyticsRequest(List(i), None)
   }
 
