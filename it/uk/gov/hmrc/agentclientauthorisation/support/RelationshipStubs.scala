@@ -37,6 +37,13 @@ trait RelationshipStubs {
     this
   }
 
+  def anAfiRelationshipIsCreatedFails(arn: Arn, clientId: ClientId) = {
+    stubFor(put(urlEqualTo(
+      s"/agent-fi-relationship/relationships/agent/${arn.value}/service/PERSONAL-INCOME-RECORD/client/${clientId.value}"))
+      .willReturn(aResponse().withStatus(502)))
+    this
+  }
+
   def anMtdVatRelationshipIsCreatedWith(arn: Arn, clientId: TaxIdentifier) = {
     stubFor(
       put(
