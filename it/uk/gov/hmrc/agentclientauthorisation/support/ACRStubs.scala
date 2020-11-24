@@ -18,4 +18,14 @@ trait ACRStubs {
     )
   }
 
+  def givenCreateRelationshipFails(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier) = {
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(502)
+        )
+    )
+  }
+
 }

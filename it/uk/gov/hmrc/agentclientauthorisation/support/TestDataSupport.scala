@@ -24,6 +24,7 @@ trait TestDataSupport {
   val servicePIR = "PERSONAL-INCOME-RECORD"
   val serviceVAT = "HMRC-MTD-VAT"
   val serviceCGT = "HMRC-CGT-PD"
+  val serviceTERS = "HMRC-TERS-ORG"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")

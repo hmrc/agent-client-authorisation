@@ -17,15 +17,31 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
-import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import org.joda.time.{DateTime, LocalDate}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{CapitalGains, MtdIt, PersonalIncomeRecord, Trust, Vat}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
+import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
+class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStubs with TestDataSupport with RelationshipStubs {
 
   val connector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
+
+  def invitation(clientType: Option[String] = personal, service: Service, clientId: TaxIdentifier, suppliedClientId: TaxIdentifier) = Invitation(
+    invitationId = InvitationId("123"),
+    arn = arn,
+    clientType = clientType,
+    service = service,
+    clientId = clientId,
+    suppliedClientId = suppliedClientId,
+    expiryDate = LocalDate.now(),
+    detailsForEmail = None,
+    clientActionUrl = None,
+    events= List.empty)
 
   "getActiveRelationships" should {
 
@@ -98,6 +114,96 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs {
 
       val result = await(connector.getActiveAfiRelationships)
       result should not be empty
+    }
+  }
+
+  "createMtdItRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, serviceITSA, "MTDITID", mtdItId)
+      val result = await(connector.createMtdItRelationship(
+        invitation(Some("personal"), MtdIt, mtdItId, mtdItId)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, serviceITSA, "MTDITID", mtdItId)
+
+      assertThrows[RuntimeException] {
+        await(connector.createMtdItRelationship(
+          invitation(Some("personal"), MtdIt, mtdItId, mtdItId)))
+      }
+    }
+  }
+
+  "createMtdVATRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, serviceVAT, "VRN", vrn)
+      val result = await(connector.createMtdVatRelationship(
+        invitation(Some("personal"), Vat, vrn, vrn)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, serviceVAT, "VRN", vrn)
+
+      assertThrows[RuntimeException] {
+        await(connector.createMtdVatRelationship(
+          invitation(Some("personal"), Vat, vrn, vrn)))
+      }
+    }
+  }
+
+  "createAfiRelationship" should {
+    "return () if the response is 2xx" in {
+     anAfiRelationshipIsCreatedWith(arn, nino)
+      val result = await(connector.createAfiRelationship(
+        invitation(Some("personal"), PersonalIncomeRecord, nino, nino), DateTime.now()))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      anAfiRelationshipIsCreatedFails(arn, nino)
+
+      assertThrows[RuntimeException] {
+        await(connector.createAfiRelationship(
+          invitation(Some("personal"), PersonalIncomeRecord, nino, nino), DateTime.now()))
+      }
+    }
+  }
+
+  "createTrustRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, serviceTERS, "SAUTR", utr)
+      val result = await(connector.createTrustRelationship(
+        invitation(Some("personal"), Trust, utr, utr)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, serviceTERS, "SAUTR", utr)
+
+      assertThrows[RuntimeException] {
+        await(connector.createTrustRelationship(
+          invitation(Some("personal"), Trust, utr, utr)))
+      }
+    }
+  }
+
+  "createCapitalGainsTaxRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, serviceCGT, "CGTPDRef", cgtRef)
+      val result = await(connector.createCapitalGainsRelationship(
+        invitation(Some("personal"), CapitalGains, cgtRef, cgtRef)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, serviceCGT, "CGTPDRef", cgtRef)
+
+      assertThrows[RuntimeException] {
+        await(connector.createCapitalGainsRelationship(
+          invitation(Some("personal"), CapitalGains, cgtRef, cgtRef)))
+      }
     }
   }
 }

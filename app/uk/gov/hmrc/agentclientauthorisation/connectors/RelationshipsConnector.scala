@@ -51,8 +51,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         response.status match {
           case status if is2xx(status) => ()
           case other =>
-            logger.warn(s"unexpected error during 'createMtdItRelationship', statusCode=$other")
-            ()
+            throw new RuntimeException(s"unexpected error during 'createMtdItRelationship', statusCode=$other")
         }
       }
     }
@@ -63,8 +62,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         response.status match {
           case status if is2xx(status) => ()
           case other =>
-            logger.warn(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
-            ()
+            throw new RuntimeException(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
         }
       }
     }
@@ -78,8 +76,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         response.status match {
           case status if is2xx(status) => ()
           case other =>
-            logger.warn(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
-            ()
+            throw new RuntimeException(s"unexpected error during 'createAfiRelationship', statusCode=$other")
         }
       }
     }
@@ -91,8 +88,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         response.status match {
           case status if is2xx(status) => ()
           case other =>
-            logger.warn(s"unexpected error during 'createTrustRelationship', statusCode=$other")
-            ()
+            throw new RuntimeException(s"unexpected error during 'createTrustRelationship', statusCode=$other")
         }
       }
     }
@@ -104,8 +100,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         response.status match {
           case status if is2xx(status) => ()
           case other =>
-            logger.warn(s"unexpected error during 'createCapitalGainsRelationship', statusCode=$other")
-            ()
+            throw new RuntimeException(s"unexpected error during 'createCapitalGainsRelationship', statusCode=$other")
         }
       }
     }
