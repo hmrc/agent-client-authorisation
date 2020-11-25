@@ -69,8 +69,7 @@ class PlatformAnalyticsService @Inject()(
     logger.info(
       s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
         .getOrElse("origin_not_set")}")
-    val maybeGAClientId: Option[String] = if (hc.sessionId.isDefined) None else Some(makeGAClientId)
-    sendAnalyticsRequest(List(i), maybeGAClientId)
+    sendAnalyticsRequest(List(i), hc.sessionId.map(_ => makeGAClientId))
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(
