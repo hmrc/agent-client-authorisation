@@ -69,7 +69,8 @@ class PlatformAnalyticsService @Inject()(
     logger.info(
       s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
         .getOrElse("origin_not_set")}")
-    sendAnalyticsRequest(List(i), None)
+    val maybeGAClientId: Option[String] = if (hc.sessionId.isDefined) None else Some(makeGAClientId)
+    sendAnalyticsRequest(List(i), maybeGAClientId)
   }
 
   private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(
@@ -103,7 +104,7 @@ class PlatformAnalyticsService @Inject()(
       )
     )
 
-  // platform analytics will make a client ID from the session ID but when there is no session make a clientId from a UUID
+  // platform analytics will make a client ID from the session ID but when there is no session (eg for expired status) use this to make a client ID.
   private def makeGAClientId: String = {
     val uuid = UUID.randomUUID().toString
     MH3.stringHash(uuid, MH3.stringSeed).abs.toString match {
