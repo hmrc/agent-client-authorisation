@@ -168,6 +168,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     "return no Invitations for Agent" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
       val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
 

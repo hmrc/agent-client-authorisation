@@ -162,14 +162,16 @@ class AgencyInvitationsController @Inject()(
       val invitationsWithOptLinks: Future[List[Invitation]] = for {
         invitations <- invitationsService
                         .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
-        invitationsWithLink <- Future.traverse(invitations) { invites =>
-                                (invites.clientType, invites.status) match {
+        normalisedAgentName <- agentLinkService.agencyName(arn)
+        record              <- agentLinkService.fetchOrCreateRecord(arn, normalisedAgentName)
+        invitationsWithLink <- Future successful invitations.map { invite =>
+                                (invite.clientType, invite.status) match {
                                   case (Some(ct), Pending) =>
-                                    agentLinkService.getInvitationUrl(invites.arn, ct).map { link =>
-                                      invites.copy(clientActionUrl =
-                                        Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
-                                    }
-                                  case _ => Future.successful(invites)
+                                    val link = s"/invitations/$ct/${record.uid}/$normalisedAgentName"
+                                    invite.copy(
+                                      clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
+
+                                  case _ => invite
                                 }
                               }
       } yield invitationsWithLink

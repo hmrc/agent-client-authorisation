@@ -54,7 +54,7 @@ class AgentLinkService @Inject()(
       record         <- fetchOrCreateRecord(arn, normalisedName)
     } yield record
 
-  private def agencyName(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
+  def agencyName(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
     desConnector
       .getAgencyDetails(arn)
       .map(
