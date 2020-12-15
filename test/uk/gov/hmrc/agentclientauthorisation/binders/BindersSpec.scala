@@ -30,8 +30,7 @@ class BindersSpec extends UnitSpec {
 
     "reject unknown status" in {
       InvitationStatusBinder.bind("status", Map("status" -> Seq("NotAStatus"))) shouldBe Some(
-        Left(
-          "Cannot parse parameter status as InvitationStatus: status of [NotAStatus] is not a valid InvitationStatus"))
+        Left("Cannot parse parameter status as InvitationStatus: status of [NotAStatus] is not a valid InvitationStatus"))
     }
 
     "reject zero status arguments" in {
@@ -53,8 +52,7 @@ class BindersSpec extends UnitSpec {
 
   "LocalDateQueryStringBinder" should {
     "accept bind of valid dates" in {
-      LocalDateQueryStringBinder.bind("date", Map("date" -> Seq("2001-01-02"))).get shouldBe Right(
-        LocalDate.parse("2001-01-02"))
+      LocalDateQueryStringBinder.bind("date", Map("date" -> Seq("2001-01-02"))).get shouldBe Right(LocalDate.parse("2001-01-02"))
     }
     "reject bind of invalid dates" in {
       LocalDateQueryStringBinder.bind("date", Map("date" -> Seq("01-01-02"))).get.isLeft shouldBe true

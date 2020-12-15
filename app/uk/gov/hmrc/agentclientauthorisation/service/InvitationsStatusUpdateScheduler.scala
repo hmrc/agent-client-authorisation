@@ -92,8 +92,8 @@ class TaskActor(
               })
           } else {
             val dateTime = if (runAt.isBefore(now)) now else runAt
-            val delay = (new Interval(now, dateTime).toPeriod(PeriodType.seconds()).getValue(0) + Random.nextInt(
-              Math.min(60, repeatInterval))).seconds
+            val delay =
+              (new Interval(now, dateTime).toPeriod(PeriodType.seconds()).getValue(0) + Random.nextInt(Math.min(60, repeatInterval))).seconds
             context.system.scheduler.scheduleOnce(delay, self, recordUid)
             toFuture(())
           }

@@ -52,8 +52,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: ReactiveMongoComponent)
       "agent-schedule",
       mongoComponent.mongoConnector.db,
       ScheduleRecord.formats,
-      ReactiveMongoFormats.objectIdFormats) with ScheduleRepository
-    with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with ScheduleRepository with StrictlyEnsureIndexes[ScheduleRecord, BSONObjectID] {
 
   import ImplicitBSONHandlers._
 

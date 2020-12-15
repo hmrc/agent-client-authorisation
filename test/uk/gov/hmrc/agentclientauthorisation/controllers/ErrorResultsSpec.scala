@@ -35,21 +35,9 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
         (jsonBody \ "message").as[String] shouldBe message
       }
 
-      checkConstant(
-        GenericUnauthorized,
-        Status.UNAUTHORIZED,
-        "UNAUTHORIZED",
-        "Bearer token is missing or not authorized.")
-      checkConstant(
-        AgentNotSubscribed,
-        Status.FORBIDDEN,
-        "AGENT_NOT_SUBSCRIBED",
-        "The Agent is not subscribed to Agent Services.")
-      checkConstant(
-        ClientRegistrationNotFound,
-        Status.FORBIDDEN,
-        "CLIENT_REGISTRATION_NOT_FOUND",
-        "The Client's MTDfB registration was not found.")
+      checkConstant(GenericUnauthorized, Status.UNAUTHORIZED, "UNAUTHORIZED", "Bearer token is missing or not authorized.")
+      checkConstant(AgentNotSubscribed, Status.FORBIDDEN, "AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")
+      checkConstant(ClientRegistrationNotFound, Status.FORBIDDEN, "CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")
       checkConstant(NotAClient, Status.FORBIDDEN, "NOT_A_CLIENT", "The logged in user must be a client to proceed.")
       checkConstant(
         NoPermissionOnAgency,
@@ -67,31 +55,11 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
         Status.FORBIDDEN,
         "POSTCODE_DOES_NOT_MATCH",
         "The submitted postcode did not match the client's postcode as held by HMRC.")
-      checkConstant(
-        InvitationNotFound,
-        Status.NOT_FOUND,
-        "INVITATION_NOT_FOUND",
-        "The specified invitation was not found.")
-      checkConstant(
-        invalidInvitationStatus("My error message"),
-        Status.FORBIDDEN,
-        "INVALID_INVITATION_STATUS",
-        "My error message")
-      checkConstant(
-        postcodeFormatInvalid("My error message"),
-        Status.BAD_REQUEST,
-        "POSTCODE_FORMAT_INVALID",
-        "My error message")
-      checkConstant(
-        unsupportedService("My error message"),
-        Status.NOT_IMPLEMENTED,
-        "UNSUPPORTED_SERVICE",
-        "My error message")
-      checkConstant(
-        unsupportedClientIdType("My error message"),
-        Status.BAD_REQUEST,
-        "UNSUPPORTED_CLIENT_ID_TYPE",
-        "My error message")
+      checkConstant(InvitationNotFound, Status.NOT_FOUND, "INVITATION_NOT_FOUND", "The specified invitation was not found.")
+      checkConstant(invalidInvitationStatus("My error message"), Status.FORBIDDEN, "INVALID_INVITATION_STATUS", "My error message")
+      checkConstant(postcodeFormatInvalid("My error message"), Status.BAD_REQUEST, "POSTCODE_FORMAT_INVALID", "My error message")
+      checkConstant(unsupportedService("My error message"), Status.NOT_IMPLEMENTED, "UNSUPPORTED_SERVICE", "My error message")
+      checkConstant(unsupportedClientIdType("My error message"), Status.BAD_REQUEST, "UNSUPPORTED_CLIENT_ID_TYPE", "My error message")
     }
 
   }

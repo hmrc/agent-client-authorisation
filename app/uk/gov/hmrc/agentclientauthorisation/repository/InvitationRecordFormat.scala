@@ -141,15 +141,10 @@ object InvitationRecordFormat {
   def createArnClientServiceStateKeys(inv: Invitation): Seq[String] =
     variants(inv.arn, inv.clientId.value, inv.service, inv.mostRecentEvent().status)(toArnClientServiceStateKey) ++
       (if (inv.clientId != inv.suppliedClientId)
-         variants(inv.arn, inv.suppliedClientId.value, inv.service, inv.mostRecentEvent().status)(
-           toArnClientServiceStateKey)
+         variants(inv.arn, inv.suppliedClientId.value, inv.service, inv.mostRecentEvent().status)(toArnClientServiceStateKey)
        else Seq.empty)
 
-  def toArnClientServiceStateKey(
-    arn: Option[Arn],
-    clientId: Option[String],
-    service: Option[Service],
-    status: Option[InvitationStatus]): String =
+  def toArnClientServiceStateKey(arn: Option[Arn], clientId: Option[String], service: Option[Service], status: Option[InvitationStatus]): String =
     Seq(
       arn.map(_.value.toLowerCase),
       clientId.map(_.toLowerCase.replaceAll(" ", "")),
@@ -160,8 +155,7 @@ object InvitationRecordFormat {
 
   val mongoFormat = ReactiveMongoFormats.mongoEntity(Format(reads, writes))
 
-  private def variants[A, B, C, D, T](a: A, b: B, c: C, d: D)(
-    fx: (Option[A], Option[B], Option[C], Option[D]) => T): Seq[T] =
+  private def variants[A, B, C, D, T](a: A, b: B, c: C, d: D)(fx: (Option[A], Option[B], Option[C], Option[D]) => T): Seq[T] =
     Seq(
       fx(Some(a), Some(b), Some(c), Some(d)),
       fx(Some(a), Some(b), None, Some(d)),

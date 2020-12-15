@@ -78,10 +78,7 @@ class ClientStatusController @Inject()(
 
 object ClientStatusController {
 
-  case class ClientStatus(
-    hasPendingInvitations: Boolean,
-    hasInvitationsHistory: Boolean,
-    hasExistingRelationships: Boolean)
+  case class ClientStatus(hasPendingInvitations: Boolean, hasInvitationsHistory: Boolean, hasExistingRelationships: Boolean)
 
   object ClientStatus {
     implicit val formats: OFormat[ClientStatus] = Json.format[ClientStatus]

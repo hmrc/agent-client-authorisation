@@ -24,8 +24,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AgentInvitationValidationSpec
-    extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
+class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
   private val validMtdItInvite: AgentInvitation = AgentInvitation("HMRC-MTD-IT", Some("personal"), "ni", "AA123456A")
   private val validMtdVatInvite: AgentInvitation = AgentInvitation("HMRC-MTD-VAT", Some("business"), "vrn", "101747641")

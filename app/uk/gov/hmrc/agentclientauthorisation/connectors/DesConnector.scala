@@ -49,12 +49,9 @@ trait DesConnector {
 
   def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 
-  def getCgtSubscription(
-    cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse]
+  def getCgtSubscription(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse]
 
-  def getAgencyDetails(agentIdentifier: TaxIdentifier)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]]
+  def getAgencyDetails(agentIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]]
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
@@ -64,16 +61,11 @@ trait DesConnector {
 
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
-  def getVatCustomerDetails(
-    vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
+  def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
 }
 
 @Singleton
-class DesConnectorImpl @Inject()(
-  appConfig: AppConfig,
-  agentCacheProvider: AgentCacheProvider,
-  httpClient: HttpClient,
-  metrics: Metrics)
+class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: AgentCacheProvider, httpClient: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
@@ -81,8 +73,7 @@ class DesConnectorImpl @Inject()(
   private val authorizationToken: String = appConfig.desAuthToken
   private val baseUrl: String = appConfig.desBaseUrl
 
-  def getBusinessDetails(
-    nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
+  def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
     getWithDesHeaders("getRegistrationBusinessDetailsByNino", url).map { response =>
       response.status match {
@@ -126,16 +117,12 @@ class DesConnectorImpl @Inject()(
             }, t => InvalidTrust(t._1, t._2))
           TrustResponse(Left(invalidTrust))
         case other =>
-          throw UpstreamErrorResponse(
-            s"unexpected status during retrieving TrustName, error=${response.body}",
-            other,
-            other)
+          throw UpstreamErrorResponse(s"unexpected status during retrieving TrustName, error=${response.body}", other, other)
       }
     }
   }
 
-  def getCgtSubscription(
-    cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse] = {
+  def getCgtSubscription(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse] = {
 
     val url = s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}"
 
@@ -154,9 +141,7 @@ class DesConnectorImpl @Inject()(
     }
   }
 
-  def getAgencyDetails(agentIdentifier: TaxIdentifier)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
+  def getAgencyDetails(agentIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
     agentCacheProvider
       .agencyDetailsCache(agentIdentifier.value) {
         getWithDesHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier)).map { response =>
@@ -167,10 +152,7 @@ class DesConnectorImpl @Inject()(
               logger.warn(s"Discovered a Termination for agent: $agentIdentifier")
               None
             case other =>
-              throw UpstreamErrorResponse(
-                s"unexpected response during 'getAgencyDetails', status: $other, response: ${response.body}",
-                other,
-                other)
+              throw UpstreamErrorResponse(s"unexpected response during 'getAgencyDetails', status: $other, response: ${response.body}", other, other)
           }
         }
       }
@@ -244,17 +226,13 @@ class DesConnectorImpl @Inject()(
             logger.warn(s"4xx response from getTradingNameForNino ${response.body}")
             None
           case other =>
-            throw UpstreamErrorResponse(
-              s"unexpected error during 'getTradingNameForNino', statusCode=$other",
-              other,
-              other)
+            throw UpstreamErrorResponse(s"unexpected error during 'getTradingNameForNino', statusCode=$other", other, other)
         }
       }
     }
   }
 
-  def getVatCustomerDetails(
-    vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]] = {
+  def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]] = {
     val url = s"$baseUrl/vat/customer/vrn/${UriEncoding.encodePathSegment(vrn.value, "UTF-8")}/information"
     agentCacheProvider.vatCustomerDetailsCache(vrn.value) {
       getWithDesHeaders("GetVatOrganisationNameByVrn", url).map { response =>
@@ -265,23 +243,16 @@ class DesConnectorImpl @Inject()(
             logger.warn(s"4xx response from getVatCustomerDetails ${response.body}")
             None
           case other =>
-            throw UpstreamErrorResponse(
-              s"unexpected error during 'getVatCustomerDetails', statusCode=$other",
-              other,
-              other)
+            throw UpstreamErrorResponse(s"unexpected error during 'getVatCustomerDetails', statusCode=$other", other, other)
         }
       }
     }
   }
 
   private def desHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
-    hc.copy(
-      authorization = Some(Authorization(s"Bearer $authorizationToken")),
-      extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
+    hc.copy(authorization = Some(Authorization(s"Bearer $authorizationToken")), extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
 
-  private def getWithDesHeaders(apiName: String, url: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[HttpResponse] = {
+  private def getWithDesHeaders(apiName: String, url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     val desHeaderCarrier = hc.copy(
       authorization = Some(Authorization(s"Bearer $authorizationToken")),
       extraHeaders =

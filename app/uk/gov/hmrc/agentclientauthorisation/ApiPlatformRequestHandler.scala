@@ -28,27 +28,13 @@ import play.core.DefaultWebCommands
   * '/agent-client-authorisation' from the URL before forwarding the request.
   * Re-add it here if necessary.
   */
-class ApiPlatformRequestHandler @Inject()(
-  router: Router,
-  errorHandler: HttpErrorHandler,
-  configuration: HttpConfiguration,
-  filters: HttpFilters)
-    extends DefaultHttpRequestHandler(
-      new DefaultWebCommands(),
-      None,
-      router,
-      errorHandler,
-      configuration,
-      filters.filters) {
+class ApiPlatformRequestHandler @Inject()(router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters)
+    extends DefaultHttpRequestHandler(new DefaultWebCommands(), None, router, errorHandler, configuration, filters.filters) {
 
   override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) =
     if (isApiPlatformRequest(request)) {
       super.handlerForRequest(
-        request.withTarget(
-          RequestTarget(
-            path = addApiPlatformContext(request.path),
-            uriString = request.uri,
-            queryString = request.queryString))
+        request.withTarget(RequestTarget(path = addApiPlatformContext(request.path), uriString = request.uri, queryString = request.queryString))
       )
     } else {
       super.handlerForRequest(request)

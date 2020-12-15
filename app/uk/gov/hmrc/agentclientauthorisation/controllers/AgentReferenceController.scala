@@ -70,19 +70,18 @@ class AgentReferenceController @Inject()(
       }
   }
 
-  def getInvitationsInfo(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async {
-    implicit request =>
-      withMultiEnrolledClient { implicit clientIds =>
-        for {
-          recordOpt <- agentReferenceRecordRepository.findBy(uid)
-          result <- recordOpt match {
-                     case Some(record) =>
-                       invitationsService
-                         .findInvitationsInfoBy(record.arn, clientIds, status)
-                         .map(list => Ok(Json.toJson(list)))
-                     case _ => Future successful NotFound
-                   }
-        } yield result
-      }
+  def getInvitationsInfo(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async { implicit request =>
+    withMultiEnrolledClient { implicit clientIds =>
+      for {
+        recordOpt <- agentReferenceRecordRepository.findBy(uid)
+        result <- recordOpt match {
+                   case Some(record) =>
+                     invitationsService
+                       .findInvitationsInfoBy(record.arn, clientIds, status)
+                       .map(list => Ok(Json.toJson(list)))
+                   case _ => Future successful NotFound
+                 }
+      } yield result
+    }
   }
 }

@@ -36,10 +36,7 @@ object DesRegistrationRequest {
   implicit val formats: Format[DesRegistrationRequest] = Json.format[DesRegistrationRequest]
 }
 
-case class DesRegistrationResponse(
-  isAnIndividual: Boolean,
-  organisationName: Option[String],
-  individual: Option[Individual])
+case class DesRegistrationResponse(isAnIndividual: Boolean, organisationName: Option[String], individual: Option[Individual])
 
 object DesRegistrationResponse {
   implicit val responseFormat: OFormat[DesRegistrationResponse] = Json.format

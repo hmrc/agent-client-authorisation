@@ -40,9 +40,7 @@ trait AgentInvitationValidation extends Results {
   private val supportedClientIdType: Validation = invite => {
     if (invite.getService.supportedSuppliedClientIdType.id == invite.clientIdType) Future successful None
     else
-      Future successful Some(
-        unsupportedClientIdType(
-          s"""Unsupported clientIdType "${invite.clientIdType}", for service type "${invite.service}""""))
+      Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", for service type "${invite.service}""""))
   }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit ec: ExecutionContext): Future[Option[Result]] =

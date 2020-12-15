@@ -70,9 +70,7 @@ class EmailService @Inject()(
                    }
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
 
-  def sendEmail(invitation: Invitation, templateId: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] =
+  def sendEmail(invitation: Invitation, templateId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     invitation.detailsForEmail match {
       case Some(dfe) =>
         for {
@@ -94,17 +92,11 @@ class EmailService @Inject()(
     sendEmail(invitation, "client_rejected_authorisation_request")
 
   def sendExpiredEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier(
-      extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
+    implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
     sendEmail(invitation, "client_expired_authorisation_request")
   }
 
-  private def emailInformation(
-    templateId: String,
-    agencyEmail: String,
-    agencyName: String,
-    clientName: String,
-    invitation: Invitation) =
+  private def emailInformation(templateId: String, agencyEmail: String, agencyName: String, clientName: String, invitation: Invitation) =
     EmailInformation(
       Seq(agencyEmail),
       templateId,

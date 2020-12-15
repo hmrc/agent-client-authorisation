@@ -33,8 +33,7 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Option[Boolean]] =
     desConnector.getVatRegDate(clientVrn).map {
-      case Some(VatRegDate(Some(effectiveRegistrationDate)))
-          if effectiveRegistrationDate == suppliedVatRegistrationDate =>
+      case Some(VatRegDate(Some(effectiveRegistrationDate))) if effectiveRegistrationDate == suppliedVatRegistrationDate =>
         Some(true)
       case Some(VatRegDate(Some(_))) =>
         Some(false)
@@ -44,9 +43,7 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
         None
     }
 
-  def clientDateOfBirthMatches(clientNino: Nino, suppliedDob: LocalDate)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Boolean]] =
+  def clientDateOfBirthMatches(clientNino: Nino, suppliedDob: LocalDate)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Boolean]] =
     citizenDetailsConnector.getCitizenDateOfBirth(clientNino).map {
       case Some(CitizenDateOfBirth(Some(clientDob))) if clientDob == suppliedDob => Some(true)
       case Some(CitizenDateOfBirth(_))                                           => Some(false)

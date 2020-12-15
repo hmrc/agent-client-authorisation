@@ -49,8 +49,7 @@ trait InvitationsRepository {
     expiryDate: LocalDate,
     origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation]
 
-  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
-    implicit ec: ExecutionContext): Future[Invitation]
+  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation]
 
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation]
 
@@ -70,10 +69,8 @@ trait InvitationsRepository {
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]]
 
-  def findInvitationInfoBy(
-    arn: Arn,
-    clientIdTypeAndValues: Seq[(String, String, String)],
-    status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]]
+  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]]
 
   def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit]
 
@@ -92,8 +89,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
       "invitations",
       mongo.mongoConnector.db,
       InvitationRecordFormat.mongoFormat,
-      ReactiveMongoFormats.objectIdFormats) with InvitationsRepository
-    with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with InvitationsRepository with StrictlyEnsureIndexes[Invitation, BSONObjectID] {
 
   import ImplicitBSONHandlers._
   import play.api.libs.json.Json.JsValueWrapper
@@ -102,17 +98,10 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
 
   override def indexes: Seq[Index] =
     Seq(
-      Index(
-        key = Seq("invitationId" -> IndexType.Ascending),
-        name = Some("invitationIdIndex"),
-        unique = true,
-        sparse = true),
+      Index(key = Seq("invitationId" -> IndexType.Ascending), name = Some("invitationIdIndex"), unique = true, sparse = true),
       Index(Seq(InvitationRecordFormat.arnClientStateKey        -> IndexType.Ascending)),
       Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending)),
-      Index(
-        Seq(
-          InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending,
-          InvitationRecordFormat.createdKey               -> IndexType.Ascending))
+      Index(Seq(InvitationRecordFormat.arnClientServiceStateKey -> IndexType.Ascending, InvitationRecordFormat.createdKey -> IndexType.Ascending))
     )
 
   def create(
@@ -131,8 +120,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     insert(invitation).map(_ => invitation)
   }
 
-  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(
-    implicit ec: ExecutionContext): Future[Invitation] =
+  def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime)(implicit ec: ExecutionContext): Future[Invitation] =
     for {
       invitationOpt <- findById(invitation.id)
       modifiedOpt = invitationOpt.map(i => i.copy(events = i.events :+ StatusChangeEvent(updateDate, status)))
@@ -144,8 +132,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                       .map { result =>
                         if (result.ok) modified
                         else
-                          throw new Exception(
-                            s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                          throw new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
                       }
                   case None =>
                     throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
@@ -164,8 +151,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                       .map { result =>
                         if (result.ok) modified
                         else
-                          throw new Exception(
-                            s"Invitation ${invitation.invitationId.value} update to set isRelationshipEnded to true has failed")
+                          throw new Exception(s"Invitation ${invitation.invitationId.value} update to set isRelationshipEnded to true has failed")
                       }
                   case None =>
                     throw new Exception(s"Invitiation ${invitation.invitationId.value} not found")
@@ -219,8 +205,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     val key = InvitationRecordFormat.toArnClientServiceStateKey(arn, clientId, service, status)
     val searchOptions: Seq[(String, JsValueWrapper)] = Seq(
       InvitationRecordFormat.arnClientServiceStateKey -> Some(JsString(key)),
-      InvitationRecordFormat.createdKey -> createdOnOrAfter.map(date =>
-        Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
+      InvitationRecordFormat.createdKey               -> createdOnOrAfter.map(date => Json.obj("$gte" -> JsNumber(date.toDateTimeAtStartOfDay().getMillis)))
     ).filter(_._2.isDefined)
       .map(option => option._1 -> toJsFieldJsValueWrapper(option._2.get))
 
@@ -228,10 +213,8 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     findInvitationInfoBySearch(query)
   }
 
-  def findInvitationInfoBy(
-    arn: Arn,
-    clientIdTypeAndValues: Seq[(String, String, String)],
-    status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
 
     val query = status match {
       case None => {
@@ -319,10 +302,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
 
   def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
     val updatedInvitation = invitation.copy(detailsForEmail = None)
-    collection.update(ordered = false).one(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map {
-      result =>
-        if (result.ok) ()
-        else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
+    collection.update(ordered = false).one(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map { result =>
+      if (result.ok) ()
+      else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
     }
   }
 
@@ -331,11 +313,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     collection.delete().one(query).map(_.n)
   }
 
-  override def getExpiredInvitationsForGA(expiredWithin: Long)(
-    implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val query = Json.obj(
-      "events.status" -> JsString("Expired"),
-      "events.time"   -> Json.obj("$gte" -> JsNumber(DateTime.now().getMillis - expiredWithin)))
+  override def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    val query =
+      Json.obj("events.status" -> JsString("Expired"), "events.time" -> Json.obj("$gte" -> JsNumber(DateTime.now().getMillis - expiredWithin)))
     collection
       .find[JsObject, JsObject](query, None)
       .sort(Json.obj(InvitationRecordFormat.createdKey -> JsNumber(-1)))

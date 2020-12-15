@@ -66,29 +66,16 @@ class InvitationsService @Inject()(
       case _ => Future successful None
     }
 
-  def create(
-    arn: Arn,
-    clientType: Option[String],
-    service: Service,
-    clientId: ClientId,
-    suppliedClientId: ClientId,
-    originHeader: Option[String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
+  def create(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId, originHeader: Option[String])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
       for {
         detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
         invitation <- invitationsRepository
-                       .create(
-                         arn,
-                         clientType,
-                         service,
-                         clientId,
-                         suppliedClientId,
-                         Some(detailsForEmail),
-                         startDate,
-                         expiryDate,
-                         originHeader)
+                       .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
         _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
       } yield {
         logger.info(s"""Created invitation with id: "${invitation.id.stringify}".""")
@@ -97,9 +84,7 @@ class InvitationsService @Inject()(
     }
   }
 
-  def acceptInvitation(invitation: Invitation)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
@@ -129,9 +114,7 @@ class InvitationsService @Inject()(
     }
   }
 
-  private def createRelationship(invitation: Invitation, acceptedDate: DateTime)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext) = {
+  private def createRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
       case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
@@ -142,8 +125,7 @@ class InvitationsService @Inject()(
 
     createRelationship.recover {
       case e if e.getMessage.contains("RELATIONSHIP_ALREADY_EXISTS") =>
-        logger.warn(
-          s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
+        logger.warn(s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
     }
   }
 
@@ -151,9 +133,7 @@ class InvitationsService @Inject()(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
-  def cancelInvitation(invitation: Invitation)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
+  def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     changeInvitationStatus(invitation, model.Cancelled)
       .andThen {
         case Success(result) => {
@@ -173,9 +153,7 @@ class InvitationsService @Inject()(
       }
     }
 
-  def rejectInvitation(invitation: Invitation)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
+  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
     def changeStatus: Future[Either[StatusUpdateFailure, Invitation]] =
       changeInvitationStatus(invitation, model.Rejected)
         .andThen {
@@ -229,9 +207,8 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
     }
 
-  def getNonSuspendedInvitations(identifiers: Seq[(Service, String)])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Seq[List[InvitationInfo]]] = {
+  def getNonSuspendedInvitations(
+    identifiers: Seq[(Service, String)])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[List[InvitationInfo]]] = {
 
     def isArnSuspendedForService(arn: Arn, service: Service): Future[Option[Boolean]] =
       desConnector
@@ -246,8 +223,8 @@ class InvitationsService @Inject()(
                       case (service, clientId) =>
                         findInvitationsInfoBy(service = Some(service), clientId = Some(clientId))
                     })
-      invs <- Future.sequence(invitations.flatMap(invs =>
-               invs.map(inv => isArnSuspendedForService(inv.arn, inv.service).map(isSuspended => (invs, isSuspended)))))
+      invs <- Future.sequence(
+               invitations.flatMap(invs => invs.map(inv => isArnSuspendedForService(inv.arn, inv.service).map(isSuspended => (invs, isSuspended)))))
     } yield invs.filter(!_._2.getOrElse(false)).map(_._1)
   }
 
@@ -270,10 +247,7 @@ class InvitationsService @Inject()(
         emailService.sendExpiredEmail(invitation)
       })
 
-  private def changeInvitationStatus(
-    invitation: Invitation,
-    status: InvitationStatus,
-    timestamp: DateTime = currentTime())(
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
     invitation.status match {
       case Pending =>

@@ -20,10 +20,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
-sealed class TypeOfEnrolment(
-  val enrolmentKey: String,
-  val identifierKey: String,
-  val identifierForValue: String => TaxIdentifier) {
+sealed class TypeOfEnrolment(val enrolmentKey: String, val identifierKey: String, val identifierForValue: String => TaxIdentifier) {
 
   def extractIdentifierFrom(enrolments: Set[Enrolment]): Option[TaxIdentifier] = {
     val maybeEnrolment: Option[Enrolment] = enrolments.find(_.key equals enrolmentKey)

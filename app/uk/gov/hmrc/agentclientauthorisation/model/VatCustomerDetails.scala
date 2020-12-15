@@ -21,16 +21,9 @@ import play.api.libs.json._
 
 case class CustomerDetailsNotFound() extends Exception
 
-case class VatCustomerDetails(
-  organisationName: Option[String],
-  individual: Option[VatIndividual],
-  tradingName: Option[String])
+case class VatCustomerDetails(organisationName: Option[String], individual: Option[VatIndividual], tradingName: Option[String])
 
-case class VatIndividual(
-  title: Option[String],
-  firstName: Option[String],
-  middleName: Option[String],
-  lastName: Option[String]) {
+case class VatIndividual(title: Option[String], firstName: Option[String], middleName: Option[String], lastName: Option[String]) {
   def name: String =
     Seq(title, firstName, middleName, lastName).flatten.map(_.trim).filter(_.nonEmpty).mkString(" ")
 }

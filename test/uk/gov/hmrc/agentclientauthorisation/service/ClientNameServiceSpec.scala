@@ -106,13 +106,8 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockDesConnector
         .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
-        .returns(
-          Future(
-            Some(
-              VatCustomerDetails(
-                Some("Organisy name"),
-                Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))),
-                None))))
+        .returns(Future(
+          Some(VatCustomerDetails(Some("Organisy name"), Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None))))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Organisy name")
     }
@@ -120,13 +115,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockDesConnector
         .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
-        .returns(
-          Future(
-            Some(
-              VatCustomerDetails(
-                None,
-                Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))),
-                None))))
+        .returns(Future(Some(VatCustomerDetails(None, Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None))))
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Miss Marilyn M Monroe")
     }

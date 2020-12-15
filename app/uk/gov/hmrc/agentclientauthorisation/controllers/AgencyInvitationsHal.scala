@@ -48,11 +48,7 @@ trait AgencyInvitationsHal {
     }.toVector
 
   def toHalResource(invitation: Invitation): HalResource = {
-    val links = HalLinks(
-      Vector(
-        HalLink(
-          "self",
-          routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url)))
+    val links = HalLinks(Vector(HalLink("self", routes.AgencyInvitationsController.getSentInvitation(invitation.arn, invitation.invitationId).url)))
 
     HalResource(links, toJson(invitation)(Invitation.external.writes).as[JsObject])
   }

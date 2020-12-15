@@ -78,10 +78,8 @@ class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit
 }
 
 @Singleton
-class AgentCacheProvider @Inject()(
-  val environment: Environment,
-  configuration: Configuration,
-  servicesConfig: ServicesConfig)(implicit metrics: Metrics) {
+class AgentCacheProvider @Inject()(val environment: Environment, configuration: Configuration, servicesConfig: ServicesConfig)(
+  implicit metrics: Metrics) {
 
   val runModeConfiguration: Configuration = configuration
   def mode = environment.mode

@@ -45,37 +45,28 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
   "clientPostcodeMatches" should {
     "return no error status if there is a business partner record with a matching UK postcode" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
-        Future successful Some(
-          BusinessDetails(
-            Seq(BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))),
-            Some(MtdItId("mtdItId")))))
+        Future successful Some(BusinessDetails(Seq(BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))), Some(MtdItId("mtdItId")))))
       val maybeResult = await(service.postCodeMatches(nino1.value, "AA11AA"))
       maybeResult shouldBe None
     }
 
     "return a 501 if there is a business partner record with a matching non-UK postcode" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
-        Future successful Some(
-          BusinessDetails(
-            Seq(BusinessData(Some(BusinessAddressDetails("US", Some("AA11AA"))))),
-            Some(MtdItId("mtdItId")))))
+        Future successful Some(BusinessDetails(Seq(BusinessData(Some(BusinessAddressDetails("US", Some("AA11AA"))))), Some(MtdItId("mtdItId")))))
       val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 501
     }
 
     "return 403 if there is a business partner record with a mis-matched postcode" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(
-        Future successful Some(
-          BusinessDetails(
-            Seq(BusinessData(Some(BusinessAddressDetails("GB", Some("ZZ99ZZ"))))),
-            Some(MtdItId("mtdItId")))))
+        Future successful Some(BusinessDetails(Seq(BusinessData(Some(BusinessAddressDetails("GB", Some("ZZ99ZZ"))))), Some(MtdItId("mtdItId")))))
       val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
 
     "return 403 if there is a business partner record with a no postcode" in {
-      when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful Some(
-        BusinessDetails(Seq(BusinessData(Some(BusinessAddressDetails("GB", None)))), Some(MtdItId("mtdItId")))))
+      when(desConnector.getBusinessDetails(nino1))
+        .thenReturn(Future successful Some(BusinessDetails(Seq(BusinessData(Some(BusinessAddressDetails("GB", None)))), Some(MtdItId("mtdItId")))))
       val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head
       result.header.status shouldBe 403
     }
@@ -95,9 +86,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
 
     "return 403 if a business partner record is returned with multiple business data records" in {
       when(desConnector.getBusinessDetails(nino1)).thenReturn(Future successful Some(BusinessDetails(
-        Array(
-          BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA")))),
-          BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))),
+        Array(BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA")))), BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))),
         Some(MtdItId("mtdItId"))
       )))
       val result = await(service.postCodeMatches(nino1.value, "AA11AA")).head

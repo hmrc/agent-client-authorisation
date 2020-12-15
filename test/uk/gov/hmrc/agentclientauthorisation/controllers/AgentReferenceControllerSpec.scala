@@ -66,11 +66,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
   private def clientAuthStub(returnValue: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments])
     : OngoingStubbing[Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]] =
-    when(
-      mockPlayAuthConnector
-        .authorise(any(): Predicate, any[Retrieval[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]]())(
-          any[HeaderCarrier],
-          any[ExecutionContext]))
+    when(mockPlayAuthConnector
+      .authorise(any(): Predicate, any[Retrieval[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments]]())(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(returnValue)
 
   "getAgentReferenceRecord" should {
@@ -187,15 +184,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
           when(
-            mockInvitationsService.findInvitationsInfoBy(
-              any[Arn],
-              any[Seq[(String, String, String)]],
-              any[Option[InvitationStatus]])(any[ExecutionContext]))
-            .thenReturn(
-              Future successful List(
-                invitationIdAndExpiryDate1,
-                invitationIdAndExpiryDate2,
-                invitationIdAndExpiryDate3))
+            mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+              any[ExecutionContext]))
+            .thenReturn(Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
           val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
           status(result) shouldBe 200
@@ -225,10 +216,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(
-            any[Arn],
-            any[Seq[(String, String, String)]],
-            any[Option[InvitationStatus]])(any[ExecutionContext]))
+          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[ExecutionContext]))
           .thenReturn(Future successful listOfInvitations)
 
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
@@ -270,10 +259,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(
-            any[Arn],
-            any[Seq[(String, String, String)]],
-            any[Option[InvitationStatus]])(any[ExecutionContext]))
+          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
@@ -292,10 +279,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(
-            any[Arn],
-            any[Seq[(String, String, String)]],
-            any[Option[InvitationStatus]])(any[ExecutionContext]))
+          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))

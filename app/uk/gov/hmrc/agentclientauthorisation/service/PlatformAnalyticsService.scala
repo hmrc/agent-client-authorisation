@@ -64,11 +64,9 @@ class PlatformAnalyticsService @Inject()(
           }
       }
 
-  def reportSingleEventAnalyticsRequest(
-    i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
-    logger.info(
-      s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
-        .getOrElse("origin_not_set")}")
+  def reportSingleEventAnalyticsRequest(i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
+    logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
+      .getOrElse("origin_not_set")}")
     val maybeGAClientId: Option[String] = if (hc.sessionId.isDefined) None else Some(makeGAClientId)
     sendAnalyticsRequest(List(i), maybeGAClientId)
   }
@@ -76,11 +74,7 @@ class PlatformAnalyticsService @Inject()(
   private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Done] =
-    connector.sendEvent(
-      AnalyticsRequest(
-        gaClientId = clientId,
-        gaTrackingId = Some(trackingId),
-        events = invitations.map(i => createEventFor(i))))
+    connector.sendEvent(AnalyticsRequest(gaClientId = clientId, gaTrackingId = Some(trackingId), events = invitations.map(i => createEventFor(i))))
 
   private def createEventFor(i: Invitation): Event =
     i.status match {

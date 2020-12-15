@@ -34,8 +34,7 @@ object Binders {
   implicit object UtrBinder extends SimpleObjectBinder[Utr](Utr.apply, _.value)
   implicit object CgtRefBinder extends SimpleObjectBinder[CgtRef](CgtRef.apply, _.value)
   implicit object InvitationIdBinder extends SimpleObjectBinder[InvitationId](InvitationId.apply, _.value)
-  implicit object LocalDateBinder
-      extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
+  implicit object LocalDateBinder extends SimpleObjectBinder[LocalDate](s => { assert(s.length == 10); LocalDate.parse(s) }, _.toString)
 
   private def toError(err: String) =
     s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"

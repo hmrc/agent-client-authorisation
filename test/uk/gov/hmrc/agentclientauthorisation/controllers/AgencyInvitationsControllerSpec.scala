@@ -47,8 +47,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 class AgencyInvitationsControllerSpec
-    extends MocksWithCache with AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach
-    with TransitionInvitation with TestData {
+    extends MocksWithCache with AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation with TestData {
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
@@ -65,8 +64,7 @@ class AgencyInvitationsControllerSpec
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
 
-  val jsonBody = Json.parse(
-    s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
+  val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
   val controller =
     new AgencyInvitationsController(
@@ -83,9 +81,7 @@ class AgencyInvitationsControllerSpec
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
       mockPlayAuthConnector
-        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(
-          any[HeaderCarrier],
-          any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
@@ -93,29 +89,22 @@ class AgencyInvitationsControllerSpec
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(
-          any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(any[ExecutionContext]))
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(
-          any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(
-          any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(
-      invitationsService.findInvitationsBy(
-        eqs(Some(arn)),
-        eqs(Seq(Service.MtdIt)),
-        any[Option[String]],
-        eqs(Some(Accepted)),
-        eqs(None))(any[ExecutionContext]))
+      invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None))(
+        any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
     ()
   }
@@ -130,8 +119,7 @@ class AgencyInvitationsControllerSpec
 
       when(postcodeService.postCodeMatches(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful None)
-      when(
-        invitationsService.translateToMtdItId(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
+      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
       when(
         invitationsService.create(
@@ -146,8 +134,7 @@ class AgencyInvitationsControllerSpec
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
 
       status(response) shouldBe 201
-      response.header.headers.get("Location") shouldBe Some(
-        s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
+      response.header.headers.get("Location") shouldBe Some(s"/agencies/arn1/invitations/sent/${mtdSaPendingInvitationId.value}")
       response.header.headers.get("InvitationId") shouldBe Some(
         mtdSaPendingInvitationId.value
       )
@@ -183,8 +170,7 @@ class AgencyInvitationsControllerSpec
         .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
       val cancelledInvite =
-        inviteCreated.copy(
-          events = List(StatusChangeEvent(DateTime.now(), Pending), StatusChangeEvent(DateTime.now(), Cancelled)))
+        inviteCreated.copy(events = List(StatusChangeEvent(DateTime.now(), Pending), StatusChangeEvent(DateTime.now(), Cancelled)))
 
       when(
         invitationsService

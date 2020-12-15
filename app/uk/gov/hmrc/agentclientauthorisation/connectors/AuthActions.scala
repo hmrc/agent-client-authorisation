@@ -62,17 +62,16 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
 
-  def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
-    implicit request ⇒
-      authorised(authProvider).retrieve(affinityGroup and allEnrolments) {
-        case Some(affinityG) ~ allEnrols ⇒
-          (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
-            case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
-            case (_, None)                => Future successful AgentNotSubscribed
-            case _                        => Future successful GenericUnauthorized
-          }
-        case _ => Future successful GenericUnauthorized
-      } recover handleFailure
+  def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request ⇒
+    authorised(authProvider).retrieve(affinityGroup and allEnrolments) {
+      case Some(affinityG) ~ allEnrols ⇒
+        (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
+          case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
+          case (_, None)                => Future successful AgentNotSubscribed
+          case _                        => Future successful GenericUnauthorized
+        }
+      case _ => Future successful GenericUnauthorized
+    } recover handleFailure
   }
 
   val basicAuthHeader: Regex = "Basic (.+)".r
@@ -83,8 +82,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       new String(Base64.getDecoder.decode(encodedString), UTF_8)
     } catch { case _: Throwable => "" }
 
-  def withBasicAuth(expectedAuth: BasicAuthentication)(body: => Future[Result])(
-    implicit request: Request[_]): Future[Result] =
+  def withBasicAuth(expectedAuth: BasicAuthentication)(body: => Future[Result])(implicit request: Request[_]): Future[Result] =
     request.headers.get(HeaderNames.authorisation) match {
       case Some(basicAuthHeader(encodedAuthHeader)) =>
         decodeFromBase64(encodedAuthHeader) match {
@@ -109,22 +107,18 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
   def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(
-    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result])(
-    implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    authorised(authProvider).retrieve(allEnrolments) { allEnrols =>
-      val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
-      if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
-      else Future successful NotAClient
-    } recover handleFailure
+    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
+    implicit request =>
+      authorised(authProvider).retrieve(allEnrolments) { allEnrols =>
+        val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
+        if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
+        else Future successful NotAClient
+      } recover handleFailure
   }
 
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
 
-  case class CurrentUser(
-    enrolments: Enrolments,
-    credentials: Credentials,
-    service: Service,
-    taxIdentifier: TaxIdentifier)
+  case class CurrentUser(enrolments: Enrolments, credentials: Credentials, service: Service, taxIdentifier: TaxIdentifier)
 
   def hasRequiredStrideRole(enrolments: Enrolments, strideRoles: Seq[String]): Boolean =
     strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
@@ -135,8 +129,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         enrolment =>
           Enrolment(
             enrolment.key.trim,
-            enrolment.identifiers.map(identifier =>
-              EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
+            enrolment.identifiers.map(identifier => EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
             enrolment.state,
             enrolment.delegatedAuthRule
         ))
@@ -159,8 +152,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }
 
-  def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(
-    body: RequestAndCurrentUser)(implicit ec: ExecutionContext): Action[AnyContent] =
+  def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
+    implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
       authorised().retrieve(allEnrolments and credentials) {
@@ -185,8 +178,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
       } recover handleFailure
     }
 
-  def onlyStride(strideRole: String)(body: Request[AnyContent] => Future[Result])(
-    implicit ec: ExecutionContext): Action[AnyContent] =
+  def onlyStride(strideRole: String)(body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       authorised(AuthProviders(PrivilegedApplication))
         .retrieve(allEnrolments) {
@@ -226,9 +218,8 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
   private def supportedServiceName(key: String): Option[String] =
     Service.supportedServices.find(_.enrolmentKey == key).map(_.id)
 
-  protected def withMultiEnrolledClient[A](body: Seq[(String, String, String)] => Future[Result])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] =
+  protected def withMultiEnrolledClient[A](
+    body: Seq[(String, String, String)] => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(affinityGroup and confidenceLevel and allEnrolments) {
         case Some(affinity) ~ confidence ~ enrols =>

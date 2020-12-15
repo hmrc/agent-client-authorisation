@@ -66,8 +66,7 @@ object Citizen {
 
 @ImplementedBy(classOf[CitizenDetailsConnectorImpl])
 trait CitizenDetailsConnector {
-  def getCitizenDateOfBirth(
-    nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]]
+  def getCitizenDateOfBirth(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]]
 
   def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen]
 }
@@ -80,8 +79,7 @@ class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClie
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  def getCitizenDateOfBirth(
-    nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]] =
+  def getCitizenDateOfBirth(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = s"$baseUrl/citizen-details/nino/${nino.value}"
       http.GET[HttpResponse](url).map { response =>

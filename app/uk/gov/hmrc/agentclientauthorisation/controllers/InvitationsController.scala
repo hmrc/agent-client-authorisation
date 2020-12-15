@@ -35,8 +35,7 @@ class InvitationsController @Inject()(
   metrics: Metrics,
   cc: ControllerComponents,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation
-    with AgencyInvitationsHal {
+    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get
 

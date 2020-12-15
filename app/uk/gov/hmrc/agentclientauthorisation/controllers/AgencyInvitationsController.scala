@@ -51,8 +51,7 @@ class AgencyInvitationsController @Inject()(
   metrics: Metrics,
   cc: ControllerComponents,
   val ec: ExecutionContext)
-    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation
-    with AgencyInvitationsHal {
+    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
@@ -83,19 +82,18 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
-      forThisAgency(givenArn) {
-        invitationsService.findInvitation(invitationId) flatMap {
-          case Some(i) if i.arn == givenArn =>
-            invitationsService.cancelInvitation(i.copy(origin = request.headers.get("Origin"))) map {
-              case Right(_)                          => NoContent
-              case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
-            }
-          case None => Future successful InvitationNotFound
-          case _    => Future successful NoPermissionOnAgency
-        }
+  def cancelInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    forThisAgency(givenArn) {
+      invitationsService.findInvitation(invitationId) flatMap {
+        case Some(i) if i.arn == givenArn =>
+          invitationsService.cancelInvitation(i.copy(origin = request.headers.get("Origin"))) map {
+            case Right(_)                          => NoContent
+            case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
+          }
+        case None => Future successful InvitationNotFound
+        case _    => Future successful NoPermissionOnAgency
       }
+    }
   }
 
   def setRelationshipEnded(invitationId: InvitationId, endedBy: String): Action[AnyContent] =
@@ -120,9 +118,7 @@ class AgencyInvitationsController @Inject()(
       case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
-  private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(
-    implicit originHeader: Option[String],
-    hc: HeaderCarrier): Future[Result] = {
+  private def makeInvitation(arn: Arn, agentInvitation: AgentInvitation)(implicit originHeader: Option[String], hc: HeaderCarrier): Future[Result] = {
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
       case MtdIt =>
@@ -168,8 +164,7 @@ class AgencyInvitationsController @Inject()(
                                 (invite.clientType, invite.status) match {
                                   case (Some(ct), Pending) =>
                                     val link = s"/invitations/$ct/${record.uid}/$normalisedAgentName"
-                                    invite.copy(
-                                      clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
+                                    invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
 
                                   case _ => invite
                                 }
@@ -177,43 +172,32 @@ class AgencyInvitationsController @Inject()(
       } yield invitationsWithLink
 
       invitationsWithOptLinks.map { invitations =>
-        Ok(
-          toHalResource(
-            invitations.filter(_.arn == givenArn),
-            arn,
-            clientType,
-            service,
-            clientIdType,
-            clientId,
-            status))
+        Ok(toHalResource(invitations.filter(_.arn == givenArn), arn, clientType, service, clientIdType, clientId, status))
       }
     }
   }
 
-  def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents {
-    implicit request => implicit arn =>
-      forThisAgency(givenArn) {
-        val invitationsWithOptLinks: Future[Option[Invitation]] = for {
-          invitation <- invitationsService.findInvitation(invitationId)
-          invitationWithLink <- invitation match {
-                                 case Some(invite) =>
-                                   (invite.clientType, invite.status) match {
-                                     case (Some(clientType), Pending) =>
-                                       agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
-                                         Some(
-                                           invite.copy(clientActionUrl =
-                                             Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
-                                       }
-                                     case _ => Future.successful(Some(invite))
-                                   }
-                                 case _ => Future successful None
-                               }
-        } yield invitationWithLink
+  def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    forThisAgency(givenArn) {
+      val invitationsWithOptLinks: Future[Option[Invitation]] = for {
+        invitation <- invitationsService.findInvitation(invitationId)
+        invitationWithLink <- invitation match {
+                               case Some(invite) =>
+                                 (invite.clientType, invite.status) match {
+                                   case (Some(clientType), Pending) =>
+                                     agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
+                                       Some(invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
+                                     }
+                                   case _ => Future.successful(Some(invite))
+                                 }
+                               case _ => Future successful None
+                             }
+      } yield invitationWithLink
 
-        invitationsWithOptLinks.map {
-          _.map(invitation => if (invitation.arn == givenArn) Ok(toHalResource(invitation)) else Forbidden) getOrElse InvitationNotFound
-        }
+      invitationsWithOptLinks.map {
+        _.map(invitation => if (invitation.arn == givenArn) Ok(toHalResource(invitation)) else Forbidden) getOrElse InvitationNotFound
       }
+    }
   }
 
   private def forThisAgency(requestedArn: Arn)(block: => Future[Result])(implicit arn: Arn) =
@@ -228,33 +212,31 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents {
-    implicit request => _ =>
-      knownFactsCheckService
-        .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
-        .map {
-          case Some(true)  => NoContent
-          case Some(false) => VatRegistrationDateDoesNotMatch
-          case None        => NotFound
-        }
-        .recover {
-          case e if e.getMessage.contains("MIGRATION") => {
-            logger.warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
-            Locked
-          }
-          case e =>
-            logger.warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
-            BadGateway
-        }
-  }
-
-  def checkKnownFactIrv(nino: Nino, dateOfBirth: LocalDate): Action[AnyContent] = onlyForAgents {
-    implicit request => _ =>
-      knownFactsCheckService.clientDateOfBirthMatches(nino, dateOfBirth).map {
+  def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
+    knownFactsCheckService
+      .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
+      .map {
         case Some(true)  => NoContent
-        case Some(false) => DateOfBirthDoesNotMatch
+        case Some(false) => VatRegistrationDateDoesNotMatch
         case None        => NotFound
       }
+      .recover {
+        case e if e.getMessage.contains("MIGRATION") => {
+          logger.warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
+          Locked
+        }
+        case e =>
+          logger.warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
+          BadGateway
+      }
+  }
+
+  def checkKnownFactIrv(nino: Nino, dateOfBirth: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
+    knownFactsCheckService.clientDateOfBirthMatches(nino, dateOfBirth).map {
+      case Some(true)  => NoContent
+      case Some(false) => DateOfBirthDoesNotMatch
+      case None        => NotFound
+    }
   }
 
   def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>

@@ -30,10 +30,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgentLinkService @Inject()(
-  agentReferenceRecordRepository: AgentReferenceRepository,
-  desConnector: DesConnector,
-  metrics: Metrics)
+class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceRepository, desConnector: DesConnector, metrics: Metrics)
     extends Monitor {
 
   private val logger = Logger(getClass)
@@ -62,8 +59,7 @@ class AgentLinkService @Inject()(
           .map(normaliseAgentName)
           .getOrElse(throw AgencyNameNotFound(arn)))
 
-  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(
-    implicit ec: ExecutionContext): Future[AgentReferenceRecord] =
+  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(implicit ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
       recordOpt <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
@@ -73,17 +69,13 @@ class AgentLinkService @Inject()(
                                          else
                                            agentReferenceRecordRepository
                                              .updateAgentName(record.uid, normalisedAgentName)
-                                             .map(
-                                               _ =>
-                                                 record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(
-                                                   normalisedAgentName)))
+                                             .map(_ => record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(normalisedAgentName)))
                                        case None =>
                                          create(arn, normalisedAgentName)
                                      }
     } yield record
 
-  private def create(arn: Arn, normalisedAgentName: String, counter: Int = 1)(
-    implicit ec: ExecutionContext): Future[AgentReferenceRecord] = {
+  private def create(arn: Arn, normalisedAgentName: String, counter: Int = 1)(implicit ec: ExecutionContext): Future[AgentReferenceRecord] = {
     val uid = RandomStringUtils.random(8, codetable)
     val newRecord =
       AgentReferenceRecord(uid, arn, Seq(normalisedAgentName))
@@ -101,8 +93,7 @@ class AgentLinkService @Inject()(
           if (e.getMessage().contains("arn"))
             agentReferenceRecordRepository
               .findByArn(arn)
-              .map(_.getOrElse(
-                throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
+              .map(_.getOrElse(throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
           else if (counter <= 3) {
             logger.error(s"""Duplicate uid happened $uid, will try again""")
             create(arn, normalisedAgentName, counter + 1)

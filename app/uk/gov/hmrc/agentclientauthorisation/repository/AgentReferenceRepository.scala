@@ -58,8 +58,7 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
       "agent-reference",
       mongo.mongoConnector.db,
       formats,
-      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRepository
-    with StrictlyEnsureIndexes[AgentReferenceRecord, BSONObjectID] {
+      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRepository with StrictlyEnsureIndexes[AgentReferenceRecord, BSONObjectID] {
 
   override def indexes: Seq[Index] =
     Seq(
@@ -69,8 +68,7 @@ class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
     insert(agentReferenceRecord).map { result =>
-      result.writeErrors.foreach(error =>
-        Logger(getClass).warn(s"Creating MultiInvitationRecord failed: ${error.errmsg}"))
+      result.writeErrors.foreach(error => Logger(getClass).warn(s"Creating MultiInvitationRecord failed: ${error.errmsg}"))
       result.n
     }
 

@@ -55,8 +55,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       )
     )
 
-  def sendInvitationExpired(
-    invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Future[Unit] =
+  def sendInvitationExpired(invitation: Invitation)(implicit hc: HeaderCarrier, request: Request[Any], ec: ExecutionContext): Future[Unit] =
     auditEvent(
       AgentClientInvitationEvent.AgentClientInvitationResponse,
       "Client responded to agent invitation",
@@ -78,10 +77,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     case _                    => throw new IllegalStateException(s"Unsupported ClientIdType")
   }
 
-  private[audit] def auditEvent(
-    event: AgentClientInvitationEvent,
-    transactionName: String,
-    details: Seq[(String, Any)] = Seq.empty)(
+  private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(
     implicit hc: HeaderCarrier,
     request: Request[Any],
     ec: ExecutionContext): Future[Unit] =

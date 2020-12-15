@@ -91,21 +91,14 @@ trait TestData {
   )
 
   val agentEnrolment = Set(
-    Enrolment(
-      "HMRC-AS-AGENT",
-      Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)),
-      state = "",
-      delegatedAuthRule = None))
+    Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), state = "", delegatedAuthRule = None))
 
   //Singular Client
-  val clientMtdItEnrolment = Set(
-    Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
+  val clientMtdItEnrolment = Set(Enrolment("HMRC-MTD-IT", Seq(EnrolmentIdentifier("MTDITID", mtdItId1.value)), state = "", delegatedAuthRule = None))
 
-  val clientNiEnrolment = Set(
-    Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None))
+  val clientNiEnrolment = Set(Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None))
 
-  val clientVrnEnrolment = Set(
-    Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
+  val clientVrnEnrolment = Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
 
   val clientTrustEnrolment = Set(
     Enrolment("HMRC-TERS-ORG", Seq(EnrolmentIdentifier("SAUTR", utr.value)), state = "", delegatedAuthRule = None)
@@ -130,8 +123,7 @@ trait TestData {
     Enrolment("HMRC-NI", Seq(EnrolmentIdentifier("NINO", "AA000003D")), state = "", delegatedAuthRule = None)
   )
 
-  val clientMtdVat = Set(
-    Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
+  val clientMtdVat = Set(Enrolment("HMRC-MTD-VAT", Seq(EnrolmentIdentifier("VRN", vrn.value)), state = "", delegatedAuthRule = None))
 
   val clientMtdIrvVatEnrolmentsIndividual: Future[Option[AffinityGroup] ~ ConfidenceLevel ~ Enrolments] =
     client(AffinityGroup.Individual, ConfidenceLevel.L200, clientMtdItIrvVat)
@@ -161,14 +153,10 @@ trait TestData {
     Future successful new ~[Option[AffinityGroup], Enrolments](None, Enrolments(Set.empty[Enrolment]))
 
   val agentNoEnrolments: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future successful new ~[Option[AffinityGroup], Enrolments](
-      Some(AffinityGroup.Agent),
-      Enrolments(Set.empty[Enrolment]))
+    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Agent), Enrolments(Set.empty[Enrolment]))
 
   val agentIncorrectAffinity: Future[~[Option[AffinityGroup], Enrolments]] =
-    Future successful new ~[Option[AffinityGroup], Enrolments](
-      Some(AffinityGroup.Individual),
-      Enrolments(agentEnrolment))
+    Future successful new ~[Option[AffinityGroup], Enrolments](Some(AffinityGroup.Individual), Enrolments(agentEnrolment))
 
   val failedStubForClient: Future[Enrolments] = Future failed MissingBearerToken()
 

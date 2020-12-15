@@ -67,9 +67,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
       }
     }
 
-  def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] = {
+  def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
       http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body).map { response =>
@@ -93,8 +91,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
       }
     }
 
-  def createCapitalGainsRelationship(
-    invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+  def createCapitalGainsRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
       http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation), "").map { response =>
         response.status match {
@@ -125,9 +122,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
           case status if is2xx(status) => response.json.as[Seq[JsObject]]
           case Status.NOT_FOUND        => Seq.empty
           case other =>
-            throw UpstreamErrorResponse(
-              s"unexpected error during 'getActiveAfiRelationships', statusCode=$other",
-              other)
+            throw UpstreamErrorResponse(s"unexpected error during 'getActiveAfiRelationships', statusCode=$other", other)
         }
       }
     }

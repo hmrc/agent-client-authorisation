@@ -74,8 +74,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       }
     }
 
-  private def getAuthTaxId(clientIdType: String, clientId: String)(
-    implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
+  private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
     clientIdType match {
       case ("MTDITID" | "UTR" | "VRN" | "CGTPDRef") if currentUser.credentials.providerType == "GovernmentGateway" =>
         Some(ClientIdentifier(currentUser.taxIdentifier))
@@ -128,10 +127,9 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       )
     }
 
-  private def rejectInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+  private def rejectInvitation[T <: TaxIdentifier](
+    clientId: ClientIdentifier[T],
+    invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier, authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
@@ -151,22 +149,17 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       }
     }
 
-  private def getInvitations[T <: TaxIdentifier](
-    supportedService: Service,
-    taxId: ClientIdentifier[T],
-    status: Option[InvitationStatus])(
+  private def getInvitations[T <: TaxIdentifier](supportedService: Service, taxId: ClientIdentifier[T], status: Option[InvitationStatus])(
     implicit ec: ExecutionContext,
     authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(taxId) {
-      invitationsService.clientsReceived(supportedService, taxId, status) map (results =>
-        Ok(toHalResource(results, taxId, status)))
+      invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
     }
 
   private def actionInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
-    action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(
-    implicit ec: ExecutionContext): Future[Result] =
+    action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(implicit ec: ExecutionContext): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation) map {
@@ -188,15 +181,12 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     implicit authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     authTaxId match {
       case None => block
-      case Some(authTaxIdentifier)
-          if authTaxIdentifier.value.replaceAll("\\s", "") == taxId.value.replaceAll("\\s", "") =>
+      case Some(authTaxIdentifier) if authTaxIdentifier.value.replaceAll("\\s", "") == taxId.value.replaceAll("\\s", "") =>
         block
       case _ => Future successful NoPermissionOnClient
     }
 
-  protected def matchClientIdentifiers[T <: TaxIdentifier](
-    invitationClientId: ClientId,
-    usersClientId: ClientIdentifier[T]): Boolean =
+  protected def matchClientIdentifiers[T <: TaxIdentifier](invitationClientId: ClientId, usersClientId: ClientIdentifier[T]): Boolean =
     if (invitationClientId == usersClientId) true
     else invitationClientId.value.replaceAll("\\s", "") == usersClientId.value.replaceAll("\\s", "")
 
