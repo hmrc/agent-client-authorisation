@@ -76,8 +76,6 @@ trait InvitationsRepository {
 
   def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit]
 
-  def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit]
-
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
 
   def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]]
@@ -114,9 +112,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     startDate: DateTime,
     expiryDate: LocalDate,
     origin: Option[String])(implicit ec: ExecutionContext): Future[Invitation] = {
-    val invitation =
-      Invitation
-        .createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)
+    val invitation = Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)
     insert(invitation).map(_ => invitation)
   }
 
@@ -138,6 +134,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                     throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
                 }
     } yield updated
+
+  private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
+    BSONDocumentFormat.reads(writes.writes(entity)).get
 
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     for {
@@ -213,31 +212,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     findInvitationInfoBySearch(query)
   }
 
-  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
-
-    val query = status match {
-      case None => {
-        val keys = clientIdTypeAndValues.map {
-          case (serviceName, clientIdType, clientIdValue) =>
-            InvitationRecordFormat
-              .toArnClientKey(arn, clientIdValue, serviceName)
-        }
-        Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Json.obj("$in" -> keys))
-      }
-      case Some(status) => {
-        val keys = clientIdTypeAndValues.map {
-          case (serviceName, clientIdType, clientIdValue) =>
-            InvitationRecordFormat
-              .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.toString)
-        }
-        Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
-      }
-    }
-
-    findInvitationInfoBySearch(query)
-  }
-
   private def findInvitationInfoBySearch(query: JsObject)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     collection
       .find(
@@ -278,8 +252,30 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               properties._8.as[List[StatusChangeEvent]]
           )))
 
-  private def bsonJson[T](entity: T)(implicit writes: Writes[T]): BSONDocument =
-    BSONDocumentFormat.reads(writes.writes(entity)).get
+  def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String, String)], status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] = {
+
+    val query = status match {
+      case None => {
+        val keys = clientIdTypeAndValues.map {
+          case (serviceName, clientIdType, clientIdValue) =>
+            InvitationRecordFormat
+              .toArnClientKey(arn, clientIdValue, serviceName)
+        }
+        Json.obj(InvitationRecordFormat.arnClientServiceStateKey -> Json.obj("$in" -> keys))
+      }
+      case Some(status) => {
+        val keys = clientIdTypeAndValues.map {
+          case (serviceName, clientIdType, clientIdValue) =>
+            InvitationRecordFormat
+              .toArnClientStateKey(arn.value, clientIdType, clientIdValue, status.toString)
+        }
+        Json.obj(InvitationRecordFormat.arnClientStateKey -> Json.obj("$in" -> keys))
+      }
+    }
+
+    findInvitationInfoBySearch(query)
+  }
 
   def refreshAllInvitations(implicit ec: ExecutionContext): Future[Unit] =
     for {
@@ -299,14 +295,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
             case None => Future.successful(())
           }
     } yield ()
-
-  def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] = {
-    val updatedInvitation = invitation.copy(detailsForEmail = None)
-    collection.update(ordered = false).one(BSONDocument(ID -> invitation.id), bsonJson(updatedInvitation)).map { result =>
-      if (result.ok) ()
-      else throw new Exception(s"Unable to remove email details from: ${updatedInvitation.invitationId.value}")
-    }
-  }
 
   override def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
     val query = Json.obj("arn" -> arn.value)

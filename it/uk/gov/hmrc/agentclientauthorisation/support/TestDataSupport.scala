@@ -145,9 +145,6 @@ trait TestDataSupport {
     override def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit] =
       Future failed new Exception("Unable to Refresh Information")
 
-    override def removeEmailDetails(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] =
-      Future failed new Exception("Unable to remove Email Details")
-
     override def removeAllInvitationsForAgent(arn: Arn)(implicit ec:  ExecutionContext): Future[Int] =
       Future failed new Exception(s"Unable to remove Invitations for ${arn.value}")
 

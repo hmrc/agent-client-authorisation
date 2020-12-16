@@ -25,7 +25,8 @@ lazy val compileDeps = Seq(
   "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.4.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-27",
   "uk.gov.hmrc" %% "play-hal" % "2.1.0-play-27",
-  "com.typesafe.play" %% "play-json-joda" % "2.7.4"
+  "com.typesafe.play" %% "play-json-joda" % "2.7.4",
+  "org.typelevel" %% "cats-core" % "2.3.0"
   //"uk.gov.hmrc" % "cluster-work-throttling_2.11" % "6.6.0-play-26"
 )
 
@@ -72,6 +73,7 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Test := true,
     scalacOptions ++= Seq(
       "-Xfatal-warnings",
+      "-Ypartial-unification",
       "-Xlint:-missing-interpolator,_",
       "-Yno-adapted-args",
       "-Ywarn-value-discard",

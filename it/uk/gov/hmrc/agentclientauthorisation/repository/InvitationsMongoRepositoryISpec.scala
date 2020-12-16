@@ -567,36 +567,6 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
-  "removeEmailDetails" should {
-    "remove DetailsForEmail from invitation" in {
-
-      val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
-
-      val itsaInvitation: Invitation = Invitation.createNew(
-      Arn(arn),
-      Some("personal"),
-      Service.MtdIt,
-      MtdItId("ABCD123456C"),
-      MtdItId("ABCD123456C"),
-      Some(dfe),
-      now,
-      now.plusDays(21).toLocalDate,
-      None)
-
-      await(repository.insert(itsaInvitation))
-
-      val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
-
-      storedInvitation.detailsForEmail shouldBe Some(dfe)
-
-      await(repository.removeEmailDetails(storedInvitation))
-
-      val updatedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
-
-      updatedInvitation.detailsForEmail shouldBe None
-    }
-  }
-
   private def addInvitations(startDate: DateTime, invitations: Invitation*) =
     await(Future sequence invitations.map {
       case Invitation(_, _, arnValue, clientType, service, clientId, suppliedClientId, _, _, _, _, _, _, _) =>
