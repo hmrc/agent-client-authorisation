@@ -15,15 +15,16 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.service
+
+import cats.data.EitherT._
+import cats.instances.future._
 import javax.inject.Inject
 import play.api.i18n.{Lang, Langs, MessagesApi}
 import play.api.{Logger, LoggerLike}
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,55 +36,30 @@ class EmailService @Inject()(
   desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
-  invitationsRepository: InvitationsRepository,
-  appConfig: AppConfig,
   messagesApi: MessagesApi)(implicit langs: Langs) {
-
-  protected def getLogger: LoggerLike = Logger
-
-  implicit val lang: Lang = langs.availables.head
 
   def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[DetailsForEmail] =
-    for {
-      agencyRecordDetails <- desConnector
-                              .getAgencyDetails(arn)
-                              .map {
-                                case Some(details) => details
-                                case _ =>
-                                  getLogger.warn(s"Agency Record details not found for: ${arn.value}")
-                                  throw AgencyEmailNotFound(arn)
-                              }
-      agencyName = agencyRecordDetails.agencyDetails
-        .flatMap(_.agencyName)
-        .getOrElse(throw AgencyNameNotFound(arn))
-      agencyEmail = agencyRecordDetails.agencyDetails
-        .flatMap(_.agencyEmail)
-        .getOrElse(throw AgencyEmailNotFound(arn))
-
-      clientName <- clientNameService.getClientNameByService(clientId.value, service).map {
-                     case Some(name) => name
-                     case _ =>
-                       getLogger.warn(s"Name not found in Client Record for: ${clientId.value} to send email")
-                       throw new ClientNameNotFound
-                   }
+    ec: ExecutionContext): Future[DetailsForEmail] = {
+    val detailsForEmail = for {
+      agencyRecordDetails <- fromOptionF(desConnector.getAgencyDetails(arn), AgencyEmailNotFound(arn))
+      agencyName          <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyName), AgencyNameNotFound(arn))
+      agencyEmail         <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail), AgencyEmailNotFound(arn))
+      clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
+    detailsForEmail
+      .map { dfe =>
+        getLogger.warn("createDetailsForEmail sucessfull"); dfe
+      } //TODO Remove the logging once APB-5043 is done
+      .leftMap { ex =>
+        getLogger.warn(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
+      } //TODO Remove the logging once APB-5043 is done
+      .merge
+  }
 
-  def sendEmail(invitation: Invitation, templateId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
-    invitation.detailsForEmail match {
-      case Some(dfe) =>
-        for {
-          _ <- {
-            val emailInfo: EmailInformation =
-              emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
-            emailConnector.sendEmail(emailInfo)
-          }
-          _ <- invitationsRepository.removeEmailDetails(invitation)
-        } yield ()
-      case _ =>
-        Future.successful((): Unit)
-    }
+  implicit val lang: Lang = langs.availables.head
+
+  protected def getLogger: LoggerLike = Logger
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_accepted_authorisation_request")
@@ -95,6 +71,15 @@ class EmailService @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders = Seq("Expired-Invitation" -> s"${invitation.invitationId.value}"))
     sendEmail(invitation, "client_expired_authorisation_request")
   }
+
+  def sendEmail(invitation: Invitation, templateId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    invitation.detailsForEmail match {
+      case Some(dfe) =>
+        val emailInfo: EmailInformation = emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
+        emailConnector.sendEmail(emailInfo)
+      case _ =>
+        Future.successful((): Unit)
+    }
 
   private def emailInformation(templateId: String, agencyEmail: String, agencyName: String, clientName: String, invitation: Invitation) =
     EmailInformation(
