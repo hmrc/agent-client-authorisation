@@ -36,7 +36,6 @@ class EmailService @Inject()(
   desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
-  invitationsRepository: InvitationsRepository,
   messagesApi: MessagesApi)(implicit langs: Langs) {
 
   def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(

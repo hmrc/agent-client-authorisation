@@ -623,18 +623,18 @@ class InvitationsMongoRepositoryISpec
   "removeEmailDetails" should {
 
     val dfe = DetailsForEmail("abc@def.com", "Mr Agent", "Mr Client")
-    val itsaInvitation: Invitation = Invitation.createNew(
-      Arn(arn),
-      Some("personal"),
-      Service.MtdIt,
-      MtdItId("ABCD123456C"),
-      MtdItId("ABCD123456C"),
-      Some(dfe),
-      now.minusDays(1),
-      now.plusDays(21).toLocalDate,
-      None)
 
     "keep detailsForEmail from invitation if invitation is younger than the given date" in {
+      val itsaInvitation: Invitation = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD111111C"),
+        MtdItId("ABCD111111C"),
+        Some(dfe),
+        now.minusDays(1),
+        now.plusDays(21).toLocalDate,
+        None)
       await(repository.insert(itsaInvitation))
       val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       storedInvitation.detailsForEmail shouldBe Some(dfe)
@@ -644,6 +644,16 @@ class InvitationsMongoRepositoryISpec
     }
 
     "remove DetailsForEmail from invitation if invitation is older than the given date" in {
+      val itsaInvitation: Invitation = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD222222C"),
+        MtdItId("ABCD222222C"),
+        Some(dfe),
+        now.minusDays(1),
+        now.plusDays(21).toLocalDate,
+        None)
       await(repository.insert(itsaInvitation))
       val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       storedInvitation.detailsForEmail shouldBe Some(dfe)
