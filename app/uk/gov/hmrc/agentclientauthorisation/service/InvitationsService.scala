@@ -274,6 +274,11 @@ class InvitationsService @Inject()(
     else
       System.currentTimeMillis() - invitation.firstEvent().time.getMillis
 
+  def removePersonalDetails()(implicit ec: ExecutionContext): Future[Unit] = {
+    val infoRemovalDate = DateTime.now().minusSeconds(appConfig.removePersonalInfoExpiryDuration.toSeconds.toInt)
+    invitationsRepository.removePersonalDetails(infoRemovalDate)
+  }
+
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
 }

@@ -76,6 +76,8 @@ trait InvitationsRepository {
 
   def refreshInvitation(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Unit]
 
+  def removePersonalDetails(startDate: DateTime)(implicit ec: ExecutionContext): Future[Unit]
+
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
 
   def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]]
@@ -295,6 +297,16 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
             case None => Future.successful(())
           }
     } yield ()
+
+  def removePersonalDetails(earlierThanThis: DateTime)(implicit ec: ExecutionContext): Future[Unit] = {
+    val query = Json.obj(
+      InvitationRecordFormat.createdKey ->
+        Json.obj("$lte" -> JsNumber(earlierThanThis.getMillis)))
+    val update = Json.obj("$set" -> Json.obj(InvitationRecordFormat.detailsForEmailKey -> JsNull))
+    val updateColl = collection.update(true)
+    val updates = updateColl.element(query, update, false, true)
+    updates.map(op => updateColl.many(Iterable(op))).map(_ => ())
+  }
 
   override def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
     val query = Json.obj("arn" -> arn.value)

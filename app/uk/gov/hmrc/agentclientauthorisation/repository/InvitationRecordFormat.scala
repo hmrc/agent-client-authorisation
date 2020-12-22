@@ -73,6 +73,12 @@ object InvitationRecordFormat {
 
   implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
 
+  val arnClientStateKey = "_arnClientStateKey"
+  val arnClientServiceStateKey = "_arnClientServiceStateKey"
+  val statusKey = "_status"
+  val createdKey = "_created"
+  val detailsForEmailKey = "detailsForEmail"
+
   val reads: Reads[Invitation] = ((JsPath \ "id").read[BSONObjectID] and
     (JsPath \ "invitationId").read[InvitationId] and
     (JsPath \ "arn").read[Arn] and
@@ -83,17 +89,12 @@ object InvitationRecordFormat {
     (JsPath \ "suppliedClientId").read[String] and
     (JsPath \ "suppliedClientIdType").read[String] and
     (JsPath \ "expiryDate").readNullable[LocalDate] and
-    (JsPath \ "detailsForEmail").readNullable[DetailsForEmail] and
+    (JsPath \ detailsForEmailKey).readNullable[DetailsForEmail] and
     (JsPath \ "isRelationshipEnded").readWithDefault[Boolean](false) and
     (JsPath \ "relationshipEndedBy").readNullable[String] and
     (JsPath \ "clientActionUrl").readNullable[String] and
     (JsPath \ "origin").readNullable[String] and
     (JsPath \ "events").read[List[StatusChangeEvent]])(read _)
-
-  val arnClientStateKey = "_arnClientStateKey"
-  val arnClientServiceStateKey = "_arnClientServiceStateKey"
-  val statusKey = "_status"
-  val createdKey = "_created"
 
   val writes = new Writes[Invitation] {
     def writes(invitation: Invitation) =
@@ -108,7 +109,7 @@ object InvitationRecordFormat {
         "suppliedClientId"     -> invitation.suppliedClientId.value,
         "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
         "events"               -> invitation.events,
-        "detailsForEmail"      -> invitation.detailsForEmail,
+        detailsForEmailKey     -> invitation.detailsForEmail,
         "isRelationshipEnded"  -> invitation.isRelationshipEnded,
         "relationshipEndedBy"  -> invitation.relationshipEndedBy,
         "clientActionUrl"      -> invitation.clientActionUrl,

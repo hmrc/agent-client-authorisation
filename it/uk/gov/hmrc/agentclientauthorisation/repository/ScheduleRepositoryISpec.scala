@@ -41,18 +41,18 @@ class ScheduleRepositoryISpec
 
   "RecoveryRepository" should {
     "read and write" in {
-      val scheduleRecord =
-        ScheduleRecord("foo", DateTime.parse("2017-10-31T23:22:50.971Z"))
-      val newScheduleRecord =
-        ScheduleRecord("foo", DateTime.parse("2019-10-31T23:22:50.971Z"))
+      val scheduleRecord = ScheduleRecord("foo", DateTime.parse("2017-10-31T23:22:50.971Z"),SchedulerType.InvitationExpired)
+      val newScheduleRecord = ScheduleRecord("faa", DateTime.parse("2019-10-31T23:22:50.971Z"),SchedulerType.InvitationExpired)
+      val otherRecord = ScheduleRecord("fuu", DateTime.parse("2017-10-31T23:22:50.971Z"),SchedulerType.RemovePersonalInfo)
 
+      await(repo.insert(otherRecord))
       await(repo.insert(scheduleRecord))
 
-      await(repo.read) shouldBe scheduleRecord
+      await(repo.read(SchedulerType.InvitationExpired)) shouldBe scheduleRecord
 
-      await(repo.write("foo", DateTime.parse("2019-10-31T23:22:50.971Z")))
+      await(repo.write("faa", DateTime.parse("2019-10-31T23:22:50.971Z"),SchedulerType.InvitationExpired))
 
-      await(repo.findAll()).head shouldBe newScheduleRecord
+      await(repo.findAll()).filter(_.schedulerType == SchedulerType.InvitationExpired ).head shouldBe newScheduleRecord
     }
   }
 

@@ -23,7 +23,7 @@ import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository, SchedulerType}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
 import scala.concurrent.ExecutionContext
@@ -57,8 +57,9 @@ class InvitationsStatusUpdateScheduler @Inject()(
       taskActor,
       "<start invitation status update scheduler>"
     )
-  } else
+  } else {
     Logger(getClass).warn("invitation status update scheduler is not enabled.")
+  }
 
 }
 
@@ -71,8 +72,8 @@ class TaskActor(
 
   def receive = {
     case uid: String =>
-      scheduleRepository.read.flatMap {
-        case ScheduleRecord(recordUid, runAt) =>
+      scheduleRepository.read(SchedulerType.InvitationExpired).flatMap {
+        case ScheduleRecord(recordUid, runAt, _) =>
           val now = DateTime.now()
           if (uid == recordUid) {
             val newUid = UUID.randomUUID().toString
@@ -80,12 +81,10 @@ class TaskActor(
               .plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
             val delay = new Interval(now, nextRunAt).toPeriod(PeriodType.seconds()).getValue(0).seconds
             scheduleRepository
-              .write(newUid, nextRunAt)
+              .write(newUid, nextRunAt, SchedulerType.InvitationExpired)
               .map(_ => {
-                context.system.scheduler
-                  .scheduleOnce(delay, self, newUid)
-                Logger(getClass)
-                  .info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
+                context.system.scheduler.scheduleOnce(delay, self, newUid)
+                Logger(getClass).info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
                 invitationsService
                   .findAndUpdateExpiredInvitations()
                   .map(_ => analyticsService.reportExpiredInvitations())

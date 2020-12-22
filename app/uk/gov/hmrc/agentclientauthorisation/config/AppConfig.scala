@@ -62,6 +62,9 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val invitationExpiringDuration: Duration = servicesConfig.getDuration("invitation.expiryDuration")
 
+  val removePersonalInfoScheduleInterval = servicesConfig.getInt("remove-personal-info-scheduler.interval")
+  val removePersonalInfoExpiryDuration = servicesConfig.getDuration("remove-personal-info-scheduler.expiryDuration")
+
   val agentCacheSize = servicesConfig.getInt("agent.cache.size")
   val agentCacheExpires = servicesConfig.getDuration("agent.cache.expires")
   val agentCacheEnabled = servicesConfig.getBoolean("agent.cache.enabled")

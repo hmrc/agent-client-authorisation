@@ -36,6 +36,7 @@ class EmailService @Inject()(
   desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
+  invitationsRepository: InvitationsRepository,
   messagesApi: MessagesApi)(implicit langs: Langs) {
 
   def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(
@@ -47,14 +48,9 @@ class EmailService @Inject()(
       agencyEmail         <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail), AgencyEmailNotFound(arn))
       clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
-    detailsForEmail
-      .map { dfe =>
-        getLogger.warn("createDetailsForEmail sucessfull"); dfe
-      } //TODO Remove the logging once APB-5043 is done
-      .leftMap { ex =>
-        getLogger.warn(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
-      } //TODO Remove the logging once APB-5043 is done
-      .merge
+    detailsForEmail.leftMap { ex =>
+      getLogger.error(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
+    }.merge
   }
 
   implicit val lang: Lang = langs.availables.head
