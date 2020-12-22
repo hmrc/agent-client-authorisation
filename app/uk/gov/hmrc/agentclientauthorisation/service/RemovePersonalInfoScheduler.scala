@@ -77,7 +77,7 @@ class RemovePersonalInfoActor(scheduleRepository: ScheduleRepository, invitation
             }
         }
       } catch {
-        case ex: Exception => logger.error(s"Exception in RemovePersonalInfoActor: ${ex.getMessage}",ex)
+        case ex: Exception => logger.error(s"Exception in RemovePersonalInfoActor: ${ex.getMessage}", ex)
       }
       ()
   }

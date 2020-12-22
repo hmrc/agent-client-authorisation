@@ -49,11 +49,9 @@ class EmailService @Inject()(
       agencyEmail         <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail), AgencyEmailNotFound(arn))
       clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
-    detailsForEmail
-      .leftMap { ex =>
-        getLogger.error(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
-      }
-      .merge
+    detailsForEmail.leftMap { ex =>
+      getLogger.error(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
+    }.merge
   }
 
   implicit val lang: Lang = langs.availables.head

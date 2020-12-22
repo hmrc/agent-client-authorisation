@@ -304,7 +304,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
         Json.obj("$lte" -> JsNumber(earlierThanThis.getMillis)))
     val update = Json.obj("$set" -> Json.obj(InvitationRecordFormat.detailsForEmailKey -> JsNull))
     val updateColl = collection.update(true)
-    val updates =updateColl.element(query,update,false,true)
+    val updates = updateColl.element(query, update, false, true)
     updates.map(op => updateColl.many(Iterable(op))).map(_ => ())
   }
 
