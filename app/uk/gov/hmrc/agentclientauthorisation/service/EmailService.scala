@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConne
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
@@ -36,6 +37,7 @@ class EmailService @Inject()(
   desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
+  invitationsRepository: InvitationsRepository,
   messagesApi: MessagesApi)(implicit langs: Langs) {
 
   def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(
@@ -48,12 +50,9 @@ class EmailService @Inject()(
       clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
     detailsForEmail
-      .map { dfe =>
-        getLogger.warn("createDetailsForEmail sucessfull"); dfe
-      } //TODO Remove the logging once APB-5043 is done
       .leftMap { ex =>
-        getLogger.warn(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
-      } //TODO Remove the logging once APB-5043 is done
+        getLogger.error(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
+      }
       .merge
   }
 
