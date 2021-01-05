@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceR
     for {
       normalisedAgentName <- agencyName(arn)
       record              <- fetchOrCreateRecord(arn, normalisedAgentName)
-    } yield s"/invitations/$clientType/${record.uid}/$normalisedAgentName"
+    } yield s"/invitations/$clientType-taxes/manage-who-can-deal-with-HMRC-for-you/${record.uid}/$normalisedAgentName"
 
   def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {

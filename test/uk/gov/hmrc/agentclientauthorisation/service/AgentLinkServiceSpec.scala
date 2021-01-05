@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 
-      response shouldBe "/invitations/personal/ABCDEFGH/stan-lee"
+      response shouldBe "/invitations/personal-taxes/manage-who-can-deal-with-HMRC-for-you/ABCDEFGH/stan-lee"
     }
 
     "create new agent reference record and return a link" in {
@@ -94,7 +94,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 
-      response should fullyMatch regex "/invitations/personal/[A-Z0-9]{8}/stan-lee"
+      response should fullyMatch regex "/invitations/personal-taxes/manage-who-can-deal-with-HMRC-for-you/[A-Z0-9]{8}/stan-lee"
     }
   }
 }
