@@ -27,7 +27,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getTrustName(utr, 200, trustNameJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
 
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
@@ -39,7 +39,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getTrustName(utr, 400, invalidTrustJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
         Left(
@@ -53,7 +53,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getTrustName(utr, 404, notFoundJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
         Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))

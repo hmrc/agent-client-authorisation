@@ -28,7 +28,7 @@ case class SuspensionDetails(suspensionStatus: Boolean, regimes: Option[Set[Stri
     this.regimes.fold(Set.empty[String])(rs => if (rs.contains("ALL")) validSuspensionRegimes else rs)
 
   private val serviceToRegime: Map[Service, String] =
-    Map(MtdIt -> "ITSA", Vat -> "VATC", Trust -> "TRS", CapitalGains -> "CGT", PersonalIncomeRecord -> "PIR")
+    Map(MtdIt -> "ITSA", Vat -> "VATC", Trust -> "TRS", TrustNT -> "TRS", CapitalGains -> "CGT", PersonalIncomeRecord -> "PIR")
 
   def isRegimeSuspended(service: Service): Boolean = {
     val regime = serviceToRegime(service)

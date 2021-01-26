@@ -3,7 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import org.joda.time.{DateTime, LocalDate}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, Vat}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, TrustNT, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -25,6 +25,7 @@ trait TestDataSupport {
   val serviceVAT = "HMRC-MTD-VAT"
   val serviceCGT = "HMRC-CGT-PD"
   val serviceTERS = "HMRC-TERS-ORG"
+  val serviceTERSNT = "HMRC-TERSNT-ORG"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
@@ -49,6 +50,9 @@ trait TestDataSupport {
 
   val utr = Utr("2134514321")
   val utr2 = Utr("3087612352")
+
+  val urn = Urn("AAAAA2642468661")
+  val urn2 = Urn("AAAAA6426901067")
 
   val cgtRef = CgtRef("XMCGTP123456789")
   val cgtRef2 = CgtRef("XMCGTP987654321")
@@ -85,6 +89,7 @@ trait TestDataSupport {
   val irvClient = TestClient(personal, "John Smith", PersonalIncomeRecord, NinoType, "NI", nino, nino, nino2)
   val vatClient = TestClient(personal, "GDT", Vat, VrnType, "VRN", vrn, vrn, vrn2)
   val trustClient = TestClient(business, "Nelson James Trust", Trust, UtrType, "UTR", utr, utr, utr2)
+  val trustNTClient = TestClient(business, "Nelson George Trust", TrustNT, UrnType, "URN", urn, urn, urn2)
   val cgtClient = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
 

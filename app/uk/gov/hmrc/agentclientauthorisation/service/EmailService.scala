@@ -85,11 +85,12 @@ class EmailService @Inject()(
         "clientName" -> clientName,
         "expiryDate" -> DateUtils.displayDate(invitation.expiryDate),
         "service" -> (invitation.service.id match {
-          case HMRCMTDIT   => messagesApi(s"service.$HMRCMTDIT")
-          case HMRCPIR     => messagesApi(s"service.$HMRCPIR")
-          case HMRCMTDVAT  => messagesApi(s"service.$HMRCMTDVAT")
-          case HMRCTERSORG => messagesApi(s"service.$HMRCTERSORG")
-          case HMRCCGTPD   => messagesApi(s"service.$HMRCCGTPD")
+          case HMRCMTDIT     => messagesApi(s"service.$HMRCMTDIT")
+          case HMRCPIR       => messagesApi(s"service.$HMRCPIR")
+          case HMRCMTDVAT    => messagesApi(s"service.$HMRCMTDVAT")
+          case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
+          case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
+          case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
         })
       )
     )

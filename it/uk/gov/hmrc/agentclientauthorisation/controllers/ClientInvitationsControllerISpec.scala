@@ -45,6 +45,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       case PersonalIncomeRecord => "view their PAYE income record."
       case Vat => "submit their VAT returns through software."
       case Trust => "maintain a trust or an estate."
+      case TrustNT => "maintain a trust or an estate."
       case CapitalGains => "manage their Capital Gains Tax on UK property disposals."
     }
 
