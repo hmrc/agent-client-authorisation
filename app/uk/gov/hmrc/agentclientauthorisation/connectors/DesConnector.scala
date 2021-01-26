@@ -69,9 +69,9 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  private val environment: String = appConfig.desEnvironment
-  private val authorizationToken: String = appConfig.desAuthToken
-  private val baseUrl: String = appConfig.desBaseUrl
+  private val environment: String = if (appConfig.desIFEnabled) appConfig.ifEnvironment else appConfig.desEnvironment
+  private val authorizationToken: String = if (appConfig.desIFEnabled) appConfig.ifAuthToken else appConfig.desAuthToken
+  private val baseUrl: String = if (appConfig.desIFEnabled) appConfig.ifPlatformBaseUrl else appConfig.desBaseUrl
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
