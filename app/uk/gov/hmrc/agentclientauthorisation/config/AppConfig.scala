@@ -88,8 +88,3 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
   val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")
 }
-trait DesConfig {
-  val environment: String
-  val baseUrl: String
-  val authorisationToken: String
-}

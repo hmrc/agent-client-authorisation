@@ -28,7 +28,7 @@ import play.api.libs.json.Writes
 import play.utils.UriEncoding
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.config.{AppConfig, DesConfig}
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -68,15 +68,10 @@ trait DesConnector {
 class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: AgentCacheProvider, httpClient: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-  case object Des extends DesConfig {
-    val desEnvironment = ("des.environment")
-    val baseUrl = ("des")
-    val authorisationToken = ("des.authorization-token")
-    override val environment: String = desEnvironment
-  }
-  private val environment: String = if (appConfig.desIFEnabled) appConfig.ifEnvironment else appConfig.desEnvironment
-  private val authorizationToken: String = if (appConfig.desIFEnabled) appConfig.ifAuthToken else appConfig.desAuthToken
-  private val baseUrl: String = if (appConfig.desIFEnabled) appConfig.ifPlatformBaseUrl else appConfig.desBaseUrl
+
+  private val environment: String = appConfig.desEnvironment
+  private val authorizationToken: String = appConfig.desAuthToken
+  private val baseUrl: String = appConfig.desBaseUrl
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
@@ -108,9 +103,13 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
 
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
-    val url = s"$baseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
+    val desBaseUrl: String = if (appConfig.desIFEnabled) appConfig.ifPlatformBaseUrl else baseUrl
+    val env: String = if (appConfig.desIFEnabled) appConfig.ifEnvironment else environment
+    val authToken: String = if (appConfig.desIFEnabled) appConfig.ifAuthToken else authorizationToken
 
-    getWithDesHeaders("getTrustName", url).map { response =>
+    val url = s"$desBaseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
+
+    getWithDesHeaders("getTrustName", url, authToken, env).map { response =>
       response.status match {
         case status if is2xx(status) =>
           TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
@@ -257,12 +256,14 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
   private def desHeaders(implicit hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(s"Bearer $authorizationToken")), extraHeaders = hc.extraHeaders :+ "Environment" -> environment)
 
-  private def getWithDesHeaders(apiName: String, url: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+  private def getWithDesHeaders(apiName: String, url: String, authToken: String = authorizationToken, env: String = environment)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[HttpResponse] = {
     val desHeaderCarrier = hc.copy(
-      authorization = Some(Authorization(s"Bearer $authorizationToken")),
+      authorization = Some(Authorization(s"Bearer $authToken")),
       extraHeaders =
         hc.extraHeaders :+
-          "Environment"   -> environment :+
+          "Environment"   -> env :+
           "CorrelationId" -> UUID.randomUUID().toString
     )
     monitor(s"ConsumedAPI-DES-$apiName-GET") {
