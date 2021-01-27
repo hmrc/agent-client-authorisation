@@ -107,7 +107,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
-        getTrustName(utr, response = trustNameJson)
+        getTrustName(utr.value, response = trustNameJson)
         givenPlatformAnalyticsRequestSent(true)
 
         val requestBody = Json.parse(

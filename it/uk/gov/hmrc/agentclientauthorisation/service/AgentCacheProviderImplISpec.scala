@@ -5,6 +5,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsController, AgentServicesController, BaseISpec}
+//import uk.gov.hmrc.agentclientauthorisation.model.{TrustName, TrustResponse}
 
 class AgentCacheProviderImplISpec extends BaseISpec {
 
@@ -42,7 +43,48 @@ class AgentCacheProviderImplISpec extends BaseISpec {
 
     }
   }
+  "AgentCacheProvider.trustCache" should {
+    "work as expected" in {
+      val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
 
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      getTrustName(utr.value, 200, trustNameJson)
+
+      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${utr.value}")
+
+      val result1 = await(controller.getTrustName(utr.value)(request))
+      status(result1) shouldBe 200
+
+      val result2 = await(controller.getTrustName(utr.value)(request))
+      status(result2) shouldBe 200
+
+
+      //verify DES call is made only once
+      verify(1, getRequestedFor(urlEqualTo(s"/trusts/agent-known-fact-check/${utr.value}")))
+    }
+  }
+  "AgentCacheProvider.trustNTCache" should {
+    "work as expected" in {
+      val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
+
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      getTrustName(urn.value, 200, trustNameJson)
+
+      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${urn.value}")
+
+      val result1 = await(controller.getTrustName(urn.value)(request))
+      status(result1) shouldBe 200
+
+      val result2 = await(controller.getTrustName(urn.value)(request))
+      status(result2) shouldBe 200
+
+
+      //verify DES call is made only once
+      verify(1, getRequestedFor(urlEqualTo(s"/trusts/agent-known-fact-check/${urn.value}")))
+    }
+  }
   "AgentCacheProvider.agencyDetailsCache" should {
     "work as expected" in {
 

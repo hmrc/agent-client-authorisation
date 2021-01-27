@@ -73,7 +73,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     givenCitizenDetailsAreKnownFor(nino.value, "19122019")
     givenClientDetailsForVat(vrn)
     val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
-    getTrustName(utr, response = trustNameJson)
+    getTrustName(utr.value, response = trustNameJson)
+    getTrustName(urn.value, response = trustNameJson)
     getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
     getCgtSubscription(cgtRefBus, 200, Json.toJson(cgtSubscriptionBus).toString())
   }
