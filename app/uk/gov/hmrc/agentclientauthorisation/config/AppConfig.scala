@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,4 +82,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaClientTypeIndex: Int = servicesConfig.getInt("google-analytics.clientTypeIndex")
   val gaInvitationIdIndex: Int = servicesConfig.getInt("google-analytics.invitationIdIndex")
   val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
+
+  val sendEmailPriorToExpireEnabled: Boolean = servicesConfig.getBoolean("invitation-about-to-expire-warning-email.enabled")
+  val sendEmailPriorToExpireDays: Int = servicesConfig.getInt("invitation-about-to-expire-warning-email.daysPrior")
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,4 +281,15 @@ class InvitationsService @Inject()(
 
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
+
+  def sendEmailForInvitationsAboutToExpire()(implicit ec: ExecutionContext): Future[Unit] = {
+    monitor("Repository-Find-invitations-about-to-expire") {
+      invitationsRepository
+        .findInvitationsBy(status = Some(Pending))
+        .map(invs => invs.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
+          .groupBy(_.arn).map{
+          case (k,v) => println(s"got an arn of $k and a size of ${v.size}")
+        })
+      }
+  }
 }
