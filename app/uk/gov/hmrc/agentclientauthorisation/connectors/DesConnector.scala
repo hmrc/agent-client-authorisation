@@ -28,7 +28,7 @@ import play.api.libs.json.Writes
 import play.utils.UriEncoding
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.config.{AppConfig, DesConfig}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -68,7 +68,12 @@ trait DesConnector {
 class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: AgentCacheProvider, httpClient: HttpClient, metrics: Metrics)
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-
+  case object Des extends DesConfig {
+    val desEnvironment = ("des.environment")
+    val baseUrl = ("des")
+    val authorisationToken = ("des.authorization-token")
+    override val environment: String = desEnvironment
+  }
   private val environment: String = if (appConfig.desIFEnabled) appConfig.ifEnvironment else appConfig.desEnvironment
   private val authorizationToken: String = if (appConfig.desIFEnabled) appConfig.ifAuthToken else appConfig.desAuthToken
   private val baseUrl: String = if (appConfig.desIFEnabled) appConfig.ifPlatformBaseUrl else appConfig.desBaseUrl

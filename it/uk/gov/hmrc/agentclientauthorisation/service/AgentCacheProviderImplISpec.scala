@@ -66,7 +66,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
   }
   "AgentCacheProvider.trustNTCache" should {
     "work as expected" in {
-      val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
+      val trustNameJson = """{"trustDetails": {"trustName": "James Nelson Trust"}}"""
 
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
