@@ -38,6 +38,7 @@ case object EnrolmentMtdIt extends TypeOfEnrolment("HMRC-MTD-IT", "MTDITID", Mtd
 case object EnrolmentMtdVat extends TypeOfEnrolment("HMRC-MTD-VAT", "VRN", Vrn.apply)
 case object EnrolmentNino extends TypeOfEnrolment("HMRC-NI", "NINO", Nino.apply)
 case object EnrolmentTrust extends TypeOfEnrolment("HMRC-TERS-ORG", "SAUTR", Utr.apply)
+case object EnrolmentTrustNT extends TypeOfEnrolment("HMRC-TERSNT-ORG", "URN", Urn.apply)
 case object EnrolmentCgt extends TypeOfEnrolment("HMRC-CGT-PD", "CGTPDRef", CgtRef.apply)
 
 object TypeOfEnrolment {
@@ -48,6 +49,7 @@ object TypeOfEnrolment {
     case Vrn(_)     => EnrolmentMtdVat
     case Arn(_)     => EnrolmentAsAgent
     case Utr(_)     => EnrolmentTrust
+    case Urn(_)     => EnrolmentTrustNT
     case CgtRef(_)  => EnrolmentCgt
     case _          => throw new IllegalArgumentException(s"Unhandled TaxIdentifier type ${identifier.getClass.getName}")
   }

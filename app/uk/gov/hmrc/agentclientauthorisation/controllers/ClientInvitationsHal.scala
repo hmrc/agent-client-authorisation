@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Urn, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -39,6 +39,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitation("VRN", invitation.clientId.value, invitation.invitationId)
       case Trust =>
         routes.ClientInvitationsController.getInvitation("UTR", invitation.clientId.value, invitation.invitationId)
+      case TrustNT =>
+        routes.ClientInvitationsController.getInvitation("URN", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
         routes.ClientInvitationsController.getInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
     }
@@ -56,6 +58,9 @@ trait ClientInvitationsHal {
       case Trust =>
         routes.ClientInvitationsController
           .acceptInvitation("UTR", invitation.clientId.value, invitation.invitationId)
+      case TrustNT =>
+        routes.ClientInvitationsController
+          .acceptInvitation("URN", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
         routes.ClientInvitationsController
           .acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
@@ -72,6 +77,9 @@ trait ClientInvitationsHal {
       case Trust =>
         routes.ClientInvitationsController
           .rejectInvitation("UTR", invitation.clientId.value, invitation.invitationId)
+      case TrustNT =>
+        routes.ClientInvitationsController
+          .rejectInvitation("URN", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
         routes.ClientInvitationsController
           .rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
@@ -95,6 +103,8 @@ trait ClientInvitationsHal {
         case Vat => routes.ClientInvitationsController.getInvitation("VRN", i.clientId.value, i.invitationId)
         case Trust =>
           routes.ClientInvitationsController.getInvitation("UTR", i.clientId.value, i.invitationId)
+        case TrustNT =>
+          routes.ClientInvitationsController.getInvitation("URN", i.clientId.value, i.invitationId)
         case CapitalGains =>
           routes.ClientInvitationsController.getInvitation("CGTPDRef", i.clientId.value, i.invitationId)
       }
@@ -113,6 +123,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitations("VRN", clientId.value, status)
       case clientId @ ClientIdentifier(Utr(_)) =>
         routes.ClientInvitationsController.getInvitations("UTR", clientId.value, status)
+      case clientId @ ClientIdentifier(Urn(_)) =>
+        routes.ClientInvitationsController.getInvitations("URN", clientId.value, status)
       case clientId @ ClientIdentifier(CgtRef(_)) =>
         routes.ClientInvitationsController.getInvitations("CGTPDRef", clientId.value, status)
       case other =>

@@ -25,9 +25,9 @@ class AgentGetTrustNameISpec extends BaseISpec {
     "return success response for a given utr" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      getTrustName(utr, 200, trustNameJson)
+      getTrustName(utr.value, 200, trustNameJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
 
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
@@ -37,9 +37,9 @@ class AgentGetTrustNameISpec extends BaseISpec {
     "return success response if trust is with in INVALID_TRUST_STATE for a given utr" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      getTrustName(utr, 400, invalidTrustJson)
+      getTrustName(utr.value, 400, invalidTrustJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
         Left(
@@ -51,9 +51,58 @@ class AgentGetTrustNameISpec extends BaseISpec {
     "handles 404 response from DES" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      getTrustName(utr, 404, notFoundJson)
+      getTrustName(utr.value, 404, notFoundJson)
 
-      val result = controller.getTrustName(utr)(request)
+      val result = controller.getTrustName(utr.value)(request)
+      status(result) shouldBe 200
+      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+        Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))
+    }
+  }
+  "GET /known-facts/organisations/trust/:urn" should {
+
+    val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
+
+    val invalidTrustJson =
+      """{"code": "INVALID_TRUST_STATE","reason": "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible."}"""
+
+    val notFoundJson =
+      """{"code": "RESOURCE_NOT_FOUND","reason": "The remote endpoint has indicated that the trust is not found."}"""
+
+    val request = FakeRequest("GET", s"/known-facts/organisations/trust/${urn.value}")
+
+    "return success response for a given urn" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      getTrustName(urn.value, 200, trustNameJson)
+
+      val result = controller.getTrustName(urn.value)(request)
+      status(result) shouldBe 200
+
+      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
+
+    }
+
+    "return success response if trust is with in INVALID_TRUST_STATE for a given urn" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      getTrustName(urn.value, 400, invalidTrustJson)
+
+      val result = controller.getTrustName(urn.value)(request)
+      status(result) shouldBe 200
+      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+        Left(
+          InvalidTrust(
+            "INVALID_TRUST_STATE",
+            "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible.")))
+    }
+
+    "handles 404 response from DES" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      getTrustName(urn.value, 404, notFoundJson)
+
+      val result = controller.getTrustName(urn.value)(request)
       status(result) shouldBe 200
       jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
         Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))

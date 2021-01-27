@@ -73,6 +73,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     case _: Vrn               => "vrn"
     case _: Nino | _: MtdItId => "ni"
     case _: Utr               => "utr"
+    case _: Urn               => "urn"
     case _: CgtRef            => "cgtRef"
     case _                    => throw new IllegalStateException(s"Unsupported ClientIdType")
   }

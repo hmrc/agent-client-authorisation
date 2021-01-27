@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, Service, VatCustomerDetails}
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
@@ -41,12 +41,13 @@ class ClientNameService @Inject()(
 
   def getClientNameByService(clientId: String, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     service.id match {
-      case HMRCMTDIT   => getItsaTradingName(MtdItId(clientId))
-      case HMRCPIR     => getCitizenName(Nino(clientId))
-      case HMRCMTDVAT  => getVatName(Vrn(clientId))
-      case HMRCTERSORG => getTrustName(Utr(clientId))
-      case HMRCCGTPD   => getCgtName(CgtRef(clientId))
-      case _           => Future successful None
+      case HMRCMTDIT     => getItsaTradingName(MtdItId(clientId))
+      case HMRCPIR       => getCitizenName(Nino(clientId))
+      case HMRCMTDVAT    => getVatName(Vrn(clientId))
+      case HMRCTERSORG   => getTrustName(clientId)
+      case HMRCTERSNTORG => getTrustName(clientId)
+      case HMRCCGTPD     => getCgtName(CgtRef(clientId))
+      case _             => Future successful None
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
@@ -84,13 +85,13 @@ class ClientNameService @Inject()(
         case _: NotFoundException => None
       }
 
-  def getTrustName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    trustCache(utr.value) {
-      desConnector.getTrustName(utr)
+  def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    trustCache(trustTaxIdentifier) {
+      desConnector.getTrustName(trustTaxIdentifier)
     }.map(_.response).map {
       case Right(trustName) => Some(trustName.name)
       case Left(invalidTrust) =>
-        logger.warn(s"error during retrieving trust name for utr: ${utr.value} , error: $invalidTrust")
+        logger.warn(s"error during retrieving trust name for: $trustTaxIdentifier , error: $invalidTrust")
         None
     }
 

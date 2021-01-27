@@ -147,6 +147,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         Right((PersonalIncomeRecord, Nino(clientId)))
       case "VRN" if VrnType.isValid(clientId)         => Right((Vat, Vrn(clientId)))
       case "UTR" if UtrType.isValid(clientId)         => Right((Trust, Utr(clientId)))
+      case "URN" if UrnType.isValid(clientId)         => Right((Trust, Urn(clientId)))
       case "CGTPDRef" if CgtRefType.isValid(clientId) => Right((CapitalGains, CgtRef(clientId)))
       case e =>
         Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
