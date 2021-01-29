@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.modules
 
 import com.google.inject.AbstractModule
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsStatusUpdateScheduler, RemovePersonalInfoScheduler}
+import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsStatusUpdateScheduler, RoutineJobScheduler}
 
 class InvitationsStatusUpdateModule extends AbstractModule {
   override def configure(): Unit = {
     bind(classOf[InvitationsStatusUpdateScheduler]).asEagerSingleton()
-    bind(classOf[RemovePersonalInfoScheduler]).asEagerSingleton()
+    bind(classOf[RoutineJobScheduler]).asEagerSingleton()
   }
 }

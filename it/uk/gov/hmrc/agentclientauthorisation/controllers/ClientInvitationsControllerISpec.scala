@@ -9,6 +9,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
@@ -37,23 +38,24 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   def createEmailInfo(dfe: DetailsForEmail,
+                      expiryDate: String,
                       templateId: String,
                       service: Service): EmailInformation = {
 
     val serviceText = service match {
-      case MtdIt => "send their Income Tax updates through software."
+      case MtdIt => "manage their Income Tax."
       case PersonalIncomeRecord => "view their PAYE income record."
-      case Vat => "submit their VAT returns through software."
+      case Vat => "manage their VAT."
       case Trust => "maintain a trust or an estate."
       case TrustNT => "maintain a trust or an estate."
-      case CapitalGains => "manage their Capital Gains Tax on UK property disposals."
+      case CapitalGains => "manage their Capital Gains Tax on UK property account."
     }
 
     EmailInformation(Seq(dfe.agencyEmail),
       templateId,
       Map("agencyName"   -> s"${dfe.agencyName}",
         "clientName"   -> s"${dfe.clientName}",
-        "expiryPeriod" -> "21 days",
+        "expiryDate" -> expiryDate,
         "service"      -> s"$serviceText"))
   }
 
@@ -101,12 +103,12 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
     s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
+      val invitation: Invitation = await(createInvitation(arn, client))
       givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
-      givenEmailSent(createEmailInfo(dfe(client.clientName), "client_accepted_authorisation_request", client.service))
+      givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
 
-      val invitation: Invitation = await(createInvitation(arn, client))
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
       val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Accepted))(getResult))
@@ -164,9 +166,10 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
     s"reject via $journey ${client.urlIdentifier} ${client.service.id} invitation for ${client.clientId.value} as expected with ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
-        givenEmailSent(createEmailInfo(dfe(client.clientName), "client_rejected_authorisation_request", client.service))
-        givenPlatformAnalyticsRequestSent(true)
       val invitation: Invitation = await(createInvitation(arn, client))
+      givenEmailSent(createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_rejected_authorisation_request", client.service))
+        givenPlatformAnalyticsRequestSent(true)
+
         val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
       val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Rejected))(getResult))

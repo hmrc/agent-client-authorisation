@@ -61,7 +61,7 @@ object Service {
 
   case object CapitalGains extends Service("HMRC-CGT-PD", 'E', "HMRC-CGT-PD", CgtRefType, CgtRefType, true)
 
-  val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, Trust, CapitalGains)
+  val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, Trust, TrustNT, CapitalGains)
 
   def findById(id: String): Option[Service] = supportedServices.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))

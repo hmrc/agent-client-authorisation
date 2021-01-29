@@ -282,4 +282,20 @@ class InvitationsService @Inject()(
 
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
+
+  def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] =
+    monitor("Repository-Find-invitations-about-to-expire") {
+      invitationsRepository
+        .findInvitationsBy(status = Some(Pending))
+        .map(
+          _.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
+        )
+        .map {
+          _.groupBy(_.arn).map {
+            case (_, list) =>
+              emailService.sendWarningToExpire(list)
+          }
+        }
+        .map(_ => ())
+    }
 }
