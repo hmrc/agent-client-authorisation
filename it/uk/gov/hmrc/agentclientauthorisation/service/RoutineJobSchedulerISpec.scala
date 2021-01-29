@@ -35,7 +35,7 @@ class RoutineJobSchedulerISpec extends UnitSpec with MongoAppAndStubs with Mongo
   override implicit val patienceConfig =
     PatienceConfig(scaled(Span(60, Seconds)), scaled(Span(5, Seconds)))
 
-  "RoutineJobScheduler" should {
+  "RoutineJobScheduler - remove personal info job" should {
 
     val arn = Arn("AARN0000057")
 
@@ -84,14 +84,14 @@ class RoutineJobSchedulerISpec extends UnitSpec with MongoAppAndStubs with Mongo
     }
   }
 
-  "Routine job scheduler email" should {
+  "RoutineJobScheduler - send warning email job" should {
 
-    val arn1 = Arn("AARN0876516")
-    val arn2 = Arn("CARN2752751")
-    val arn3 = Arn("EARN2086970")
+    "send email to agents for invitations that are about to expire" in {
 
+      val arn1 = Arn("AARN0876516")
+      val arn2 = Arn("CARN2752751")
+      val arn3 = Arn("EARN2086970")
 
-    "send email to agents for invitations that are about to expire when the feature is enabled" in {
       val arn = Array(arn1, arn2, arn3)
       val now = DateTime.now()
       val expireIn5DaysMtdIt: Seq[Invitation] = (1 to 3).map(

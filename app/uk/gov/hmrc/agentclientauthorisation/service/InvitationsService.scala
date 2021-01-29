@@ -287,11 +287,11 @@ class InvitationsService @Inject()(
     monitor("Repository-Find-invitations-about-to-expire") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
-        .map(invs => {
-          invs.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
-        })
-        .map { invs =>
-          invs.groupBy(_.arn).map {
+        .map(
+          _.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
+        )
+        .map {
+          _.groupBy(_.arn).map {
             case (_, list) =>
               emailService.sendWarningToExpire(list)
           }
