@@ -48,7 +48,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)
 
   val invitationLinkRegex: String => String =
-    (clientType: String) => s"(http:\\/\\/localhost:9448\\/invitations\\/${clientType}\\/[A-Z0-9]{8}\\/my-agency)"
+    (clientType: String) => s"(http:\\/\\/localhost:9448\\/invitations\\/${clientType}-taxes\\/manage-who-can-deal-with-HMRC-for-you\\/[A-Z0-9]{8}\\/my-agency)"
 
   val testClients = List(
     itsaClient,

@@ -120,6 +120,7 @@ class InvitationsService @Inject()(
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
       case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
+      case Service.TrustNT              => relationshipsConnector.createTrustRelationship(invitation)
       case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
     }
 
@@ -282,14 +283,19 @@ class InvitationsService @Inject()(
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
 
-  def sendEmailForInvitationsAboutToExpire()(implicit ec: ExecutionContext): Future[Unit] = {
+  def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] =
     monitor("Repository-Find-invitations-about-to-expire") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
-        .map(invs => invs.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
-          .groupBy(_.arn).map{
-          case (k,v) => println(s"got an arn of $k and a size of ${v.size}")
+        .map(invs => {
+          invs.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
         })
-      }
-  }
+        .map { invs =>
+          invs.groupBy(_.arn).map {
+            case (_, list) =>
+              emailService.sendWarningToExpire(list)
+          }
+        }
+        .map(_ => ())
+    }
 }

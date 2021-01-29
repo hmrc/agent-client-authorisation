@@ -239,10 +239,10 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getTrustName(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
+  def getTrustName(trustTaxIdentifier: String): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      trustCache(utr.value) {
-        desConnector.getTrustName(utr)
+      trustCache(trustTaxIdentifier) {
+        desConnector.getTrustName(trustTaxIdentifier)
       }.map(r => Ok(Json.toJson(r)))
     }
   }

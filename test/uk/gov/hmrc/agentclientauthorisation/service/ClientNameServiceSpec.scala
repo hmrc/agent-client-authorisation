@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,10 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
   val vrn = Vrn("555219930")
+
   val utr = Utr("2134514321")
+  val urn = Utr("AAAAA2642468661")
+
   val cgtRef = CgtRef("XMCGTP123456789")
   implicit val hc = HeaderCarrier()
 
@@ -122,14 +125,24 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   }
 
   "getTrustName" should {
-    "get trust name from trust details" in {
+    "get trust name from trust details when passed a utr" in {
       val trustDetailsResponse = TrustResponse(Right(TrustName("Trusted")))
       (mockDesConnector
-        .getTrustName(_: Utr)(_: HeaderCarrier, _: ExecutionContext))
-        .expects(utr, *, *)
+        .getTrustName(_: String)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(utr.value, *, *)
         .returns(Future(trustDetailsResponse))
 
       val result = await(clientNameService.getClientNameByService(utr.value, Service.Trust))
+      result shouldBe Some("Trusted")
+    }
+    "get trust name from trust details when passed a urn" in {
+      val trustDetailsResponse = TrustResponse(Right(TrustName("Trusted")))
+      (mockDesConnector
+        .getTrustName(_: String)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(urn.value, *, *)
+        .returns(Future(trustDetailsResponse))
+
+      val result = await(clientNameService.getClientNameByService(urn.value, Service.Trust))
       result shouldBe Some("Trusted")
     }
   }

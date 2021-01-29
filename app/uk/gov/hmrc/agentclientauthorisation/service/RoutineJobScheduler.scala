@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorSystem, Props}
-import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository, SchedulerType}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Random
 
 @Singleton
-class RemovePersonalInfoScheduler @Inject()(
+class RoutineJobScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
   actorSystem: ActorSystem,
@@ -41,12 +40,14 @@ class RemovePersonalInfoScheduler @Inject()(
 
   val interval = appConfig.removePersonalInfoScheduleInterval
 
-  val removePersonalInfoActor = actorSystem.actorOf(Props { new RemovePersonalInfoActor(scheduleRepository, invitationsService, interval) })
+  val removePersonalInfoActor = actorSystem.actorOf(Props {
+    new RoutineScheduledJobActor(scheduleRepository, invitationsService, interval)
+  })
   actorSystem.scheduler.scheduleOnce(2.seconds, removePersonalInfoActor, "<Initial RemovePersonalInfoActor message>")
 
 }
 
-class RemovePersonalInfoActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
+class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
   implicit ec: ExecutionContext)
     extends Actor with Logging {
 
@@ -65,8 +66,11 @@ class RemovePersonalInfoActor(scheduleRepository: ScheduleRepository, invitation
                 .write(newUid, nextRunAt, SchedulerType.RemovePersonalInfo)
                 .map { _ =>
                   context.system.scheduler.scheduleOnce(delay, self, newUid)
-                  logger.info(s"Starting to remove personal info job, next job is scheduled at $nextRunAt")
-                  invitationsService.removePersonalDetails()
+                  logger.info(s"Starting routine scheduled job, next job is scheduled at $nextRunAt")
+                  for {
+                    _ <- invitationsService.prepareAndSendWarningEmail()
+                    _ <- invitationsService.removePersonalDetails()
+                  } yield (logger info ("routine scheduled job completed"))
                 }
             } else { //There are several instances of this service running
               val dateTime = if (runAt.isBefore(now)) now else runAt

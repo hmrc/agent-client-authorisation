@@ -39,6 +39,10 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val desEnvironment = getConf("des.environment")
   val desAuthToken = getConf("des.authorization-token")
 
+  val ifPlatformBaseUrl = baseUrl("if")
+  val ifEnvironment = getConf("if.environment")
+  val ifAuthToken = getConf("if.authorization-token")
+
   val serviceLocatorBaseUrl = baseUrl("service-locator")
 
   val relationshipsBaseUrl = baseUrl("relationships")
@@ -83,6 +87,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaInvitationIdIndex: Int = servicesConfig.getInt("google-analytics.invitationIdIndex")
   val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
 
-  val sendEmailPriorToExpireEnabled: Boolean = servicesConfig.getBoolean("invitation-about-to-expire-warning-email.enabled")
   val sendEmailPriorToExpireDays: Int = servicesConfig.getInt("invitation-about-to-expire-warning-email.daysPrior")
+  val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")
 }

@@ -97,6 +97,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       case "MTDITID"  => MtdItIdType
       case "VRN"      => VrnType
       case "UTR"      => UtrType
+      case "URN"      => UrnType
       case "CGTPDRef" => CgtRefType
     }
 

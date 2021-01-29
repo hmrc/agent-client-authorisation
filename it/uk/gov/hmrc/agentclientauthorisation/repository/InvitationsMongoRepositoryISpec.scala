@@ -386,7 +386,7 @@ class InvitationsMongoRepositoryISpec
 
     "return elements with the specified status" in {
 
-      val invitations = addInvitations(now, invitationITSA, invitationITSA)
+      val invitations = addInvitations(now,  invitationIRV, invitationITSA)
 
       update(invitations.head, Accepted, DateTime.now())
 
