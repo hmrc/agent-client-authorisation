@@ -268,6 +268,22 @@ trait DesStubs {
             .withBody(response)))
   }
 
+  def getTrustNameIF(trustTaxIdentifier: TrustTaxIdentifier, status: Int = 200, response: String) = {
+    val identifierType = trustTaxIdentifier match {
+      case Utr(_) => "UTR"
+      case Urn(_) => "URN"
+    }
+    stubFor(
+      get(urlEqualTo(s"/trusts/agent-known-fact-check/$identifierType/${trustTaxIdentifier.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withStatus(status)
+            .withBody(response)))
+  }
+
   def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/subscriptions/CGT/ZCGT/${cgtRef.value}"))

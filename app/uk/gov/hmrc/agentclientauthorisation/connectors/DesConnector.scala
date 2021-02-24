@@ -103,11 +103,10 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
 
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
-    val desBaseUrl: String = if (appConfig.desIFEnabled) appConfig.ifPlatformBaseUrl else baseUrl
     val env: String = if (appConfig.desIFEnabled) appConfig.ifEnvironment else environment
     val authToken: String = if (appConfig.desIFEnabled) appConfig.ifAuthToken else authorizationToken
 
-    val url = s"$desBaseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
+    val url = getTrustNameUrl(trustTaxIdentifier, appConfig.desIFEnabled)
 
     getWithDesHeaders("getTrustName", url, authToken, env).map { response =>
       response.status match {
@@ -282,4 +281,10 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
       case _ =>
         throw new Exception(s"The client identifier $agentId is not supported.")
     }
+
+  private def getTrustNameUrl(trustTaxIdentifier: String, ifEnabled: Boolean): String =
+    if (!ifEnabled) s"$baseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
+    else if (Utr.isValid(trustTaxIdentifier))
+      s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
+    else s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
 }
