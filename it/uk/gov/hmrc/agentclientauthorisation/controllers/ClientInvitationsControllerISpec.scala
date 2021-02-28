@@ -104,7 +104,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
-      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else if(client.urlIdentifier == "URN") "URN" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)

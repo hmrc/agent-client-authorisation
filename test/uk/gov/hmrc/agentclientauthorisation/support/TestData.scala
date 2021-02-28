@@ -33,12 +33,22 @@ trait TestData {
 
   val mtdSaPendingInvitationDbId: BSONObjectID = BSONObjectID.generate
   val mtdSaAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
+
+  val trustPendingInvitationDbId: BSONObjectID = BSONObjectID.generate
+  val trustAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
+
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
   val mtdSaPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
   val mtdSaAcceptedInvitationId: InvitationId =
     InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
+
+  val trustPendingInvitationId: InvitationId =
+    InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-01"))('B')
+  val trustAcceptedInvitationId: InvitationId =
+    InvitationId.create(arn.value, utr.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-02"))('B')
+
   val otherRegimePendingInvitationId: InvitationId =
     InvitationId.create(arn.value, mtdItId1.value, "mtd-other", DateTime.parse("2001-01-03"))('A')
 
@@ -81,6 +91,54 @@ trait TestData {
       Service.PersonalIncomeRecord,
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
+      now().toLocalDate.plusDays(100),
+      None,
+      false,
+      None,
+      None,
+      events = List(StatusChangeEvent(now(), Pending))
+    )
+  )
+
+  val trustInvitations = List(
+    Invitation(
+      trustPendingInvitationDbId,
+      trustPendingInvitationId,
+      arn,
+      Some("business"),
+      Service.Trust,
+      utr,
+      ClientIdentifier(utr.value, "2134514321"),
+      now().toLocalDate.plusDays(100),
+      None,
+      false,
+      None,
+      None,
+      events = List(StatusChangeEvent(now(), Pending))
+    ),
+    Invitation(
+      trustAcceptedInvitationDbId,
+      trustAcceptedInvitationId,
+      arn,
+      Some("business"),
+      Service.Trust,
+      utr,
+      ClientIdentifier(utr.value, "2134514321"),
+      now().toLocalDate.plusDays(100),
+      None,
+      false,
+      None,
+      None,
+      events = List(StatusChangeEvent(now(), Accepted))
+    ),
+    Invitation(
+      otherRegimePendingInvitationDbId,
+      otherRegimePendingInvitationId,
+      arn,
+      Some("business"),
+      Service.PersonalIncomeRecord,
+      utr,
+      ClientIdentifier(utr.value, "2134514321"),
       now().toLocalDate.plusDays(100),
       None,
       false,
