@@ -42,20 +42,4 @@ class InvitationSpec extends UnitSpec {
       (json \ "lastUpdated").as[String] shouldBe lastUpdated
     }
   }
-  "invitation requests for Trusts" should {
-    "go through these stages" in {
-      val created = "2010-01-01T01:00:23.456Z"
-      val lastUpdated = "2010-01-02T04:00:23.456Z"
-
-      val invitation = TestConstants.trustInvitation.copy(
-        invitationId = InvitationId("ABBBBCCCDDDCC"),
-        arn = Arn("myAgency"),
-        service =Service.Trust,
-        events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
-      )
-      val json = toJson(invitation)
-      (json \ "created").as[String] shouldBe created
-      (json \ "lastUpdated").as[String] shouldBe lastUpdated
-    }
-  }
 }

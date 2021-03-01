@@ -47,18 +47,6 @@ object TestConstants {
 
   val TrustService = "HMRC-TERS-ORG"
 
-  val trustInvitation = Invitation(
-    invitationId = InvitationId("ABBBBBBBBBBDD"),
-    arn = Arn("98765"),
-    clientType = Some("Business"),
-    service = Service.Trust,
-    clientId = ClientIdentifier(Utr("2134514321")),
-    suppliedClientId = ClientIdentifier(Utr("2134514321")),
-    expiryDate = LocalDate.now().plusDays(14),
-    detailsForEmail = None,
-    clientActionUrl = None,
-    events = List(StatusChangeEvent(DateTime.now(), Pending)))
-
 
   val defaultInvitation = Invitation(
     invitationId = InvitationId("ABBBBBBBBBBCC"),
