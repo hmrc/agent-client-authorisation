@@ -35,7 +35,6 @@ class InvitationSpec extends UnitSpec {
         service = Service.MtdIt,
         events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
       )
-
       val json = toJson(invitation)
 
       (json \ "created").as[String] shouldBe created
