@@ -49,11 +49,11 @@ trait TestData {
 
   val trustPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-01"))('D')
-    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-02"))('F')
+
 
   val trustAcceptedInvitationId: InvitationId =
     InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-02"))('D')
-    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-01"))('F')
+
 
   val trustNTPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-01"))('F')
