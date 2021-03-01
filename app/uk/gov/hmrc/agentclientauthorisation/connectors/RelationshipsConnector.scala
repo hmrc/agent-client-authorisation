@@ -26,7 +26,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpClient
@@ -128,9 +128,14 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     }
 
   private def trustRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
-      invitation.clientId.value)}"
-
+    invitation.service.enrolmentKey match {
+      case Service.HMRCTERSORG =>
+        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
+          invitation.clientId.value)}"
+      case Service.HMRCTERSNTORG =>
+        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERSNT-ORG/client/URN/${encodePathSegment(
+          invitation.clientId.value)}"
+    }
   private def mtdItRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(
       invitation.clientId.value)}"

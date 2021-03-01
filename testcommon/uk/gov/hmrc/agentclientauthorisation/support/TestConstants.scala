@@ -35,6 +35,8 @@ object TestConstants {
   val utr = Utr("2134514321")
   val utr2 = Utr("3134514321")
 
+  val urn = Urn("TRUSTXX10000100")
+
   val arn = "ABCDEF123456"
 
   val invitationIds = Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
@@ -42,6 +44,21 @@ object TestConstants {
   val agentCode = "12345"
 
   val MtdItService = "HMRC-MTD-IT"
+
+  val TrustService = "HMRC-TERS-ORG"
+
+  val trustInvitation = Invitation(
+    invitationId = InvitationId("ABBBBBBBBBBDD"),
+    arn = Arn("98765"),
+    clientType = Some("Business"),
+    service = Service.Trust,
+    clientId = ClientIdentifier(Utr("2134514321")),
+    suppliedClientId = ClientIdentifier(Utr("2134514321")),
+    expiryDate = LocalDate.now().plusDays(14),
+    detailsForEmail = None,
+    clientActionUrl = None,
+    events = List(StatusChangeEvent(DateTime.now(), Pending)))
+
 
   val defaultInvitation = Invitation(
     invitationId = InvitationId("ABBBBBBBBBBCC"),
