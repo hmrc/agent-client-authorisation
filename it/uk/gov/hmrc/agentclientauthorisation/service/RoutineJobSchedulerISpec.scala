@@ -162,6 +162,8 @@ class RoutineJobSchedulerISpec extends UnitSpec with MongoAppAndStubs with Mongo
         remainingInvitations.length shouldBe 9
         remainingInvitations.filter(_.detailsForEmail.isEmpty).length shouldBe 0
         remainingInvitations.filter(_.detailsForEmail.isDefined).length shouldBe 9
+      }
+      eventually {
         verify(
           3,
           postRequestedFor(urlPathEqualTo("/hmrc/email"))
