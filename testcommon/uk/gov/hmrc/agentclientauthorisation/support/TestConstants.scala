@@ -47,8 +47,6 @@ object TestConstants {
 
   val TrustService = "HMRC-TERS-ORG"
 
-  val TrustNTService = "HMRC-TERSNT-ORG"
-
   val defaultInvitation = Invitation(
     invitationId = InvitationId("ABBBBBBBBBBCC"),
     arn = Arn("98765"),
