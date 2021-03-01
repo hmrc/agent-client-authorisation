@@ -35,6 +35,8 @@ object TestConstants {
   val utr = Utr("2134514321")
   val utr2 = Utr("3134514321")
 
+  val urn = Urn("TRUSTXX10000100")
+
   val arn = "ABCDEF123456"
 
   val invitationIds = Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))

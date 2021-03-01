@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import org.joda.time.DateTime._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{urn, _}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.~
@@ -37,6 +37,9 @@ trait TestData {
   val trustPendingInvitationDbId: BSONObjectID = BSONObjectID.generate
   val trustAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
 
+  val trustNTPendingInvitationDbId: BSONObjectID = BSONObjectID.generate
+  val trustNTAcceptedInvitationDbId: BSONObjectID = BSONObjectID.generate
+
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
   val mtdSaPendingInvitationId: InvitationId =
@@ -45,9 +48,17 @@ trait TestData {
     InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-02"))('A')
 
   val trustPendingInvitationId: InvitationId =
-    InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-01"))('B')
+    InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-01"))('D')
+    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-02"))('F')
+
   val trustAcceptedInvitationId: InvitationId =
-    InvitationId.create(arn.value, utr.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-02"))('B')
+    InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-02"))('D')
+    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-01"))('F')
+
+  val trustNTPendingInvitationId: InvitationId =
+    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-01"))('F')
+  val trustNTAcceptedInvitationId: InvitationId =
+    InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-02"))('F')
 
   val otherRegimePendingInvitationId: InvitationId =
     InvitationId.create(arn.value, mtdItId1.value, "mtd-other", DateTime.parse("2001-01-03"))('A')
