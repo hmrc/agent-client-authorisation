@@ -50,10 +50,8 @@ trait TestData {
   val trustPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-01"))('D')
 
-
   val trustAcceptedInvitationId: InvitationId =
     InvitationId.create(arn.value, utr.value, "HMRC-TERS-ORG", DateTime.parse("2001-01-02"))('D')
-
 
   val trustNTPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, urn.value, "HMRC-TERSNT-ORG", DateTime.parse("2001-01-01"))('F')
@@ -102,54 +100,6 @@ trait TestData {
       Service.PersonalIncomeRecord,
       mtdItId1,
       ClientIdentifier(nino1.value, "ni"),
-      now().toLocalDate.plusDays(100),
-      None,
-      false,
-      None,
-      None,
-      events = List(StatusChangeEvent(now(), Pending))
-    )
-  )
-
-  val trustInvitations = List(
-    Invitation(
-      trustPendingInvitationDbId,
-      trustPendingInvitationId,
-      arn,
-      Some("business"),
-      Service.Trust,
-      utr,
-      ClientIdentifier(utr.value, "2134514321"),
-      now().toLocalDate.plusDays(100),
-      None,
-      false,
-      None,
-      None,
-      events = List(StatusChangeEvent(now(), Pending))
-    ),
-    Invitation(
-      trustAcceptedInvitationDbId,
-      trustAcceptedInvitationId,
-      arn,
-      Some("business"),
-      Service.Trust,
-      utr,
-      ClientIdentifier(utr.value, "2134514321"),
-      now().toLocalDate.plusDays(100),
-      None,
-      false,
-      None,
-      None,
-      events = List(StatusChangeEvent(now(), Accepted))
-    ),
-    Invitation(
-      otherRegimePendingInvitationDbId,
-      otherRegimePendingInvitationId,
-      arn,
-      Some("business"),
-      Service.PersonalIncomeRecord,
-      utr,
-      ClientIdentifier(utr.value, "2134514321"),
       now().toLocalDate.plusDays(100),
       None,
       false,
