@@ -282,9 +282,11 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
         throw new Exception(s"The client identifier $agentId is not supported.")
     }
 
+  private val utrPattern = "^\\d{10}$"
+
   private def getTrustNameUrl(trustTaxIdentifier: String, ifEnabled: Boolean): String =
     if (!ifEnabled) s"$baseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
-    else if (Utr.isValid(trustTaxIdentifier))
+    else if (trustTaxIdentifier.matches(utrPattern))
       s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
     else s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
 }

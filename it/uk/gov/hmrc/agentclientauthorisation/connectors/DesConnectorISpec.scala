@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import org.joda.time.LocalDate
+import uk.gov.hmrc.agentclientauthorisation.model.{InvalidTrust, TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs}
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
@@ -121,6 +122,24 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     }
   }
 
-  private def connector = app.injector.instanceOf[DesConnector]
+  "GetTrustName" should {
+    "return the name of a trust for a given Utr" in {
 
+      getTrustName(utr.value, 200, """{"trustDetails": {"trustName": "Nelson James Trust"}}""")
+
+      val result = await(connector.getTrustName(utr.value))
+      result shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getTrustName-GET")
+    }
+
+    "return InvalidTrust response when 400" in {
+
+      getTrustName(utr.value, 400,  """{"code": "INVALID_TRUST_STATE","reason": "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible."}""")
+
+      val result = await(connector.getTrustName(utr.value))
+      result shouldBe TrustResponse(Left(InvalidTrust("INVALID_TRUST_STATE", "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible.")))
+    }
+  }
+
+  private def connector = app.injector.instanceOf[DesConnector]
 }
