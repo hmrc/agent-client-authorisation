@@ -109,6 +109,67 @@ class AgencyInvitationsControllerSpec
     ()
   }
 
+  "replace URN invitation with UTR" should {
+    "return 404 when no invitation found" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(None)
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 404
+    }
+
+    "return 204 when there is an invitation which isn't pending or existing" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationExpired))
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 204
+    }
+
+    "return 201 when an active invitation is found" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationActive))
+      when(
+        invitationsService.create(
+          any[Arn](),
+          any[Option[String]],
+          any[Service](),
+          any[ClientIdentifier.ClientId],
+          any[ClientIdentifier.ClientId],
+          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful invitationActive)
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 201
+    }
+
+    "return 201 when a pending invitation is found" in {
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationPending))
+      when(
+        invitationsService.create(
+          any[Arn](),
+          any[Option[String]],
+          any[Service](),
+          any[ClientIdentifier.ClientId],
+          any[ClientIdentifier.ClientId],
+          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful invitationActive)
+      when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Right(invitationActive))
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 201
+    }
+  }
+
   "createInvitation" should {
     "create an invitation when given correct Arn" in {
 

@@ -456,6 +456,18 @@ GET /status
 * hasInvitationsHistory - there were other authorisations requests in the past, which can be accepted, rejected or expired
 * hasExistingRelationships - there exist active client's authorisations for HMRC-MTD-IT, HMRC-MTD-VAT, PERSONAL-INCOME-RECORD or any other supported service
 
+### Replace URN relationship with UTR
+Replaces URN clientID of pending or active relationships with UTR
+
+```
+POST /invitations/:urn/replace/utr/:utr
+```
+|Response|Description|
+|--------|---------|
+|201|A new relationship has been created|
+|204|Latest relationship isn't Pending or Active, so didn't create any new relationship|
+|404|No relationships found|
+
 ### Running the tests <a name="runningTests"></a>
 
     sbt test it:test

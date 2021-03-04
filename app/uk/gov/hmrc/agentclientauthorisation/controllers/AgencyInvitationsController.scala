@@ -27,6 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnecto
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -69,6 +70,25 @@ class AgencyInvitationsController @Inject()(
         },
         invitationJson.get
       )
+    }
+  }
+
+  def replaceUrnInvitationWithUtr(givenUrn: Urn, utr: Utr): Action[AnyContent] = Action.async { implicit request =>
+    invitationsService.findLatestInvitationByClientId(clientId = givenUrn.value) flatMap {
+      case Some(i) if i.status == Pending =>
+        invitationsService
+          .create(i.arn, i.clientType, i.service, utr, utr, i.origin)
+          .flatMap(_ => invitationsService.cancelInvitation(i))
+          .map {
+            case Right(_)                          => Created
+            case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
+          }
+      case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
+        invitationsService
+          .create(i.arn, i.clientType, i.service, utr, utr, i.origin)
+          .map(_ => Created)
+      case Some(_) => Future successful NoContent
+      case _       => Future successful NotFound
     }
   }
 

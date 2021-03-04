@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Urn, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -73,6 +73,23 @@ class InvitationsMongoRepositoryISpec
     Service.PersonalIncomeRecord,
     nino1,
     nino1,
+    date,
+    None,
+    false,
+    None,
+    None,
+    None,
+    List.empty
+  )
+
+  val invitationURN = Invitation(
+    BSONObjectID.generate(),
+    InvitationId("EPN7M763YPGLJ"),
+    Arn(arn),
+    Some("personal"),
+    Service.TrustNT,
+    urn,
+    urn,
     date,
     None,
     false,
@@ -331,6 +348,28 @@ class InvitationsMongoRepositoryISpec
       val list01 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.toLocalDate))
       list01.size shouldBe 0
     }
+  }
+
+  "listing latest by clientId" should {
+
+    "return an empty list when there is no invitation present" in {
+
+      getLatestByClientId(urn) shouldBe None
+    }
+
+    "return latest invitation when there are multiple invitations present" in {
+
+      val invitation = invitationURN.copy(events = List(StatusChangeEvent(now, Pending)))
+
+      addInvitation(now, invitation)
+
+      inside(getLatestByClientId(urn).get) {
+        case Invitation(_, _, Arn(`arn`), _, _, _, _, _, _, _, _, _, _, List(StatusChangeEvent(dateValue, Pending))) =>
+          dateValue shouldBe now
+      }
+
+    }
+
   }
 
   "listing by clientId" should {
@@ -697,4 +736,7 @@ class InvitationsMongoRepositoryISpec
 
   private def setRelationshipEnded(invitation: Invitation): Invitation =
     await(repository.setRelationshipEnded(invitation, "Agent"))
+
+  private def getLatestByClientId(clientId: Urn) =
+    await(repository.findLatestInvitationByClientId(clientId.value))
 }
