@@ -130,10 +130,12 @@ class AgencyInvitationsControllerSpec
       status(response) shouldBe 204
     }
 
-    "return 201 when an active invitation is found" in {
+    "return 201 and end existing relationship when an active invitation is found" in {
 
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
         .thenReturn(Some(invitationActive))
+      when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+        .thenReturn(Future.successful(invitationActive))
       when(
         invitationsService.create(
           any[Arn](),

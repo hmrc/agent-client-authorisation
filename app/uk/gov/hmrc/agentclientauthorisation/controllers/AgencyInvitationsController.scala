@@ -84,9 +84,10 @@ class AgencyInvitationsController @Inject()(
             case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
           }
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
-        invitationsService
-          .create(i.arn, i.clientType, i.service, utr, utr, i.origin)
-          .map(_ => Created)
+        for {
+          _ <- invitationsService.setRelationshipEnded(i, "HMRC")
+          _ <- invitationsService.create(i.arn, i.clientType, i.service, utr, utr, i.origin)
+        } yield Created
       case Some(_) => Future successful NoContent
       case _       => Future successful NotFound
     }
