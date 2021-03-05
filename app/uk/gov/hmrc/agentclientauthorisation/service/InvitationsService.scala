@@ -178,6 +178,11 @@ class InvitationsService @Inject()(
       invitationsRepository.findByInvitationId(invitationId)
     }
 
+  def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
+    monitor(s"Repository-Find-Latest-Invitation-$clientId") {
+      invitationsRepository.findLatestInvitationByClientId(clientId)
+    }
+
   def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {

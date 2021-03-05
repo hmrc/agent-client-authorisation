@@ -55,6 +55,8 @@ trait InvitationsRepository {
 
   def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]]
 
+  def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]]
+
   def findInvitationsBy(
     arn: Option[Arn] = None,
     services: Seq[Service] = Seq.empty[Service],
@@ -161,6 +163,13 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
 
   def findByInvitationId(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
     find("invitationId" -> invitationId).map(_.headOption)
+
+  def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
+    collection
+      .find[JsObject, JsObject](Json.obj("clientId" -> clientId), None)
+      .sort(Json.obj("events.time" -> JsNumber(-1)))
+      .cursor[Invitation](ReadPreference.primaryPreferred)
+      .headOption
 
   def findInvitationsBy(
     arn: Option[Arn] = None,

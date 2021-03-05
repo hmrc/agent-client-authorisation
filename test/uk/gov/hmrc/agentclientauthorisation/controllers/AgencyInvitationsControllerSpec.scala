@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.Service.Trust
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -107,6 +108,63 @@ class AgencyInvitationsControllerSpec
         any[ExecutionContext]))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
     ()
+  }
+
+  "replace URN invitation with UTR" should {
+    "return 404 when no invitation found" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(None)
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 404
+    }
+
+    "return 204 when there is an invitation which isn't pending or existing" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationExpired))
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 204
+    }
+
+    "return 201 and end existing relationship when an active invitation is found" in {
+
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationActive))
+      when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+        .thenReturn(Future.successful(invitationActive))
+      when(
+        invitationsService
+          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
+            any[HeaderCarrier],
+            any[ExecutionContext]))
+        .thenReturn(Future successful invitationActive)
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 201
+    }
+
+    "return 201 when a pending invitation is found" in {
+      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+        .thenReturn(Some(invitationPending))
+      when(
+        invitationsService
+          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
+            any[HeaderCarrier],
+            any[ExecutionContext]))
+        .thenReturn(Future successful invitationActive)
+      when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Right(invitationActive))
+
+      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+      status(response) shouldBe 201
+    }
   }
 
   "createInvitation" should {

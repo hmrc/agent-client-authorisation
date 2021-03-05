@@ -109,6 +109,54 @@ trait TestData {
     )
   )
 
+  val invitationExpired = Invitation(
+    otherRegimePendingInvitationDbId,
+    otherRegimePendingInvitationId,
+    arn,
+    Some("personal"),
+    Service.PersonalIncomeRecord,
+    mtdItId1,
+    ClientIdentifier(urn.value, "urn"),
+    now().toLocalDate.plusDays(100),
+    None,
+    false,
+    None,
+    None,
+    events = List(StatusChangeEvent(now(), Expired))
+  )
+
+  val invitationActive = Invitation(
+    otherRegimePendingInvitationDbId,
+    otherRegimePendingInvitationId,
+    arn,
+    Some("personal"),
+    Service.TrustNT,
+    mtdItId1,
+    ClientIdentifier(urn.value, "urn"),
+    now().toLocalDate.plusDays(100),
+    None,
+    false,
+    None,
+    None,
+    events = List(StatusChangeEvent(now(), Accepted))
+  )
+
+  val invitationPending = Invitation(
+    otherRegimePendingInvitationDbId,
+    otherRegimePendingInvitationId,
+    arn,
+    Some("personal"),
+    Service.TrustNT,
+    mtdItId1,
+    ClientIdentifier(urn.value, "urn"),
+    now().toLocalDate.plusDays(100),
+    None,
+    false,
+    None,
+    None,
+    events = List(StatusChangeEvent(now(), Pending))
+  )
+
   val agentEnrolment = Set(
     Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), state = "", delegatedAuthRule = None))
 

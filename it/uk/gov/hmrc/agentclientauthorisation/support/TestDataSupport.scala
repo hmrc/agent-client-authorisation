@@ -158,6 +158,9 @@ trait TestDataSupport {
 
     override def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]] =
       Future failed new Exception(s"Unable to retrieve Expired Invitations")
+
+    override def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
+      Future failed new Exception(s"Unable to retrieve latest invitation for a client")
   }
 
   /*
