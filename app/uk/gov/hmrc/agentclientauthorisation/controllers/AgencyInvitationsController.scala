@@ -77,7 +77,7 @@ class AgencyInvitationsController @Inject()(
     invitationsService.findLatestInvitationByClientId(clientId = givenUrn.value) flatMap {
       case Some(i) if i.status == Pending =>
         invitationsService
-          .create(i.arn, i.clientType, i.service, utr, utr, i.origin)
+          .create(i.arn, i.clientType, Trust, utr, utr, i.origin)
           .flatMap(_ => invitationsService.cancelInvitation(i))
           .map {
             case Right(_)                          => Created
@@ -86,7 +86,7 @@ class AgencyInvitationsController @Inject()(
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
         for {
           _ <- invitationsService.setRelationshipEnded(i, "HMRC")
-          _ <- invitationsService.create(i.arn, i.clientType, i.service, utr, utr, i.origin)
+          _ <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
         } yield Created
       case Some(_) => Future successful NoContent
       case _       => Future successful NotFound

@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.Service.Trust
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -137,13 +138,10 @@ class AgencyInvitationsControllerSpec
       when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
         .thenReturn(Future.successful(invitationActive))
       when(
-        invitationsService.create(
-          any[Arn](),
-          any[Option[String]],
-          any[Service](),
-          any[ClientIdentifier.ClientId],
-          any[ClientIdentifier.ClientId],
-          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
+        invitationsService
+          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
+            any[HeaderCarrier],
+            any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
@@ -155,13 +153,10 @@ class AgencyInvitationsControllerSpec
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
         .thenReturn(Some(invitationPending))
       when(
-        invitationsService.create(
-          any[Arn](),
-          any[Option[String]],
-          any[Service](),
-          any[ClientIdentifier.ClientId],
-          any[ClientIdentifier.ClientId],
-          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
+        invitationsService
+          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
+            any[HeaderCarrier],
+            any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
       when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Right(invitationActive))
