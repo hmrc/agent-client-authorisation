@@ -20,6 +20,7 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject._
 import org.joda.time.LocalDate
 import play.api.http.HeaderNames
+import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -35,6 +36,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -51,6 +53,7 @@ class AgencyInvitationsController @Inject()(
   implicit
   metrics: Metrics,
   cc: ControllerComponents,
+  futures: Futures,
   val ec: ExecutionContext)
     extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
@@ -85,8 +88,9 @@ class AgencyInvitationsController @Inject()(
           }
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
         for {
-          _ <- invitationsService.setRelationshipEnded(i, "HMRC")
-          _ <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
+          _          <- invitationsService.setRelationshipEnded(i, "HMRC")
+          invitation <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
+          _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitation(invitation))
         } yield Created
       case Some(_) => Future successful NoContent
       case _       => Future successful NotFound

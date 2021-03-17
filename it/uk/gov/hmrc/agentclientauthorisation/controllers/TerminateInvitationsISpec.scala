@@ -2,11 +2,11 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Base64
-
 import akka.stream.Materializer
 import com.kenshoo.play.metrics.Metrics
 import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{ControllerComponents, Result}
 import play.api.test.FakeRequest
@@ -43,6 +43,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val agentCacheProvider = app.injector.instanceOf(classOf[AgentCacheProvider])
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
 
+  implicit val futures = app.injector.instanceOf(classOf[Futures])
   implicit val metrics = app.injector.instanceOf(classOf[Metrics])
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
 
