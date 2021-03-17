@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import akka.actor.ActorSystem
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
+import play.api.libs.concurrent.{DefaultFutures, Futures}
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Results._
@@ -64,6 +66,7 @@ class AgencyInvitationsControllerSpec
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
+  val futures: Futures = new DefaultFutures(ActorSystem("TestSystem"))
 
   val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
 
@@ -77,7 +80,7 @@ class AgencyInvitationsControllerSpec
       mockDesConnector,
       mockPlayAuthConnector,
       agentCacheProvider
-    )(metrics, cc, global) {}
+    )(metrics, cc, futures, global) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
@@ -143,6 +146,8 @@ class AgencyInvitationsControllerSpec
             any[HeaderCarrier],
             any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
+      when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(Right(invitationActive)))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
