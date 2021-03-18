@@ -114,6 +114,11 @@ class InvitationsService @Inject()(
     }
   }
 
+  def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+    val acceptedDate = currentTime()
+    changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+  }
+
   private def createRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
       case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)

@@ -146,7 +146,7 @@ class AgencyInvitationsControllerSpec
             any[HeaderCarrier],
             any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
-      when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+      when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
         .thenReturn(Future.successful(Right(invitationActive)))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
