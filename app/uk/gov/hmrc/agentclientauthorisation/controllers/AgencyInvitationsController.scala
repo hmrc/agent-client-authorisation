@@ -90,7 +90,7 @@ class AgencyInvitationsController @Inject()(
         for {
           _          <- invitationsService.setRelationshipEnded(i, "HMRC")
           invitation <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
-          _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitation(invitation))
+          _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitationStatus(invitation))
         } yield Created
       case Some(_) => Future successful NoContent
       case _       => Future successful NotFound
