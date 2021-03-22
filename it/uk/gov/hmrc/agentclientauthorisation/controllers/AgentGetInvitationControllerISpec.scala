@@ -55,6 +55,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     irvClient,
     vatClient,
     trustClient,
+    trustNTClient,
     cgtClient)
 
   //Prior to Client Type and Client ActionUrl
@@ -93,7 +94,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      json.invitations.length shouldBe 5
+      json.invitations.length shouldBe 6
     }
 
     "return Invitations for Agent with Service Query Params" in new TestSetup {
@@ -127,7 +128,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-      json.invitations.length shouldBe 5
+      json.invitations.length shouldBe 6
     }
 
     "return Invitations for Agent with CreatedBefore Query Params" in new TestSetup {
@@ -139,7 +140,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       val jsonResponse = jsonBodyOf(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
 
-      json.invitations.length shouldBe 5
+      json.invitations.length shouldBe 6
     }
 
     "return Invitations for Agent with Services and CreatedBefore Query Params" in new TestSetup {

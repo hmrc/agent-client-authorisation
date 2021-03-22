@@ -75,7 +75,7 @@ trait BasicUserAuthStubs {
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
 
-  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, cgtRef: CgtRef) = {
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse()
         .withStatus(200)
@@ -122,6 +122,16 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        {
                      |          "key": "SAUTR",
                      |          "value": "${utr.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key": "HMRC-TERSNT-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "URN",
+                     |          "value": "${urn.value}"
                      |        }
                      |      ],
                      |      "state": "Activated"

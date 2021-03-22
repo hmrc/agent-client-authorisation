@@ -51,8 +51,8 @@ trait TestDataSupport {
   val utr = Utr("2134514321")
   val utr2 = Utr("3087612352")
 
-  val urn = Urn("AAAAA2642468661")
-  val urn2 = Urn("AAAAA6426901067")
+  val urn = Urn("XXTRUST12345678")
+  val urn2 = Urn("YYTRUST12345678")
 
   val cgtRef = CgtRef("XMCGTP123456789")
   val cgtRef2 = CgtRef("XMCGTP987654321")
@@ -93,7 +93,7 @@ trait TestDataSupport {
   val cgtClient = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
 
-  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, cgtClient)
+  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient)
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient)
 
   val apiClients = List(itsaClient, vatClient)
