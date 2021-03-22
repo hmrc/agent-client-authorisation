@@ -64,7 +64,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       authConnector,
       agentCacheProvider)
 
-  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 5), DeletionCount(appConfig.appName, "agent-reference", 1))))
+  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 6), DeletionCount(appConfig.appName, "agent-reference", 1))))
   val jsonNoDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 0), DeletionCount(appConfig.appName, "agent-reference", 0))))
 
   def createInvitation(arn: Arn,
@@ -117,7 +117,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       jsonBodyOf(response).as[JsObject] shouldBe jsonDeletedRecords
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 5
+      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 6
       await(agentReferenceRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 1
     }
 
