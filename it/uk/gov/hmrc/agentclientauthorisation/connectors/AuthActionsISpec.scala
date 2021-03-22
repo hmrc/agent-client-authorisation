@@ -47,7 +47,7 @@ class AuthActionsISpec extends BaseISpec {
     if(forStride)
       givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
     else if(forClient)
-      givenClientAll(mtdItId, vrn, nino, utr, cgtRef)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef)
     else isNotLoggedIn
   }
 
@@ -63,7 +63,7 @@ class AuthActionsISpec extends BaseISpec {
     }
 
     s"return 401 if not logged in as Agent" in {
-      givenClientAll(mtdItId, vrn, nino, utr, cgtRef)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef)
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithOnlyForAgents(request)
@@ -81,7 +81,7 @@ class AuthActionsISpec extends BaseISpec {
 
   "OnlyForClients" should {
     s"return 200 if logged in client" in {
-      givenClientAll(mtdItId, vrn, nino, utr, cgtRef)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef)
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
 
       testClientList.foreach { testClient =>

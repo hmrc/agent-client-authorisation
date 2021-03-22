@@ -101,7 +101,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
         verifyAnalyticsRequestSent(1)
       }
 
-      "service is Trust" in {
+      "service is Trust - UTR" in {
         val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
 
         givenAuditConnector()
@@ -115,6 +115,29 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
             |  "service": "HMRC-TERS-ORG",
             |  "clientIdType": "utr",
             |  "clientId": "2134514321"
+            |}""".stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
+      }
+
+      "service is Trust - URN" in {
+        val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
+
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        getTrustName(urn.value, response = trustNameJson)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val requestBody = Json.parse(
+          """{
+            |  "service": "HMRC-TERSNT-ORG",
+            |  "clientIdType": "urn",
+            |  "clientId": "XXTRUST12345678"
             |}""".stripMargin)
 
         val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
