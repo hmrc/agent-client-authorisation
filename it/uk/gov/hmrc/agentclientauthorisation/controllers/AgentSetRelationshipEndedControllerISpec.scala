@@ -75,6 +75,9 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       val response = controller.setRelationshipEnded(invitation.invitationId, "Client")(request)
 
       status(response) shouldBe 204
+
+      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
+      result.get.status shouldBe DeAuthorised
     }
   }
 
