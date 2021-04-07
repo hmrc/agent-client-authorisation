@@ -147,7 +147,7 @@ class AgencyInvitationsControllerSpec
             any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
       when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
-        .thenReturn(Future.successful(Right(invitationActive)))
+        .thenReturn(Future successful invitationActive)
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
@@ -164,7 +164,7 @@ class AgencyInvitationsControllerSpec
             any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
       when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Right(invitationActive))
+        .thenReturn(invitationActive)
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
@@ -240,7 +240,7 @@ class AgencyInvitationsControllerSpec
           .findInvitation(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Right(cancelledInvite))
+        .thenReturn(Future successful cancelledInvite)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 
@@ -258,7 +258,7 @@ class AgencyInvitationsControllerSpec
           .findInvitation(any[InvitationId])(any[ExecutionContext]))
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Left(StatusUpdateFailure(Accepted, "already accepted")))
+        .thenReturn(Future failed StatusUpdateFailure(Accepted, "already accepted"))
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 

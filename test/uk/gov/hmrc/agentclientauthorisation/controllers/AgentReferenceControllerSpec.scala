@@ -185,6 +185,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
           when(
             mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+              any[HeaderCarrier],
               any[ExecutionContext]))
             .thenReturn(Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
@@ -217,6 +218,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         when(
           mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful listOfInvitations)
 
@@ -260,6 +262,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         when(
           mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
@@ -280,6 +283,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         when(
           mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 

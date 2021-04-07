@@ -78,14 +78,14 @@ class AgencyInvitationsController @Inject()(
 
   def replaceUrnInvitationWithUtr(givenUrn: Urn, utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     invitationsService.findLatestInvitationByClientId(clientId = givenUrn.value) flatMap {
-      case Some(i) if i.status == Pending =>
-        invitationsService
-          .create(i.arn, i.clientType, Trust, utr, utr, i.origin)
-          .flatMap(_ => invitationsService.cancelInvitation(i))
-          .map {
-            case Right(_)                          => Created
-            case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
-          }
+      case Some(existingInvite) if existingInvite.status == Pending => {
+        for {
+          _ <- invitationsService.create(existingInvite.arn, existingInvite.clientType, Trust, utr, utr, existingInvite.origin)
+          _ <- invitationsService.cancelInvitation(existingInvite)
+        } yield Created
+      }.recoverWith {
+        case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
+      }
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
         for {
           _          <- invitationsService.setRelationshipEnded(i, "HMRC")
@@ -111,10 +111,10 @@ class AgencyInvitationsController @Inject()(
     forThisAgency(givenArn) {
       invitationsService.findInvitation(invitationId) flatMap {
         case Some(i) if i.arn == givenArn =>
-          invitationsService.cancelInvitation(i.copy(origin = request.headers.get("Origin"))) map {
-            case Right(_)                          => NoContent
-            case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
-          }
+          invitationsService
+            .cancelInvitation(i.copy(origin = request.headers.get("Origin")))
+            .map(_ => NoContent)
+            .recoverWith { case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg) }
         case None => Future successful InvitationNotFound
         case _    => Future successful NoPermissionOnAgency
       }
@@ -126,9 +126,10 @@ class AgencyInvitationsController @Inject()(
       withBasicAuth {
         invitationsService.findInvitation(invitationId) flatMap {
           case Some(i) =>
-            invitationsService.setRelationshipEnded(i, endedBy) map { _ =>
-              NoContent
-            }
+            invitationsService
+              .setRelationshipEnded(i, endedBy)
+              .map(_ => NoContent)
+              .recoverWith { case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg) }
           case None => Future successful InvitationNotFound
           case _    => Future successful NoPermissionOnAgency
         }

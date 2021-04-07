@@ -26,7 +26,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
+import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino, nino1, utr}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Utr, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
@@ -93,10 +93,10 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def aFutureOptionInvitation(): Future[Option[Invitation]] =
     Future successful Some(anInvitation(nino1))
 
-  def whenInvitationIsAccepted: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
+  def whenInvitationIsAccepted: OngoingStubbing[Future[Invitation]] =
     when(invitationsService.acceptInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
 
-  def whenInvitationIsRejected: OngoingStubbing[Future[Either[StatusUpdateFailure, Invitation]]] =
+  def whenInvitationIsRejected: OngoingStubbing[Future[Invitation]] =
     when(invitationsService.rejectInvitation(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =

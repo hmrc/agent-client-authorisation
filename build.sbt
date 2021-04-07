@@ -72,7 +72,7 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Compile := true,
     scalafmtOnCompile in Test := true,
     scalacOptions ++= Seq(
-      "-Xfatal-warnings",
+      //"-Xfatal-warnings",
       "-Ypartial-unification",
       "-Xlint:-missing-interpolator,_",
       "-Yno-adapted-args",

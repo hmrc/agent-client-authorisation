@@ -48,25 +48,29 @@ case object Accepted extends InvitationStatus
 
 case object Cancelled extends InvitationStatus
 
+case object DeAuthorised extends InvitationStatus
+
 case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
   def unapply(status: InvitationStatus): Option[String] = status match {
-    case Pending   => Some("Pending")
-    case Rejected  => Some("Rejected")
-    case Accepted  => Some("Accepted")
-    case Cancelled => Some("Cancelled")
-    case Expired   => Some("Expired")
-    case _         => None
+    case Pending      => Some("Pending")
+    case Rejected     => Some("Rejected")
+    case Accepted     => Some("Accepted")
+    case Cancelled    => Some("Cancelled")
+    case Expired      => Some("Expired")
+    case DeAuthorised => Some("Deauthorised")
+    case _            => None
   }
 
   def apply(status: String): InvitationStatus = status.toLowerCase match {
-    case "pending"   => Pending
-    case "rejected"  => Rejected
-    case "accepted"  => Accepted
-    case "cancelled" => Cancelled
-    case "expired"   => Expired
-    case _           => Unknown(status)
+    case "pending"      => Pending
+    case "rejected"     => Rejected
+    case "accepted"     => Accepted
+    case "cancelled"    => Cancelled
+    case "expired"      => Expired
+    case "deauthorised" => DeAuthorised
+    case _              => Unknown(status)
   }
 
   implicit val invitationStatusFormat = new Format[InvitationStatus] {

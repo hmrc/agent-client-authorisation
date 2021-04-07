@@ -141,6 +141,30 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(invitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       testInvitationOpt.map(_.status) shouldBe Some(Pending.toString)
     }
+
+    s"accepting via $journey to accept an ${client.service.id} invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
+      val oldInvitation: Invitation = await(createInvitation(arn, client))
+      await(repository.update(oldInvitation, Accepted, DateTime.now()))
+
+      val invitation: Invitation = await(createInvitation(arn, client))
+      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+      givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
+      givenClientRelationships(arn, client.service.id)
+
+      anAfiRelationshipIsCreatedWith(arn, client.clientId)
+      givenPlatformAnalyticsRequestSent(true)
+
+      val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+      status(result) shouldBe 204
+      val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Accepted))(getResult))
+      val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+      testInvitationOpt.map(_.status) shouldBe Some(Accepted.toString)
+      verifyAnalyticsRequestSent(1)
+
+      val oldInvitationResult: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(DeAuthorised))(getResult))
+      val oldInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(oldInvitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+      oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+    }
   }
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject" should {

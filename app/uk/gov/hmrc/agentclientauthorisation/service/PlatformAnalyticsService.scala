@@ -78,12 +78,13 @@ class PlatformAnalyticsService @Inject()(
 
   private def createEventFor(i: Invitation): Event =
     i.status match {
-      case Pending    => makeAuthRequestEvent("created", i)
-      case Accepted   => makeAuthRequestEvent("accepted", i)
-      case Rejected   => makeAuthRequestEvent("declined", i)
-      case Expired    => makeAuthRequestEvent("expired", i)
-      case Cancelled  => makeAuthRequestEvent("cancelled", i)
-      case s: Unknown => makeAuthRequestEvent("unknown", i)
+      case Pending      => makeAuthRequestEvent("created", i)
+      case Accepted     => makeAuthRequestEvent("accepted", i)
+      case Rejected     => makeAuthRequestEvent("declined", i)
+      case Expired      => makeAuthRequestEvent("expired", i)
+      case Cancelled    => makeAuthRequestEvent("cancelled", i)
+      case DeAuthorised => makeAuthRequestEvent("deauthorised", i)
+      case _: Unknown   => makeAuthRequestEvent("unknown", i)
     }
 
   private def makeAuthRequestEvent(action: String, i: Invitation): Event =

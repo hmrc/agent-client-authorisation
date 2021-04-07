@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -128,7 +129,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "Throw an exception if the response is 5xx" in {
       givenCreateRelationshipFails(arn, serviceITSA, "MTDITID", mtdItId)
 
-      assertThrows[RuntimeException] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.createMtdItRelationship(
           invitation(Some("personal"), MtdIt, mtdItId, mtdItId)))
       }
@@ -146,7 +147,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "Throw an exception if the response is 5xx" in {
       givenCreateRelationshipFails(arn, serviceVAT, "VRN", vrn)
 
-      assertThrows[RuntimeException] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.createMtdVatRelationship(
           invitation(Some("personal"), Vat, vrn, vrn)))
       }
@@ -164,7 +165,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "Throw an exception if the response is 5xx" in {
       anAfiRelationshipIsCreatedFails(arn, nino)
 
-      assertThrows[RuntimeException] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.createAfiRelationship(
           invitation(Some("personal"), PersonalIncomeRecord, nino, nino), DateTime.now()))
       }
@@ -182,7 +183,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "Throw an exception if the response is 5xx" in {
       givenCreateRelationshipFails(arn, serviceTERS, "SAUTR", utr)
 
-      assertThrows[RuntimeException] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.createTrustRelationship(
           invitation(Some("personal"), Trust, utr, utr)))
       }
@@ -200,7 +201,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "Throw an exception if the response is 5xx" in {
       givenCreateRelationshipFails(arn, serviceCGT, "CGTPDRef", cgtRef)
 
-      assertThrows[RuntimeException] {
+      assertThrows[UpstreamErrorResponse] {
         await(connector.createCapitalGainsRelationship(
           invitation(Some("personal"), CapitalGains, cgtRef, cgtRef)))
       }
