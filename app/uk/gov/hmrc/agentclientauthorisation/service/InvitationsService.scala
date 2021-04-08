@@ -90,13 +90,13 @@ class InvitationsService @Inject()(
     invitation.status match {
       case Pending =>
         for {
-          // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
-          activeRelationships <- relationshipsConnector.getActiveRelationships.map(_.get(invitation.service.id)).fallbackTo(successful(None))
-          _                   <- updateInvitationStatuses(activeRelationships).fallbackTo(successful(Nil))
-
           // accept the invite
           _          <- createRelationship(invitation, acceptedDate)
           invitation <- changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+
+          // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
+          activeRelationships <- relationshipsConnector.getActiveRelationships.map(_.get(invitation.service.id)).fallbackTo(successful(None))
+          _                   <- updateInvitationStatuses(activeRelationships, invitation).fallbackTo(successful(Nil))
 
           // audit, don't fail on these
           _ <- emailService.sendAcceptedEmail(invitation).fallbackTo(successful(()))
@@ -109,13 +109,13 @@ class InvitationsService @Inject()(
     }
   }
 
-  private def updateInvitationStatuses(activeRelationships: Option[Seq[Arn]])(implicit ec: ExecutionContext) =
+  private def updateInvitationStatuses(activeRelationships: Option[Seq[Arn]], invitation: Invitation)(implicit ec: ExecutionContext) =
     Future
       .sequence(
         activeRelationships.getOrElse(Nil).map { arn =>
-          invitationsRepository.findInvitationsBy(Some(arn)).flatMap { existingInvitations =>
+          invitationsRepository.findInvitationsBy(Some(arn), Seq(invitation.service)).flatMap { invitations =>
             Future.sequence(
-              existingInvitations.collect {
+              onlyOldInvitations(invitation, invitations).collect {
                 case invite if invite.status == Accepted =>
                   changeInvitationStatus(invite, DeAuthorised, currentTime())
               }
@@ -124,6 +124,9 @@ class InvitationsService @Inject()(
         }
       )
       .map(_.flatten)
+
+  private def onlyOldInvitations(invitation: Invitation, invitations: Seq[Invitation]): Seq[Invitation] =
+    invitations.filterNot(i => i.firstEvent() == invitation.firstEvent())
 
   def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
@@ -147,8 +150,7 @@ class InvitationsService @Inject()(
   }
 
   def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[List[InvitationInfo]] =
+    implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
