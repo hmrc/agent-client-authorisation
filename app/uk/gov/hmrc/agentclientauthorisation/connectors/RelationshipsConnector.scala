@@ -45,61 +45,50 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
   private val baseUrl: String = appConfig.relationshipsBaseUrl
   private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
 
+  implicit class FutureResponseOps(f: Future[HttpResponse]) {
+    def handleNon2xx(msg: String)(implicit ec: ExecutionContext): Future[Unit] = f.map { response =>
+      response.status match {
+        case status if is2xx(status) => ()
+        case other                   => throw UpstreamErrorResponse(msg, other)
+      }
+    }
+  }
+
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
-      http.PUT[String, HttpResponse](mtdItRelationshipUrl(invitation), "").map { response =>
-        response.status match {
-          case status if is2xx(status) => ()
-          case other =>
-            throw new RuntimeException(s"unexpected error during 'createMtdItRelationship', statusCode=$other")
-        }
-      }
+      http
+        .PUT[String, HttpResponse](mtdItRelationshipUrl(invitation), "")
+        .handleNon2xx(s"unexpected error during 'createMtdItRelationship'")
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
-      http.PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation), "").map { response =>
-        response.status match {
-          case status if is2xx(status) => ()
-          case other =>
-            throw new RuntimeException(s"unexpected error during 'createMtdVatRelationship', statusCode=$other")
-        }
-      }
+      http
+        .PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation), "")
+        .handleNon2xx(s"unexpected error during 'createMtdVatRelationship'")
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
-      http.PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body).map { response =>
-        response.status match {
-          case status if is2xx(status) => ()
-          case other =>
-            throw new RuntimeException(s"unexpected error during 'createAfiRelationship', statusCode=$other")
-        }
-      }
+      http
+        .PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body)
+        .handleNon2xx("unexpected error during 'createAfiRelationship'")
     }
   }
 
   def createTrustRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Trust-PUT") {
-      http.PUT[String, HttpResponse](trustRelationshipUrl(invitation), "").map { response =>
-        response.status match {
-          case status if is2xx(status) => ()
-          case other =>
-            throw new RuntimeException(s"unexpected error during 'createTrustRelationship', statusCode=$other")
-        }
-      }
+      http
+        .PUT[String, HttpResponse](trustRelationshipUrl(invitation), "")
+        .handleNon2xx("unexpected error during 'createTrustRelationship")
     }
 
   def createCapitalGainsRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
-      http.PUT[String, HttpResponse](cgtRelationshipUrl(invitation), "").map { response =>
-        response.status match {
-          case status if is2xx(status) => ()
-          case other =>
-            throw new RuntimeException(s"unexpected error during 'createCapitalGainsRelationship', statusCode=$other")
-        }
-      }
+      http
+        .PUT[String, HttpResponse](cgtRelationshipUrl(invitation), "")
+        .handleNon2xx("unexpected error during 'createCapitalGainsRelationship'")
     }
 
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =

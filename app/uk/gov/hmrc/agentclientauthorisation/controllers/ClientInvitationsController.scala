@@ -121,9 +121,9 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
         invitationId,
         invitation =>
           invitationsService.acceptInvitation(invitation).andThen {
-            case Success(Right(x)) =>
+            case Success(invitation) =>
               auditService
-                .sendAgentClientRelationshipCreated(invitationId.value, x.arn, clientId, invitation.service)
+                .sendAgentClientRelationshipCreated(invitationId.value, invitation.arn, clientId, invitation.service)
         }
       )
     }
@@ -160,12 +160,11 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   private def actionInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
-    action: Invitation => Future[Either[StatusUpdateFailure, Invitation]])(implicit ec: ExecutionContext): Future[Result] =
+    action: Invitation => Future[Invitation])(implicit ec: ExecutionContext): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
-        action(invitation) map {
-          case Right(_)                          => NoContent
-          case Left(StatusUpdateFailure(_, msg)) => invalidInvitationStatus(msg)
+        action(invitation).map(_ => NoContent).recoverWith {
+          case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
         }
       case None => Future successful InvitationNotFound
       case _    => Future successful NoPermissionOnClient

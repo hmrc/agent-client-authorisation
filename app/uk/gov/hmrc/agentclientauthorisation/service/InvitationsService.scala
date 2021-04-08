@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import akka.Done
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, _}
@@ -32,9 +33,9 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.Seq
-import scala.util.Success
+import scala.concurrent.Future.successful
 
-case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String)
+case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String) extends Throwable
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -84,37 +85,50 @@ class InvitationsService @Inject()(
     }
   }
 
-  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+  def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
     invitation.status match {
       case Pending =>
-        def changeInvitationStatusAndRecover: Future[Either[StatusUpdateFailure, Invitation]] =
-          createRelationship(invitation, acceptedDate).flatMap(
-            _ =>
-              changeInvitationStatus(invitation, model.Accepted, acceptedDate)
-                .andThen {
-                  case Success(_) => reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
-              })
-
         for {
-          result <- changeInvitationStatusAndRecover
-          _ <- result match {
-                case Right(invite) => {
-                  emailService
-                    .sendAcceptedEmail(invite)
-                    .map(_ => analyticsService.reportSingleEventAnalyticsRequest(invite))
-                }
-                case Left(_) => Future.successful(())
-              }
-        } yield {
-          result
-        }
+          // accept the invite
+          _          <- createRelationship(invitation, acceptedDate)
+          invitation <- changeInvitationStatus(invitation, model.Accepted, acceptedDate)
 
-      case _ => Future successful cannotTransitionBecauseNotPending(invitation, Accepted)
+          // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
+          activeRelationships <- relationshipsConnector.getActiveRelationships.map(_.get(invitation.service.id)).fallbackTo(successful(None))
+          _                   <- updateInvitationStatuses(activeRelationships, invitation).fallbackTo(successful(Nil))
+
+          // audit, don't fail on these
+          _ <- emailService.sendAcceptedEmail(invitation).fallbackTo(successful(()))
+          _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
+        } yield {
+          reportHistogramValue("Duration-Invitation-Accepted", durationOf(invitation))
+          invitation
+        }
+      case _ => Future failed invalidTransition(invitation, Accepted)
     }
   }
 
-  def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] = {
+  private def updateInvitationStatuses(activeRelationships: Option[Seq[Arn]], invitation: Invitation)(implicit ec: ExecutionContext) =
+    Future
+      .sequence(
+        activeRelationships.getOrElse(Nil).map { arn =>
+          invitationsRepository.findInvitationsBy(Some(arn), Seq(invitation.service)).flatMap { invitations =>
+            Future.sequence(
+              onlyOldInvitations(invitation, invitations).collect {
+                case invite if invite.status == Accepted =>
+                  changeInvitationStatus(invite, DeAuthorised, currentTime())
+              }
+            )
+          }
+        }
+      )
+      .map(_.flatten)
+
+  private def onlyOldInvitations(invitation: Invitation, invitations: Seq[Invitation]): Seq[Invitation] =
+    invitations.filterNot(i => i.firstEvent() == invitation.firstEvent())
+
+  def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
     changeInvitationStatus(invitation, model.Accepted, acceptedDate)
   }
@@ -139,44 +153,31 @@ class InvitationsService @Inject()(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
-  def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
-    changeInvitationStatus(invitation, model.Cancelled)
-      .andThen {
-        case Success(result) => {
-          reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
-          result match {
-            case Right(i) => analyticsService.reportSingleEventAnalyticsRequest(i)
-            case Left(_)  => Future.successful(())
-          }
-        }
-      }
+  def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
+    for {
+      invitation <- changeInvitationStatus(invitation, model.Cancelled)
+      _ = reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
+      _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
+    } yield invitation
 
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
-      invitationsRepository.setRelationshipEnded(invitation, endedBy) map { invitation =>
+      for {
+        _                 <- changeInvitationStatus(invitation, model.DeAuthorised)
+        updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
+      } yield {
         logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
-        invitation
+        updatedInvitation
       }
     }
 
-  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[StatusUpdateFailure, Invitation]] = {
-    def changeStatus: Future[Either[StatusUpdateFailure, Invitation]] =
-      changeInvitationStatus(invitation, model.Rejected)
-        .andThen {
-          case Success(_) => reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
-        }
+  def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
     for {
-      result <- changeStatus
-      _ <- result match {
-            case Right(invite) => {
-              emailService
-                .sendRejectedEmail(invite)
-                .map(_ => analyticsService.reportSingleEventAnalyticsRequest(invite))
-            }
-            case Left(_) => Future.successful(())
-          }
-    } yield result
-  }
+      invitation <- changeInvitationStatus(invitation, model.Rejected).fallbackTo(successful(invitation))
+      _ = reportHistogramValue("Duration-Invitation-Rejected", durationOf(invitation))
+      _ <- emailService.sendRejectedEmail(invitation).fallbackTo(successful(()))
+      _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
+    } yield invitation
 
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
     monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
@@ -259,24 +260,21 @@ class InvitationsService @Inject()(
       })
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
-    implicit ec: ExecutionContext): Future[Either[StatusUpdateFailure, Invitation]] =
-    invitation.status match {
-      case Pending =>
-        monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
-          invitationsRepository.update(invitation, status, timestamp) map { invitation =>
-            logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
-            Right(invitation)
-          }
+    implicit ec: ExecutionContext): Future[Invitation] =
+    if (invitation.status == Pending || (invitation.status == Accepted && status == DeAuthorised)) {
+      monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
+        invitationsRepository.update(invitation, status, timestamp) map { invitation =>
+          logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
+          invitation
         }
-      case _ => Future successful cannotTransitionBecauseNotPending(invitation, status)
-    }
+      }
+    } else Future failed invalidTransition(invitation, status)
 
-  private def cannotTransitionBecauseNotPending(invitation: Invitation, toStatus: InvitationStatus) =
-    Left(
-      StatusUpdateFailure(
-        invitation.status,
-        s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}. Only Pending invitations may be transitioned to $toStatus."
-      ))
+  private def invalidTransition(invitation: Invitation, toStatus: InvitationStatus) =
+    StatusUpdateFailure(
+      invitation.status,
+      s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}."
+    )
 
   private def currentTime() = DateTime.now(DateTimeZone.UTC)
 
