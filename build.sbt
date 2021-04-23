@@ -20,7 +20,7 @@ lazy val compileDeps = Seq(
   ws,
   "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "2.24.0",
   "uk.gov.hmrc" %% "auth-client" % "3.0.0-play-27",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.22.0-play-27",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.23.0-play-27",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
   "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.4.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-27",
@@ -53,11 +53,8 @@ lazy val root = (project in file("."))
     organization := "uk.gov.hmrc",
     scalaVersion := "2.12.10",
     PlayKeys.playDefaultPort := 9432,
-    resolvers := Seq(
-      Resolver.bintrayRepo("hmrc", "releases"),
-      Resolver.bintrayRepo("hmrc", "release-candidates"),
+    resolvers ++= Seq(
       Resolver.typesafeRepo("releases"),
-      Resolver.jcenterRepo
     ),
     libraryDependencies ++= tmpMacWorkaround() ++ compileDeps ++ testDeps("test") ++ testDeps("it"),
     libraryDependencies ++= Seq(
