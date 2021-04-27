@@ -117,7 +117,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("anne-mari"), Some("email"))),
+              Option(model.AgencyDetails(Some("anne-mari"), Some("email"), Some(businessAddress))),
               Some(SuspensionDetails(suspensionStatus = false, None))))))
 
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))

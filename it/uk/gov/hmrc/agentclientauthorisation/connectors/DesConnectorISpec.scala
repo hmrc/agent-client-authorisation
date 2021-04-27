@@ -17,10 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model.{InvalidTrust, TrustName, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, InvalidTrust, SuspensionDetails, TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs}
-import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -138,6 +138,36 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val result = await(connector.getTrustName(utr.value))
       result shouldBe TrustResponse(Left(InvalidTrust("INVALID_TRUST_STATE", "The remote endpoint has indicated that the Trust/Estate is Closed and playback is not possible.")))
+    }
+  }
+
+  "GetAgencyDetails" should {
+    "return agency details for a given ARN" in {
+
+      givenDESRespondsWithValidData(Arn(arn), "My Agency Ltd")
+
+      val result = await(connector.getAgencyDetails(Arn(arn)))
+      result shouldBe Some(
+        AgentDetailsDesResponse(Some(
+          AgencyDetails(Some("My Agency Ltd"),
+            Some("abc@xyz.com"),
+            Some(BusinessAddress("Matheson House",
+              Some("Grange Central"),
+              Some("Town Centre"),
+              Some("Telford"),
+              Some("TF3 4ER"),
+              "GB")))),
+          Some(SuspensionDetails(
+            false,
+            None))))
+    }
+
+    "return None when DES responds with invalid data" in {
+      givenDESRespondsWithoutValidData(Arn(arn))
+
+      val result = await(connector.getAgencyDetails(Arn(arn)))
+
+      result shouldBe Some(AgentDetailsDesResponse(None, None))
     }
   }
 

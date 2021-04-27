@@ -40,6 +40,7 @@ GET         /invitations/:invitationId                                          
 # Agent Services Account migrated routes
 GET         /agent/agency-name                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentAgencyName
 GET         /agent/agency-email                                                               @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentAgencyEmail
+GET         /agent/agency-details                                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentAgencyDetails
 GET         /agent/suspension-details                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCurrentSuspensionDetails
 POST        /client/agency-names/utr                                                          @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getAgencyNamesUtrs
 GET         /client/business-name/utr/:utr                                                    @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getBusinessNameUtr(utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
