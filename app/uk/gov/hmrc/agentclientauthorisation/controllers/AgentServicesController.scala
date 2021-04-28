@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Singleton}
 import play.api.Environment
 import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
@@ -30,6 +29,7 @@ import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -48,6 +48,10 @@ class AgentServicesController @Inject()(
 
   def getCurrentAgencyEmail: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     getAgencyEmail(arn)
+  }
+
+  def getCurrentAgencyDetails: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    getAgencyDetails(arn)
   }
 
   def getCurrentSuspensionDetails: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
@@ -249,6 +253,15 @@ class AgentServicesController @Inject()(
       .map {
         case Some(email) => Ok(Json.obj("agencyEmail" -> email))
         case None        => NoContent
+      }
+
+  private def getAgencyDetails(arn: Arn)(implicit hc: HeaderCarrier) =
+    desConnector
+      .getAgencyDetails(arn)
+      .map(_.flatMap(_.agencyDetails))
+      .map {
+        case Some(agencyDetails) => Ok(Json.toJson(agencyDetails))
+        case None                => NoContent
       }
 
   private def getAgencySuspensionDetails(arn: Arn)(implicit hc: HeaderCarrier) =

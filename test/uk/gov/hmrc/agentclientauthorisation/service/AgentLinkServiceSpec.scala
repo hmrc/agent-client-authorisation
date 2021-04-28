@@ -27,7 +27,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, SuspensionDetails}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, BusinessAddress, SuspensionDetails}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
@@ -62,6 +62,8 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
   "getAgentLink" should {
 
+    val businessAddress = BusinessAddress("25 Any Street", None, None, None, Some("AA1 7YY"), "GB")
+
     "return a link when agent reference record already exists" in {
       val agentReferenceRecord = AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("obi-wan"))
 
@@ -71,7 +73,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"))),
+              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
               Some(SuspensionDetails(suspensionStatus = false, None))))))
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any[ExecutionContext]))
         .thenReturn(Future.successful(()))
@@ -89,7 +91,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"))),
+              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
               Some(SuspensionDetails(suspensionStatus = false, None))))))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))

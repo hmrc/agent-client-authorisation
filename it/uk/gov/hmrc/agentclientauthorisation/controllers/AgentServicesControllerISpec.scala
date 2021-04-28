@@ -46,6 +46,12 @@ class AgentServicesControllerISpec extends BaseISpec {
       .get()
       .futureValue
 
+  def getCurrentAgencyDetails: WSResponse =
+    wsClient
+      .url(s"$url/agent/agency-details")
+      .get()
+      .futureValue
+
   def getCurrentSuspensionDetails: WSResponse =
     wsClient
     .url(s"$url/agent/suspension-details")
@@ -227,6 +233,44 @@ class AgentServicesControllerISpec extends BaseISpec {
       givenDESReturnsError(arn, BAD_GATEWAY)
 
       val result = getCurrentAgencyEmail
+      result.status shouldBe BAD_GATEWAY
+      (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+    }
+  }
+
+  "GET /agent/agency-details" should {
+    "return Ok and agencyDetails after successful response" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESRespondsWithValidData(arn, "ACME")
+
+      val result = getCurrentAgencyDetails
+      result.status shouldBe OK
+      result.json shouldBe Json.obj(
+        "agencyEmail" -> "abc@xyz.com",
+        "agencyName" -> "ACME",
+        "agencyAddress" -> Json.obj(
+          "addressLine1" -> "Matheson House",
+          "addressLine2" -> "Grange Central",
+          "addressLine3" -> "Town Centre",
+          "addressLine4" -> "Telford",
+          "postalCode" -> "TF3 4ER",
+          "countryCode" -> "GB"
+        ))
+    }
+
+    "return NoContent after successful response but there is no agencyDetails" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESRespondsWithoutValidData(arn)
+
+      val result = getCurrentAgencyDetails
+      result.status shouldBe NO_CONTENT
+    }
+
+    "return an exception when there is an unsuccessful response" in {
+      givenAuthorisedAsAgent(arn)
+      givenDESReturnsError(arn, BAD_GATEWAY)
+
+      val result = getCurrentAgencyDetails
       result.status shouldBe BAD_GATEWAY
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
     }
