@@ -42,6 +42,8 @@ trait TestData {
 
   val otherRegimePendingInvitationDbId: BSONObjectID = BSONObjectID.generate
 
+  val businessAddress = BusinessAddress("25 Any Street", None, None, None, Some("AA1 7YY"), "GB")
+
   val mtdSaPendingInvitationId: InvitationId =
     InvitationId.create(arn.value, mtdItId1.value, "HMRC-MTD-IT", DateTime.parse("2001-01-01"))('A')
   val mtdSaAcceptedInvitationId: InvitationId =
