@@ -50,6 +50,8 @@ case object Cancelled extends InvitationStatus
 
 case object DeAuthorised extends InvitationStatus
 
+case object PartialAuth extends InvitationStatus
+
 case class Unknown(attempted: String) extends InvitationStatus
 
 object InvitationStatus {
@@ -60,6 +62,7 @@ object InvitationStatus {
     case Cancelled    => Some("Cancelled")
     case Expired      => Some("Expired")
     case DeAuthorised => Some("Deauthorised")
+    case PartialAuth  => Some("Partialauth")
     case _            => None
   }
 
@@ -70,6 +73,7 @@ object InvitationStatus {
     case "cancelled"    => Cancelled
     case "expired"      => Expired
     case "deauthorised" => DeAuthorised
+    case "partialauth"  => PartialAuth
     case _              => Unknown(status)
   }
 

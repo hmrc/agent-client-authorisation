@@ -84,6 +84,7 @@ class PlatformAnalyticsService @Inject()(
       case Expired      => makeAuthRequestEvent("expired", i)
       case Cancelled    => makeAuthRequestEvent("cancelled", i)
       case DeAuthorised => makeAuthRequestEvent("deauthorised", i)
+      case PartialAuth  => makeAuthRequestEvent("partialauth", i)
       case _: Unknown   => makeAuthRequestEvent("unknown", i)
     }
 
