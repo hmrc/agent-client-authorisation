@@ -38,6 +38,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
@@ -181,7 +182,7 @@ class AgencyInvitationsControllerSpec
         .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
       when(postcodeService.postCodeMatches(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful None)
+        .thenReturn(().toFuture)
       when(invitationsService.translateToMtdItId(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
       when(
@@ -286,7 +287,7 @@ class AgencyInvitationsControllerSpec
     "return No Content if Nino is known in ETMP and the postcode matched" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful None)
+        .thenReturn(().toFuture)
 
       await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest())) shouldBe NoContent
     }
@@ -294,7 +295,7 @@ class AgencyInvitationsControllerSpec
     "return 400 if given invalid postcode" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Some(BadRequest))
+        .thenReturn(failure(BadRequest))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 400
     }
@@ -302,7 +303,7 @@ class AgencyInvitationsControllerSpec
     "return 403 if Nino is known in ETMP but the postcode did not match or not found" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Some(Forbidden))
+        .thenReturn(failure(Forbidden))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
     }
@@ -310,7 +311,7 @@ class AgencyInvitationsControllerSpec
     "return 501 if Nino is known in ETMP but the postcode is non-UK" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Some(NotImplemented))
+        .thenReturn(failure(NotImplemented))
 
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 501
     }

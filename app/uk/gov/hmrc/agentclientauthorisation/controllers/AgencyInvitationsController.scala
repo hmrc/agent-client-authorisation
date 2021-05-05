@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject._
 import org.joda.time.LocalDate
 import play.api.http.HeaderNames
@@ -31,6 +32,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
+import uk.gov.hmrc.agentclientauthorisation.util.FailedResultException
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
@@ -232,10 +234,12 @@ class AgencyInvitationsController @Inject()(
     else block
 
   def checkKnownFactItsa(nino: Nino, postcode: String): Action[AnyContent] = onlyForAgents { implicit request => _ =>
-    postcodeService.postCodeMatches(nino.value, postcode.replaceAll("\\s", "")).map {
-      case Some(error) => error
-      case None        => NoContent
-    }
+    postcodeService
+      .postCodeMatches(nino.value, postcode.replaceAll("\\s", ""))
+      .map(_ => NoContent)
+      .recover {
+        case FailedResultException(r) => r
+      }
   }
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
