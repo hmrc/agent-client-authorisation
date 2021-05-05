@@ -14,22 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentclientauthorisation
+package uk.gov.hmrc.agentclientauthorisation.util
 
 import play.api.mvc.Result
 
-import scala.concurrent.Future
-
-package object util {
-
-  def toFuture[A](a: A): Future[A] = Future.successful(a)
-
-  def failure[A](r: Result): Future[A] = Future failed FailedResultException(r)
-
-  implicit class throwableOps(val t: Throwable) extends AnyVal {
-    def toFailure[A]: Future[A] = Future.failed(t)
-  }
-  implicit class valueOps[A](val a: A) extends AnyVal {
-    def toFuture: Future[A] = Future.successful(a)
-  }
-}
+case class FailedResultException(r: Result) extends RuntimeException()
