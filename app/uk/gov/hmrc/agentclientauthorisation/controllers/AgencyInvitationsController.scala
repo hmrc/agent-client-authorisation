@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
 
 import javax.inject._
@@ -25,18 +26,18 @@ import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, PostcodeDoesNotMatch, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service._
-import uk.gov.hmrc.agentclientauthorisation.util.FailedResultException
+import uk.gov.hmrc.agentclientauthorisation.util.{FailedResultException, valueOps}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,6 +52,7 @@ class AgencyInvitationsController @Inject()(
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
   authConnector: AuthConnector,
+  citizenDetailsConnector: CitizenDetailsConnector,
   agentCacheProvider: AgentCacheProvider)(
   implicit
   metrics: Metrics,
@@ -237,10 +239,29 @@ class AgencyInvitationsController @Inject()(
     postcodeService
       .postCodeMatches(nino.value, postcode.replaceAll("\\s", ""))
       .map(_ => NoContent)
+      .recoverWith {
+        case FailedResultException(r) if r.header.status == BadRequest.header.status     => r.toFuture
+        case FailedResultException(r) if r.header.status == NotImplemented.header.status => r.toFuture
+        case FailedResultException(PostcodeDoesNotMatch)                                 => PostcodeDoesNotMatch.toFuture
+        case _                                                                           => checkPostcodeAgainstCitizenDetails(nino, postcode)
+      }
       .recover {
-        case FailedResultException(r) => r
+        case uer: UpstreamErrorResponse =>
+          logger.warn(uer.getMessage(), uer)
+          PostcodeDoesNotMatch
       }
   }
+
+  def checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(implicit hc: HeaderCarrier): Future[Result] = {
+    for {
+      _       <- OptionT(citizenDetailsConnector.getCitizenDetails(nino))
+      details <- OptionT(citizenDetailsConnector.getDesignatoryDetails(nino))
+    } yield
+      details.postCode.fold[Result](PostcodeDoesNotMatch) { pc =>
+        if (pc.toLowerCase.replaceAll("\\s", "") == postcode.toLowerCase.replaceAll("\\s", "")) NoContent
+        else PostcodeDoesNotMatch
+      }
+  }.value.map(_.getOrElse(PostcodeDoesNotMatch))
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
     knownFactsCheckService

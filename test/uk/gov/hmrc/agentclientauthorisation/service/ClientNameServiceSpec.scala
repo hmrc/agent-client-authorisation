@@ -70,7 +70,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockCitizenDetailsConnector
         .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
-        .returns(Future(Citizen(Some("Henry"), Some("Hoover"))))
+        .returns(Future(Some(Citizen(Some("Henry"), Some("Hoover")))))
       val result = await(clientNameService.getClientNameByService(nino.value, Service.PersonalIncomeRecord))
 
       result shouldBe Some("Henry Hoover")
@@ -98,7 +98,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockCitizenDetailsConnector
         .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
-        .returns(Future(Citizen(Some("Henry"), Some("Hoover"))))
+        .returns(Future(Some(Citizen(Some("Henry"), Some("Hoover")))))
 
       val result = await(clientNameService.getItsaTradingName(MtdItId("LCLG57411010846")))
       result shouldBe Some("Henry Hoover")
