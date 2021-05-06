@@ -64,11 +64,22 @@ object Citizen {
   }
 }
 
+case class DesignatoryDetails(nino: Option[String], postCode: Option[String])
+
+object DesignatoryDetails {
+  implicit val reads: Reads[DesignatoryDetails] = for {
+    nino     <- (JsPath \ "person" \ "nino").readNullable[String]
+    postCode <- (JsPath \ "address" \ "postcode").readNullable[String]
+  } yield DesignatoryDetails(nino, postCode)
+}
+
 @ImplementedBy(classOf[CitizenDetailsConnectorImpl])
 trait CitizenDetailsConnector {
   def getCitizenDateOfBirth(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]]
 
-  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen]
+  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[Citizen]]
+
+  def getDesignatoryDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[DesignatoryDetails]]
 }
 
 @Singleton
@@ -90,16 +101,30 @@ class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClie
       }
     }
 
-  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Citizen] =
+  def getCitizenDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[Citizen]] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {
       val url = s"$baseUrl/citizen-details/nino/${nino.value}"
       http.GET[HttpResponse](url).map { response =>
         response.status match {
-          case Status.OK        => response.json.as[Citizen]
-          case Status.NOT_FOUND => Citizen(None, None, None)
+          case Status.OK        => Try(response.json.asOpt[Citizen]).getOrElse(None)
+          case Status.NOT_FOUND => None
           case other =>
             throw UpstreamErrorResponse(s"unexpected error during 'getCitizenDetails', statusCode=$other", other)
         }
       }
     }
+
+  override def getDesignatoryDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[DesignatoryDetails]] =
+    monitor(s"ConsumedAPI-CitizenDetailsDesignatorDetails-GET") {
+      val url = s"$baseUrl/citizen-details/nino/${nino.value}/designatory-details"
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case Status.OK        => Try(response.json.asOpt[DesignatoryDetails]).getOrElse(None)
+          case Status.NOT_FOUND => None
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error during 'getCitizenDetailsDesignatoryDetails', statusCode=$other", other)
+        }
+      }
+    }
+
 }
