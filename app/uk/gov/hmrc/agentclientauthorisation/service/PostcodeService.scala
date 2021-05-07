@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.Result
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.BusinessDetails
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
+import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -32,20 +32,18 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
-  def postCodeMatches(clientId: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Result]] =
-    if (postcode.isEmpty) Future successful Some(postcodeRequired("HMRC-MTD-IT"))
+  def postCodeMatches(clientId: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    if (postcode.isEmpty) failure(postcodeRequired("HMRC-MTD-IT"))
     else {
       postcodeWithoutSpacesRegex
         .findFirstIn(postcode)
         .map(_ => clientPostcodeMatches(clientId, postcode))
-        .getOrElse(Future successful Some(postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
+        .getOrElse(failure(postcodeFormatInvalid(s"""The submitted postcode, $postcode, does not match the expected format.""")))
     }
 
-  private def clientPostcodeMatches(clientIdentifier: String, postcode: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Result]] = {
+  private def clientPostcodeMatches(clientIdentifier: String, postcode: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     // we can use head here due to the guard on the array size in the case statement but these are not a general purpose functions
-    def postcodeMatches(details: BusinessDetails, postcode: String) =
+    def postcodeMatches(details: BusinessDetails, postcode: String): Boolean =
       details.businessData.head.businessAddressDetails
         .flatMap(_.postalCode.map(normalise))
         .contains(normalise(postcode))
@@ -53,13 +51,13 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
     def isUkAddress(details: BusinessDetails) =
       details.businessData.head.businessAddressDetails.map(_.countryCode.toUpperCase).contains("GB")
 
-    desConnector.getBusinessDetails(Nino(clientIdentifier)).map {
-      case Some(details) if details.businessData.length != 1                           => Some(PostcodeDoesNotMatch)
-      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => None
+    desConnector.getBusinessDetails(Nino(clientIdentifier)).flatMap {
+      case Some(details) if details.businessData.length != 1                           => failure(PostcodeDoesNotMatch)
+      case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => ().toFuture
       case Some(details) if postcodeMatches(details, postcode) =>
-        details.businessData.head.businessAddressDetails.map(_.countryCode).map(nonUkAddress)
-      case Some(_) => Some(PostcodeDoesNotMatch)
-      case None    => Some(ClientRegistrationNotFound)
+        details.businessData.head.businessAddressDetails.map(_.countryCode).map(nonUkAddress).fold(().toFuture)(failure)
+      case Some(_) => failure(PostcodeDoesNotMatch)
+      case None    => failure(ClientRegistrationNotFound)
     }
   }
 }

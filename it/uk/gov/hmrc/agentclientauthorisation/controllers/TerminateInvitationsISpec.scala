@@ -12,7 +12,7 @@ import play.api.mvc.{ControllerComponents, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
@@ -42,6 +42,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val emailService = app.injector.instanceOf(classOf[EmailService])
   val agentCacheProvider = app.injector.instanceOf(classOf[AgentCacheProvider])
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
+  val citizenDetailsConnector = app.injector.instanceOf[CitizenDetailsConnector]
 
   implicit val futures = app.injector.instanceOf(classOf[Futures])
   implicit val metrics = app.injector.instanceOf(classOf[Metrics])
@@ -62,6 +63,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       agentLinkService(agentReferenceRepository),
       desConnector,
       authConnector,
+      citizenDetailsConnector,
       agentCacheProvider)
 
   val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 6), DeletionCount(appConfig.appName, "agent-reference", 1))))
