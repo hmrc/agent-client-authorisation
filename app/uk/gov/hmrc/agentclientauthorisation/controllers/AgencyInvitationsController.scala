@@ -317,4 +317,30 @@ class AgencyInvitationsController @Inject()(
       } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
     }
   }
+
+  def altItsaUpdate(nino: Nino): Action[AnyContent] = Action.async { implicit request =>
+    invitationsService
+      .updateAltItsaFor(nino)
+      .map { result =>
+        if (result.nonEmpty) Created else Ok
+      }
+      .recover {
+        case e => {
+          logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
+          genericInternalServerError(e.getMessage)
+        }
+      }
+  }
+
+  def altItsaUpdateAgent(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
+    invitationsService
+      .updateAltItsaFor(arn)
+      .map(_ => Ok)
+      .recover {
+        case e => {
+          logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
+          genericInternalServerError(e.getMessage)
+        }
+      }
+  }
 }

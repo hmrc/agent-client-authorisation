@@ -19,19 +19,20 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import akka.Done
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, _}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import javax.inject.{Inject, _}
 import scala.collection.Seq
 import scala.concurrent.Future.successful
 
@@ -306,4 +307,38 @@ class InvitationsService @Inject()(
         }
         .map(_ => ())
     }
+
+  def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
+    fetchAltItsaInvitationsFor(taxIdentifier)
+      .flatMap(updateInvitationStoreIfMtdItIdExists(_))
+      .flatMap(Future sequence _.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
+
+  private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
+    Future sequence invitations.map { inv =>
+      desConnector
+        .getMtdIdFor(Nino(inv.suppliedClientId.value))
+        .flatMap {
+          case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId)
+          case None        => Future successful inv
+        }
+    }
+
+  private def createRelationshipAndUpdateStatus(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
+    val timeNow = DateTime.now(DateTimeZone.UTC)
+    createRelationship(invitation, timeNow)
+      .flatMap(_ => invitationsRepository.update(invitation, Accepted, timeNow))
+  }
+
+  private def fetchAltItsaInvitationsFor(taxIdentifier: TaxIdentifier)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+    val (nino, arn) = taxIdentifier match {
+      case n: Nino => (Some(n), None)
+      case a: Arn  => (None, Some(a))
+      case e       => throw new Exception(s"unexpected TaxIdentifier $e for fetch alt-itsa")
+    }
+    monitor("Repository-Find-Alt-ITSA-invitations") {
+      invitationsRepository
+        .findInvitationsBy(arn = arn, clientId = nino.map(n => n.nino), services = List(MtdIt))
+        .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
+    }
+  }
 }

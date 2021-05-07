@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.google.inject.ImplementedBy
+
 import javax.inject._
 import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.json.JodaReads._
@@ -29,7 +30,7 @@ import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -83,6 +84,8 @@ trait InvitationsRepository {
   def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
 
   def getExpiredInvitationsForGA(expiredWithin: Long)(implicit ec: ExecutionContext): Future[List[Invitation]]
+
+  def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId)(implicit ec: ExecutionContext): Future[Invitation]
 }
 
 @Singleton
@@ -136,6 +139,23 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                       }
                   case None =>
                     throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
+                }
+    } yield updated
+
+  def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId)(implicit ec: ExecutionContext): Future[Invitation] =
+    for {
+      invitationOpt <- findById(invitation.id)
+      modifiedOpt = invitationOpt.map(i => i.copy(clientId = mtdItId))
+      updated <- modifiedOpt match {
+                  case Some(modified) =>
+                    collection
+                      .update(ordered = false)
+                      .one(BSONDocument(ID -> invitation.id), bsonJson(modified))
+                      .map { result =>
+                        if (result.ok) modified
+                        else throw new Exception(s"Invitation ${invitation.invitationId.value} update alt-itsa clientId has failed")
+                      }
+                  case None => throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
                 }
     } yield updated
 
