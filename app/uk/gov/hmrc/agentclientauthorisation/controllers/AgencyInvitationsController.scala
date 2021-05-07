@@ -254,7 +254,8 @@ class AgencyInvitationsController @Inject()(
 
   def checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(implicit hc: HeaderCarrier): Future[Result] = {
     for {
-      _       <- OptionT(citizenDetailsConnector.getCitizenDetails(nino))
+      citizen <- OptionT(citizenDetailsConnector.getCitizenDetails(nino))
+      _       <- OptionT(citizen.sautr.toFuture)
       details <- OptionT(citizenDetailsConnector.getDesignatoryDetails(nino))
     } yield
       details.postCode.fold[Result](PostcodeDoesNotMatch) { pc =>

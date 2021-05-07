@@ -46,7 +46,7 @@ object CitizenDateOfBirth {
         case None      => CitizenDateOfBirth(None)
       }
 }
-case class Citizen(firstName: Option[String], lastName: Option[String], nino: Option[String] = None) {
+case class Citizen(firstName: Option[String], lastName: Option[String], nino: Option[String] = None, sautr: Option[String] = None) {
   lazy val name: Option[String] = {
     val n = Seq(firstName, lastName).collect({ case Some(x) => x }).mkString(" ")
     if (n.isEmpty) None else Some(n)
@@ -60,7 +60,8 @@ object Citizen {
       fn <- (current \ "firstName").readNullable[String]
       ln <- (current \ "lastName").readNullable[String]
       n  <- (JsPath \ "ids" \ "nino").readNullable[String]
-    } yield Citizen(fn, ln, n)
+      s  <- (JsPath \ "ids" \ "sautr").readNullable[String]
+    } yield Citizen(fn, ln, n, s)
   }
 }
 
