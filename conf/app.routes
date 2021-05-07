@@ -55,6 +55,10 @@ GET         /client/nino/:nino                                                  
 GET         /client/trading-name/nino/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getTradingNameForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/vat-customer-details/vrn/:vrn                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getVatCustomerDetails(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
 
+# Alternative-Itsa routes
+PUT         /alt-itsa/update/:nino                                                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdate(nino: uk.gov.hmrc.domain.Nino)
+PUT         /agent/alt-itsa/update/:arn                                                       @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdateAgent(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+
 # Stride Routes
 # --------------------------------
 

@@ -161,6 +161,9 @@ trait TestDataSupport {
 
     override def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to retrieve latest invitation for a client")
+
+    override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId)(implicit ec: ExecutionContext): Future[Invitation] =
+      Future failed new Exception(s"Unable to replace Nino for a client")
   }
 
   /*
