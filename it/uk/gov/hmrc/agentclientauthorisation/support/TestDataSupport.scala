@@ -83,7 +83,9 @@ trait TestDataSupport {
                          urlIdentifier: String,
                          clientId: TaxIdentifier,
                          suppliedClientId: TaxIdentifier,
-                         wrongIdentifier: TaxIdentifier)
+                         wrongIdentifier: TaxIdentifier) {
+    val isAltItsaClient = service == MtdIt && clientId == suppliedClientId
+  }
 
   val itsaClient = TestClient(personal, "Trade Pears", MtdIt, MtdItIdType, "MTDITID", mtdItId, nino, mtdItId2)
   val irvClient = TestClient(personal, "John Smith", PersonalIncomeRecord, NinoType, "NI", nino, nino, nino2)
@@ -92,6 +94,7 @@ trait TestDataSupport {
   val trustNTClient = TestClient(business, "Nelson George Trust", TrustNT, UrnType, "URN", urn, urn, urn2)
   val cgtClient = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
+  val altItsaClient = TestClient(personal, "John Smith", MtdIt, NinoType, "MTDITID", nino, nino, nino2)
 
   val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient)
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient)

@@ -82,7 +82,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
-    uiClients.foreach { client =>
+    (altItsaClient::uiClients).foreach { client =>
       runAcceptInvitationsScenario(client, "UI",false)
     }
 
@@ -96,15 +96,18 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     runAcceptInvitationsScenario(cgtClientBus, "UI", false, true)
     runAcceptInvitationsScenario(cgtClientBus, "UI", true, true)
+
+    //runAcceptInvitationsScenarioForAlternativeItsa(altItsaClient, "UI", false)
   }
 
   def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false) = {
-    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
+
+  val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
-    s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
+    s"accept via $journey ${client.urlIdentifier} ${client.service.id} ${if(client.isAltItsaClient)"alt-itsa" else "" }invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
-      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+      if(!client.isAltItsaClient) givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
@@ -117,7 +120,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       verifyAnalyticsRequestSent(1)
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} ${if(client.isAltItsaClient)"alt-itsa" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
@@ -180,6 +183,13 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       }
     }
   }
+
+//  def runAcceptInvitationsScenarioForAlternativeItsa[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean): Unit ={
+//    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
+//    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
+//
+//
+//  }
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject" should {
 
