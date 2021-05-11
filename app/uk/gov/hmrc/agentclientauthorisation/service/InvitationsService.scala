@@ -61,7 +61,7 @@ class InvitationsService @Inject()(
       case NinoType.id =>
         desConnector.getBusinessDetails(Nino(clientId)).map {
           case Some(record) => record.mtdbsa.map(ClientIdentifier(_))
-          case None         => if (Nino.isValid(clientId)) Some(ClientIdentifier(clientId, clientIdType)) else None
+          case None         => if (appConfig.altItsaEnabled && Nino.isValid(clientId)) Some(ClientIdentifier(clientId, clientIdType)) else None
         }
       case _ => Future successful None
     }
