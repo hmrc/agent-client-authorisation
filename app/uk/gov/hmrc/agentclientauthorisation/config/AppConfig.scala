@@ -89,4 +89,5 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val sendEmailPriorToExpireDays: Int = servicesConfig.getInt("invitation-about-to-expire-warning-email.daysPrior")
   val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")
+  val altItsaEnabled: Boolean = servicesConfig.getBoolean("alt-itsa.enabled")
 }

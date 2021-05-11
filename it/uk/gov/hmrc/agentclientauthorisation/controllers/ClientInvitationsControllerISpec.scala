@@ -82,7 +82,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
-    uiClients.foreach { client =>
+    (altItsaClient::uiClients).foreach { client =>
       runAcceptInvitationsScenario(client, "UI",false)
     }
 
@@ -96,40 +96,44 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     runAcceptInvitationsScenario(cgtClientBus, "UI", false, true)
     runAcceptInvitationsScenario(cgtClientBus, "UI", true, true)
+
+    //runAcceptInvitationsScenarioForAlternativeItsa(altItsaClient, "UI", false)
   }
 
   def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false) = {
-    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
+
+  val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
-    s"accept via $journey ${client.urlIdentifier} ${client.service.id} invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
+    s"accept via $journey ${client.urlIdentifier} ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA) " else "" }invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
-      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+      if(!client.isAltItsaClient) givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
 
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
-      val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Accepted))(getResult))
+      val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, if(client.isAltItsaClient) Some(PartialAuth) else Some(Accepted))(getResult))
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
-      testInvitationOpt.map(_.status) shouldBe Some(Accepted.toString)
+      val testHasStatusOf = if(client.isAltItsaClient) PartialAuth else Accepted
+      testInvitationOpt.map(_.status) shouldBe Some(testHasStatusOf.toString)
       verifyAnalyticsRequestSent(1)
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
     }
 
-    s"attempting via $journey to accept an ${client.service.id} invitation that does not exist for ${client.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
+    s"attempting via $journey to accept an ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } invitation that does not exist for ${client.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       val result: Future[Result] = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request))
 
       status(result) shouldBe 404
     }
 
-    s"attempting via $journey to accept an ${client.service.id} invitation that is not for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
+    s"attempting via $journey to accept an ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } invitation that is not for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       val invitation: Invitation = await(createInvitation(arn, client))
       val invitationId: InvitationId = invitation.invitationId
 
@@ -142,9 +146,10 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testInvitationOpt.map(_.status) shouldBe Some(Pending.toString)
     }
 
-    s"accepting via $journey to accept an ${client.service.id} invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
+    s"accepting via $journey to accept an ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val oldInvitation: Invitation = await(createInvitation(arn, client))
-      await(repository.update(oldInvitation, Accepted, DateTime.now()))
+      val acceptedStatus = if(client.isAltItsaClient) PartialAuth else Accepted
+      await(repository.update(oldInvitation, acceptedStatus, DateTime.now()))
 
       val clientOnDifferentService = if(client.service == Service.Vat) itsaClient else vatClient
 
@@ -152,9 +157,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       await(repository.update(oldInvitationFromDifferentService, Accepted, DateTime.now()))
 
       val invitation: Invitation = await(createInvitation(arn, client))
-      givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
+      if(!client.isAltItsaClient) givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
       givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
-      givenClientRelationships(arn, client.service.id)
+      if(!client.isAltItsaClient) givenClientRelationships(arn, client.service.id)
 
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
@@ -162,9 +167,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       // New invitation should be "accepted"
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
-      val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Accepted))(getResult))
+      val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(acceptedStatus))(getResult))
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
-      testInvitationOpt.map(_.status) shouldBe Some(Accepted.toString)
+      testInvitationOpt.map(_.status) shouldBe Some(acceptedStatus.toString)
       verifyAnalyticsRequestSent(1)
 
       // Old invitation should be "deauthorised"

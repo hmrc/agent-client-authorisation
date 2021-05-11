@@ -42,7 +42,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, authConnector, cc) with HalWriter with ClientInvitationsHal {
+    extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get
 
@@ -123,7 +123,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
           invitationsService.acceptInvitation(invitation).andThen {
             case Success(invitation) =>
               auditService
-                .sendAgentClientRelationshipCreated(invitationId.value, invitation.arn, clientId, invitation.service)
+                .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service)
         }
       )
     }

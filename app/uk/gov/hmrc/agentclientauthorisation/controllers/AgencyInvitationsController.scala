@@ -59,7 +59,7 @@ class AgencyInvitationsController @Inject()(
   cc: ControllerComponents,
   futures: Futures,
   val ec: ExecutionContext)
-    extends AuthActions(metrics, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
+    extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache

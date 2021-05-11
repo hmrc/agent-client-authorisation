@@ -38,7 +38,7 @@ class AgentServicesController @Inject()(
   val env: Environment,
   desConnector: DesConnector,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
-    extends AuthActions(metrics, authConnector, cc) {
+    extends AuthActions(metrics, appConfig, authConnector, cc) {
 
   implicit val erFormats: OFormat[ErrorResponse] = Json.format
 

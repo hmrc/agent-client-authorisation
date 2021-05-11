@@ -88,16 +88,27 @@ class InvitationsService @Inject()(
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
+    val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
+    val nextStatus = if (isAltItsa) PartialAuth else Accepted
     invitation.status match {
       case Pending =>
         for {
           // accept the invite
-          _          <- createRelationship(invitation, acceptedDate)
-          invitation <- changeInvitationStatus(invitation, model.Accepted, acceptedDate)
+          _          <- if (isAltItsa) Future successful (()) else createRelationship(invitation, acceptedDate)
+          invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
-          activeRelationships <- relationshipsConnector.getActiveRelationships.map(_.get(invitation.service.id)).fallbackTo(successful(None))
-          _                   <- updateInvitationStatuses(activeRelationships, invitation).fallbackTo(successful(Nil))
+          activeRelOrPartialAuth <- if (isAltItsa)
+                                     fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
+                                       .map(_.filter(_.status == PartialAuth)
+                                         .map(_.arn))
+                                       .map(Some(_))
+                                   else
+                                     relationshipsConnector.getActiveRelationships
+                                       .map(_.get(invitation.service.id))
+                                       .fallbackTo(successful(None))
+
+          _ <- updateInvitationStatuses(activeRelOrPartialAuth, invitation).fallbackTo(successful(Nil))
 
           // audit, don't fail on these
           _ <- emailService.sendAcceptedEmail(invitation).fallbackTo(successful(()))
@@ -110,14 +121,14 @@ class InvitationsService @Inject()(
     }
   }
 
-  private def updateInvitationStatuses(activeRelationships: Option[Seq[Arn]], invitation: Invitation)(implicit ec: ExecutionContext) =
+  private def updateInvitationStatuses(activeRelOrPartialAuth: Option[Seq[Arn]], invitation: Invitation)(implicit ec: ExecutionContext) =
     Future
       .sequence(
-        activeRelationships.getOrElse(Nil).map { arn =>
+        activeRelOrPartialAuth.getOrElse(Nil).map { arn =>
           invitationsRepository.findInvitationsBy(Some(arn), Seq(invitation.service)).flatMap { invitations =>
             Future.sequence(
               onlyOldInvitations(invitation, invitations).collect {
-                case invite if invite.status == Accepted =>
+                case invite if invite.status == Accepted | invite.status == PartialAuth =>
                   changeInvitationStatus(invite, DeAuthorised, currentTime())
               }
             )
@@ -262,7 +273,7 @@ class InvitationsService @Inject()(
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
-    if (invitation.status == Pending || (invitation.status == Accepted && status == DeAuthorised)) {
+    if (invitation.status == Pending || ((invitation.status == Accepted || invitation.status == PartialAuth) && status == DeAuthorised)) {
       monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
           logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
