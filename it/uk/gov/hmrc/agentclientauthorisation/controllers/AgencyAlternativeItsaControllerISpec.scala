@@ -442,7 +442,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       anotherArn.get.clientId shouldBe ClientIdentifier(nino2)
     }
 
-    "return 500 when create relationship fails for a client - some records may have been updated" in {
+    "return 500 when create relationship fails for a client" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -457,55 +457,20 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
           None)
       )
 
-      val altItsaPending2 = await(
-        invitationsRepo.create(
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          nino2,
-          nino2,
-          None,
-          DateTime.now(),
-          LocalDate.now().plusDays(21),
-          None)
-      )
-
-      val altItsaPending3 = await(
-        invitationsRepo.create(
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          nino3,
-          nino3,
-          None,
-          DateTime.now(),
-          LocalDate.now().plusDays(21),
-          None)
-      )
-
       await(invitationsRepo.update(altItsaPending1, PartialAuth, DateTime.now()))
-      await(invitationsRepo.update(altItsaPending2, PartialAuth, DateTime.now()))
-      await(invitationsRepo.update(altItsaPending3, PartialAuth, DateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
-      givenMtdItIdIsKnownFor(nino2, mtdItId2)
-      givenMtdItIdIsKnownFor(nino3, mtdItId3)
 
-      givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
-      givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId2)
-      givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId3)
+      givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
       status(result) shouldBe 500
 
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
-      verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId2)
-      verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId3)
 
       val mongoResult = await(invitationsRepo.findInvitationsBy(arn = Some(arn)))
 
-      mongoResult.count(_.status == PartialAuth) shouldBe 2
-      mongoResult.count(_.status == Accepted) shouldBe 1
+      mongoResult.count(_.status == PartialAuth) shouldBe 1
     }
 
     "return 200 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in {
