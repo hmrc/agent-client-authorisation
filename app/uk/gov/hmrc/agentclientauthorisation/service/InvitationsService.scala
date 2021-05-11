@@ -88,7 +88,7 @@ class InvitationsService @Inject()(
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
-    val isAltItsa = invitation.service == MtdIt && (invitation.clientId == invitation.suppliedClientId)
+    val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
     val nextStatus = if (isAltItsa) PartialAuth else Accepted
     invitation.status match {
       case Pending =>
@@ -273,7 +273,7 @@ class InvitationsService @Inject()(
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
-    if (invitation.status == Pending || (invitation.status == Accepted && status == DeAuthorised)) {
+    if (invitation.status == Pending || ((invitation.status == Accepted || invitation.status == PartialAuth) && status == DeAuthorised)) {
       monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
           logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""

@@ -42,50 +42,36 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   authConnector: AuthConnector,
   auditService: AuditService,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, authConnector, cc) with HalWriter with ClientInvitationsHal {
+    extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
   implicit val ec: ExecutionContext = ecp.get
 
   private val strideRoles = Seq(appConfig.oldStrideEnrolment, appConfig.newStrideEnrolment)
 
-  def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] = Action.async { implicit request =>
-    invitationsService.findInvitation(invitationId).flatMap {
-      case Some(invitation) =>
-        if (invitation.service == PersonalIncomeRecord) {
-
-          onlyForClients(PersonalIncomeRecord, NinoType) { implicit request =>
-            implicit authNino =>
-              implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
-              acceptInvitation(ClientIdentifier(Nino(clientId)), invitation)
-          }
-        } else {
-          AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request =>
-            implicit currentUser =>
-              implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
-              acceptInvitation(ClientIdentifier(currentUser.taxIdentifier), invitation)
-          }
-        }
-      case None => { implicit request => InvitationNotFound }
+  def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
+    if (clientIdType == "NI") {
+      onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
+        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
+        acceptInvitation(ClientIdentifier(Nino(clientId)), invitationId)
+      }
+    } else {
+      AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
+        implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+        acceptInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
+      }
     }
-  }
-
 
   def rejectInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
-    invitationsService.findInvitation(invitationId).map {
-      case Some(invitation) =>
-        if (clientIdType == "NI") {
-          onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
-            implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
-            rejectInvitation(ClientIdentifier(Nino(clientId)), invitation)
-          }
-        } else {
-          AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
-            implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
-            rejectInvitation(ClientIdentifier(currentUser.taxIdentifier), invitation)
-          }
-        }
-      case None => InvitationNotFound
-
+    if (clientIdType == "NI") {
+      onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
+        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
+        rejectInvitation(ClientIdentifier(Nino(clientId)), invitationId)
+      }
+    } else {
+      AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
+        implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+        rejectInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
+      }
     }
 
   private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
@@ -124,7 +110,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       getInvitations(currentUser.service, ClientIdentifier(currentUser.taxIdentifier), status)
     }
 
-  private def acceptInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitation: Invitation)(
+  private def acceptInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
     request: Request[Any],
@@ -132,7 +118,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
-        invitation,
+        invitationId,
         invitation =>
           invitationsService.acceptInvitation(invitation).andThen {
             case Success(invitation) =>
@@ -144,11 +130,11 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def rejectInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
-    invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier, authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+    invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier, authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
-        invitation,
+        invitationId,
         invitation => invitationsService.rejectInvitation(invitation)
       )
     }
@@ -171,11 +157,18 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
     }
 
-  private def actionInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitation: Invitation, action: Invitation => Future[Invitation])(
-    implicit ec: ExecutionContext): Future[Result] =
-    if (matchClientIdentifiers(invitation.clientId, clientId)) action(invitation).map(_ => NoContent).recoverWith {
-      case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
-    } else Future successful NoPermissionOnClient
+  private def actionInvitation[T <: TaxIdentifier](
+    clientId: ClientIdentifier[T],
+    invitationId: InvitationId,
+    action: Invitation => Future[Invitation])(implicit ec: ExecutionContext): Future[Result] =
+    invitationsService.findInvitation(invitationId) flatMap {
+      case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
+        action(invitation).map(_ => NoContent).recoverWith {
+          case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
+        }
+      case None => Future successful InvitationNotFound
+      case _    => Future successful NoPermissionOnClient
+    }
 
   private def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(block: => Future[Result])(
     implicit authTaxId: ClientIdentifier[T]): Future[Result] =

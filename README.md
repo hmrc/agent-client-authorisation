@@ -42,12 +42,13 @@ Invitations can have one of the following status:
 |Invitation Status|Description|
 |--------|---------|
 |Pending|Default status when an invitation has been created|
+|PartialAuth|For ITSA only - allows agent to sign-up client to ITSA for a limited time
 |Accepted|Allows Agent to be authorised to act on behalf of a client|
 |Rejected|Prevents Agent being authorised to act on a client's behalf|
 |Expired|Client did not respond to the Agent's Invitation within 21 days|
 |Cancelled|Agent cancels the invitation they sent out, preventing a client from responding|
 
-Note: Invitations with "Pending" status is the only editable status.
+Note: Invitations with "Pending" or "PartialAuth" statuses are the only editable status.
   
 
 ## Agent APIs <a name="agentApis"></a>
@@ -325,6 +326,8 @@ Any unauthorised access could receive one of the following responses:
 
 #### Client Accepts Invitation <a name="acceptInvitation"></a>
 Changes the status of a "Pending" Invitation to "Accepted". As a result of accepting an invitation, a relationship record is established to allow an agent to act on their behalf. See [agent-client-relationships](https://github.com/hmrc/agent-client-relationships) for further details.
+
+For HMRC-MTD-IT, a client may successfully accept an invitation without having the ITSA enrolment. In this case the status moves from Pending to PartialAuth and for a limited time allows the agent to sign up the client to ITSA. The creation of a full relationship is deferred until the client has acquired the ITSA enrolment.  
 ```
 PUT   /clients/(service-api)/(associated-clientIdentifier)/invitations/received/:invitationId/accept
 ```

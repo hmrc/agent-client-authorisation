@@ -17,9 +17,11 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject._
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{Pending, Service}
@@ -33,13 +35,14 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 class ClientStatusController @Inject()(
   invitationsService: InvitationsService,
   relationshipsConnector: RelationshipsConnector,
-  agentCacheProvider: AgentCacheProvider)(
+  agentCacheProvider: AgentCacheProvider,
+  appConfig: AppConfig)(
   implicit
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
   ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, authConnector, cc) {
+    extends AuthActions(metrics, appConfig, authConnector, cc) {
 
   implicit val ec: ExecutionContext = ecp.get
   private val clientStatusCache = agentCacheProvider.clientStatusCache

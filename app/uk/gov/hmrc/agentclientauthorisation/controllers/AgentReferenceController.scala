@@ -17,10 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
@@ -43,13 +45,14 @@ object SimplifiedAgentRefRecord {
 class AgentReferenceController @Inject()(
   agentLinkService: AgentLinkService,
   agentReferenceRecordRepository: AgentReferenceRepository,
-  invitationsService: InvitationsService)(
+  invitationsService: InvitationsService,
+  appConfig: AppConfig)(
   implicit
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
   val ec: ExecutionContext)
-    extends AuthActions(metrics, authConnector, cc) {
+    extends AuthActions(metrics, appConfig, authConnector, cc) {
 
   def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { _ =>
     agentReferenceRecordRepository

@@ -25,6 +25,7 @@ import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
 import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model
@@ -53,12 +54,13 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
   val mockDesConnector = resettingMock[DesConnector]
+  val appConfig = resettingMock[AppConfig]
 
   val mockAgentLinkService: AgentLinkService =
     new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics)
 
   val agentReferenceController =
-    new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService)(
+    new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService, appConfig)(
       metrics,
       cc,
       mockPlayAuthConnector,
