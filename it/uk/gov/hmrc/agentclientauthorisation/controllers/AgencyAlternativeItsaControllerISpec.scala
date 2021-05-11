@@ -502,21 +502,10 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId2)
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId3)
 
-      val modified1 = await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId))
-      val modified2 = await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId))
-      val modified3 = await(invitationsRepo.findByInvitationId(altItsaPending3.invitationId))
+      val mongoResult = await(invitationsRepo.findInvitationsBy(arn = Some(arn)))
 
-      modified1.get.suppliedClientId shouldBe ClientIdentifier(nino)
-      modified1.get.clientId shouldBe ClientIdentifier(mtdItId)
-      modified1.get.status shouldBe Accepted
-
-      modified2.get.suppliedClientId shouldBe ClientIdentifier(nino2)
-      modified2.get.clientId shouldBe ClientIdentifier(mtdItId2)
-      modified2.get.status shouldBe PartialAuth
-
-      modified3.get.suppliedClientId shouldBe ClientIdentifier(nino3)
-      modified3.get.clientId shouldBe ClientIdentifier(mtdItId3)
-      modified3.get.status shouldBe PartialAuth
+      mongoResult.count(_.status == PartialAuth) shouldBe 2
+      mongoResult.count(_.status == Accepted) shouldBe 1
     }
 
     "return 200 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in {

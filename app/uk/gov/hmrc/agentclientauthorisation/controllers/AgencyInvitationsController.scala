@@ -152,7 +152,7 @@ class AgencyInvitationsController @Inject()(
     val suppliedClientId = ClientIdentifier(agentInvitation.clientId, agentInvitation.clientIdType)
     (agentInvitation.getService match {
       case MtdIt =>
-        invitationsService.translateToMtdItId(agentInvitation.clientId, agentInvitation.clientIdType)
+        invitationsService.getClientIdForItsa(agentInvitation.clientId, agentInvitation.clientIdType)
       case _ => Future successful Some(suppliedClientId)
     }) flatMap {
       case None =>

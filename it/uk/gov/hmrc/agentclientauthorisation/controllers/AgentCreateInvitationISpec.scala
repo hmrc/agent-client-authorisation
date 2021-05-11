@@ -277,10 +277,12 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
       status(response) shouldBe 401
     }
 
-    "return 403 when client registration is not found" in {
+    "return 201 when client registration is not found - use Nino instead (Alt-ITSA) " in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       hasNoBusinessPartnerRecord(nino)
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      givenCitizenDetailsAreKnownFor(nino.value, "any" )
 
       val
       requestBody = Json.parse(
@@ -290,9 +292,10 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
           |  "clientId": "AB123456A"
           |}""".stripMargin)
 
+
       val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
-      status(response) shouldBe 403
+      status(response) shouldBe 201
     }
 
     "return 403 when post code does not match" in {}
