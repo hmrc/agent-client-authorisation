@@ -21,7 +21,7 @@ import play.api.Environment
 import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -37,6 +37,7 @@ class AgentServicesController @Inject()(
   override val authConnector: AuthConnector,
   val env: Environment,
   desConnector: DesConnector,
+  cidConnector: CitizenDetailsConnector,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
 
@@ -207,11 +208,20 @@ class AgentServicesController @Inject()(
     withBasicAuth {
       desConnector
         .getTradingNameForNino(nino)
-        .map {
-          case Some(tn) => Ok(Json.obj("tradingName" -> tn))
-          case None =>
-            logger.warn("Trading name not found for given nino")
-            NotFound
+        .flatMap {
+          case Some(tn) => Future successful Ok(Json.obj("tradingName" -> tn))
+          case None => {
+            if (appConfig.altItsaEnabled) cidConnector.getCitizenDetails(nino).map {
+              case Some(citizen) => Ok(Json.obj("tradingName" -> (citizen.firstName ++ citizen.lastName).mkString(" ")))
+              case None => {
+                logger.warn("Citizen not found for given nino (Alt-Itsa)")
+                NotFound
+              }
+            } else {
+              logger.warn("Trading name not found for given nino")
+              Future successful NotFound
+            }
+          }
         }
     }
   }

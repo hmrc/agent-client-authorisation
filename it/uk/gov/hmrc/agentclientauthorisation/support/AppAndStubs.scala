@@ -78,7 +78,8 @@ trait AppAndStubs
       "invitation-status-update-scheduler.interval"          -> 20,
       "google-analytics.batchSize"                           -> 2,
       "google-analytics.token"                               -> "token",
-      "des-if.enabled"                                        -> false
+      "des-if.enabled"                                        -> false,
+      "alt-itsa.enabled"                                       -> true
     )
 
   override def commonStubs(): Unit = {
