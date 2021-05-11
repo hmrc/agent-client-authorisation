@@ -37,6 +37,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, InsufficientEnrolments,
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 import play.api.test.Helpers.stubControllerComponents
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,8 +46,9 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
   val mockPlayAuthConnector: PlayAuthConnector = mock[PlayAuthConnector]
   val mockMetrics: Metrics = mock[Metrics]
+  val appConfig: AppConfig = mock[AppConfig]
   val cc = stubControllerComponents()
-  val mockAuthConnector: AuthActions = new AuthActions(mockMetrics, mockPlayAuthConnector, cc)
+  val mockAuthConnector: AuthActions = new AuthActions(mockMetrics, appConfig, mockPlayAuthConnector, cc)
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
   private type ClientAuthAction = Request[AnyContent] => ClientId => Future[Result]

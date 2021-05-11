@@ -19,13 +19,14 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import java.net.URL
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Base64
-
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject._
 import play.api.{Logger, Logging}
 import play.api.mvc._
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -49,7 +50,7 @@ case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
 @Singleton
-class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, cc: ControllerComponents)
+class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConnector: AuthConnector, cc: ControllerComponents)
     extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions with Logging {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
@@ -141,6 +142,7 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
 
   def validateClientId(clientIdType: String, clientId: String): Either[Result, (Service, TaxIdentifier)] =
     clientIdType match {
+      case "MTDITID" if appConfig.altItsaEnabled & NinoType.isValid(clientId) => Right((MtdIt, Nino(clientId)))
       case "MTDITID" if MtdItIdType.isValid(clientId) =>
         Right((MtdIt, MtdItId(clientId)))
       case "NI" if NinoType.isValid(clientId) =>
@@ -153,13 +155,13 @@ class AuthActions @Inject()(metrics: Metrics, val authConnector: AuthConnector, 
         Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }
 
-  def AuthorisedClientOrStrideUser[T](service: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
+  def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
     implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
       authorised().retrieve(allEnrolments and credentials) {
         case enrolments ~ Some(creds) =>
-          validateClientId(service, identifier) match {
+          validateClientId(clientIdType, identifier) match {
             case Right((clientService, clientId)) =>
               creds.providerType match {
                 case "GovernmentGateway" if hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
