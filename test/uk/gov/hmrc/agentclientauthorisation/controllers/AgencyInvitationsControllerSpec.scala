@@ -185,7 +185,7 @@ class AgencyInvitationsControllerSpec
 
       when(postcodeService.postCodeMatches(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(().toFuture)
-      when(invitationsService.translateToMtdItId(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
+      when(invitationsService.getClientIdForItsa(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful Some(ClientIdentifier(mtdItId1)))
       when(
         invitationsService.create(
