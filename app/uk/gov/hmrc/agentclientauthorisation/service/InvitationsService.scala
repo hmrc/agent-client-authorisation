@@ -98,17 +98,15 @@ class InvitationsService @Inject()(
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
-          activeRelOrPartialAuth <- if (isAltItsa)
-                                     fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
-                                       .map(_.filter(_.status == PartialAuth)
-                                         .map(_.arn))
-                                       .map(Some(_))
-                                   else
-                                     relationshipsConnector.getActiveRelationships
-                                       .map(_.get(invitation.service.id))
-                                       .fallbackTo(successful(None))
+          existingInvitations <- if (isAltItsa)
+                                  fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
+                                    .map(_.filter(_.status == PartialAuth))
+                                else
+                                  invitationsRepository
+                                    .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
+                                    .fallbackTo(successful(Nil))
 
-          _ <- updateInvitationStatuses(activeRelOrPartialAuth, invitation).fallbackTo(successful(Nil))
+          _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
           // audit, don't fail on these
           _ <- emailService.sendAcceptedEmail(invitation).fallbackTo(successful(()))
@@ -121,24 +119,14 @@ class InvitationsService @Inject()(
     }
   }
 
-  private def updateInvitationStatuses(activeRelOrPartialAuth: Option[Seq[Arn]], invitation: Invitation)(implicit ec: ExecutionContext) =
+  private def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit ec: ExecutionContext) =
     Future
       .sequence(
-        activeRelOrPartialAuth.getOrElse(Nil).map { arn =>
-          invitationsRepository.findInvitationsBy(Some(arn), Seq(invitation.service)).flatMap { invitations =>
-            Future.sequence(
-              onlyOldInvitations(invitation, invitations).collect {
-                case invite if invite.status == Accepted | invite.status == PartialAuth =>
-                  changeInvitationStatus(invite, DeAuthorised, currentTime())
-              }
-            )
-          }
+        existingInvitations.filterNot(i => i.firstEvent() == invitation.firstEvent()).collect {
+          case invite if invite.status == Accepted | invite.status == PartialAuth =>
+            invitationsRepository.setRelationshipEnded(invite, "Client")
         }
       )
-      .map(_.flatten)
-
-  private def onlyOldInvitations(invitation: Invitation, invitations: Seq[Invitation]): Seq[Invitation] =
-    invitations.filterNot(i => i.firstEvent() == invitation.firstEvent())
 
   def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
@@ -175,7 +163,6 @@ class InvitationsService @Inject()(
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
       for {
-        _                 <- changeInvitationStatus(invitation, model.DeAuthorised)
         updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
       } yield {
         logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
@@ -273,7 +260,7 @@ class InvitationsService @Inject()(
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
-    if (invitation.status == Pending || ((invitation.status == Accepted || invitation.status == PartialAuth) && status == DeAuthorised)) {
+    if (invitation.status == Pending) {
       monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
           logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
