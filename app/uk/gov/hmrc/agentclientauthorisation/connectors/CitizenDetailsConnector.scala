@@ -117,7 +117,7 @@ class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClie
 
   override def getDesignatoryDetails(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[DesignatoryDetails]] =
     monitor(s"ConsumedAPI-CitizenDetailsDesignatorDetails-GET") {
-      val url = s"$baseUrl/citizen-details/nino/${nino.value}/designatory-details"
+      val url = s"$baseUrl/citizen-details/${nino.value}/designatory-details"
       http.GET[HttpResponse](url).map { response =>
         response.status match {
           case Status.OK        => Try(response.json.asOpt[DesignatoryDetails]).getOrElse(None)
