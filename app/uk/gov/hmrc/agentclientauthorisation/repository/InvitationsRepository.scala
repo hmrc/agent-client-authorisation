@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.google.inject.ImplementedBy
 
 import javax.inject._
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.JodaReads._
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
@@ -166,7 +166,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     for {
       invitationOpt <- findById(invitation.id)
       modifiedOpt = invitationOpt.map(i =>
-        i.copy(events = i.events :+ StatusChangeEvent(DateTime.now(), DeAuthorised), isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
+        i.copy(events = i.events :+ StatusChangeEvent(DateTime.now(DateTimeZone.UTC), DeAuthorised), isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
       updated <- modifiedOpt match {
                   case Some(modified) =>
                     collection
