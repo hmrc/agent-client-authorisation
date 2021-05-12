@@ -700,12 +700,24 @@ class AgentServicesControllerISpec extends BaseISpec {
       (result.json \ "tradingName").get.as[String] shouldBe tradingName
     }
 
-    "return not found when there is no trading name for the individual" in {
+    "return not found when there is no trading name for the individual in ETMP and no name found in Citizen Details" in {
       isLoggedIn
       givenNoTradingNameFor(nino)
+      givenCitizenDetailsReturnsResponseFor(nino.value, 404)
 
       val result = getTradingNameForNino(nino)
       result.status shouldBe NOT_FOUND
+    }
+
+    "return 200 when there is no trading name for the individual in ETMP but Citizen details found" in {
+      isLoggedIn
+      givenNoTradingNameFor(nino)
+      givenCitizenDetailsAreKnownFor(nino.value, "any")
+
+      val result = getTradingNameForNino(nino)
+      result.status shouldBe OK
+
+      result.json shouldBe Json.parse(s"""{"tradingName": "John Smith"}""")
     }
   }
 
