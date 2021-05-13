@@ -511,7 +511,7 @@ class InvitationsMongoRepositoryISpec
         Some("personal"),
         Service.MtdIt,
         MtdItId("ABCD123456C"),
-        MtdItId("ABCD123456C"),
+        nino,
         None,
         now,
         now.plusDays(21).toLocalDate,

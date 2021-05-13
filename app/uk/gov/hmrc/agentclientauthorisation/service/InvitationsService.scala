@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import javax.inject.{Inject, _}
 import scala.collection.Seq
@@ -146,6 +146,22 @@ class InvitationsService @Inject()(
         logger.warn(s"Error Found: ${e.getMessage} \n Client has accepted an invitation despite previously delegated the same agent")
     }
   }
+
+  def findInvitationsInfoForClient(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[List[InvitationInfo]] =
+    clientIds.find(_._2 == NinoType.enrolmentId) match {
+      case Some(ninoClientId) if appConfig.altItsaEnabled & clientIds.map(_._2).contains(MtdItIdType.id) =>
+        updateAltItsaFor(Nino(ninoClientId._3))
+          .flatMap(_ => findInvitationsInfoBy(arn, clientIds, status))
+          .recoverWith {
+            case e: UpstreamErrorResponse => {
+              logger.warn(s"failure when updating alt-Itsa invitations, falling back to existing client data ${e.message}")
+              findInvitationsInfoBy(arn, clientIds, status)
+            }
+          }
+      case _ => findInvitationsInfoBy(arn, clientIds, status)
+    }
 
   def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
@@ -315,7 +331,7 @@ class InvitationsService @Inject()(
         .getMtdIdFor(Nino(inv.suppliedClientId.value))
         .flatMap {
           case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId)
-          case None        => Future successful inv
+          case None => Future successful inv
         }
     }
 
@@ -333,7 +349,7 @@ class InvitationsService @Inject()(
     }
     monitor("Repository-Find-Alt-ITSA-invitations") {
       invitationsRepository
-        .findInvitationsBy(arn = arn, clientId = nino.map(n => n.nino), services = List(MtdIt))
+        .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(MtdIt))
         .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
     }
   }

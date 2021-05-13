@@ -386,6 +386,45 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
   def authorisedAsValidClientWithAffinityGroup[A](request: FakeRequest[A], clientVatEnrolKey: String, clientITEnrolKey: String)(implicit hc: HeaderCarrier): FakeRequest[A] =
     authenticatedClientAffinityGroup(request, clientVatEnrolKey, clientITEnrolKey)
 
+  def authorisedAsNinoClient[A](request: FakeRequest[A], nino: Nino)(implicit hc: HeaderCarrier): FakeRequest[A] = {
+    givenAuthorisedFor(
+      payload =
+        """
+          |{
+          |"authorise" : [ {
+          | "authProviders" : [ "GovernmentGateway" ]
+          |}, {
+          |"$or" : [ {
+          | "affinityGroup" : "Individual"
+          |},{
+          | "affinityGroup" : "Organisation"
+          |}]
+          |}],
+          |"retrieve" : [ "affinityGroup", "confidenceLevel",
+          |"allEnrolments" ]
+          | }""".stripMargin,
+      responseBody =
+        s"""
+           |{
+           |"affinityGroup" : "Individual",
+           |"confidenceLevel" : 200,
+           |"allEnrolments":
+           |[
+           |  {
+           |    "key" : "HMRC-NI",
+           |    "identifiers" : [
+           |    {"key":"NINO", "value": "${nino.value}"}
+           |    ]
+           |  }
+           |]
+           |}""".stripMargin
+    )
+    request.withSession(
+      SessionKeys.authToken -> "Bearer XYZ",
+      SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse("ClientSession123456")
+    )
+  }
+
   def authenticatedClientAffinityGroup[A](request: FakeRequest[A], vatEnrolKey: String, itEnrolKey: String, confidenceLevel: Int = 200)(implicit hc: HeaderCarrier): FakeRequest[A] = {
     givenAuthorisedFor(
       payload = """
@@ -417,7 +456,7 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
          |  {
          |    "key" : "$itEnrolKey",
          |    "identifiers" : [
-         |    {"key":"NINO", "value": "AB123456A"}
+         |    {"key":"MTDITID", "value": "ABCDEF123456789"}
          |    ]
          |  },
          |  {

@@ -17,8 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-
-import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -30,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, Invitatio
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class SimplifiedAgentRefRecord(uid: String, arn: Arn, normalisedAgentName: String)
@@ -80,7 +79,7 @@ class AgentReferenceController @Inject()(
         result <- recordOpt match {
                    case Some(record) =>
                      invitationsService
-                       .findInvitationsInfoBy(record.arn, clientIds, status)
+                       .findInvitationsInfoForClient(record.arn, clientIds, status)
                        .map(list => Ok(Json.toJson(list)))
                    case _ => Future successful NotFound
                  }
