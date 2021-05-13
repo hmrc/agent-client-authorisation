@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.google.inject.ImplementedBy
 
 import javax.inject._
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.JodaReads._
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json._
@@ -166,7 +166,8 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     for {
       invitationOpt <- findById(invitation.id)
-      modifiedOpt = invitationOpt.map(i => i.copy(isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
+      modifiedOpt = invitationOpt.map(i =>
+        i.copy(events = i.events :+ StatusChangeEvent(DateTime.now(DateTimeZone.UTC), DeAuthorised), isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
       updated <- modifiedOpt match {
                   case Some(modified) =>
                     collection
@@ -175,10 +176,10 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
                       .map { result =>
                         if (result.ok) modified
                         else
-                          throw new Exception(s"Invitation ${invitation.invitationId.value} update to set isRelationshipEnded to true has failed")
+                          throw new Exception(s"Invitation ${invitation.invitationId.value} update to deauthorised has failed")
                       }
                   case None =>
-                    throw new Exception(s"Invitiation ${invitation.invitationId.value} not found")
+                    throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
                 }
     } yield updated
 
