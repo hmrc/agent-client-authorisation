@@ -323,9 +323,7 @@ class InvitationsService @Inject()(
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
     fetchAltItsaInvitationsFor(taxIdentifier)
       .flatMap(updateInvitationStoreIfMtdItIdExists(_))
-      .flatMap(Future sequence _.filter(i => i.status == PartialAuth).map(x => {
-        createRelationshipAndUpdateStatus(x)
-      }))
+      .flatMap(Future sequence _.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
 
   private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     Future sequence invitations.map { inv =>
@@ -333,9 +331,7 @@ class InvitationsService @Inject()(
         .getMtdIdFor(Nino(inv.suppliedClientId.value))
         .flatMap {
           case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId)
-          case None => {
-            Future successful inv
-          }
+          case None => Future successful inv
         }
     }
 
