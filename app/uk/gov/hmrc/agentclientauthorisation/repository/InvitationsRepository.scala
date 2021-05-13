@@ -29,6 +29,7 @@ import reactivemongo.api.{Cursor, ReadPreference}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service.HMRCMTDIT
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId}
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -247,15 +248,17 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
     collection
       .find(
         query,
-        Some(
-          Json.obj(
-            "invitationId"                   -> 1,
-            "expiryDate"                     -> 1,
-            InvitationRecordFormat.statusKey -> 1,
-            "arn"                            -> 1,
-            "service"                        -> 1,
-            "isRelationshipEnded"            -> 1,
-            "events"                         -> 1))
+        Some(Json.obj(
+          "invitationId"                   -> 1,
+          "expiryDate"                     -> 1,
+          InvitationRecordFormat.statusKey -> 1,
+          "arn"                            -> 1,
+          "service"                        -> 1,
+          "isRelationshipEnded"            -> 1,
+          "events"                         -> 1,
+          "clientId"                       -> 1,
+          "suppliedClientId"               -> 1
+        ))
       )
       .cursor[JsObject](ReadPreference.primaryPreferred)
       .collect[List](1000, Cursor.FailOnError[List[JsObject]]())
@@ -270,7 +273,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               x \ "service",
               (x \ "isRelationshipEnded").orElse(JsDefined(JsBoolean(false))),
               (x \ "relationshipEndedBy").orElse(JsDefined(JsNull)),
-              x \ "events"))
+              x \ "events",
+              x \ "clientId",
+              x \ "suppliedClientId"))
           .map(properties =>
             InvitationInfo(
               properties._1.as[InvitationId],
@@ -280,7 +285,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
               properties._5.as[Service],
               properties._6.as[Boolean],
               properties._7.asOpt[String],
-              properties._8.as[List[StatusChangeEvent]]
+              properties._8.as[List[StatusChangeEvent]],
+              (properties._5.as[Service].id == HMRCMTDIT && properties._9.as[String] == properties._10.as[String]) || properties._3
+                .as[InvitationStatus] == PartialAuth
           )))
 
   def findInvitationInfoBy(arn: Arn, clientIdTypeAndValues: Seq[(String, String, String)], status: Option[InvitationStatus])(

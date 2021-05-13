@@ -209,7 +209,8 @@ case class InvitationInfo(
   service: Service,
   isRelationshipEnded: Boolean = false,
   relationshipEndedBy: Option[String] = None,
-  events: List[StatusChangeEvent])
+  events: List[StatusChangeEvent],
+  isAltItsa: Boolean = false)
 
 object InvitationInfo {
   implicit val format = Json.format[InvitationInfo]

@@ -186,7 +186,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
           when(
-            mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            mockInvitationsService.findInvitationsInfoForClient(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+              any[HeaderCarrier],
               any[ExecutionContext]))
             .thenReturn(Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
@@ -218,7 +219,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+          mockInvitationsService.findInvitationsInfoForClient(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful listOfInvitations)
 
@@ -261,7 +263,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+          mockInvitationsService.findInvitationsInfoForClient(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
@@ -281,7 +284,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
         when(
-          mockInvitationsService.findInvitationsInfoBy(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+          mockInvitationsService.findInvitationsInfoForClient(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
+            any[HeaderCarrier],
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 

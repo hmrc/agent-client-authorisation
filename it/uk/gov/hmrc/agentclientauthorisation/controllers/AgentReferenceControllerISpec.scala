@@ -3,7 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo}
+import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
@@ -84,6 +84,54 @@ class AgentReferenceControllerISpec extends BaseISpec {
       status(response) shouldBe 200
 
       jsonBodyOf(response).as[List[InvitationInfo]].size shouldBe 3
+    }
+
+    "the service is HMRC-MTD-IT and there are ALT-ITSA invitations make updates if client has MTDITID enrolment and return updated list" in {
+
+      val altItsaInvitation = await(createInvitation(arn, altItsaClient))
+     await(invitationsRepo.update(altItsaInvitation, PartialAuth, DateTime.now()))
+
+      val agentReferenceRecord: AgentReferenceRecord =
+        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+      await(agentReferenceRepo.insert(agentReferenceRecord))
+
+      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
+
+      givenMtdItIdIsKnownFor(nino, mtdItId)
+      givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
+
+      val response = await(controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT")))
+
+      status(response) shouldBe 200
+
+      val result = jsonBodyOf(response).as[List[InvitationInfo]]
+      result.size shouldBe 1
+      result.head.isAltItsa shouldBe false
+    }
+
+    "the service is HMRC-MTD-IT and there are ALT-ITSA invitations to update but create relationship fails" in {
+
+      val altItsaInvitation = await(createInvitation(arn, altItsaClient))
+      await(invitationsRepo.update(altItsaInvitation, PartialAuth, DateTime.now()))
+
+      val agentReferenceRecord: AgentReferenceRecord =
+        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+
+      await(agentReferenceRepo.insert(agentReferenceRecord))
+
+      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
+
+      givenMtdItIdIsKnownFor(nino, mtdItId)
+      givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
+
+      val response = await(controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT")))
+
+      status(response) shouldBe 200
+
+      val result = jsonBodyOf(response).as[List[InvitationInfo]]
+      result.size shouldBe 1
+      result.head.isAltItsa shouldBe true
     }
   }
 
