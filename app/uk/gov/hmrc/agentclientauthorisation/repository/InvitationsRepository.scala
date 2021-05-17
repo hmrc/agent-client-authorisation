@@ -166,8 +166,12 @@ class InvitationsRepositoryImpl @Inject()(mongo: ReactiveMongoComponent)
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     for {
       invitationOpt <- findById(invitation.id)
-      modifiedOpt = invitationOpt.map(i =>
-        i.copy(events = i.events :+ StatusChangeEvent(DateTime.now(DateTimeZone.UTC), DeAuthorised), isRelationshipEnded = true, relationshipEndedBy = Some(endedBy)))
+      modifiedOpt = invitationOpt.map(
+        i =>
+          i.copy(
+            events = i.events :+ StatusChangeEvent(DateTime.now(DateTimeZone.UTC), DeAuthorised),
+            isRelationshipEnded = true,
+            relationshipEndedBy = Some(endedBy)))
       updated <- modifiedOpt match {
                   case Some(modified) =>
                     collection

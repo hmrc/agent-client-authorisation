@@ -697,8 +697,10 @@ class InvitationsMongoRepositoryISpec
       val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       storedInvitation.detailsForEmail shouldBe Some(dfe)
       await(repository.removePersonalDetails(now))
-      val updatedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
-      updatedInvitation.detailsForEmail shouldBe None
+      eventually {
+        val updatedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
+        updatedInvitation.detailsForEmail shouldBe None
+      }
     }
   }
 

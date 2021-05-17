@@ -23,7 +23,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
 
     val request = FakeRequest("PUT", "/alt-itsa/update/:nino")
 
-    "return 200 when there are no alternative itsa invitations found for the client" in {
+    "return 204 when there are no alternative itsa invitations found for the client" in {
 
       await(
         invitationsRepo.create(
@@ -39,7 +39,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       )
 
       val result = await(controller.altItsaUpdate(nino)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
     }
 
     "return 500 when DES MtdItId call fails leaving alt-itsa invitation untouched" in {
@@ -64,7 +64,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 200 when DES MtdItId call return 404 (client not signed up to MtdItId) leaving alt-itsa invitation untouched" in {
+    "return 204 when DES MtdItId call return 404 (client not signed up to MtdItId) leaving alt-itsa invitation untouched" in {
 
       val altItsaPending = await(
         invitationsRepo.create(
@@ -82,11 +82,11 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenMtdItIdIsUnknownFor(nino)
 
       val result = await(controller.altItsaUpdate(nino)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 200 when client has MtdItId, updating the invitation store to replace Nino" in {
+    "return 204 when client has MtdItId, updating the invitation store to replace Nino" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -117,7 +117,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
       val result = await(controller.altItsaUpdate(nino)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
     }
@@ -208,7 +208,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
 
     val request = FakeRequest("PUT", "/agent/alt-itsa/update/:arn")
 
-    "return 200 when there are no alt-itsa invitations found for the agent" in {
+    "return 204 when there are no alt-itsa invitations found for the agent" in {
 
       await(
         invitationsRepo.create(
@@ -224,7 +224,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       )
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
     }
 
     "return 500 when DES MtdItId call fails" in {
@@ -249,7 +249,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 200 when a DES MtdItId call returns 404 (a client is not signed up to MtdItId)" in {
+    "return 204 when a DES MtdItId call returns 404 (a client is not signed up to MtdItId)" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -281,12 +281,12 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenMtdItIdIsUnknownFor(nino2)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2)
     }
 
-    "return 200 when MtdItId found and replace Nino on multiple records for the same client" in {
+    "return 204 when MtdItId found and replace Nino on multiple records for the same client" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -317,12 +317,12 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
     }
 
-    "return 200 when MtdItId found and replace Nino on multiple records for different clients" in {
+    "return 204 when MtdItId found and replace Nino on multiple records for different clients" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -367,13 +367,13 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenMtdItIdIsKnownFor(nino2, mtdItId2)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId2))
       await(invitationsRepo.findByInvitationId(anotherAgent.invitationId)) shouldBe Some(anotherAgent)
     }
 
-    "return 200 when MtdItId found and create relationship succeeds, updating status to Accepted" in {
+    "return 204 when MtdItId found and create relationship succeeds, updating status to Accepted" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -424,7 +424,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId2)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
 
       val modified1 = await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId))
       val modified2 = await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId))
@@ -473,7 +473,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       mongoResult.count(_.status == PartialAuth) shouldBe 1
     }
 
-    "return 200 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in {
+    "return 204 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in {
 
       val altItsaPending1 = await(
         invitationsRepo.create(
@@ -527,7 +527,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId3)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
-      status(result) shouldBe 200
+      status(result) shouldBe 204
 
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId2)

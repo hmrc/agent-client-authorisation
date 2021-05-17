@@ -331,7 +331,7 @@ class InvitationsService @Inject()(
         .getMtdIdFor(Nino(inv.suppliedClientId.value))
         .flatMap {
           case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId)
-          case None => Future successful inv
+          case None        => Future successful inv
         }
     }
 

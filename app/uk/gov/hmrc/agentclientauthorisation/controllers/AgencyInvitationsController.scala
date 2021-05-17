@@ -348,7 +348,7 @@ class AgencyInvitationsController @Inject()(
     invitationsService
       .updateAltItsaFor(nino)
       .map { result =>
-        if (result.nonEmpty) Created else Ok
+        if (result.nonEmpty) Created else NoContent
       }
       .recover {
         case e => {
@@ -361,7 +361,7 @@ class AgencyInvitationsController @Inject()(
   def altItsaUpdateAgent(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
     invitationsService
       .updateAltItsaFor(arn)
-      .map(_ => Ok)
+      .map(_ => NoContent)
       .recover {
         case e => {
           logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
