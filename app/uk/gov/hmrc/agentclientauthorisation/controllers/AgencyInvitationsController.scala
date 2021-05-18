@@ -243,7 +243,9 @@ class AgencyInvitationsController @Inject()(
         case FailedResultException(r) if r.header.status == BadRequest.header.status     => r.toFuture
         case FailedResultException(r) if r.header.status == NotImplemented.header.status => r.toFuture
         case FailedResultException(PostcodeDoesNotMatch)                                 => PostcodeDoesNotMatch.toFuture
-        case _                                                                           => checkPostcodeAgainstCitizenDetails(nino, postcode)
+        case FailedResultException(r) =>
+          if (appConfig.altItsaEnabled) checkPostcodeAgainstCitizenDetails(nino, postcode)
+          else r.toFuture
       }
       .recover {
         case uer: UpstreamErrorResponse =>
