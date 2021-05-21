@@ -221,6 +221,13 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
   private def supportedServiceName(key: String): Option[String] =
     Service.supportedServices.find(_.enrolmentKey == key).map(_.id)
 
+  private def maybeNinoForMtdItId(enrols: Enrolments) =
+    if (appConfig.altItsaEnabled)
+      enrols.enrolments
+        .find(_.key == "HMRC-NI")
+        .map(ninoEnrol => ("HMRC-MTD-IT", ninoEnrol.identifiers.head.key, ninoEnrol.identifiers.head.value.replaceAll(" ", "")))
+    else None
+
   protected def withMultiEnrolledClient[A](
     body: Seq[(String, String, String)] => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
@@ -239,6 +246,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
               }
               .toSeq
 
+          val clientIds = clientIdTypePlusIds ++ maybeNinoForMtdItId(enrols).toSeq
+
           //APB-4856: Clients with only CGT enrol dont need to go through IV and they should be allowed same as if they have CL >= L200
           val isCgtOnlyClient: Boolean = {
             val enrolKeys: Set[String] = enrols.enrolments.map(_.key)
@@ -246,7 +255,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
           }
 
           (affinity, confidence) match {
-            case (Individual, cl) if cl >= L200 || isCgtOnlyClient => body(clientIdTypePlusIds)
+            case (Individual, cl) if cl >= L200 || isCgtOnlyClient => body(clientIds)
             case (Organisation, _)                                 => body(clientIdTypePlusIds)
             case _                                                 => Future successful GenericForbidden
           }

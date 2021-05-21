@@ -152,7 +152,7 @@ class InvitationsService @Inject()(
     ec: ExecutionContext): Future[List[InvitationInfo]] =
     clientIds.find(_._2 == NinoType.enrolmentId) match {
       case Some(ninoClientId) if appConfig.altItsaEnabled & clientIds.map(_._2).contains(MtdItIdType.id) =>
-        updateAltItsaFor(Nino(ninoClientId._3))
+        updateAltItsaFor(Nino(ninoClientId._3)) //if there is an alt-itsa invitation then we want to update it with MTDITID
           .flatMap(_ => findInvitationsInfoBy(arn, clientIds, status))
           .recoverWith {
             case e: UpstreamErrorResponse => {
