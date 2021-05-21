@@ -32,7 +32,7 @@ object ErrorResults {
   val GenericUnauthorized: Result = Unauthorized(toJson(ErrorBody("UNAUTHORIZED", "Bearer token is missing or not authorized.")))
   val AgentNotSubscribed: Result = Forbidden(toJson(ErrorBody("AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")))
   val ClientRegistrationNotFound: Result = Forbidden(
-    toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")))
+    toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration or SAUTR (if alt-itsa is enabled) was not found.")))
   val NotAClient: Result = Forbidden(toJson(ErrorBody("NOT_A_CLIENT", "The logged in user must be a client to proceed.")))
   val NoPermissionOnAgency: Result = Forbidden(
     toJson(ErrorBody("NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency.")))

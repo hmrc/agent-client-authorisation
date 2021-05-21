@@ -6,7 +6,7 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 trait CitizenDetailsStub {
   me: StartAndStopWireMock =>
 
-  def givenCitizenDetailsAreKnownFor(nino: String, dob: String): StubMapping =
+  def givenCitizenDetailsAreKnownFor(nino: String, dob: String, sautr: Option[String] = None): StubMapping =
     stubFor(
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(
@@ -21,7 +21,7 @@ trait CitizenDetailsStub {
                          |      "previous": []
                          |   },
                          |   "ids": {
-                         |      "nino": "$nino"
+                         |      "nino": "$nino" ${sautr.map(utr => s""","sautr": "$utr" """).getOrElse("")}
                          |   },
                          |   "dateOfBirth": "$dob"
                          |}""".stripMargin)))
@@ -50,4 +50,17 @@ trait CitizenDetailsStub {
       get(urlEqualTo(s"/citizen-details/nino/$nino"))
         .willReturn(aResponse()
           .withStatus(response)))
+
+  def givenDesignatoryDetailsAreKNownFor(nino: String, postcode: Option[String]): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/citizen-details/$nino/designatory-details"))
+        .willReturn(aResponse()
+          .withStatus(200)
+        .withBody(
+          s"""{
+             |"person": {
+             |  "nino": "$nino"
+             |} ${postcode.map(pc => s""", "address": { "postcode": "$pc"} """).getOrElse("")}
+             |}""".stripMargin)
+    ))
 }

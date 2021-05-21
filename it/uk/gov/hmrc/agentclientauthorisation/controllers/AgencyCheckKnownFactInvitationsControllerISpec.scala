@@ -100,6 +100,45 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 
       result shouldBe nonUkAddress("PL")
     }
+
+    "return No Content if Nino is unknown in ETMP but found in CiD with SAUTR exists and postcodes match" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasNoBusinessPartnerRecord(nino)
+      givenCitizenDetailsAreKnownFor(nino.value, "10041980", Some("1234567890"))
+      givenDesignatoryDetailsAreKNownFor(nino.value, Some("AA11AA"))
+
+      val result = await(controller.checkKnownFactItsa(nino, "AA11AA")(request))
+
+      status(result) shouldBe 204
+    }
+
+    "return Forbidden if Nino is unknown in ETMP but found in CiD with SAUTR exists and postcodes do not match" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasNoBusinessPartnerRecord(nino)
+      givenCitizenDetailsAreKnownFor(nino.value, "10041980", Some("1234567890"))
+      givenDesignatoryDetailsAreKNownFor(nino.value, Some("AA11AX"))
+
+      val result = await(controller.checkKnownFactItsa(nino, "AA11AA")(request))
+
+      result shouldBe PostcodeDoesNotMatch
+    }
+
+    "return Forbidden if Nino is unknown in ETMP but found in CiD with no SAUTR" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasNoBusinessPartnerRecord(nino)
+      givenCitizenDetailsAreKnownFor(nino.value, "10041980", None)
+      givenDesignatoryDetailsAreKNownFor(nino.value, Some("AA11AX"))
+
+      val result = await(controller.checkKnownFactItsa(nino, "AA11AA")(request))
+
+      result shouldBe ClientRegistrationNotFound
+
+    }
+
+
   }
 
   "GET /known-facts/individuals/:nino/dob/:dob" should {

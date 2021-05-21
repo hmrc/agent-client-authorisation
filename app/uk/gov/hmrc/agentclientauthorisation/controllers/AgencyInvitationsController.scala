@@ -264,7 +264,7 @@ class AgencyInvitationsController @Inject()(
         if (pc.toLowerCase.replaceAll("\\s", "") == postcode.toLowerCase.replaceAll("\\s", "")) NoContent
         else PostcodeDoesNotMatch
       }
-  }.value.map(_.getOrElse(PostcodeDoesNotMatch))
+  }.value.map(_.getOrElse(ClientRegistrationNotFound))
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
     knownFactsCheckService

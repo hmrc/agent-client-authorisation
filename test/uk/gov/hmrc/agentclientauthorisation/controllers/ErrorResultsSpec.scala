@@ -37,7 +37,12 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
 
       checkConstant(GenericUnauthorized, Status.UNAUTHORIZED, "UNAUTHORIZED", "Bearer token is missing or not authorized.")
       checkConstant(AgentNotSubscribed, Status.FORBIDDEN, "AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")
-      checkConstant(ClientRegistrationNotFound, Status.FORBIDDEN, "CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration was not found.")
+      checkConstant(
+        ClientRegistrationNotFound,
+        Status.FORBIDDEN,
+        "CLIENT_REGISTRATION_NOT_FOUND",
+        "The Client's MTDfB registration or SAUTR (if alt-itsa is enabled) was not found."
+      )
       checkConstant(NotAClient, Status.FORBIDDEN, "NOT_A_CLIENT", "The logged in user must be a client to proceed.")
       checkConstant(
         NoPermissionOnAgency,
