@@ -124,10 +124,15 @@ class EmailService @Inject()(
           case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
           case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
         }),
-        "additionalInfo" -> (invitation.service.id match {
-          case HMRCMTDIT => s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
-          case _         => ""
-        })
+        "additionalInfo" -> {
+          if (isAltItsa(invitation))
+            s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
+          else ""
+        }
       )
     )
+
+  private def isAltItsa(invitation: Invitation): Boolean =
+    invitation.service.id == HMRCMTDIT && invitation.clientId == invitation.suppliedClientId ||
+      invitation.events.sortBy(_.time.getMillis)(Ordering.Long.reverse).headOption.map(_.status).contains(PartialAuth)
 }
