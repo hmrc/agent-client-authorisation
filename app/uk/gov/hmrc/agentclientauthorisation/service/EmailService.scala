@@ -123,8 +123,11 @@ class EmailService @Inject()(
           case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
           case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
           case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
+        }),
+        "additionalInfo" -> (invitation.service.id match {
+          case HMRCMTDIT => s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
+          case _         => ""
         })
       )
     )
-
 }
