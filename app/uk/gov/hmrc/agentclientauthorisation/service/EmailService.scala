@@ -123,8 +123,15 @@ class EmailService @Inject()(
           case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
           case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
           case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
-        })
+        }),
+        "additionalInfo" -> {
+          if (isAltItsa(invitation))
+            s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
+          else ""
+        }
       )
     )
 
+  private def isAltItsa(invitation: Invitation): Boolean =
+    invitation.service.id == HMRCMTDIT && invitation.clientId == invitation.suppliedClientId || invitation.status == PartialAuth
 }
