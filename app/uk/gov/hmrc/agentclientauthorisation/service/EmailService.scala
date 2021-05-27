@@ -133,6 +133,5 @@ class EmailService @Inject()(
     )
 
   private def isAltItsa(invitation: Invitation): Boolean =
-    invitation.service.id == HMRCMTDIT && invitation.clientId == invitation.suppliedClientId ||
-      invitation.events.sortBy(_.time.getMillis)(Ordering.Long.reverse).headOption.map(_.status).contains(PartialAuth)
+    invitation.service.id == HMRCMTDIT && invitation.clientId == invitation.suppliedClientId || invitation.status == PartialAuth
 }
