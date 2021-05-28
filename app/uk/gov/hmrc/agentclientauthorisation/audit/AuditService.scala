@@ -39,7 +39,7 @@ object AgentClientInvitationEvent extends Enumeration {
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service)(
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service, isAltIsa: Boolean)(
     implicit hc: HeaderCarrier,
     request: Request[Any],
     ec: ExecutionContext): Future[Unit] =
@@ -51,7 +51,8 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "agentReferenceNumber" -> arn.value,
         "clientIdType"         -> clientIdentifierType(clientId),
         "clientId"             -> clientId.value,
-        "service"              -> service.id
+        "service"              -> service.id,
+        "altITSASource"        -> isAltIsa
       )
     )
 
