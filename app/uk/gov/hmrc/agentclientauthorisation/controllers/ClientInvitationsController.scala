@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.Service.PersonalIncomeRecord
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
@@ -122,8 +122,9 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
         invitation =>
           invitationsService.acceptInvitation(invitation).andThen {
             case Success(invitation) =>
+              val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
               auditService
-                .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service)
+                .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service, isAltItsa)
         }
       )
     }
