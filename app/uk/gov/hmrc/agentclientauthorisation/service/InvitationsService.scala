@@ -167,12 +167,14 @@ class InvitationsService @Inject()(
     implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
-  def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] =
+  def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
+    val nextStatus = if (invitation.status == PartialAuth) DeAuthorised else Cancelled
     for {
-      invitation <- changeInvitationStatus(invitation, model.Cancelled)
+      invitation <- changeInvitationStatus(invitation, nextStatus)
       _ = reportHistogramValue("Duration-Invitation-Cancelled", durationOf(invitation))
       _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
     } yield invitation
+  }
 
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
     monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
@@ -279,7 +281,7 @@ class InvitationsService @Inject()(
 
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
-    if (invitation.status == Pending) {
+    if (invitation.status == Pending || invitation.status == PartialAuth) {
       monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
           logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
