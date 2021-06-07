@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 import com.kenshoo.play.metrics.Metrics
-import javax.inject.{Inject, Provider, Singleton}
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -31,6 +30,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Success
 
@@ -102,7 +102,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     }
 
   def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { _ => implicit currentUser =>
+    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(currentUser.taxIdentifier))
@@ -152,10 +152,13 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
     }
 
   private def getInvitations[T <: TaxIdentifier](supportedService: Service, taxId: ClientIdentifier[T], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext,
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext,
     authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(taxId) {
-      invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
+      invitationsService
+        .updateAltItsaForNino(taxId)
+        .flatMap(_ => invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status))))
     }
 
   private def actionInvitation[T <: TaxIdentifier](

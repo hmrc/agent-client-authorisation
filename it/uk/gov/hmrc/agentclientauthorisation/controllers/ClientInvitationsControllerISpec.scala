@@ -114,6 +114,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
+
+      if(client.isAltItsaClient) givenMtdItIdIsUnknownFor(nino)
+
       val updatedInvitation: Result = await(controller.getInvitations(client.urlIdentifier, client.clientId.value, if(client.isAltItsaClient) Some(PartialAuth) else Some(Accepted))(getResult))
       val testInvitationOpt: Option[TestHalResponseInvitation] = (jsonBodyOf(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       val testHasStatusOf = if(client.isAltItsaClient) PartialAuth else Accepted
@@ -275,6 +278,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     runGetAllInvitationsScenario(cgtClientBus,  false, true)
     runGetAllInvitationsScenario(cgtClientBus, true, true)
+    runGetAllInvitationsScenario(altItsaClient, false)
+    runGetAllInvitationsAltItsaScenario(altItsaClient, true)
+    runGetAllInvitationsAltItsaScenario(altItsaClient, false)
   }
 
   private def runGetAllInvitationsScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, forBusiness: Boolean = false) = {
@@ -292,6 +298,50 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
 
     s"return 200 for getting no ${testClient.service.id} invitations for ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
+      val result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
+
+      status(result) shouldBe 200
+
+      val json = (jsonBodyOf(result) \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 0
+    }
+  }
+
+  private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean) = {
+    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
+    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, false) {
+      await(createInvitation(arn, testClient))
+      await(createInvitation(arn2, testClient))
+      givenMtdItIdIsKnownFor(nino, mtdItId)
+
+      val result: Result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
+
+      status(result) shouldBe 200
+
+      val json = (jsonBodyOf(result) \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 2
+      json.invitations.head.clientId shouldBe mtdItId.value
+      json.invitations.last.clientId shouldBe mtdItId.value
+    }
+
+    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"} and " +
+      s"update status to Accepted when PartialAuth exists" in new LoggedInUser(forStride, false) {
+      val pendingInvitation: Invitation = await(createInvitation(arn, testClient))
+      await(repository.update(pendingInvitation, PartialAuth, DateTime.now()))
+      givenMtdItIdIsKnownFor(nino, mtdItId)
+      givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
+
+      val result: Result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
+
+      status(result) shouldBe 200
+
+      val json = (jsonBodyOf(result) \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 1
+      json.invitations.head.clientId shouldBe mtdItId.value
+      json.invitations.head.status shouldBe "Accepted"
+    }
+
+    s"return 200 for getting no ${testClient.service.id} (ALT-ITSA) invitations for ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, false) {
       val result = await(controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request))
 
       status(result) shouldBe 200
