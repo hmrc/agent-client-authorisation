@@ -1,17 +1,24 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.joda.time.{DateTime, LocalDate}
+import akka.stream.Materializer
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, ClientIdentifier, PartialAuth, Pending, Service}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
+import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class AgencyAlternativeItsaControllerISpec extends BaseISpec {
+class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 
   lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
+
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
   override def beforeEach() {
     super.beforeEach()
@@ -549,5 +556,63 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec {
       modified3.get.clientId shouldBe ClientIdentifier(mtdItId3)
       modified3.get.status shouldBe Accepted
     }
+
+    "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
+
+      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("X-Session-ID" -> "1234")
+      val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId")
+
+      s"return 204 when a PartialAuth invitation is successfully cancelled" in {
+
+        val pending: Invitation = await(createInvitation(arn, altItsaClient))
+        val partialAuth: Invitation = await(invitationsRepo.update(pending, PartialAuth, DateTime.now()))
+
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val response = controller.cancelInvitation(arn, partialAuth.invitationId)(request)
+        status(response) shouldBe 204
+
+        val updatedInvitation = controller.getSentInvitation(arn, partialAuth.invitationId)(getResult)
+        status(updatedInvitation) shouldBe 200
+
+        val invitationStatus = jsonBodyOf(updatedInvitation).as[TestHalResponseInvitation].status
+
+        invitationStatus shouldBe DeAuthorised.toString
+
+        val event = Event("authorisation request", "deauthorised", altItsaClient.service.id.toLowerCase,
+          Seq(DimensionValue(7, altItsaClient.clientType.getOrElse("personal")), DimensionValue(8, partialAuth.invitationId.value), DimensionValue(9, "unknown")))
+
+        verifySingleEventAnalyticsRequestSent(List(event))
+      }
+
+
+
+      "return InvitationNotFound when there is no invitation to cancel" in {
+        val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+
+        val response = controller.cancelInvitation(arn, InvitationId("A7GJRTMY4DS3T"))(request)
+
+        await(response) shouldBe InvitationNotFound
+      }
+    }
+  }
+
+  def createInvitation(arn: Arn,
+                       testClient: TestClient[_],
+                       hasEmail: Boolean = true): Future[Invitation] = {
+    invitationsRepo.create(
+      arn,
+      testClient.clientType,
+      testClient.service,
+      testClient.clientId,
+      testClient.suppliedClientId,
+      if(hasEmail) Some(dfe(testClient.clientName)) else None,
+      DateTime.now(DateTimeZone.UTC),
+      LocalDate.now().plusDays(21),
+      None)
   }
 }
