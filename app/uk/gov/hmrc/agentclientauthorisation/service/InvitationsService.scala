@@ -208,6 +208,11 @@ class InvitationsService @Inject()(
       invitationsRepository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status)
     }
 
+  def updateAltItsaForNino(clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
+      updateAltItsaFor(Nino(clientId.value)).map(_ => ())
+    else Future successful (())
+
   def findInvitationsBy(
     arn: Option[Arn] = None,
     services: Seq[Service] = Seq.empty[Service],
@@ -323,15 +328,15 @@ class InvitationsService @Inject()(
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
     fetchAltItsaInvitationsFor(taxIdentifier)
       .flatMap(updateInvitationStoreIfMtdItIdExists(_))
-      .flatMap(Future sequence _.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
+      .flatMap(maybeUpdated => Future sequence maybeUpdated.flatten.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
 
   private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     Future sequence invitations.map { inv =>
       desConnector
         .getMtdIdFor(Nino(inv.suppliedClientId.value))
         .flatMap {
-          case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId)
-          case None        => Future successful inv
+          case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId).map(Some(_))
+          case None        => Future successful None
         }
     }
 
