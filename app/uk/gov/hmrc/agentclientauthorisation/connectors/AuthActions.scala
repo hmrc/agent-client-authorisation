@@ -39,8 +39,8 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolment
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
-import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -158,7 +158,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
   def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
     implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       authorised().retrieve(allEnrolments and credentials) {
         case enrolments ~ Some(creds) =>
           validateClientId(clientIdType, identifier) match {
