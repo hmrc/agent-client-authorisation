@@ -18,24 +18,23 @@ lazy val scoverageSettings = {
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "2.24.0",
-  "uk.gov.hmrc" %% "auth-client" % "3.0.0-play-27",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.23.0-play-27",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "5.3.0",
+  "uk.gov.hmrc" %% "auth-client" % "5.6.0-play-27",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.24.0-play-27",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
-  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.4.0",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-27",
+  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.5.0-play-27",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-27",
   "uk.gov.hmrc" %% "play-hal" % "2.1.0-play-27",
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
   "org.typelevel" %% "cats-core" % "2.3.0"
-  //"uk.gov.hmrc" % "cluster-work-throttling_2.11" % "6.6.0-play-26"
 )
 
 def testDeps(scope: String) = Seq(
-  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-26" % scope,
+  "uk.gov.hmrc" %% "hmrctest" % "3.10.0-play-26" % scope,
   "org.scalatest" %% "scalatest" % "3.0.8" % scope,
-  "org.mockito" % "mockito-core" % "2.27.0" % scope,
+  "org.mockito" % "mockito-core" % "3.2.0" % scope,
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope,
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.21.0-play-27" % scope,
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.22.0-play-27" % scope,
   "com.github.tomakehurst" % "wiremock-jre8" % "2.27.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,

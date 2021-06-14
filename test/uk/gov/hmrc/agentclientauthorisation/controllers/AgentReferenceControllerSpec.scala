@@ -137,7 +137,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       "authorised for user: Individual" when {
         "confidence level is 200" in testAuthorisedIndividual(ConfidenceLevel.L200)
 
-        "confidence level is greater than 200" in testAuthorisedIndividual(ConfidenceLevel.L300)
+        "confidence level is greater than 200" in testAuthorisedIndividual(ConfidenceLevel.L250)
 
         def testAuthorisedIndividual(withThisConfidenceLevel: ConfidenceLevel) = {
           clientAuthStub(client(AffinityGroup.Individual, withThisConfidenceLevel, clientMtdItIrvVat))
@@ -309,7 +309,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       }
 
       "user: Individual with confidence level less than 200" in {
-        clientAuthStub(client(AffinityGroup.Individual, ConfidenceLevel.L100, clientMtdItIrvVat))
+        clientAuthStub(client(AffinityGroup.Individual, ConfidenceLevel.L50, clientMtdItIrvVat))
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
         status(result) shouldBe 403
