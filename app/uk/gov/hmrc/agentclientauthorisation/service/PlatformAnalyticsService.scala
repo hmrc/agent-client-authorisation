@@ -47,6 +47,7 @@ class PlatformAnalyticsService @Inject()(
   private val clientTypeIndex = appConfig.gaClientTypeIndex
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
   private val originIndex = appConfig.gaOriginIndex
+  private val altItsaIndex = appConfig.gaAltItsaIndex
 
   val logger = Logger(getClass)
 
@@ -78,14 +79,13 @@ class PlatformAnalyticsService @Inject()(
 
   private def createEventFor(i: Invitation): Event =
     i.status match {
-      case Pending      => makeAuthRequestEvent("created", i)
-      case Accepted     => makeAuthRequestEvent("accepted", i)
-      case Rejected     => makeAuthRequestEvent("declined", i)
-      case Expired      => makeAuthRequestEvent("expired", i)
-      case Cancelled    => makeAuthRequestEvent("cancelled", i)
-      case DeAuthorised => makeAuthRequestEvent("deauthorised", i)
-      case PartialAuth  => makeAuthRequestEvent("partialauth", i)
-      case _: Unknown   => makeAuthRequestEvent("unknown", i)
+      case Pending | PartialAuth => makeAuthRequestEvent("created", i)
+      case Accepted              => makeAuthRequestEvent("accepted", i)
+      case Rejected              => makeAuthRequestEvent("declined", i)
+      case Expired               => makeAuthRequestEvent("expired", i)
+      case Cancelled             => makeAuthRequestEvent("cancelled", i)
+      case DeAuthorised          => makeAuthRequestEvent("deauthorised", i)
+      case _: Unknown            => makeAuthRequestEvent("unknown", i)
     }
 
   private def makeAuthRequestEvent(action: String, i: Invitation): Event =
@@ -97,7 +97,7 @@ class PlatformAnalyticsService @Inject()(
         DimensionValue(clientTypeIndex, i.clientType.getOrElse("unknown")),
         DimensionValue(invitationIdIndex, i.invitationId.value),
         DimensionValue(originIndex, i.origin.getOrElse("unknown"))
-      )
+      ) ++ i.altItsa.map(v => List(DimensionValue(altItsaIndex, v.toString))).getOrElse(List.empty)
     )
 
   // platform analytics will make a client ID from the session ID but when there is no session (eg for expired status) use this to make a client ID.

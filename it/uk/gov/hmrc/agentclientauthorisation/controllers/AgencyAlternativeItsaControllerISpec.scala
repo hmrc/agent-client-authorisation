@@ -582,7 +582,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
         invitationStatus shouldBe DeAuthorised.toString
 
         val event = Event("authorisation request", "deauthorised", altItsaClient.service.id.toLowerCase,
-          Seq(DimensionValue(7, altItsaClient.clientType.getOrElse("personal")), DimensionValue(8, partialAuth.invitationId.value), DimensionValue(9, "unknown")))
+          Seq(DimensionValue(7, altItsaClient.clientType.getOrElse("personal")), DimensionValue(8, partialAuth.invitationId.value), DimensionValue(9, "unknown"), DimensionValue(105, "true")))
 
         verifySingleEventAnalyticsRequestSent(List(event))
       }
