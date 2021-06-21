@@ -86,6 +86,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val gaClientTypeIndex: Int = servicesConfig.getInt("google-analytics.clientTypeIndex")
   val gaInvitationIdIndex: Int = servicesConfig.getInt("google-analytics.invitationIdIndex")
   val gaOriginIndex: Int = servicesConfig.getInt("google-analytics.originIndex")
+  val gaAltItsaIndex: Int = servicesConfig.getInt("google-analytics.altItsaIndex")
 
   val sendEmailPriorToExpireDays: Int = servicesConfig.getInt("invitation-about-to-expire-warning-email.daysPrior")
   val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")

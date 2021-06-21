@@ -22,6 +22,7 @@ import play.api.libs.json.JodaReads._
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.http.controllers.RestFormats
 
@@ -131,6 +132,8 @@ case class Invitation(
   def status = mostRecentEvent().status
 
   def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
+
+  val altItsa: Option[Boolean] = if (service == MtdIt) Some(clientId == suppliedClientId) else None
 
 }
 
