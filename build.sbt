@@ -18,11 +18,11 @@ lazy val scoverageSettings = {
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "5.3.0",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "5.6.0",
   "uk.gov.hmrc" %% "auth-client" % "5.6.0-play-27",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.24.0-play-27",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.25.0-play-27",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
-  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.5.0-play-27",
+  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.6.0-play-27",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-27",
   "uk.gov.hmrc" %% "play-hal" % "2.1.0-play-27",
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
@@ -55,6 +55,7 @@ lazy val root = (project in file("."))
     resolvers ++= Seq(
       Resolver.typesafeRepo("releases"),
     ),
+    resolvers += "HMRC-local-artefacts-maven" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases-local",
     libraryDependencies ++= tmpMacWorkaround() ++ compileDeps ++ testDeps("test") ++ testDeps("it"),
     libraryDependencies ++= Seq(
       compilerPlugin("com.github.ghik" % "silencer-plugin" % "1.4.4" cross CrossVersion.full),
@@ -90,7 +91,7 @@ lazy val root = (project in file("."))
     parallelExecution in IntegrationTest := false,
     scalafmtOnCompile in IntegrationTest := true
   )
-  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
 
 inConfig(IntegrationTest)(scalafmtCoreSettings)
