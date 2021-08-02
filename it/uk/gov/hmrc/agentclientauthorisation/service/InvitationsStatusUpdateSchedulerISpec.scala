@@ -91,6 +91,7 @@ class InvitationsStatusUpdateSchedulerISpec
       eventually {
         await(invitationsRepository.findInvitationsBy(status = Some(Expired))).length shouldBe 5
       }
+      testKit.shutdownTestKit()
     }
   }
 }

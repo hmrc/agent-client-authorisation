@@ -5,7 +5,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -41,6 +41,8 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
     appConfig,
     metrics)
 
+  val testKit = ActorTestKit()
+
 
   val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository,invitationsService, 60)))
 
@@ -48,9 +50,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
 
     "run scheduled tasks" in {
 
-      val testKit = ActorTestKit()
-
-      val now = DateTime.now()
+      val now = DateTime.now(DateTimeZone.UTC)
 
       await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
 
@@ -82,7 +82,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         arn = Arn(arn),
         clientType = None,
         service = Service.MtdIt,
-        clientId = MtdItId(s"AB123456B"),
+        clientId = MtdItId(s"AB323456B"),
         suppliedClientId = MtdItId(s"AB123456A"),
         detailsForEmail = Some(DetailsForEmail("keep@x.com", "keep", "keep")),
         startDate = now.minusDays(21),
@@ -94,7 +94,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         arn = Arn(arn),
         clientType = None,
         service = Service.MtdIt,
-        clientId = MtdItId(s"AB223456B"),
+        clientId = MtdItId(s"AB423456B"),
         suppliedClientId = MtdItId(s"AB223456A"),
         detailsForEmail = None,
         startDate = now.minusDays(appConfig.altItsaExpiryDays + 21),
@@ -129,9 +129,6 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail.isDefined shouldBe true
       await(invitationsRepository.findByInvitationId(toRemoveDetailsForEmail.invitationId)).head.detailsForEmail.isDefined shouldBe true
 
-      await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
-      await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
-
       givenEmailSent(EmailInformation(
         to = Seq("agency@x.com"),
         templateId = "agent_invitation_about_to_expire_single",
@@ -145,6 +142,15 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       testKit.scheduler.scheduleOnce(2.seconds, actorRef, "uid")
 
       eventually {
+        await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
+
+        await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.status shouldBe DeAuthorised
+        await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.isRelationshipEnded shouldBe true
+        await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.relationshipEndedBy shouldBe Some("HMRC")
+
+      }
+
+      eventually {
 
         verify(
           1,
@@ -153,15 +159,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
 
         await(invitationsRepository.findByInvitationId(toRemoveDetailsForEmail.invitationId)).head.detailsForEmail shouldBe None
         await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail shouldBe Some(DetailsForEmail(s"keep@x.com", s"keep", s"keep"))
-
-        await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
-        val cancelledPartialAuth = await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head
-        cancelledPartialAuth.status  shouldBe DeAuthorised
-        cancelledPartialAuth.isRelationshipEnded shouldBe true
-        cancelledPartialAuth.relationshipEndedBy shouldBe Some("HMRC")
-
       }
-
       testKit.shutdownTestKit()
     }
   }
