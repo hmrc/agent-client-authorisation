@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-class RoutineJobScheduler02ISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs  with EmailStub {
+class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs  with EmailStub {
 
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
