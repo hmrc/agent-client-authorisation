@@ -38,13 +38,18 @@ class RoutineJobScheduler @Inject()(
 )(implicit ec: ExecutionContext)
     extends Logging {
 
+  val enabled = appConfig.removePersonalInfoSchedulerEnabled
   val interval = appConfig.removePersonalInfoScheduleInterval
 
-  val removePersonalInfoActor = actorSystem.actorOf(Props {
-    new RoutineScheduledJobActor(scheduleRepository, invitationsService, interval)
-  })
-  actorSystem.scheduler.scheduleOnce(2.seconds, removePersonalInfoActor, "<Initial RemovePersonalInfoActor message>")
-
+  if (enabled) {
+    logger.info(s"routine job scheduler is enabled.")
+    val removePersonalInfoActor = actorSystem.actorOf(Props {
+      new RoutineScheduledJobActor(scheduleRepository, invitationsService, interval)
+    })
+    actorSystem.scheduler.scheduleOnce(2.seconds, removePersonalInfoActor, "<Initial RoutineJobSchedulerActor message>")
+  } else {
+    logger.warn(s"routine job scheduler is not enabled.")
+  }
 }
 
 class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
@@ -53,7 +58,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
 
   def receive = {
     case uid: String =>
-      logger.info("RemovePersonalInfoActor Received message: " + uid)
+      logger.info("RoutineJobSchedulerActor Received message: " + uid)
       try {
         scheduleRepository.read(SchedulerType.RemovePersonalInfo).flatMap {
           case ScheduleRecord(recordUid, runAt, _) =>
@@ -70,6 +75,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
                   for {
                     _ <- invitationsService.prepareAndSendWarningEmail()
                     _ <- invitationsService.removePersonalDetails()
+                    _ <- invitationsService.cancelOldAltItsaInvitations()
                   } yield (logger info ("routine scheduled job completed"))
                 }
             } else { //There are several instances of this service running
@@ -81,7 +87,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
             }
         }
       } catch {
-        case ex: Exception => logger.error(s"Exception in RemovePersonalInfoActor: ${ex.getMessage}", ex)
+        case ex: Exception => logger.error(s"Exception in RoutineJobSchedulerActor: ${ex.getMessage}", ex)
       }
       ()
   }

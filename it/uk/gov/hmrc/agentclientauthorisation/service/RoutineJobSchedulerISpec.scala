@@ -1,175 +1,168 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
-
-import akka.actor.ActorSystem
-//import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import akka.actor.{ActorSystem, Props}
+import akka.testkit.TestKit
+import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
+import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
-import org.scalatest.time.{Seconds, Span}
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.model.{DetailsForEmail, EmailInformation, Invitation, Service}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, ScheduleRepository}
-import uk.gov.hmrc.agentclientauthorisation.support.{EmailStub, MongoApp, MongoAppAndStubs}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord, SchedulerType}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.arn
+import uk.gov.hmrc.agentclientauthorisation.support.{EmailStub, MongoAppAndStubs}
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Urn}
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
+class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs  with EmailStub {
 
-class RoutineJobSchedulerISpec extends UnitSpec with MongoAppAndStubs with MongoApp with EmailStub with GuiceOneServerPerSuite {
-
-  private lazy val invitationsRepo = app.injector.instanceOf[InvitationsRepositoryImpl]
+  val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
+  val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
+  val desConnector = app.injector.instanceOf[DesConnector]
   val appConfig = app.injector.instanceOf[AppConfig]
+  val emailService = app.injector.instanceOf[EmailService]
+  val metrics = app.injector.instanceOf[Metrics]
+  val schedulerRepository = app.injector.instanceOf[MongoScheduleRepository]
+  val invitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
 
-  val scheduler = new RoutineJobScheduler(
-    app.injector.instanceOf[ScheduleRepository],
-    app.injector.instanceOf[InvitationsService],
-    app.injector.instanceOf[ActorSystem],
-    appConfig
-  )
+  val invitationsService = new InvitationsService(
+    invitationsRepository,
+    relationshipConnector,
+    analyticsService,
+    desConnector,
+    emailService,
+    appConfig,
+    metrics)
 
-  override implicit val patienceConfig =
-    PatienceConfig(scaled(Span(60, Seconds)), scaled(Span(5, Seconds)))
 
-  "RoutineJobScheduler - remove personal info job" should {
+  val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository,invitationsService, 60)))
 
-    val arn = Arn("AARN0000057")
+  "RoutineJobScheduler" should {
 
-    "remove personal information after they are expired" in {
+    "run scheduled tasks" in {
+
+      val testKit = ActorTestKit()
+
       val now = DateTime.now()
-      val expiredInvitations: Seq[Invitation] = (1 to 5).map(
-        i =>
-          Invitation.createNew(
-            arn,
-            None,
-            Service.MtdIt,
-            MtdItId(s"AB${i}23456B"),
-            MtdItId(s"AB${i}23456A"),
-            Some(DetailsForEmail(s"mustDelete@x.com", s"mustDelete", s"mustDelete")),
-            now.minusDays(appConfig.removePersonalInfoExpiryDuration.toDays.toInt + Random.nextInt(15) + 2),
-            now.minusDays(Random.nextInt(5) + 1).toLocalDate,
-            None
-          ))
 
-      val activeInvitations: Seq[Invitation] = (1 to 5).map(
-        i =>
-          Invitation.createNew(
-            arn,
-            None,
-            Service.MtdIt,
-            MtdItId(s"AB${i}23456B"),
-            MtdItId(s"AB${i}23456A"),
-            Some(DetailsForEmail(s"active@x.com", s"active", s"active")),
-            now.minusDays(Random.nextInt(15)),
-            now.minusDays(Random.nextInt(5)).toLocalDate,
-            None
-          ))
+      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
 
-      await(Future.sequence(expiredInvitations.map(invitationsRepo.insert)))
-      await(Future.sequence(activeInvitations.map(invitationsRepo.insert)))
-
-      await(invitationsRepo.findAll()).length shouldBe 10
-
-      eventually {
-        val remainingInvitations = await(invitationsRepo.findAll())
-        remainingInvitations.length shouldBe 10
-        remainingInvitations.filter(_.detailsForEmail.isEmpty).length shouldBe 5
-        remainingInvitations.filter(_.detailsForEmail.isDefined).length shouldBe 5
-        remainingInvitations.flatMap(_.detailsForEmail).map(_.agencyName).foreach(_ shouldBe "active")
-      }
-    }
-  }
-
-  "RoutineJobScheduler - send warning email job" should {
-
-    "send email to agents for invitations that are about to expire" in {
-
-      val arn1 = Arn("AARN0876516")
-      val arn2 = Arn("CARN2752751")
-      val arn3 = Arn("EARN2086970")
-
-      val arn = Array(arn1, arn2, arn3)
-      val now = DateTime.now()
-      val expireIn5DaysMtdIt: Seq[Invitation] = (1 to 3).map(
-        i =>
-          Invitation.createNew(
-            arn(i-1),
-            None,
-            Service.MtdIt,
-            MtdItId(s"JH${i}23456B"),
-            MtdItId(s"JH${i}23456A"),
-            Some(DetailsForEmail(s"mustDelete${i}@x.com", s"mustDelete${i}", s"mustDelete${i}")),
-            now.minusDays(16),
-            now.plusDays(5).toLocalDate,
-            None
-          )
+      val pendingInvitation = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB123456B"),
+        suppliedClientId = MtdItId(s"AB123456A"),
+        detailsForEmail = Some(DetailsForEmail("keep@x.com", "keep", "keep")),
+        startDate = now.minusDays(1),
+        expiryDate = now.plusDays(20).toLocalDate,
+        origin = None
       )
 
-      val expireIn5DaysIRV: Seq[Invitation] = (1 to 3).map(
-        i =>
-        Invitation.createNew(
-          arn(i-1),
-          None,
-          Service.PersonalIncomeRecord,
-          Nino(s"JH${i}23456B"),
-          Nino(s"JH${i}23456A"),
-          Some(DetailsForEmail(s"mustDeleteIrv${i}@x.com", s"mustDeleteIrv${i}", s"mustDeleteIrv${i}")),
-          now.minusDays(16),
-          now.plusDays(5).toLocalDate,
-          None
+      val toRemoveDetailsForEmail = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB223456B"),
+        suppliedClientId = MtdItId(s"AB223456A"),
+        detailsForEmail = Some(DetailsForEmail("mustDelete@x.com", "mustDelete", "mustDelete")),
+        startDate = now.minusDays(appConfig.removePersonalInfoExpiryDuration.toDays.toInt + Random.nextInt(15) + 2),
+        expiryDate = now.minusDays(Random.nextInt(5) + 1).toLocalDate,
+        origin = None
+      )
+
+      val newPartialAuthInvitation = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB123456B"),
+        suppliedClientId = MtdItId(s"AB123456A"),
+        detailsForEmail = Some(DetailsForEmail("keep@x.com", "keep", "keep")),
+        startDate = now.minusDays(21),
+        expiryDate = now.toLocalDate,
+        origin = None
+      )
+
+      val oldPartialAuthInvitation = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB223456B"),
+        suppliedClientId = MtdItId(s"AB223456A"),
+        detailsForEmail = None,
+        startDate = now.minusDays(appConfig.altItsaExpiryDays + 21),
+        expiryDate = now.minusDays(appConfig.altItsaExpiryDays).toLocalDate,
+        origin = None
+      )
+
+      val aboutToExpireInvitation = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB223456B"),
+        suppliedClientId = MtdItId(s"AB223456A"),
+        detailsForEmail =  Some(DetailsForEmail("agency@x.com", "MyAgency", "clientName")),
+        startDate = now.minusDays(appConfig.invitationExpiringDuration.toDays.toInt + appConfig.sendEmailPriorToExpireDays),
+        expiryDate = now.plusDays(appConfig.sendEmailPriorToExpireDays).toLocalDate,
+        origin = None
+      )
+
+      await(Future.sequence(List(
+        pendingInvitation,
+        toRemoveDetailsForEmail,
+        newPartialAuthInvitation,
+        oldPartialAuthInvitation,
+        aboutToExpireInvitation)
+        .map(invitationsRepository.insert)))
+
+
+      await(invitationsRepository.update(newPartialAuthInvitation,PartialAuth, now.minusDays(5)))
+      await(invitationsRepository.update(oldPartialAuthInvitation, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 5)))
+
+      await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail.isDefined shouldBe true
+      await(invitationsRepository.findByInvitationId(toRemoveDetailsForEmail.invitationId)).head.detailsForEmail.isDefined shouldBe true
+
+      await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
+      await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
+
+      givenEmailSent(EmailInformation(
+        to = Seq("agency@x.com"),
+        templateId = "agent_invitation_about_to_expire_single",
+        parameters = Map(
+          "agencyName"          -> "MyAgency",
+          "numberOfInvitations" -> "1",
+          "createdDate"         -> DateUtils.displayDate(aboutToExpireInvitation.mostRecentEvent().time.toLocalDate),
+          "expiryDate"          -> DateUtils.displayDate(aboutToExpireInvitation.expiryDate)
+        )))
+
+      testKit.scheduler.scheduleOnce(2.seconds, actorRef, "uid")
+
+      eventually {
+
+        verify(
+          1,
+          postRequestedFor(urlPathEqualTo("/hmrc/email"))
         )
-      )
 
-      val pendingInvitations: Seq[Invitation] = (1 to 3).map(
-        i =>
-          Invitation.createNew(
-            arn(i-1),
-            None,
-            Service.TrustNT,
-            Urn(s"TRUSTNT${i}2345678"),
-            Urn(s"TRUSTNT${i}2345678"),
-            Some(DetailsForEmail(s"active${i}@x.com", s"active${i}", s"active${i}")),
-            now.minusDays(10),
-            now.plusDays(11).toLocalDate,
-            None
-          ))
+        await(invitationsRepository.findByInvitationId(toRemoveDetailsForEmail.invitationId)).head.detailsForEmail shouldBe None
+        await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail shouldBe Some(DetailsForEmail(s"keep@x.com", s"keep", s"keep"))
 
-      (1 to 3).map(
-        i =>
-          givenEmailSent(EmailInformation(
-            to = Seq(s"mustDelete${i}@x.com"),
-            templateId = "agent_invitations_about_to_expire",
-            parameters = Map(
-              "agencyName" -> s"mustDelete${i}",
-              "numberOfInvitations" -> "2",
-              "createdDate" -> DateUtils.displayDate(now.minusDays(16).toLocalDate),
-              "expiryDate" -> DateUtils.displayDate(now.plusDays(5).toLocalDate)
-            )))
-      )
+        await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
+        val cancelledPartialAuth = await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head
+        cancelledPartialAuth.status  shouldBe DeAuthorised
+        cancelledPartialAuth.isRelationshipEnded shouldBe true
+        cancelledPartialAuth.relationshipEndedBy shouldBe Some("HMRC")
 
-      await(Future.sequence(expireIn5DaysMtdIt.map(invitationsRepo.insert)))
-      await(Future.sequence(expireIn5DaysIRV.map(invitationsRepo.insert)))
-      await(Future.sequence(pendingInvitations.map(invitationsRepo.insert)))
-
-      await(invitationsRepo.findAll()).length shouldBe 9
-
-      eventually {
-        val remainingInvitations = await(invitationsRepo.findAll())
-        remainingInvitations.length shouldBe 9
-        remainingInvitations.filter(_.detailsForEmail.isEmpty).length shouldBe 0
-        remainingInvitations.filter(_.detailsForEmail.isDefined).length shouldBe 9
-
-        //temporary disable to allow the build to succeed - sometimes this passes sometimes not.
-        //TODO refactor the scheduler tests so there is no timing concern...one possibility is akka test kit.
-//        verify(
-//          3,
-//          postRequestedFor(urlPathEqualTo("/hmrc/email"))
-//        )
       }
+
+      testKit.shutdownTestKit()
     }
   }
 }

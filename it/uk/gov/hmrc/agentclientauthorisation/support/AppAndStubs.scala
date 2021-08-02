@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+
 import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
@@ -74,12 +75,13 @@ trait AppAndStubs
       "agent.cache.size"                                     -> 1,
       "agent.cache.expires"                                  -> "1 millis",
       "invitation.expiryDuration"                            -> "21 days",
-      "invitation-status-update-scheduler.enabled"           -> true,
+      "invitation-status-update-scheduler.enabled"           -> false,
       "invitation-status-update-scheduler.interval"          -> 20,
       "google-analytics.batchSize"                           -> 2,
       "google-analytics.token"                               -> "token",
       "des-if.enabled"                                        -> false,
-      "alt-itsa.enabled"                                       -> true
+      "alt-itsa.enabled"                                       -> true,
+      "remove-personal-info-scheduler.enabled"              -> false
     )
 
   override def commonStubs(): Unit = {

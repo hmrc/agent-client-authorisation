@@ -66,6 +66,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val invitationExpiringDuration: Duration = servicesConfig.getDuration("invitation.expiryDuration")
 
+  val removePersonalInfoSchedulerEnabled = servicesConfig.getBoolean("remove-personal-info-scheduler.enabled")
   val removePersonalInfoScheduleInterval = servicesConfig.getInt("remove-personal-info-scheduler.interval")
   val removePersonalInfoExpiryDuration = servicesConfig.getDuration("remove-personal-info-scheduler.expiryDuration")
 
@@ -91,4 +92,5 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val sendEmailPriorToExpireDays: Int = servicesConfig.getInt("invitation-about-to-expire-warning-email.daysPrior")
   val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")
   val altItsaEnabled: Boolean = servicesConfig.getBoolean("alt-itsa.enabled")
+  val altItsaExpiryDays: Int = servicesConfig.getInt("alt-itsa-expiry-days")
 }
