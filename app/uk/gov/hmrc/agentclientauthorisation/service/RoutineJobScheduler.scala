@@ -75,7 +75,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
                   for {
                     _ <- invitationsService.prepareAndSendWarningEmail()
                     _ <- invitationsService.removePersonalDetails()
-                    _ <- invitationsService.expireOldAltItsaInvitations()
+                    _ <- invitationsService.cancelOldAltItsaInvitations()
                   } yield (logger info ("routine scheduled job completed"))
                 }
             } else { //There are several instances of this service running
@@ -87,7 +87,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
             }
         }
       } catch {
-        case ex: Exception => logger.error(s"Exception in RemovePersonalInfoActor: ${ex.getMessage}", ex)
+        case ex: Exception => logger.error(s"Exception in RoutineJobSchedulerActor: ${ex.getMessage}", ex)
       }
       ()
   }

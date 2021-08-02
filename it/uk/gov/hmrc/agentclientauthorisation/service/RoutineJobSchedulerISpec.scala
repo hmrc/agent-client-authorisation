@@ -155,7 +155,11 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail shouldBe Some(DetailsForEmail(s"keep@x.com", s"keep", s"keep"))
 
         await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
-        await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.status shouldBe Expired
+        val cancelledPartialAuth = await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head
+        cancelledPartialAuth.status  shouldBe DeAuthorised
+        cancelledPartialAuth.isRelationshipEnded shouldBe true
+        cancelledPartialAuth.relationshipEndedBy shouldBe Some("HMRC")
+
       }
 
       testKit.shutdownTestKit()

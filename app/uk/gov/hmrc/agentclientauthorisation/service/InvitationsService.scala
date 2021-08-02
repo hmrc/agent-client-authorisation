@@ -327,16 +327,16 @@ class InvitationsService @Inject()(
         .map(_ => ())
     }
 
-  def expireOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] =
-    monitor("Repository-expire-old-alt-itsa-invitations") {
+  def cancelOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] =
+    monitor("Repository-cancel-old-alt-itsa-invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(PartialAuth))
         .map(_.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now())))
         .flatMap { invitations =>
           val result = invitations.map(invit => {
             logger.info(s"invitation ${invit.invitationId.value} with status ${invit.status} and " +
-              s"datetime ${invit.mostRecentEvent().time} is being updated to status Expired.")
-            changeInvitationStatus(invit, Expired)
+              s"datetime ${invit.mostRecentEvent().time} has been cancelled.")
+            setRelationshipEnded(invit, "HMRC")
           })
           Future sequence result map (_ => ())
         }
