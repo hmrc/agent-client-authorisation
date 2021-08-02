@@ -1,43 +1,56 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import akka.testkit.TestKit
+import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
-import org.scalatest.time.{Seconds, Span}
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, ScheduleRepository}
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord, SchedulerType}
+import uk.gov.hmrc.agentclientauthorisation.support.MongoAppAndStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 class InvitationsStatusUpdateSchedulerISpec
-    extends UnitSpec with MongoAppAndStubs with MongoApp with GuiceOneServerPerSuite {
+    extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs {
 
-  private lazy val invitationsRepo =
-    app.injector.instanceOf[InvitationsRepositoryImpl]
+  val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
+  val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
+  val desConnector = app.injector.instanceOf[DesConnector]
+  val appConfig = app.injector.instanceOf[AppConfig]
+  val emailService = app.injector.instanceOf[EmailService]
+  val metrics = app.injector.instanceOf[Metrics]
+  val schedulerRepository = app.injector.instanceOf[MongoScheduleRepository]
+  val invitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
 
-  val scheduler = new InvitationsStatusUpdateScheduler(
-    app.injector.instanceOf[ScheduleRepository],
-    app.injector.instanceOf[InvitationsService],
-    app.injector.instanceOf[PlatformAnalyticsService],
-    app.injector.instanceOf[ActorSystem],
-    app.injector.instanceOf[AppConfig]
-  )
+  val invitationsService = new InvitationsService(
+    invitationsRepository,
+    relationshipConnector,
+    analyticsService,
+    desConnector,
+    emailService,
+    appConfig,
+    metrics)
 
-  override implicit val patienceConfig =
-    PatienceConfig(scaled(Span(60, Seconds)), scaled(Span(5, Seconds)))
+  val arn = Arn("AARN0000002")
+
+  val testKit = ActorTestKit()
+
+  val actorRef = system.actorOf(Props(new TaskActor(schedulerRepository,invitationsService, analyticsService, 60)))
 
   "InvitationsStatusUpdateScheduler" should {
 
-    val arn = Arn("AARN0000002")
-
     "update status of all Pending invitations to Expired if they are expired" in {
+
       val now = DateTime.now()
+
       val expiredInvitations: Seq[Invitation] = for (i <- 1 to 5)
         yield
           Invitation.createNew(
@@ -66,13 +79,17 @@ class InvitationsStatusUpdateSchedulerISpec
             None
           )
 
-      await(Future.sequence(expiredInvitations.map(invitationsRepo.insert)))
-      await(Future.sequence(activeInvitations.map(invitationsRepo.insert)))
+      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.InvitationExpired)))
 
-      await(invitationsRepo.findAll()).length shouldBe 10
+      await(Future.sequence(expiredInvitations.map(invitationsRepository.insert)))
+      await(Future.sequence(activeInvitations.map(invitationsRepository.insert)))
+
+      await(invitationsRepository.findAll()).length shouldBe 10
+
+      testKit.scheduler.scheduleOnce(2.seconds, actorRef, "uid")
 
       eventually {
-        await(invitationsRepo.findInvitationsBy(status = Some(Expired))).length shouldBe 5
+        await(invitationsRepository.findInvitationsBy(status = Some(Expired))).length shouldBe 5
       }
     }
   }

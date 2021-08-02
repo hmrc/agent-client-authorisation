@@ -327,6 +327,21 @@ class InvitationsService @Inject()(
         .map(_ => ())
     }
 
+  def expireOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] =
+    monitor("Repository-expire-old-alt-itsa-invitations") {
+      invitationsRepository
+        .findInvitationsBy(status = Some(PartialAuth))
+        .map(_.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now())))
+        .flatMap { invitations =>
+          val result = invitations.map(invit => {
+            logger.info(s"invitation ${invit.invitationId.value} with status ${invit.status} and " +
+              s"datetime ${invit.mostRecentEvent().time} is being updated to status Expired.")
+            changeInvitationStatus(invit, Expired)
+          })
+          Future sequence result map (_ => ())
+        }
+    }
+
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
     fetchAltItsaInvitationsFor(taxIdentifier)
       .flatMap(updateInvitationStoreIfMtdItIdExists(_))
