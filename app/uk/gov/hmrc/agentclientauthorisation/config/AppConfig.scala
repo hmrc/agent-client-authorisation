@@ -43,15 +43,11 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val ifEnvironment = getConf("if.environment")
   val ifAuthToken = getConf("if.authorization-token")
 
-  val serviceLocatorBaseUrl = baseUrl("service-locator")
-
   val relationshipsBaseUrl = baseUrl("relationships")
 
   val afiRelationshipsBaseUrl = baseUrl("afi-relationships")
 
   val citizenDetailsBaseUrl = baseUrl("citizen-details")
-
-  val niExemptionRegistrationBaseUrl = baseUrl("ni-exemption-registration")
 
   val emailBaseUrl = baseUrl("email")
 
