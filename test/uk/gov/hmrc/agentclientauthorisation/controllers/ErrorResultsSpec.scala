@@ -19,9 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.mvc.Result
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+
+import scala.concurrent.Future
 
 class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
 
@@ -30,7 +33,7 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
     "contain the correct data" in {
       def checkConstant(constant: Result, status: Int, code: String, message: String) = {
         constant.header.status shouldBe status
-        val jsonBody = jsonBodyOf(constant)
+        val jsonBody = contentAsJson(Future.successful(constant))
         (jsonBody \ "code").as[String] shouldBe code
         (jsonBody \ "message").as[String] shouldBe message
       }

@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 
-import org.scalatest.{BeforeAndAfterEach, Matchers, Suite, TestSuite}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterEach, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -25,7 +26,6 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport, Awaiting => MongoAwaiting}
-import uk.gov.hmrc.play.it.Port
 
 import scala.concurrent.ExecutionContext
 
@@ -33,8 +33,6 @@ trait AppAndStubs
     extends StartAndStopWireMock with GuiceOneServerPerSuite with DataStreamStubs with MetricsTestSupport
     with Matchers {
   me: Suite with TestSuite =>
-
-  override lazy val port: Int = Port.randomAvailable
 
   implicit val hc = HeaderCarrier()
   implicit lazy val portNum: Int = port

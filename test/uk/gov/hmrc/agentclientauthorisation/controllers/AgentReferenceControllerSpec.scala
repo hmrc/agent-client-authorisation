@@ -23,7 +23,7 @@ import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
-import play.api.test.Helpers.stubControllerComponents
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
@@ -81,17 +81,17 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-      val result = await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
+      val result = agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest())
 
       status(result) shouldBe 200
-      jsonBodyOf(result).as[AgentReferenceRecord] shouldBe agentReferenceRecord
+      contentAsJson(result).as[AgentReferenceRecord] shouldBe agentReferenceRecord
     }
 
     "return none when the record is not found" in {
       when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
         .thenReturn(Future.successful(None))
 
-      val result = await(agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest()))
+      val result = agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest())
 
       status(result) shouldBe 404
     }
@@ -125,10 +125,10 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-      val result = await(agentReferenceController.getAgentReferenceRecordByArn(arn)(FakeRequest()))
+      val result = agentReferenceController.getAgentReferenceRecordByArn(arn)(FakeRequest())
 
       status(result) shouldBe 200
-      jsonBodyOf(result).as[SimplifiedAgentRefRecord] shouldBe simplifiedAgentRefRecord
+      contentAsJson(result).as[SimplifiedAgentRefRecord] shouldBe simplifiedAgentRefRecord
     }
   }
 
@@ -191,9 +191,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               any[ExecutionContext]))
             .thenReturn(Future successful List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3))
 
-          val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+          val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
           status(result) shouldBe 200
-          jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+          contentAsJson(result).as[List[InvitationInfo]] shouldBe listOfInvitations
         }
       }
 
@@ -227,9 +227,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+        contentAsJson(result).as[List[InvitationInfo]] shouldBe listOfInvitations
       }
     }
 
@@ -271,10 +271,10 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
 
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe List.empty
+        contentAsJson(result).as[List[InvitationInfo]] shouldBe List.empty
       }
 
       "invitation-store returned nothing for authorised user: Organisation" in {
@@ -292,10 +292,10 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
-        val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
+        val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
 
         status(result) shouldBe 200
-        jsonBodyOf(result).as[List[InvitationInfo]] shouldBe List.empty
+        contentAsJson(result).as[List[InvitationInfo]] shouldBe List.empty
       }
     }
 

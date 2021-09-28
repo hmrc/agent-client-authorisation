@@ -6,9 +6,10 @@ import org.joda.time.DateTime
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

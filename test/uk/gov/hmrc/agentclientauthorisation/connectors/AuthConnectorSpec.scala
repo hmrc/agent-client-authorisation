@@ -35,7 +35,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, InsufficientEnrolments, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 

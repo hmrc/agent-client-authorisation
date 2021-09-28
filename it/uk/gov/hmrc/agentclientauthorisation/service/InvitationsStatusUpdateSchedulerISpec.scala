@@ -11,7 +11,8 @@ import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord, SchedulerType}
 import uk.gov.hmrc.agentclientauthorisation.support.MongoAppAndStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -86,7 +87,7 @@ class InvitationsStatusUpdateSchedulerISpec
 
       await(invitationsRepository.findAll()).length shouldBe 10
 
-      testKit.scheduler.scheduleOnce(2.seconds, actorRef, "uid")
+      testKit.scheduler.scheduleOnce(2.seconds, new Runnable { def run = { actorRef ! "uid" }} )
 
       eventually {
         await(invitationsRepository.findInvitationsBy(status = Some(Expired))).length shouldBe 5

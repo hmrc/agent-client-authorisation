@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
@@ -82,7 +83,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
       val updatedInvitation = controller.getSentInvitation(arn, invitation.invitationId)(getResult)
       status(updatedInvitation) shouldBe 200
 
-      val invitationStatus = jsonBodyOf(updatedInvitation).as[TestHalResponseInvitation].status
+      val invitationStatus = contentAsJson(updatedInvitation).as[TestHalResponseInvitation].status
 
       invitationStatus shouldBe Cancelled.toString
 

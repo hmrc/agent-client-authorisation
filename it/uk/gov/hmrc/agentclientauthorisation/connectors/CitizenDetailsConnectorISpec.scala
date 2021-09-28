@@ -18,9 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import org.joda.time.LocalDate
 import org.joda.time.format._
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CitizenDetailsStub}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

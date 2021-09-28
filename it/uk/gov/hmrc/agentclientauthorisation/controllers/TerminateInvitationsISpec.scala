@@ -8,8 +8,9 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{ControllerComponents, Result}
+import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, RelationshipsConnector}
@@ -113,10 +114,10 @@ class TerminateInvitationsISpec extends BaseISpec {
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 6
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 1
 
-      val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(arn)(request))
+      val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
 
       status(response) shouldBe 200
-      jsonBodyOf(response).as[JsObject] shouldBe jsonDeletedRecords
+      contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 6
@@ -124,43 +125,43 @@ class TerminateInvitationsISpec extends BaseISpec {
     }
 
     "return 200 no invitations and references to remove" in {
-      val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(arn)(request))
+      val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
 
       status(response) shouldBe 200
 
-      jsonBodyOf(response).as[JsObject] shouldBe jsonNoDeletedRecords
+      contentAsJson(response).as[JsObject] shouldBe jsonNoDeletedRecords
 
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
     }
 
     "return 400 for invalid arn" in {
-      val response: Result = await(controller.removeAllInvitationsAndReferenceForArn(Arn("MARN01"))(request))
+      val response = controller.removeAllInvitationsAndReferenceForArn(Arn("MARN01"))(request)
 
       status(response) shouldBe 400
 
-      jsonBodyOf(response).as[JsObject] shouldBe jsonBodyOf(genericBadRequest(s"Invalid Arn given by Stride user: MARN01"))
+      contentAsJson(response).as[JsObject] shouldBe contentAsJson(Future.successful(genericBadRequest(s"Invalid Arn given by Stride user: MARN01")))
     }
 
     /*
       Note: this is just example of Mongo Failures. Not Actual ones for the error messages given
      */
     "return 500 if removing all invitations but failed to remove references" in new TestSetup {
-      val response: Result = await(testFailedController(invitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
+      val response = testFailedController(invitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request)
       status(response) shouldBe 500
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to Remove References for given Agent"))
+      contentAsJson(response) shouldBe contentAsJson(Future.successful(genericInternalServerError("Unable to Remove References for given Agent")))
     }
 
     "return 500 if removing all references but failed to remove invitations" in new TestSetup {
-      val response: Result = await(testFailedController(testFailedInvitationsRepo, agentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
+      val response = testFailedController(testFailedInvitationsRepo, agentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request)
       status(response) shouldBe 500
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
+      contentAsJson(response) shouldBe contentAsJson(Future.successful(genericInternalServerError("Unable to remove Invitations for TARN0000001")))
     }
 
     "return 500 if failed to remove all invitations and references" in new TestSetup {
-      val response: Result = await(testFailedController(testFailedInvitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request))
+      val response = testFailedController(testFailedInvitationsRepo, testFailedAgentReferenceRepo).removeAllInvitationsAndReferenceForArn(arn)(request)
       status(response) shouldBe 500
-      jsonBodyOf(response) shouldBe jsonBodyOf(genericInternalServerError("Unable to remove Invitations for TARN0000001"))
+      contentAsJson(response) shouldBe contentAsJson(Future.successful(genericInternalServerError("Unable to remove Invitations for TARN0000001")))
     }
   }
 

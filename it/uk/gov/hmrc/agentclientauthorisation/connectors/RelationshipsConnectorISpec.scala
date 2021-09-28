@@ -24,7 +24,9 @@ import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, Rela
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

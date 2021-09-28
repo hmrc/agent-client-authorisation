@@ -2,6 +2,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 
 class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
@@ -34,7 +35,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
       val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
 
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
 
     }
 
@@ -45,7 +46,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
       val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(
         Left(
           InvalidTrust(
             "INVALID_TRUST_STATE",
@@ -59,7 +60,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
       val result = controller.getTrustName(utr.value)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(
         Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))
     }
   }
@@ -83,7 +84,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
       val result = controller.getTrustName(urn.value)(request)
       status(result) shouldBe 200
 
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
 
     }
 
@@ -94,7 +95,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
       val result = controller.getTrustName(urn.value)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(
         Left(
           InvalidTrust(
             "INVALID_TRUST_STATE",
@@ -108,7 +109,7 @@ class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
       val result = controller.getTrustName(urn.value)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[TrustResponse] shouldBe TrustResponse(
+      contentAsJson(result).as[TrustResponse] shouldBe TrustResponse(
         Left(InvalidTrust("RESOURCE_NOT_FOUND", "The remote endpoint has indicated that the trust is not found.")))
     }
   }

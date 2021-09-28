@@ -20,6 +20,7 @@ import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitations
@@ -92,7 +93,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 6
     }
@@ -104,7 +105,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 2
     }
@@ -115,7 +116,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 1
     }
@@ -126,7 +127,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 6
     }
@@ -137,7 +138,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
 
       json.invitations.length shouldBe 6
@@ -150,7 +151,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 2
     }
@@ -161,7 +162,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 1
     }
@@ -175,7 +176,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val jsonResponse = jsonBodyOf(response).as[JsObject]
+      val jsonResponse = contentAsJson(response).as[JsObject]
       val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 0
     }
@@ -282,7 +283,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       status(response) shouldBe 200
 
-      val json = jsonBodyOf(response).as[JsObject]
+      val json = contentAsJson(response).as[JsObject]
       (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
       (json \ "arn").as[String] shouldBe arn.value
       (json \ "clientType").asOpt[String] shouldBe invitation.clientType
@@ -310,7 +311,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
       status(response) shouldBe 200
-      val json = jsonBodyOf(response).as[JsObject]
+      val json = contentAsJson(response).as[JsObject]
       (json \ "invitationId").as[String] shouldBe invitation.invitationId.value
       (json \ "clientType").asOpt[String] shouldBe None
       (json \ "status").as[String] shouldBe "Accepted"

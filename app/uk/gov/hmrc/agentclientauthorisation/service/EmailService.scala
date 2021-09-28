@@ -20,7 +20,7 @@ import cats.data.EitherT._
 import cats.instances.future._
 import javax.inject.Inject
 import play.api.i18n.{Lang, Langs, MessagesApi}
-import play.api.{Logger, LoggerLike}
+import play.api.LoggerLike
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
@@ -56,7 +56,7 @@ class EmailService @Inject()(
 
   implicit val lang: Lang = langs.availables.head
 
-  protected def getLogger: LoggerLike = Logger
+  protected def getLogger: LoggerLike = logger
 
   def sendAcceptedEmail(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     sendEmail(invitation, "client_accepted_authorisation_request")

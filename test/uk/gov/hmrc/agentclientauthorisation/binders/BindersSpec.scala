@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.binders
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.binders.Binders.{InvitationStatusBinder, LocalDateBinder, LocalDateQueryStringBinder}
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
 

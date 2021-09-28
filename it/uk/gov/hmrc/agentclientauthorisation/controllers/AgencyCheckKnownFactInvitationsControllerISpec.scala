@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 

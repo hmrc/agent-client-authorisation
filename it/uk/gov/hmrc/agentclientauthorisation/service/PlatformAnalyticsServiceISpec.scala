@@ -10,7 +10,8 @@ import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, MtdItIdType}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs, PlatformAnalyticsStubs, TestDataSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,9 +42,9 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
 
   private def expireInvitations(i:List[Invitation], recently: Boolean): List[String] = {
     Future.sequence(i.map(
-      x => await(invitationsRepo.update(
-        x,Expired, if(recently) now.minusMillis(500) else now.minusDays(1)))
-        .map(_.invitationId.value)))
+      x => invitationsRepo.update(
+        x,Expired, if(recently) now.minusMillis(500) else now.minusDays(1))
+        .map(_.invitationId.value))).futureValue
   }
 
   val now = DateTime.now()

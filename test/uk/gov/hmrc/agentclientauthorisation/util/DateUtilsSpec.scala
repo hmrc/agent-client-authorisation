@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.util
 
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import org.joda.time.LocalDate.parse
 
 class DateUtilsSpec extends UnitSpec {

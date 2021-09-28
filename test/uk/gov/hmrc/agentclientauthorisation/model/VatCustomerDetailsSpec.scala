@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json._
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class VatCustomerDetailsSpec extends UnitSpec {
 

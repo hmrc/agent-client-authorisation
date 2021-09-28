@@ -4,7 +4,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.agentclientauthorisation.model.{TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{TrustTaxIdentifier, Urn, Utr}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
