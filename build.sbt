@@ -18,27 +18,25 @@ lazy val scoverageSettings = {
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-backend-play-27" % "5.11.0",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.9.0",
   "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.25.0-play-27",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
-  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.8.0-play-27",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-27",
-  "uk.gov.hmrc" %% "play-hal" % "2.1.0-play-27",
-  "com.typesafe.play" %% "play-json-joda" % "2.7.4",
-  "org.typelevel" %% "cats-core" % "2.3.0"
+  "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.8.0-play-28",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-28",
+  "uk.gov.hmrc" %% "play-hal" % "3.1.0-play-28",
+  "com.typesafe.play" %% "play-json-joda" % "2.9.2",
+  "org.typelevel" %% "cats-core" % "2.6.1"
 )
 
 def testDeps(scope: String) = Seq(
-  "uk.gov.hmrc" %% "hmrctest" % "3.10.0-play-26" % scope,
-  "org.scalatest" %% "scalatest" % "3.0.8" % scope,
-  "org.mockito" % "mockito-core" % "3.2.0" % scope,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope,
-  "uk.gov.hmrc" %% "reactivemongo-test" % "5.0.0-play-27" % scope,
-  "com.github.tomakehurst" % "wiremock-jre8" % "2.27.1" % scope,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % scope,
+  "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % scope,
+  "uk.gov.hmrc" %% "reactivemongo-test" % "5.0.0-play-28" % scope,
+  "com.github.tomakehurst" % "wiremock-jre8" % "2.26.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
-  "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-  "org.scalamock" %% "scalamock" % "4.4.0" % scope,
-  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.5.31" % scope
+  "org.scalamock" %% "scalamock" % "5.1.0" % scope,
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.10" % scope,
+  "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % scope
 )
 
 def tmpMacWorkaround(): Seq[ModuleID] =
@@ -84,7 +82,7 @@ lazy val root = (project in file("."))
   .configs(IntegrationTest)
   .settings(
     majorVersion:=0,
-    Keys.fork in IntegrationTest := false,
+    Keys.fork in IntegrationTest := true,
     Defaults.itSettings,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
     unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,

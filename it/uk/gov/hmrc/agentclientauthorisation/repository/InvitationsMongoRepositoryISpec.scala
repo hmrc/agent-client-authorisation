@@ -23,6 +23,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.bson.BSONObjectID.parse
@@ -33,7 +34,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoAp
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Urn, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -145,7 +146,7 @@ class InvitationsMongoRepositoryISpec
     "create a new StatusChangedEvent which can be found using a reconstructed id" in {
 
       val invitation =
-        await(addInvitation(now, invitationITSA))
+        addInvitation(now, invitationITSA)
 
       val id: BSONObjectID = invitation.id
       val stringifieldId: String = id.stringify

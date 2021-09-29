@@ -16,22 +16,23 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import com.fasterxml.jackson.databind.JsonMappingException
 import org.scalatest.matchers.{MatchResult, Matcher}
 import play.api.mvc.Result
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.play.test.UnitSpec
+import play.api.test.Helpers._
 
+import scala.concurrent.Future
 import scala.util.Try
 
 trait ErrorResultMatchers { this: UnitSpec =>
 
-  implicit def materializer: ActorMaterializer
+  implicit def materializer: Materializer
 
   class ErrorResultMatcher(expectedResult: Result) extends Matcher[HttpResponse] {
     override def apply(left: HttpResponse): MatchResult = {
-      val expectedBodyJson = jsonBodyOf(expectedResult)
+      val expectedBodyJson = contentAsJson(Future.successful(expectedResult))
       val rawNegatedFailureMessage =
         s"""Response had expected status ${expectedResult.header.status} and body "$expectedBodyJson""""
       if (left.status != expectedResult.header.status) {

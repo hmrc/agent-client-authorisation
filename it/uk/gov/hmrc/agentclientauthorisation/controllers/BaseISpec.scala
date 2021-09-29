@@ -2,7 +2,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class BaseISpec extends
   UnitSpec with

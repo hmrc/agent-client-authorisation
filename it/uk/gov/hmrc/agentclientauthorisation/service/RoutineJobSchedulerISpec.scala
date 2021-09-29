@@ -14,7 +14,8 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.arn
 import uk.gov.hmrc.agentclientauthorisation.support.{EmailStub, MongoAppAndStubs}
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -139,7 +140,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
           "expiryDate"          -> DateUtils.displayDate(aboutToExpireInvitation.expiryDate)
         )))
 
-      testKit.scheduler.scheduleOnce(2.seconds, actorRef, "uid")
+      testKit.scheduler.scheduleOnce(2.seconds, new Runnable { def run = { actorRef ! "uid" }} )
 
       eventually {
         await(invitationsRepository.findByInvitationId(newPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth

@@ -28,7 +28,7 @@ import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Results._
 import play.api.test.FakeRequest
-import play.api.test.Helpers.stubControllerComponents
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, Citizen, CitizenDetailsConnector, DesConnector, DesignatoryDetails}
@@ -120,7 +120,7 @@ class AgencyInvitationsControllerSpec
     "return 404 when no invitation found" in {
 
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
-        .thenReturn(None)
+        .thenReturn(Future.successful(None))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
@@ -130,7 +130,7 @@ class AgencyInvitationsControllerSpec
     "return 204 when there is an invitation which isn't pending or existing" in {
 
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
-        .thenReturn(Some(invitationExpired))
+        .thenReturn(Future.successful(Some(invitationExpired)))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
@@ -140,7 +140,7 @@ class AgencyInvitationsControllerSpec
     "return 201 and end existing relationship when an active invitation is found" in {
 
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
-        .thenReturn(Some(invitationActive))
+        .thenReturn(Future.successful(Some(invitationActive)))
       when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
         .thenReturn(Future.successful(invitationActive))
       when(
@@ -159,7 +159,7 @@ class AgencyInvitationsControllerSpec
 
     "return 201 when a pending invitation is found" in {
       when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
-        .thenReturn(Some(invitationPending))
+        .thenReturn(Future.successful(Some(invitationPending)))
       when(
         invitationsService
           .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
@@ -167,7 +167,7 @@ class AgencyInvitationsControllerSpec
             any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
       when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(invitationActive)
+        .thenReturn(Future.successful(invitationActive))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
@@ -307,7 +307,7 @@ class AgencyInvitationsControllerSpec
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(failure(Forbidden))
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(None)
+        .thenReturn(Future.successful(None))
       status(await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest()))) shouldBe 403
     }
 
@@ -316,10 +316,10 @@ class AgencyInvitationsControllerSpec
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(().toFuture)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None)))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(DesignatoryDetails(Some(nino.nino), Some(postcode))))
-      await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest())) shouldBe NoContent
+        .thenReturn(Future.successful(Some(DesignatoryDetails(Some(nino.nino), Some(postcode)))))
+      controller.checkKnownFactItsa(nino, postcode)(FakeRequest()).futureValue shouldBe NoContent
     }
 
     "return No Content if Nino is known in ETMP but the postcode did not match or not found and IS in Citizen Details with an SAUTR" in {
@@ -327,9 +327,9 @@ class AgencyInvitationsControllerSpec
       when(postcodeService.postCodeMatches(eqs(nino.value), eqs(postcode))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(().toFuture)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), Some(utr.value))))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), Some(utr.value)))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(DesignatoryDetails(Some(nino.nino), Some(postcode))))
+        .thenReturn(Future.successful(Some(DesignatoryDetails(Some(nino.nino), Some(postcode)))))
       await(controller.checkKnownFactItsa(nino, postcode)(FakeRequest())) shouldBe NoContent
     }
 
@@ -348,41 +348,41 @@ class AgencyInvitationsControllerSpec
     "return 204 if postcode matches in CitizenDetails" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), Some(utr.value))))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), Some(utr.value)))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(DesignatoryDetails(Some(nino.nino), Some(postcode))))
-      await(controller.checkPostcodeAgainstCitizenDetails(nino, postcode)(HeaderCarrier())).header.status shouldBe 204
+        .thenReturn(Future.successful(Some(DesignatoryDetails(Some(nino.nino), Some(postcode)))))
+      controller.checkPostcodeAgainstCitizenDetails(nino, postcode)(HeaderCarrier()).futureValue.header.status shouldBe 204
     }
 
     "return 403 if postcode doesn't match in CitizenDetails" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None)))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(DesignatoryDetails(Some(nino.nino), Some("BB2 2BB"))))
+        .thenReturn(Future.successful(Some(DesignatoryDetails(Some(nino.nino), Some("BB2 2BB")))))
       await(controller.checkPostcodeAgainstCitizenDetails(nino, postcode)(HeaderCarrier())).header.status shouldBe 403
     }
     "return 403 if postcode not found in CitizenDetails" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None)))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(DesignatoryDetails(Some(nino.nino), None)))
-      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).header.status shouldBe 403
+        .thenReturn(Future.successful(Some(DesignatoryDetails(Some(nino.nino), None))))
+      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).futureValue.header.status shouldBe 403
     }
     "return 403 if nino not found in DesignatoryDetails" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None)))
+        .thenReturn(Future.successful(Some(Citizen(Some("Billy"), Some("Pilgrim"), Some(nino.nino), None))))
       when(mockCitizenDetailsConnector.getDesignatoryDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(None)
-      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).header.status shouldBe 403
+        .thenReturn(Future.successful(None))
+      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).futureValue.header.status shouldBe 403
     }
     "return 403 if nino not found in CitizenDetails" in {
       agentAuthStub(agentAffinityAndEnrolments)
       when(mockCitizenDetailsConnector.getCitizenDetails(eqs(nino))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(None)
-      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).header.status shouldBe 403
+        .thenReturn(Future.successful(None))
+      controller.checkPostcodeAgainstCitizenDetails(nino: Nino, postcode: String)(HeaderCarrier()).futureValue.header.status shouldBe 403
     }
   }
 

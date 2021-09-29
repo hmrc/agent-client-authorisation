@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import play.api.libs.json.Json.toJson
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class MultiInvitationSpec extends UnitSpec {
   "MultiInvitationRecord" should {

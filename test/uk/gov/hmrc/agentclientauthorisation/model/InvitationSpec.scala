@@ -21,7 +21,7 @@ import play.api.libs.json.Json.toJson
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.external._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class InvitationSpec extends UnitSpec {
   "Dates in the serialised JSON" should {

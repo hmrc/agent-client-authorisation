@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.{Result, Results}
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.AgentInvitation
 import uk.gov.hmrc.agentclientauthorisation.support.AkkaMaterializerSpec
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidation with Results with MockitoSugar with AkkaMaterializerSpec {
 
@@ -36,7 +38,7 @@ class AgentInvitationValidationSpec extends UnitSpec with AgentInvitationValidat
     }
 
     def withCode(code: String) = {
-      (jsonBodyOf(r) \ "code").as[String] shouldBe code
+      (contentAsJson(Future.successful(r)) \ "code").as[String] shouldBe code
       r
     }
   }

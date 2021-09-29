@@ -3,6 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import akka.stream.Materializer
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 
 class CgtSubscriptionISPec extends BaseISpec {
@@ -46,9 +47,9 @@ class CgtSubscriptionISPec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
 
-      val result = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
+      val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[CgtSubscription] shouldBe cgtSubscription
+      contentAsJson(result).as[CgtSubscription] shouldBe cgtSubscription
     }
 
     "return cgt subscription as expected for Trustees" in {
@@ -59,9 +60,9 @@ class CgtSubscriptionISPec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
 
-      val result = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
+      val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 200
-      jsonBodyOf(result).as[CgtSubscription] shouldBe cgtSub
+      contentAsJson(result).as[CgtSubscription] shouldBe cgtSub
     }
 
     "handle single 400 from DES" in {
@@ -71,9 +72,9 @@ class CgtSubscriptionISPec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
 
-      val result = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
+      val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 400
-      jsonBodyOf(result).toString() shouldBe """[{"code":"INVALID_REGIME","reason":"some message"}]"""
+      contentAsJson(result).toString() shouldBe """[{"code":"INVALID_REGIME","reason":"some message"}]"""
     }
 
     "handle multiple 400s from DES" in {
@@ -83,9 +84,9 @@ class CgtSubscriptionISPec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
 
-      val result = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
+      val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 400
-      jsonBodyOf(result)
+      contentAsJson(result)
         .toString() shouldBe """[{"code":"INVALID_REGIME","reason":"some message"},{"code":"INVALID_IDType","reason":"some other message"}]"""
     }
 
@@ -96,9 +97,9 @@ class CgtSubscriptionISPec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
 
-      val result = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
+      val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 404
-      jsonBodyOf(result)
+      contentAsJson(result)
         .toString() shouldBe """[{"code":"NOT_FOUND","reason":"Data not found  for the provided Registration Number."}]"""
     }
   }

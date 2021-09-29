@@ -4,7 +4,8 @@ import uk.gov.hmrc.agentclientauthorisation.model.EmailInformation
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, EmailStub}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Vrn}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.libs.json.Json.toJson
 
 class EmailInformationSpec extends UnitSpec {

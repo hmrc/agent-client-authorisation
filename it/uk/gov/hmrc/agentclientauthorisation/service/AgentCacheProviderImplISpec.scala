@@ -4,8 +4,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.{AgencyInvitationsController, AgentServicesController, BaseISpec}
-//import uk.gov.hmrc.agentclientauthorisation.model.{TrustName, TrustResponse}
 
 class AgentCacheProviderImplISpec extends BaseISpec {
 
