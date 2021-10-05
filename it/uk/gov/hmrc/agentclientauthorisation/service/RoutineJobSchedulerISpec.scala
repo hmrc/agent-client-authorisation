@@ -6,6 +6,7 @@ import akka.testkit.TestKit
 import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
 import com.kenshoo.play.metrics.Metrics
 import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatest.time.{Millis, Span}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -22,7 +23,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs  with EmailStub {
+class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs with EmailStub {
 
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
@@ -42,14 +43,12 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
     appConfig,
     metrics)
 
-  val testKit = ActorTestKit()
-
-
-  val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository,invitationsService, 60)))
-
   "RoutineJobScheduler" should {
 
     "run scheduled tasks" in {
+
+      val testKit = ActorTestKit()
+      val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository,invitationsService, repeatInterval = 60, altItsaExpiryEnable = true)))
 
       val now = DateTime.now(DateTimeZone.UTC)
 
@@ -161,6 +160,42 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         await(invitationsRepository.findByInvitationId(toRemoveDetailsForEmail.invitationId)).head.detailsForEmail shouldBe None
         await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail shouldBe Some(DetailsForEmail(s"keep@x.com", s"keep", s"keep"))
       }
+      testKit.shutdownTestKit()
+    }
+
+    "not expire Alt-ITSA invitations when the relevant flag is set to disabled" in {
+
+      val testKit = ActorTestKit()
+      val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository,invitationsService, repeatInterval = 60, altItsaExpiryEnable = false)))
+
+      val now = DateTime.now(DateTimeZone.UTC)
+
+      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
+
+      val oldPartialAuthInvitation = Invitation.createNew(
+        arn = Arn(arn),
+        clientType = None,
+        service = Service.MtdIt,
+        clientId = MtdItId(s"AB423456B"),
+        suppliedClientId = MtdItId(s"AB223456A"),
+        detailsForEmail = None,
+        startDate = now.minusDays(appConfig.altItsaExpiryDays + 21),
+        expiryDate = now.minusDays(appConfig.altItsaExpiryDays).toLocalDate,
+        origin = None
+      )
+
+      await(invitationsRepository.insert(oldPartialAuthInvitation))
+
+      await(invitationsRepository.update(oldPartialAuthInvitation, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 5)))
+
+      testKit.scheduler.scheduleOnce(2.seconds, new Runnable { def run = { actorRef ! "uid" }} )
+
+      Thread.sleep(scaled(Span(10000, Millis)).millisPart)
+
+      // the invitation should still be in PartialAuth (i.e. not expired) status
+      await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.status shouldBe PartialAuth
+      await(invitationsRepository.findByInvitationId(oldPartialAuthInvitation.invitationId)).head.isRelationshipEnded shouldBe false
+
       testKit.shutdownTestKit()
     }
   }
