@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Random
 
@@ -40,11 +40,12 @@ class RoutineJobScheduler @Inject()(
 
   val enabled = appConfig.removePersonalInfoSchedulerEnabled
   val interval = appConfig.removePersonalInfoScheduleInterval
+  val altItsaExpiryEnable = appConfig.altItsaExpiryEnable
 
   if (enabled) {
     logger.info(s"routine job scheduler is enabled.")
     val removePersonalInfoActor = actorSystem.actorOf(Props {
-      new RoutineScheduledJobActor(scheduleRepository, invitationsService, interval)
+      new RoutineScheduledJobActor(scheduleRepository, invitationsService, interval, altItsaExpiryEnable)
     })
     actorSystem.scheduler.scheduleOnce(2.seconds, removePersonalInfoActor, "<Initial RoutineJobSchedulerActor message>")
   } else {
@@ -52,8 +53,11 @@ class RoutineJobScheduler @Inject()(
   }
 }
 
-class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(
-  implicit ec: ExecutionContext)
+class RoutineScheduledJobActor(
+  scheduleRepository: ScheduleRepository,
+  invitationsService: InvitationsService,
+  repeatInterval: Int,
+  altItsaExpiryEnable: Boolean)(implicit ec: ExecutionContext)
     extends Actor with Logging {
 
   def receive = {
@@ -75,7 +79,7 @@ class RoutineScheduledJobActor(scheduleRepository: ScheduleRepository, invitatio
                   for {
                     _ <- invitationsService.prepareAndSendWarningEmail()
                     _ <- invitationsService.removePersonalDetails()
-                    _ <- invitationsService.cancelOldAltItsaInvitations()
+                    _ <- if (altItsaExpiryEnable) invitationsService.cancelOldAltItsaInvitations() else Future.successful(())
                   } yield (logger info ("routine scheduled job completed"))
                 }
             } else { //There are several instances of this service running

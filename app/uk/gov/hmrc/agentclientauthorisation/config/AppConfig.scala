@@ -89,4 +89,5 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val desIFEnabled: Boolean = servicesConfig.getBoolean("des-if.enabled")
   val altItsaEnabled: Boolean = servicesConfig.getBoolean("alt-itsa.enabled")
   val altItsaExpiryDays: Int = servicesConfig.getInt("alt-itsa-expiry-days")
+  val altItsaExpiryEnable: Boolean = servicesConfig.getConfBool("alt-itsa-expiry-enable", defBool = false)
 }
