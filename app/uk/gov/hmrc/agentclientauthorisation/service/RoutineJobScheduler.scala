@@ -63,6 +63,7 @@ class RoutineScheduledJobActor(
   def receive = {
     case uid: String =>
       logger.info("RoutineJobSchedulerActor Received message: " + uid)
+      logger.info(s"RoutineJobSchedulerActor: alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
       try {
         scheduleRepository.read(SchedulerType.RemovePersonalInfo).flatMap {
           case ScheduleRecord(recordUid, runAt, _) =>
@@ -76,6 +77,8 @@ class RoutineScheduledJobActor(
                 .map { _ =>
                   context.system.scheduler.scheduleOnce(delay, self, newUid)
                   logger.info(s"Starting routine scheduled job, next job is scheduled at $nextRunAt")
+                  logger.info(s"alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
+                  logger.info(s"Out-of-date alt-ITSA invitations (if found) ${if (altItsaExpiryEnable) "WILL" else "will NOT"} be set to expired.")
                   for {
                     _ <- invitationsService.prepareAndSendWarningEmail()
                     _ <- invitationsService.removePersonalDetails()
