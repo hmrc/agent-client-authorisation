@@ -126,7 +126,7 @@ class EmailService @Inject()(
         }),
         "additionalInfo" -> {
           if (isAltItsa(invitation))
-            s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
+            s"You must now sign $clientName up to Making Tax Digital for Income Tax."
           else ""
         }
       )
