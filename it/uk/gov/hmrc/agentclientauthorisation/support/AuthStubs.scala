@@ -75,7 +75,7 @@ trait BasicUserAuthStubs {
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
 
-  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef) = {
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef, pptRef: PptRef) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse()
         .withStatus(200)
@@ -142,6 +142,16 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        {
                      |          "key":"CGTPDRef",
                      |          "value":"${cgtRef.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key":"HMRC-PPT-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"PPTReference",
+                     |          "value":"${pptRef.value}"
                      |        }
                      |      ],
                      |      "state": "Activated"
@@ -278,6 +288,33 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        {
                      |          "key": "SAUTR",
                      |          "value": "${utr.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    }
+                     |  ]
+                     |}
+       """.stripMargin)))
+
+    this
+  }
+
+  def givenClientPpt(pptRef: PptRef) = {
+    stubFor(post(urlPathEqualTo(s"/auth/authorise"))
+      .willReturn(aResponse().withStatus(200)
+        .withBody(s"""
+                     |{
+                     |  "optionalCredentials":{
+                     |    "providerId": "12345",
+                     |    "providerType": "GovernmentGateway"
+                     |  },
+                     |  "allEnrolments": [
+                     |    {
+                     |      "key": "HMRC-PPT-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key": "PPTReference",
+                     |          "value": "${pptRef.value}"
                      |        }
                      |      ],
                      |      "state": "Activated"

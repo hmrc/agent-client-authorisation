@@ -42,12 +42,23 @@ object ErrorResults {
     toJson(ErrorBody("POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC.")))
   val DateOfBirthDoesNotMatch: Result = Forbidden(
     toJson(ErrorBody("DATE_OF_BIRTH_DOES_NOT_MATCH", "The submitted date of birth did not match the client's date of birth as held by HMRC.")))
+  val PptRegistrationDateDoesNotMatch: Result = Forbidden(
+    toJson(
+      ErrorBody(
+        "PPT_REGISTRATION_DATE_DOES_NOT_MATCH",
+        "The submitted date of application does not match the date of application on the PPT Subscription Display record."
+      ))
+  )
+  val PptCustomerDeregistered: Result = Forbidden(
+    toJson(ErrorBody("PPT_CUSTOMER_IS_DEREGISTERED", "The PPT Subscription Display record is deregistered."))
+  )
   val VatRegistrationDateDoesNotMatch: Result = Forbidden(
     toJson(
       ErrorBody(
         "VAT_REGISTRATION_DATE_DOES_NOT_MATCH",
         "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC.")))
   val InvitationNotFound: Result = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
+  val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the PptReference was not found")))
   val InvalidClientId: Result = BadRequest(toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
   def nonUkAddress(countryCode: String): Result =
     NotImplemented(

@@ -23,7 +23,7 @@ import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, Utr, Vrn}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
@@ -234,6 +234,15 @@ class AgentServicesController @Inject()(
           logger.warn("CustomerDetails not found for given vrn")
           NotFound
       }
+    }
+  }
+
+  def getPptCustomerName(pptRef: PptRef): Action[AnyContent] = Action.async { implicit request =>
+    desConnector.getPptSubscription(pptRef).map {
+      case Some(record) => Ok(Json.obj("customerName" -> record.customerName))
+      case None =>
+        logger.warn(s"PPT customer not found for getPptCustomerName")
+        NotFound
     }
   }
 

@@ -19,10 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment, Logger, Logging}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, TrustResponse, VatCustomerDetails}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, PptSubscription, TrustResponse, VatCustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -99,6 +100,10 @@ class AgentCacheProvider @Inject()(val environment: Environment, configuration: 
   val cgtSubscriptionCache: Cache[CgtSubscriptionResponse] =
     if (cacheEnabled) new LocalCaffeineCache[CgtSubscriptionResponse]("cgtSubscription", cacheSize, cacheExpires)
     else new DoNotCache[CgtSubscriptionResponse]
+
+  val pptSubscriptionCache: Cache[Option[PptSubscription]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[PptSubscription]]("pptSubscription", cacheSize, cacheExpires)
+    else new DoNotCache[Option[PptSubscription]]
 
   val agencyDetailsCache: Cache[Option[AgentDetailsDesResponse]] =
     if (cacheEnabled)

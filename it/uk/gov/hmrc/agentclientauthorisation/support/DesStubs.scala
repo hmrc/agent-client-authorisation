@@ -820,4 +820,58 @@ trait DesStubs {
             .withStatus(404)
         )
     )
-}
+
+  private val individualCustomerDetails =
+    s"""
+       |"customerType": "Individual",
+       |"individualDetails": {
+       |  "firstName": "Bill",
+       |  "lastName": "Sikes"
+       |}
+       |""".stripMargin
+
+  private val organisationCustomerDetails =
+    s"""
+       |"customerType": "Organisation",
+       |"organisationDetails": {
+       |  "organisationName": "Fagan Ltd"
+       |  }
+       |""".stripMargin
+
+  //from the spec API1712 changeOfCircumstanceDetails are optional although PPT team advised that there wil always be
+  //a deregistrationDate but customers who are actually deregistered will have a date of today or before and customers
+  // who are not deregistered will have a date long into the future. TBC
+  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean) = {
+    stubFor(
+      get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
+        .willReturn(
+          aResponse()
+            .withStatus(200).withBody(
+            s"""
+               |{
+               |"legalEntityDetails": {
+               |  "dateOfApplication": "2021-10-12",
+               |  "customerDetails": {
+               |    ${if(isIndividual) individualCustomerDetails else organisationCustomerDetails}
+               |  }
+               | }${if(deregisteredDetailsPresent){s""",
+               |"changeOfCircumstanceDetails": {
+               | "deregistrationDetails": {
+               |    "deregistrationDate": ${if(isDeregistered)""" "2021-10-01" """ else """ "2050-10-01" """}
+               |  }
+               | }"""} else {""""""}}
+               |}""".stripMargin)))
+    }
+
+  def givenPptSubscriptionRespondsWith(pptRef: PptRef, status: Int) =
+    stubFor(
+      get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
+        .willReturn(
+          aResponse()
+            .withStatus(status)
+        )
+    )
+  }
+
+
+

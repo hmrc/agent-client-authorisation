@@ -123,6 +123,7 @@ class EmailService @Inject()(
           case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
           case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
           case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
+          case HMRCPPTORG    => messagesApi(s"service.$HMRCPPTORG")
         }),
         "additionalInfo" -> {
           if (isAltItsa(invitation))

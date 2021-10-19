@@ -139,6 +139,7 @@ class InvitationsService @Inject()(
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
       case Service.TrustNT              => relationshipsConnector.createTrustRelationship(invitation)
       case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
+      case Service.Ppt                  => relationshipsConnector.createPlasticPackagingTaxRelationship(invitation)
     }
 
     createRelationship.recover {

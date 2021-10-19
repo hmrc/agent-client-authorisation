@@ -17,10 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, InvalidTrust, SuspensionDetails, TrustName, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, InvalidTrust, PptSubscription, SuspensionDetails, TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, PptRef, Vrn}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
@@ -169,6 +169,27 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       val result = await(connector.getAgencyDetails(Arn(arn)))
 
       result shouldBe Some(AgentDetailsDesResponse(None, None))
+    }
+  }
+
+  "getPPTSubscription" should {
+    "return a PPT subscription record" in {
+      givenPptSubscription(PptRef("XAPPT1234567890"), true, true, false)
+      val result = connector.getPptSubscription(PptRef("XAPPT1234567890")).futureValue
+      result shouldBe Some(PptSubscription("Bill Sikes", LocalDate.parse("2021-10-12"), Some(LocalDate.parse("2050-10-01"))))
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetPptSubscriptionDisplay-GET")
+    }
+    "return None when IF responds with 4xx" in {
+      givenPptSubscriptionRespondsWith(PptRef("XAPPT1234567890"), 404)
+      val result = connector.getPptSubscription(PptRef("XAPPT1234567890")).futureValue
+      result shouldBe None
+    }
+
+    "throw an exception when IF responds with 5xx" in {
+      givenPptSubscriptionRespondsWith(PptRef("XAPPT1234567890"), 503)
+      assertThrows[UpstreamErrorResponse]{
+        await(connector.getPptSubscription(PptRef("XAPPT1234567890")))
+      }
     }
   }
 
