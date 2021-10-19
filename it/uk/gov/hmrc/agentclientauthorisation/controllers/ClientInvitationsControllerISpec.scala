@@ -46,10 +46,11 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     val serviceText = service match {
       case MtdIt => "manage their Making Tax Digital for Income Tax."
       case PersonalIncomeRecord => "view their PAYE income record."
-      case Vat => "manage their Making Tax Digital for VAT."
+      case Vat => "manage their VAT."
       case Trust => "maintain a trust or an estate."
       case TrustNT => "maintain a trust or an estate."
       case CapitalGains => "manage their Capital Gains Tax on UK property account."
+      case Ppt => "manage their Plastic Packaging Tax."
     }
 
     EmailInformation(Seq(dfe.agencyEmail),
@@ -66,7 +67,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     else if(forBusiness)
       givenClientAllBusCgt(cgtRefBus)
     else
-      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef)
   }
 
   trait AddEmailSupportStub {

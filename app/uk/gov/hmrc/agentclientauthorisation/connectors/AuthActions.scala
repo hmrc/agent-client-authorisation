@@ -151,6 +151,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
       case "UTR" if UtrType.isValid(clientId)         => Right((Trust, Utr(clientId)))
       case "URN" if UrnType.isValid(clientId)         => Right((TrustNT, Urn(clientId)))
       case "CGTPDRef" if CgtRefType.isValid(clientId) => Right((CapitalGains, CgtRef(clientId)))
+      case "PPTReference" if PptRef.isValid(clientId) => Right((Ppt, PptRef(clientId)))
       case e =>
         Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }

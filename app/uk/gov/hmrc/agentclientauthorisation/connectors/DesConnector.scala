@@ -61,6 +61,8 @@ trait DesConnector {
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
   def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
+
+  def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]]
 }
 
 @Singleton
@@ -258,6 +260,23 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
             None
           case other =>
             throw UpstreamErrorResponse(s"unexpected error during 'getVatCustomerDetails', statusCode=$other", other, other)
+        }
+      }
+    }
+  }
+
+  def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] = {
+    val url = s"$baseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
+    agentCacheProvider.pptSubscriptionCache(pptRef.value) {
+      getWithDesIfHeaders("GetPptSubscriptionDisplay", url, true).map { response =>
+        response.status match {
+          case status if is2xx(status) =>
+            response.json.asOpt[PptSubscription](PptSubscription.reads)
+          case status if is4xx(status) =>
+            logger.warn(s"$status response from getPptSubscriptionDisplay ${response.body}")
+            None
+          case other =>
+            throw UpstreamErrorResponse(s"unexpected error from getPptSubscriptionDisplay, status = $other", other)
         }
       }
     }

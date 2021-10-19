@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, Service, VatCustomerDetails}
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, PptRef, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ClientNameNotFound() extends Exception
@@ -48,6 +48,7 @@ class ClientNameService @Inject()(
       case HMRCTERSORG                         => getTrustName(clientId)
       case HMRCTERSNTORG                       => getTrustName(clientId)
       case HMRCCGTPD                           => getCgtName(CgtRef(clientId))
+      case HMRCPPTORG                          => getPptCustomerName(PptRef(clientId))
       case _                                   => Future successful None
     }
 
@@ -109,4 +110,7 @@ class ClientNameService @Inject()(
         logger.warn(s"Error occcured when getting CGT Name")
         None
     }
+
+  def getPptCustomerName(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    desConnector.getPptSubscription(pptRef).map(_.map(_.customerName))
 }

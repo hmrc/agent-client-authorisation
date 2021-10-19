@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
 import org.joda.time.{DateTime, LocalDate}
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{CapitalGains, MtdIt, PersonalIncomeRecord, Trust, Vat}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{CapitalGains, MtdIt, PersonalIncomeRecord, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, Service}
 import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
@@ -26,7 +26,6 @@ import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -57,13 +56,15 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
               .withBody(s"""{
                            |  "HMRC-MTD-IT": ["AARN1187295", "AARN1187296"],
                            |  "HMRC-MTD-VAT": ["AARN1187259"],
-                           |  "HMRC-TERS-ORG": ["AARN1187259"]
+                           |  "HMRC-TERS-ORG": ["AARN1187259"],
+                           |  "HMRC-PPT-ORG": ["AARN1187259"]
                            |}""".stripMargin)))
 
       val result = await(connector.getActiveRelationships)
       result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"), Arn("AARN1187296"))
       result("HMRC-MTD-VAT") should contain.only(Arn("AARN1187259"))
       result("HMRC-TERS-ORG") should contain.only(Arn("AARN1187259"))
+      result("HMRC-PPT-ORG") should contain.only(Arn("AARN1187259"))
     }
 
     "return the map of active relationships when only one present" in {
@@ -81,6 +82,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"))
       result.get("HMRC-MTD-VAT") shouldBe None
       result.get("HMRC-TERS-ORG") shouldBe None
+      result.get("HMRC-PPT-ORG") shouldBe None
     }
 
     "return an empty map of active relationships when none available" in {
@@ -96,6 +98,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       result.get("HMRC-MTD-IT") shouldBe None
       result.get("HMRC-MTD-VAT") shouldBe None
       result.get("HMRC-TERS-ORG") shouldBe None
+      result.get("HMRC-PPT-ORG") shouldBe None
     }
   }
 
@@ -206,6 +209,24 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       assertThrows[UpstreamErrorResponse] {
         await(connector.createCapitalGainsRelationship(
           invitation(Some("personal"), CapitalGains, cgtRef, cgtRef)))
+      }
+    }
+  }
+
+  "createPlasticPackagingTaxRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, servicePPT, "PPTReference", pptRef)
+      val result = await(connector.createPlasticPackagingTaxRelationship(
+        invitation(Some("personal"), Ppt, pptRef, pptRef)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, servicePPT, "PPTReference", pptRef)
+
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.createPlasticPackagingTaxRelationship(
+          invitation(Some("personal"), Ppt, pptRef, pptRef)))
       }
     }
   }

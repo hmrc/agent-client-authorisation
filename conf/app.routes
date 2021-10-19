@@ -16,6 +16,7 @@ GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrati
 GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
 GET         /known-facts/individuals/:nino/dob/:dob                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactIrv(nino: uk.gov.hmrc.domain.Nino, dob: LocalDate)
 GET         /known-facts/organisations/trust/:trustTaxIdentifier                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getTrustName(trustTaxIdentifier: String)
+GET         /known-facts/ppt/:pptReferenceNumber/:dateOfApplication                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPpt(pptReferenceNumber: uk.gov.hmrc.agentmtdidentifiers.model.PptRef, dateOfApplication: LocalDate)
 
 GET         /cgt/subscriptions/:cgtRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCgtSubscriptionDetails(cgtRef: uk.gov.hmrc.agentmtdidentifiers.model.CgtRef)
 
@@ -54,6 +55,7 @@ GET         /client/mtdItId/:mtdItId                                            
 GET         /client/nino/:nino                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getMtdItIdForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/trading-name/nino/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getTradingNameForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/vat-customer-details/vrn/:vrn                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getVatCustomerDetails(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
+GET         /client/ppt-customer-name/pptref/:pptRef                                      @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getPptCustomerName(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
 
 # Alternative-Itsa routes
 PUT         /alt-itsa/update/:nino                                                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdate(nino: uk.gov.hmrc.domain.Nino)

@@ -3,7 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import org.joda.time.{DateTime, LocalDate}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Trust, TrustNT, Vat}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord, Ppt, Trust, TrustNT, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -26,6 +26,7 @@ trait TestDataSupport {
   val serviceCGT = "HMRC-CGT-PD"
   val serviceTERS = "HMRC-TERS-ORG"
   val serviceTERSNT = "HMRC-TERSNT-ORG"
+  val servicePPT = "HMRC-PPT-ORG"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
@@ -43,6 +44,11 @@ trait TestDataSupport {
 
   val vrn = Vrn("101747696")
   val vrn2 = Vrn("121747696")
+
+  val pptRef = PptRef("XAPPT1234567890")
+  val pptApplicationDate = LocalDate.parse("2021-10-12")
+  val pptDeregistrationDateWhenActive = LocalDate.parse("2050-10-01")
+  val pptDeregistrationDateWhenDeregistered = LocalDate.parse("2021-10-01")
 
   val postcode: String = "AA11AA"
   val vatRegDate: LocalDate = LocalDate.parse("2018-01-01")
@@ -95,9 +101,10 @@ trait TestDataSupport {
   val cgtClient = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
   val altItsaClient = TestClient(personal, "John Smith", MtdIt, NinoType, "MTDITID", nino, nino, nino2)
+  val pptClient = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "PPTReference", pptRef, pptRef, PptRef("XAPPT1234567899") )
 
-  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient)
-  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient)
+  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient)
+  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient)
 
   val apiClients = List(itsaClient, vatClient)
 

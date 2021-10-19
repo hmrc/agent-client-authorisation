@@ -49,6 +49,8 @@ object Service {
 
   val HMRCCGTPD = "HMRC-CGT-PD"
 
+  val HMRCPPTORG = "HMRC-PPT-ORG"
+
   case object MtdIt extends Service("HMRC-MTD-IT", 'A', "HMRC-MTD-IT", NinoType, MtdItIdType, true)
 
   case object PersonalIncomeRecord extends Service("PERSONAL-INCOME-RECORD", 'B', "HMRC-NI", NinoType, NinoType, false)
@@ -61,7 +63,9 @@ object Service {
 
   case object CapitalGains extends Service("HMRC-CGT-PD", 'E', "HMRC-CGT-PD", CgtRefType, CgtRefType, true)
 
-  val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, Trust, TrustNT, CapitalGains)
+  case object Ppt extends Service("HMRC-PPT-ORG", 'G', "HMRC-PPT-ORG", PptRefType, PptRefType, true)
+
+  val supportedServices: Seq[Service] = Seq(MtdIt, Vat, PersonalIncomeRecord, Trust, TrustNT, CapitalGains, Ppt)
 
   def findById(id: String): Option[Service] = supportedServices.find(_.id == id)
   def forId(id: String): Service = findById(id).getOrElse(throw new Exception("Not a valid service"))
@@ -86,7 +90,7 @@ sealed abstract class ClientIdType[+T <: TaxIdentifier](
 }
 
 object ClientIdType {
-  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType, UtrType, UrnType, CgtRefType)
+  val supportedTypes = Seq(NinoType, MtdItIdType, VrnType, UtrType, UrnType, CgtRefType, PptRefType)
   def forId(id: String) =
     supportedTypes.find(_.id == id).getOrElse(throw new IllegalArgumentException("Invalid id:" + id))
 }
@@ -113,6 +117,10 @@ case object UrnType extends ClientIdType(classOf[Urn], "urn", "URN", Urn.apply) 
 
 case object CgtRefType extends ClientIdType(classOf[CgtRef], "CGTPDRef", "CGTPDRef", CgtRef.apply) {
   override def isValid(value: String): Boolean = CgtRef.isValid(value)
+}
+
+case object PptRefType extends ClientIdType(classOf[PptRef], "PPTReference", "PPTReference", PptRef.apply) {
+  override def isValid(value: String): Boolean = PptRef.isValid(value)
 }
 
 case class ClientIdentifier[T <: TaxIdentifier](underlying: T) {

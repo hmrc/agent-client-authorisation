@@ -4,3 +4,4 @@ service.HMRC-MTD-VAT=manage their VAT.
 service.HMRC-TERS-ORG=maintain a trust or an estate.
 service.HMRC-TERSNT-ORG=maintain a trust or an estate.
 service.HMRC-CGT-PD=manage their Capital Gains Tax on UK property account.
+service.HMRC-PPT-ORG=manage their Plastic Packaging Tax.

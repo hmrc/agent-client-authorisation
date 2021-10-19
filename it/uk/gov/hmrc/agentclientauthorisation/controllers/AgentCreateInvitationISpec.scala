@@ -170,6 +170,29 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
 
         verifyAnalyticsRequestSent(1)
       }
+
+      "service is PPT" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenPptSubscription(pptRef, true, true, false)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val requestBody = Json.parse(
+          s"""
+             |{
+             |  "service":"HMRC-PPT-ORG",
+             |  "clientIdType":"PPTReference",
+             |  "clientId":"XAPPT1234567890"
+             |}
+           """.stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
+      }
     }
 
     "throw exception when adding DetailsForEmail Failed" when {
