@@ -570,25 +570,6 @@ trait StrideAuthStubs extends BasicUserAuthStubs{
     this
   }
 
-  def givenUserIsAuthenticatedWithMultipleStrideRoles(strideRoles: Seq[String], strideUserId: String): StrideAuthStubs = {
-    stubFor(
-      post(urlPathEqualTo(s"/auth/authorise"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |{
-                         |"allEnrolments": [{
-                         |  "key": "$strideRoles"
-                         |	}],
-                         |  "optionalCredentials": {
-                         |    "providerId": "$strideUserId",
-                         |    "providerType": "PrivilegedApplication"
-                         |  }
-                         |}""".stripMargin)))
-    this
-  }
-
   def givenOnlyStrideStub(strideRole: String, strideUserId: String): StrideAuthStubs = {
     stubFor(
       post(urlEqualTo("/auth/authorise"))

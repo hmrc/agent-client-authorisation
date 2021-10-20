@@ -55,6 +55,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val oldStrideEnrolment = URLDecoder.decode(servicesConfig.getString("old.auth.stride.enrolment"), "utf-8")
   val newStrideEnrolment = servicesConfig.getString("new.auth.stride.enrolment")
+  val altStrideEnrolment = servicesConfig.getString("alt.auth.stride.enrolment")
   val terminationStrideEnrolment = servicesConfig.getString("termination.stride.enrolment")
 
   val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")

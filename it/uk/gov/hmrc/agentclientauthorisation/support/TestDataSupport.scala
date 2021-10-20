@@ -65,9 +65,7 @@ trait TestDataSupport {
   val NEW_STRIDE_ROLE = "maintain_agent_relationships"
   val ALT_STRIDE_ROLE = "maintain_agent_manually_assure"
 
-  val strideRoles = Seq(STRIDE_ROLE, NEW_STRIDE_ROLE)
-  val multipleStrideRoles = Seq(ALT_STRIDE_ROLE, NEW_STRIDE_ROLE)
-  val manuallyAssureStrideRole = Seq(ALT_STRIDE_ROLE)
+  val strideRoles = Seq(STRIDE_ROLE, NEW_STRIDE_ROLE, ALT_STRIDE_ROLE)
 
   val tpd = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
   val tpdBus = TypeOfPersonDetails("Organisation", Right(OrganisationName("Trustee")))

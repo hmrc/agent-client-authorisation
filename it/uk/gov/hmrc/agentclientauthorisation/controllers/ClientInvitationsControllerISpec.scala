@@ -60,10 +60,14 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         "service"      -> s"$serviceText"))
   }
 
-  class LoggedInUser(forStride: Boolean, forBusiness: Boolean = false) {
-    if(forStride)
-      givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
-    else if(forBusiness)
+  class LoggedInUser(forStride: Boolean, forBusiness: Boolean = false, altStride: Boolean = false) {
+    if(forStride) {
+      if (altStride) {
+        givenUserIsAuthenticatedWithStride(ALT_STRIDE_ROLE, "strideId-1234456")
+      } else {
+        givenUserIsAuthenticatedWithStride(NEW_STRIDE_ROLE, "strideId-1234456")
+      }
+    } else if(forBusiness)
       givenClientAllBusCgt(cgtRefBus)
     else
       givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef)
@@ -281,6 +285,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     runGetAllInvitationsScenario(cgtClientBus, forStride = true, forBusiness = true)
     runGetAllInvitationsScenario(altItsaClient, forStride = false)
     runGetAllInvitationsAltItsaScenario(altItsaClient, forStride = true)
+    runGetAllInvitationsAltItsaScenario(altItsaClient, forStride = true, altStride = true)
     runGetAllInvitationsAltItsaScenario(altItsaClient, forStride = false)
   }
 
@@ -308,9 +313,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
   }
 
-  private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, multipleStrideRoles: Boolean = false): Unit = {
+  private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, altStride: Boolean = false): Unit = {
     val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
-    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness = false) {
+    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"}" in new LoggedInUser(forStride, forBusiness = false, altStride = altStride) {
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))
       givenMtdItIdIsKnownFor(nino, mtdItId)
@@ -325,8 +330,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       json.invitations.last.clientId shouldBe mtdItId.value
     }
 
-    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"} and " +
-      s"update status to Accepted when PartialAuth exists" in new LoggedInUser(forStride, false) {
+    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"} and " +
+      s"update status to Accepted when PartialAuth exists" in new LoggedInUser(forStride, false, altStride = altStride) {
       val pendingInvitation: Invitation = await(createInvitation(arn, testClient))
       await(repository.update(pendingInvitation, PartialAuth, DateTime.now()))
       givenMtdItIdIsKnownFor(nino, mtdItId)
@@ -341,7 +346,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       json.invitations.head.status shouldBe "Accepted"
     }
 
-    s"return 200 for getting no ${testClient.service.id} (ALT-ITSA) invitations for ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, false) {
+    s"return 200 for getting no ${testClient.service.id} (ALT-ITSA) invitations for ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"}" in new LoggedInUser(forStride, false, altStride = altStride) {
       val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
 
       status(result) shouldBe 200
