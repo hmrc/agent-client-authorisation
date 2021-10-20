@@ -21,7 +21,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   val controller: ClientInvitationsController = app.injector.instanceOf[ClientInvitationsController]
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
-  implicit val mat = app.injector.instanceOf[Materializer]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
   def createInvitation[T<:TaxIdentifier](arn: Arn,
                        testClient: TestClient[T],
@@ -105,7 +105,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     //runAcceptInvitationsScenarioForAlternativeItsa(altItsaClient, "UI", false)
   }
 
-  def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false) = {
+  def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false): Unit = {
 
   val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
@@ -124,7 +124,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
       val updatedInvitation: Future[Result] = controller.getInvitations(client.urlIdentifier, client.clientId.value, if(client.isAltItsaClient) Some(PartialAuth) else Some(Accepted))(getResult)
       val testInvitationOpt: Option[TestHalResponseInvitation] = (contentAsJson(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
-      val testHasStatusOf = if(client.isAltItsaClient) PartialAuth else Accepted
+      val testHasStatusOf: InvitationStatus = if(client.isAltItsaClient) PartialAuth else Accepted
       testInvitationOpt.map(_.status) shouldBe Some(testHasStatusOf.toString)
       verifyAnalyticsRequestSent(1)
     }
@@ -156,10 +156,10 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     s"accepting via $journey to accept an ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val oldInvitation: Invitation = await(createInvitation(arn, client))
-      val acceptedStatus = if(client.isAltItsaClient) PartialAuth else Accepted
+      val acceptedStatus: InvitationStatus = if(client.isAltItsaClient) PartialAuth else Accepted
       await(repository.update(oldInvitation, acceptedStatus, DateTime.now()))
 
-      val clientOnDifferentService = if(client.service == Service.Vat) itsaClient else vatClient
+      val clientOnDifferentService: TestClient[_ >: MtdItId with Vrn <: TaxIdentifier] = if(client.service == Service.Vat) itsaClient else vatClient
 
       val oldInvitationFromDifferentService: Invitation = await(createInvitation(arn, clientOnDifferentService))
       await(repository.update(oldInvitationFromDifferentService, Accepted, DateTime.now()))
@@ -212,7 +212,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     runRejectInvitationsScenario(cgtClientBus, "UI", true, true)
   }
 
-  def runRejectInvitationsScenario[T<:TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBussiness: Boolean = false) = {
+  def runRejectInvitationsScenario[T<:TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBussiness: Boolean = false): Unit = {
     val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
 
@@ -221,7 +221,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       givenEmailSent(createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_rejected_authorisation_request", client.service))
         givenPlatformAnalyticsRequestSent(true)
 
-        val result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
+        val result: Result = await(controller.rejectInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
         status(result) shouldBe 204
       val updatedInvitation: Future[Result] = controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Rejected))(getResult)
       val testInvitationOpt: Option[TestHalResponseInvitation] = (contentAsJson(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
@@ -249,7 +249,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
       status(result) shouldBe 403
 
-      val invitationResult = controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Pending))(getResult)
+      val invitationResult: Future[Result] = controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(Pending))(getResult)
       val testInvitationOpt: Option[TestHalResponseInvitation] = (contentAsJson(invitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       testInvitationOpt.map(_.status) shouldBe Some(Pending.toString)
     }
@@ -295,20 +295,20 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))
 
-      val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
+      val result: Future[Result] = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
 
       status(result) shouldBe 200
 
-      val json = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
+      val json: TestHalResponseInvitations = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 2
     }
 
     s"return 200 for getting no ${testClient.service.id} invitations for ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
-      val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
+      val result: Future[Result] = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
 
       status(result) shouldBe 200
 
-      val json = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
+      val json: TestHalResponseInvitations = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 0
     }
   }
@@ -320,11 +320,11 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       await(createInvitation(arn2, testClient))
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
-      val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
+      val result: Future[Result] = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
 
       status(result) shouldBe 200
 
-      val json = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
+      val json: TestHalResponseInvitations = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 2
       json.invitations.head.clientId shouldBe mtdItId.value
       json.invitations.last.clientId shouldBe mtdItId.value
@@ -337,21 +337,21 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
-      val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
+      val result: Future[Result] = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
       status(result) shouldBe 200
 
-      val json = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
+      val json: TestHalResponseInvitations = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 1
       json.invitations.head.clientId shouldBe mtdItId.value
       json.invitations.head.status shouldBe "Accepted"
     }
 
     s"return 200 for getting no ${testClient.service.id} (ALT-ITSA) invitations for ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"}" in new LoggedInUser(forStride, false, altStride = altStride) {
-      val result = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
+      val result: Future[Result] = controller.getInvitations(testClient.urlIdentifier, testClient.clientId.value, None)(request)
 
       status(result) shouldBe 200
 
-      val json = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
+      val json: TestHalResponseInvitations = (contentAsJson(result) \ "_embedded").as[TestHalResponseInvitations]
       json.invitations.length shouldBe 0
     }
   }

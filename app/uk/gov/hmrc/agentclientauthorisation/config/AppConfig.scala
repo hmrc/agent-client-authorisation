@@ -33,43 +33,43 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
     servicesConfig.getConfString(key, throw new RuntimeException(s"config $key not found"))
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)
 
-  val authBaseUrl = baseUrl("auth")
+  val authBaseUrl: String = baseUrl("auth")
 
-  val desBaseUrl = baseUrl("des")
-  val desEnvironment = getConf("des.environment")
-  val desAuthToken = getConf("des.authorization-token")
+  val desBaseUrl: String = baseUrl("des")
+  val desEnvironment: String = getConf("des.environment")
+  val desAuthToken: String = getConf("des.authorization-token")
 
-  val ifPlatformBaseUrl = baseUrl("if")
-  val ifEnvironment = getConf("if.environment")
-  val ifAuthToken = getConf("if.authorization-token")
+  val ifPlatformBaseUrl: String = baseUrl("if")
+  val ifEnvironment: String = getConf("if.environment")
+  val ifAuthToken: String = getConf("if.authorization-token")
 
-  val relationshipsBaseUrl = baseUrl("relationships")
+  val relationshipsBaseUrl: String = baseUrl("relationships")
 
-  val afiRelationshipsBaseUrl = baseUrl("afi-relationships")
+  val afiRelationshipsBaseUrl: String = baseUrl("afi-relationships")
 
-  val citizenDetailsBaseUrl = baseUrl("citizen-details")
+  val citizenDetailsBaseUrl: String = baseUrl("citizen-details")
 
-  val emailBaseUrl = baseUrl("email")
+  val emailBaseUrl: String = baseUrl("email")
 
-  val agentInvitationsFrontendExternalUrl = getConf("agent-invitations-frontend.external-url")
+  val agentInvitationsFrontendExternalUrl: String = getConf("agent-invitations-frontend.external-url")
 
-  val oldStrideEnrolment = URLDecoder.decode(servicesConfig.getString("old.auth.stride.enrolment"), "utf-8")
-  val newStrideEnrolment = servicesConfig.getString("new.auth.stride.enrolment")
-  val altStrideEnrolment = servicesConfig.getString("alt.auth.stride.enrolment")
-  val terminationStrideEnrolment = servicesConfig.getString("termination.stride.enrolment")
+  val oldStrideEnrolment: String = URLDecoder.decode(servicesConfig.getString("old.auth.stride.enrolment"), "utf-8")
+  val newStrideEnrolment: String = servicesConfig.getString("new.auth.stride.enrolment")
+  val altStrideEnrolment: String = servicesConfig.getString("alt.auth.stride.enrolment")
+  val terminationStrideEnrolment: String = servicesConfig.getString("termination.stride.enrolment")
 
   val invitationUpdateStatusInterval: Int = servicesConfig.getInt("invitation-status-update-scheduler.interval")
   val invitationStatusUpdateEnabled: Boolean = servicesConfig.getBoolean("invitation-status-update-scheduler.enabled")
 
   val invitationExpiringDuration: Duration = servicesConfig.getDuration("invitation.expiryDuration")
 
-  val removePersonalInfoSchedulerEnabled = servicesConfig.getBoolean("remove-personal-info-scheduler.enabled")
-  val removePersonalInfoScheduleInterval = servicesConfig.getInt("remove-personal-info-scheduler.interval")
-  val removePersonalInfoExpiryDuration = servicesConfig.getDuration("remove-personal-info-scheduler.expiryDuration")
+  val removePersonalInfoSchedulerEnabled: Boolean = servicesConfig.getBoolean("remove-personal-info-scheduler.enabled")
+  val removePersonalInfoScheduleInterval: Int = servicesConfig.getInt("remove-personal-info-scheduler.interval")
+  val removePersonalInfoExpiryDuration: Duration = servicesConfig.getDuration("remove-personal-info-scheduler.expiryDuration")
 
-  val agentCacheSize = servicesConfig.getInt("agent.cache.size")
-  val agentCacheExpires = servicesConfig.getDuration("agent.cache.expires")
-  val agentCacheEnabled = servicesConfig.getBoolean("agent.cache.enabled")
+  val agentCacheSize: Int = servicesConfig.getInt("agent.cache.size")
+  val agentCacheExpires: Duration = servicesConfig.getDuration("agent.cache.expires")
+  val agentCacheEnabled: Boolean = servicesConfig.getBoolean("agent.cache.enabled")
 
   def expectedAuth: BasicAuthentication = {
     val username = servicesConfig.getString("agent-termination.username")
@@ -78,7 +78,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
     BasicAuthentication(username, password)
   }
 
-  val platformAnalyticsBaseUrl = baseUrl("platform-analytics")
+  val platformAnalyticsBaseUrl: String = baseUrl("platform-analytics")
   val gaTrackingId: String = servicesConfig.getString("google-analytics.token")
   val gaBatchSize: Int = servicesConfig.getInt("google-analytics.batchSize")
   val gaClientTypeIndex: Int = servicesConfig.getInt("google-analytics.clientTypeIndex")
