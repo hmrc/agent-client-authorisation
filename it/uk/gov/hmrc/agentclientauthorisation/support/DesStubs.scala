@@ -96,6 +96,33 @@ trait DesStubs {
     this
   }
 
+  def hasABusinessPartnerRecordWithBusinessDataWithNoTradingName(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}
+              """.stripMargin)))
+    this
+  }
+
   def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
@@ -158,6 +185,25 @@ trait DesStubs {
     this
   }
 
+  def hasBusinessPartnerRecordWithNoBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "mtdbsa": "${mtdItId.value}",
+                       |  "propertyIncome": false,
+                       |  "propertyData": []
+                       |}
+                       |""".stripMargin)))
+    this
+  }
+
   def hasNoBusinessPartnerRecord(nino: Nino) = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
@@ -166,6 +212,16 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(404)))
 
+    this
+  }
+
+  def businessPartnerRecordFails(nino: Nino, status: Int) = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(status)))
     this
   }
 
@@ -748,32 +804,6 @@ trait DesStubs {
             .withBody(body)))
   }
 
-  def givenTradingName(nino: Nino, tradingName: String) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/$nino"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{"tradingName": "$tradingName"}""")
-        ))
-
-  def givenTradingNameMissing(nino: Nino) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/$nino"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{}""")
-        ))
-
-  def givenTradingNameNotFound(nino: Nino) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(404)
-        ))
-
   def givenClientDetailsForVat(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
@@ -820,4 +850,58 @@ trait DesStubs {
             .withStatus(404)
         )
     )
-}
+
+  private val individualCustomerDetails =
+    s"""
+       |"customerType": "Individual",
+       |"individualDetails": {
+       |  "firstName": "Bill",
+       |  "lastName": "Sikes"
+       |}
+       |""".stripMargin
+
+  private val organisationCustomerDetails =
+    s"""
+       |"customerType": "Organisation",
+       |"organisationDetails": {
+       |  "organisationName": "Fagan Ltd"
+       |  }
+       |""".stripMargin
+
+  //from the spec API1712 changeOfCircumstanceDetails are optional although PPT team advised that there wil always be
+  //a deregistrationDate but customers who are actually deregistered will have a date of today or before and customers
+  // who are not deregistered will have a date long into the future. TBC
+  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean) = {
+    stubFor(
+      get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
+        .willReturn(
+          aResponse()
+            .withStatus(200).withBody(
+            s"""
+               |{
+               |"legalEntityDetails": {
+               |  "dateOfApplication": "2021-10-12",
+               |  "customerDetails": {
+               |    ${if(isIndividual) individualCustomerDetails else organisationCustomerDetails}
+               |  }
+               | }${if(deregisteredDetailsPresent){s""",
+               |"changeOfCircumstanceDetails": {
+               | "deregistrationDetails": {
+               |    "deregistrationDate": ${if(isDeregistered)""" "2021-10-01" """ else """ "2050-10-01" """}
+               |  }
+               | }"""} else {""""""}}
+               |}""".stripMargin)))
+    }
+
+  def givenPptSubscriptionRespondsWith(pptRef: PptRef, status: Int) =
+    stubFor(
+      get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
+        .willReturn(
+          aResponse()
+            .withStatus(status)
+        )
+    )
+  }
+
+
+

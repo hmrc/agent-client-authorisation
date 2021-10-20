@@ -35,7 +35,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
     "return 201 Created with link to invitation in headers" when {
       "service is ITSA" in {
         givenAuditConnector()
-        givenTradingName(nino, "Trade Pears")
+        hasABusinessPartnerRecord(nino)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         givenNinoForMtdItId(mtdItId, nino)
 
@@ -161,6 +161,29 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
              |  "service":"HMRC-CGT-PD",
              |  "clientIdType":"CGTPDRef",
              |  "clientId":"XMCGTP123456789"
+             |}
+           """.stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
+      }
+
+      "service is PPT" in {
+        givenAuditConnector()
+        givenAuthorisedAsAgent(arn)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenPptSubscription(pptRef, true, true, false)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val requestBody = Json.parse(
+          s"""
+             |{
+             |  "service":"HMRC-PPT-ORG",
+             |  "clientIdType":"PPTReference",
+             |  "clientId":"XAPPT1234567890"
              |}
            """.stripMargin)
 

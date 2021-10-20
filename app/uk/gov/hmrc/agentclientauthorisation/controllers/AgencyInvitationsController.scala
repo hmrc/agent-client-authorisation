@@ -18,8 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
-
-import javax.inject._
 import org.joda.time.LocalDate
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Futures
@@ -27,11 +25,10 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{ClientRegistrationNotFound, DateOfBirthDoesNotMatch, InvitationNotFound, NoPermissionOnAgency, PostcodeDoesNotMatch, VatRegistrationDateDoesNotMatch, genericBadRequest, genericInternalServerError, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
-import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted}
-import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.util.{FailedResultException, valueOps}
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -39,6 +36,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -320,6 +318,24 @@ class AgencyInvitationsController @Inject()(
         }
       }
     }
+  }
+
+  def checkKnownFactPpt(pptReferenceNumber: PptRef, dateOfApplication: LocalDate) = Action.async { implicit request =>
+    desConnector
+      .getPptSubscription(pptReferenceNumber)
+      .map {
+        case Some(record) =>
+          if (record.dateOfApplication != dateOfApplication) PptRegistrationDateDoesNotMatch
+          else
+            record.deregistrationDate.fold(NoContent)(deregistrationDate =>
+              if (deregistrationDate.isAfter(LocalDate.now)) NoContent else PptCustomerDeregistered)
+        case None => PptSubscriptionNotFound
+      }
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.warn(s"unexpected error on checkKnownFactPpt $e")
+          InternalServerError
+      }
   }
 
   def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>

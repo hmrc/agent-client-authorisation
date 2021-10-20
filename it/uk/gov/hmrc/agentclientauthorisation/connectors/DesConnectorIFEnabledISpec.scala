@@ -1,11 +1,10 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.agentclientauthorisation.model.{TrustName, TrustResponse}
-import uk.gov.hmrc.agentclientauthorisation.support.AppAndStubs
-import uk.gov.hmrc.agentmtdidentifiers.model.{TrustTaxIdentifier, Urn, Utr}
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.model.{TrustName, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, UnitSpec}
+import uk.gov.hmrc.agentmtdidentifiers.model.{TrustTaxIdentifier, Urn, Utr}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

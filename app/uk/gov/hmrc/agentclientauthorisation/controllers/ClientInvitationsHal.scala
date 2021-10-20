@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Urn, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, PptRef, Urn, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -43,6 +43,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitation("URN", invitation.clientId.value, invitation.invitationId)
       case CapitalGains =>
         routes.ClientInvitationsController.getInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
+      case Ppt =>
+        routes.ClientInvitationsController.getInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
     }
 
     var links = HalLinks(Vector(HalLink("self", invitationUrl.url)))
@@ -64,6 +66,9 @@ trait ClientInvitationsHal {
       case CapitalGains =>
         routes.ClientInvitationsController
           .acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
+      case Ppt =>
+        routes.ClientInvitationsController
+          .acceptInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
     }
 
     lazy val rejectLink = invitation.service match {
@@ -83,6 +88,9 @@ trait ClientInvitationsHal {
       case CapitalGains =>
         routes.ClientInvitationsController
           .rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
+      case Ppt =>
+        routes.ClientInvitationsController
+          .rejectInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
     }
 
     if (invitation.status == Pending) {
@@ -107,6 +115,8 @@ trait ClientInvitationsHal {
           routes.ClientInvitationsController.getInvitation("URN", i.clientId.value, i.invitationId)
         case CapitalGains =>
           routes.ClientInvitationsController.getInvitation("CGTPDRef", i.clientId.value, i.invitationId)
+        case Ppt =>
+          routes.ClientInvitationsController.getInvitation("PPTReference", i.clientId.value, i.invitationId)
       }
       HalLink("invitations", link.toString)
     }.toVector
@@ -127,6 +137,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitations("URN", clientId.value, status)
       case clientId @ ClientIdentifier(CgtRef(_)) =>
         routes.ClientInvitationsController.getInvitations("CGTPDRef", clientId.value, status)
+      case clientId @ ClientIdentifier(PptRef(_)) =>
+        routes.ClientInvitationsController.getInvitations("PPTReference", clientId.value, status)
       case other =>
         throw new RuntimeException(s"'toHalResource' not yet implemented for $other ")
     }

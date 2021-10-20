@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
+import org.joda.time.LocalDate
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
@@ -239,6 +240,57 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 
       val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
       status(result) shouldBe 502
+    }
+  }
+
+  "GET /known-facts/ppt/:pptRegistrationNumber/:pptDateOfApplication" should {
+    val request = FakeRequest("GET", "/known-facts/ppt/:pptRegistrationNumber/:pptDateOfApplication")
+
+    "return No Content if PptRef is known in ETMP and the dateOfApplication matched" in {
+      givenAuditConnector()
+      givenPptSubscription(pptRef, true, true, false)
+
+      val result = await(controller.checkKnownFactPpt(pptRef, pptApplicationDate)(request))
+      status(result) shouldBe 204
+    }
+
+    "return No Content when deregistrationDate is not on record" in {
+      givenAuditConnector()
+      givenPptSubscription(pptRef, true, false, false)
+
+      val result = await(controller.checkKnownFactPpt(pptRef, pptApplicationDate)(request))
+      status(result) shouldBe 204
+    }
+
+    "return Not Found if PptRef is unknown in ETMP" in {
+      givenAuditConnector()
+      givenPptSubscriptionRespondsWith(pptRef, 404)
+      val result = await(controller.checkKnownFactPpt(pptRef, pptApplicationDate)(request))
+
+      result shouldBe PptSubscriptionNotFound
+    }
+    "return Forbidden if PPT customer is deregistered" in {
+      givenAuditConnector()
+      givenPptSubscription(pptRef, true, true, true)
+
+      val result = await(controller.checkKnownFactPpt(pptRef, pptApplicationDate)(request))
+      result shouldBe PptCustomerDeregistered
+    }
+
+    "return Forbidden if date of application does not match" in {
+      givenAuditConnector()
+     givenPptSubscription(pptRef, false, false, false)
+
+      val result = await(controller.checkKnownFactPpt(pptRef, LocalDate.parse("2019-10-10"))(request))
+      result shouldBe PptRegistrationDateDoesNotMatch
+    }
+
+    "return 500 when DES/ETMP is unavailable" in {
+      givenAuditConnector()
+      givenPptSubscriptionRespondsWith(pptRef, 503)
+
+      val result = await(controller.checkKnownFactPpt(pptRef, pptApplicationDate)(request))
+      status(result) shouldBe 500
     }
   }
 

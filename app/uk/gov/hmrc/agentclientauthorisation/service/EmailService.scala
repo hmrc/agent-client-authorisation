@@ -123,10 +123,11 @@ class EmailService @Inject()(
           case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
           case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
           case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
+          case HMRCPPTORG    => messagesApi(s"service.$HMRCPPTORG")
         }),
         "additionalInfo" -> {
           if (isAltItsa(invitation))
-            s"You now have 4 months to sign $clientName up to Making Tax Digital for Income Tax."
+            s"You must now sign $clientName up to Making Tax Digital for Income Tax."
           else ""
         }
       )

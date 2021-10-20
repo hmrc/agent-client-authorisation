@@ -67,7 +67,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       citizenDetailsConnector,
       agentCacheProvider)
 
-  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 6), DeletionCount(appConfig.appName, "agent-reference", 1))))
+  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 7), DeletionCount(appConfig.appName, "agent-reference", 1))))
   val jsonNoDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 0), DeletionCount(appConfig.appName, "agent-reference", 0))))
 
   def createInvitation(arn: Arn,
@@ -111,7 +111,7 @@ class TerminateInvitationsISpec extends BaseISpec {
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
-      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 6
+      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 7
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 1
 
       val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
@@ -120,7 +120,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 6
+      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 7
       await(agentReferenceRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 1
     }
 

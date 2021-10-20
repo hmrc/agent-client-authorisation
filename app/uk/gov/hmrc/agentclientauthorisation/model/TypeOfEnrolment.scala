@@ -40,6 +40,7 @@ case object EnrolmentNino extends TypeOfEnrolment("HMRC-NI", "NINO", Nino.apply)
 case object EnrolmentTrust extends TypeOfEnrolment("HMRC-TERS-ORG", "SAUTR", Utr.apply)
 case object EnrolmentTrustNT extends TypeOfEnrolment("HMRC-TERSNT-ORG", "URN", Urn.apply)
 case object EnrolmentCgt extends TypeOfEnrolment("HMRC-CGT-PD", "CGTPDRef", CgtRef.apply)
+case object EnrolmentPpt extends TypeOfEnrolment("HMRC-PPT-ORG", "PPTReference", PptRef.apply)
 
 object TypeOfEnrolment {
 
@@ -51,6 +52,7 @@ object TypeOfEnrolment {
     case Utr(_)     => EnrolmentTrust
     case Urn(_)     => EnrolmentTrustNT
     case CgtRef(_)  => EnrolmentCgt
+    case PptRef(_)  => EnrolmentPpt
     case _          => throw new IllegalArgumentException(s"Unhandled TaxIdentifier type ${identifier.getClass.getName}")
   }
 }

@@ -9,7 +9,7 @@ import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{SuspensionDetails, VatCustomerDetails, VatIndividual}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 class AgentServicesControllerISpec extends BaseISpec {
@@ -127,6 +127,12 @@ class AgentServicesControllerISpec extends BaseISpec {
   def getVatCustomerDetails(vrn: Vrn): WSResponse =
     wsClient
       .url(s"$url/client/vat-customer-details/vrn/${vrn.value}")
+      .get()
+      .futureValue
+
+  def getPptCustomerName(pptRef: PptRef): WSResponse =
+    wsClient
+      .url(s"$url/client/ppt-customer-name/pptref/${pptRef.value}")
       .get()
       .futureValue
 
@@ -764,6 +770,15 @@ class AgentServicesControllerISpec extends BaseISpec {
 
       val result = getVatCustomerDetails(vrn)
       result.status shouldBe NOT_FOUND
+    }
+  }
+
+  "GET /client/ppt-customer-name/pptref/:pptRef" should {
+    "return OK for successful response" in {
+      givenPptSubscription(pptRef, false, false, false)
+      val result = getPptCustomerName(pptRef)
+      result.status shouldBe 200
+      (result.json \ "customerName").as[String] shouldBe "Fagan Ltd"
     }
   }
 }

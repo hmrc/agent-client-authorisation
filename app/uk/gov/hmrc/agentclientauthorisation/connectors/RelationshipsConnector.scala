@@ -91,6 +91,13 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         .handleNon2xx("unexpected error during 'createCapitalGainsRelationship'")
     }
 
+  def createPlasticPackagingTaxRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-PlasticPackagingTax-PUT") {
+      http
+        .PUT[String, HttpResponse](pptRelationshipUrl(invitation), "")
+        .handleNon2xx("unexepected error during 'createPlasticPackagingTaxRelationship'")
+    }
+
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
@@ -136,6 +143,11 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
   private def cgtRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(
       invitation.clientId.value)}"
+
+  private def pptRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PPT-ORG/client/PPTReference/${encodePathSegment(
+      invitation.clientId.value
+    )}"
 
   private def afiRelationshipUrl(invitation: Invitation): String = {
     val arn = encodePathSegment(invitation.arn.value)
