@@ -46,7 +46,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   implicit val ec: ExecutionContext = ecp.get
 
-  private val strideRoles = Seq(appConfig.oldStrideEnrolment, appConfig.newStrideEnrolment)
+  private val strideRoles = Seq(appConfig.oldStrideEnrolment, appConfig.newStrideEnrolment, appConfig.altStrideEnrolment)
 
   def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     if (clientIdType == "NI") {

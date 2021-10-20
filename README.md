@@ -18,9 +18,10 @@ Refer to [RAML documentation](https://github.com/hmrc/agent-client-authorisation
     *   [GET all of Agent's Sent Invitation](#agentInvitations)
     *   [GET Known Fact for VAT](#vatKnownFact)
 *   [Client APIs](#clientApis)
-    *   [Client Accepts Invitation](#acceptInvitation)
-    *   [Client Rejects Invitation](#rejectInvitation)
-    *   [GET Client Specific Invitation](#clientSpecificInvitation)
+    * [Client Accepts Invitation](#acceptInvitation)
+    * [Client Rejects Invitation](#rejectInvitation)
+    * [GET Client Specific Invitation](#clientSpecificInvitation)
+    * [GET All Client Invitations](#clientAllInvitations)
 *   [Running the tests](#runningTests)    
 *   [Running the application locally](#runningLocal)  
 
@@ -414,7 +415,69 @@ Example Response, 200 with Body:
    "clientId" : "101747696"
 }
 ```
+#### GET All Client Invitation <a name="clientAllInvitations"></a>
+Retrieve all invitations by client identifier, used by agent-client-management (manage your tax agent) and STRIDE users with the correct roles
 
+|Response|Description|
+|--------|---------|
+|200|Returns all Invitations for a given client identifier, returns empty if no invitations|
+|403|User is not authorised to view this invitation|
+
+```
+GET   /clients/(service-api)/(associated-clientIdentifier)/invitations/received
+```
+
+Example Requests:
+```
+http://localhost:9432/agent-client-authorisation/clients/NI/AB12456A/invitations/received
+http://localhost:9432/agent-client-authorisation/clients/MTDITID/EP849172B/invitations/received?status=Partialauth
+http://localhost:9432/agent-client-authorisation/clients/VRN/101747696/invitations/received?status=Pending
+```
+Example Response for partialAuth query, 200 Body:
+```json
+{
+    "_links": {
+        "self": {
+            "href": "/agent-client-authorisation/clients/NI/EP849172B/invitations/received?status=Partialauth"
+        },
+        "invitations": {
+            "href": "/agent-client-authorisation/clients/MTDITID/EP849172B/invitations/received/AJKFPB2XJCZXA"
+        }
+    },
+    "_embedded": {
+        "invitations": [
+            {
+                "_links": {
+                    "self": {
+                        "href": "/agent-client-authorisation/clients/MTDITID/EP849172B/invitations/received/AJKFPB2XJCZXA"
+                    }
+                },
+                "clientType": "personal",
+                "service": "HMRC-MTD-IT",
+                "clientIdType": "ni",
+                "clientId": "EP849172B",
+                "arn": "KARN0762398",
+                "suppliedClientId": "EP849172B",
+                "suppliedClientIdType": "ni",
+                "created": "2021-10-19T10:49:46.048+01:00",
+                "lastUpdated": "2021-10-19T16:25:24.614+01:00",
+                "expiryDate": "2021-11-09",
+                "status": "Partialauth",
+                "invitationId": "AJKFPB2XJCZXA",
+                "detailsForEmail": {
+                    "agencyEmail": "z7osda@pekas.me",
+                    "agencyName": "Booth Professional Services",
+                    "clientName": "Elijah Thompson"
+                },
+                "isRelationshipEnded": false,
+                "relationshipEndedBy": null,
+                "clientActionUrl": null,
+                "origin": "agent-invitations-frontend"
+            }
+        ]
+    }
+}
+```
 ### Cancel a client specific invitation
 Cancel a specific invitation by its invitationId
 
