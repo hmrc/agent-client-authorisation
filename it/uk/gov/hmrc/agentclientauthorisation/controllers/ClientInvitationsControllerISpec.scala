@@ -273,18 +273,18 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   "GET /clients/:service/:taxIdentifier/invitations/received" should {
     uiClients.foreach { client =>
-      runGetAllInvitationsScenario(client, true)
-      runGetAllInvitationsScenario(client, false)
+      runGetAllInvitationsScenario(client, forStride = true)
+      runGetAllInvitationsScenario(client, forStride = false)
     }
 
-    runGetAllInvitationsScenario(cgtClientBus,  false, true)
-    runGetAllInvitationsScenario(cgtClientBus, true, true)
-    runGetAllInvitationsScenario(altItsaClient, false)
-    runGetAllInvitationsAltItsaScenario(altItsaClient, true)
-    runGetAllInvitationsAltItsaScenario(altItsaClient, false)
+    runGetAllInvitationsScenario(cgtClientBus,  forStride = false, forBusiness = true)
+    runGetAllInvitationsScenario(cgtClientBus, forStride = true, forBusiness = true)
+    runGetAllInvitationsScenario(altItsaClient, forStride = false)
+    runGetAllInvitationsAltItsaScenario(altItsaClient, forStride = true)
+    runGetAllInvitationsAltItsaScenario(altItsaClient, forStride = false)
   }
 
-  private def runGetAllInvitationsScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, forBusiness: Boolean = false) = {
+  private def runGetAllInvitationsScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, forBusiness: Boolean = false): Unit = {
     val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
     s"return 200 for get all ${testClient.service.id} invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       await(createInvitation(arn, testClient))
@@ -308,9 +308,9 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
   }
 
-  private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean) = {
+  private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, multipleStrideRoles: Boolean = false): Unit = {
     val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
-    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, false) {
+    s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness = false) {
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))
       givenMtdItIdIsKnownFor(nino, mtdItId)
