@@ -111,7 +111,7 @@ class TerminateInvitationsISpec extends BaseISpec {
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
-      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 6
+      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 7
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 1
 
       val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
