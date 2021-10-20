@@ -237,7 +237,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     agentCacheProvider.tradingNameCache(nino.value) {
       getWithDesIfHeaders("GetTradingNameByNino", url).map { response =>
         response.status match {
-          case status if is2xx(status) => ((response.json \ "businessData")(0) \ "tradingName").asOpt[String]
+          case status if is2xx(status) => (response.json \ "businessData").toOption.map(_(0) \ "tradingName").flatMap(_.asOpt[String])
           case status if is4xx(status) =>
             logger.warn(s"4xx response from getTradingNameForNino ${response.body}")
             None

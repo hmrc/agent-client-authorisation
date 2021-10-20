@@ -73,7 +73,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   trait AddEmailSupportStub {
     givenGetAgencyDetailsStub(arn)
     givenNinoForMtdItId(mtdItId, nino)
-    givenTradingName(nino, "Trade Pears")
+    hasABusinessPartnerRecord(nino)
     givenCitizenDetailsAreKnownFor(nino.value, "19122019")
     givenClientDetailsForVat(vrn)
     val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""
