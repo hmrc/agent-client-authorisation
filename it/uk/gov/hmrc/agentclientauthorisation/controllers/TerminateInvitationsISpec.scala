@@ -120,7 +120,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
       await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
       await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 6
+      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 7
       await(agentReferenceRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 1
     }
 
