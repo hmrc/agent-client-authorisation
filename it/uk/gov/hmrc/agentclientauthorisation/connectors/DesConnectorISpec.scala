@@ -193,5 +193,36 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     }
   }
 
+  "getTradingNameForNino" should {
+      "return tradingName if defined in businessData" in {
+        hasABusinessPartnerRecord(nino)
+        val result = connector.getTradingNameForNino(nino).futureValue
+        result shouldBe Some("Surname DADTN")
+      }
+    "return None when no businessData is defined" in {
+      hasBusinessPartnerRecordWithNoBusinessData(nino)
+      val result = connector.getTradingNameForNino(nino).futureValue
+      result shouldBe None
+    }
+    "return None when no tradingName is defined within businessData" in {
+      hasABusinessPartnerRecordWithBusinessDataWithNoTradingName(nino)
+      val result = connector.getTradingNameForNino(nino).futureValue
+      result shouldBe None
+    }
+
+    "return None when the Nino is not found" in {
+      hasNoBusinessPartnerRecord(nino)
+      val result = connector.getTradingNameForNino(nino).futureValue
+      result shouldBe None
+    }
+
+    "throw an exception when DES returns a 5xx response" in {
+      assertThrows[UpstreamErrorResponse]{
+        businessPartnerRecordFails(nino, 503)
+        await(connector.getTradingNameForNino(nino))
+      }
+    }
+  }
+
   private def connector = app.injector.instanceOf[DesConnector]
 }

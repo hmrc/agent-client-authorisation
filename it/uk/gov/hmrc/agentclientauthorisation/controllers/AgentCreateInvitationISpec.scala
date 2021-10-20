@@ -35,7 +35,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
     "return 201 Created with link to invitation in headers" when {
       "service is ITSA" in {
         givenAuditConnector()
-        givenTradingName(nino, "Trade Pears")
+        hasABusinessPartnerRecord(nino)
         givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
         givenNinoForMtdItId(mtdItId, nino)
 

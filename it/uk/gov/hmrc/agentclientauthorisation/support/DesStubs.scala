@@ -96,6 +96,33 @@ trait DesStubs {
     this
   }
 
+  def hasABusinessPartnerRecordWithBusinessDataWithNoTradingName(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}
+              """.stripMargin)))
+    this
+  }
+
   def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
@@ -158,6 +185,25 @@ trait DesStubs {
     this
   }
 
+  def hasBusinessPartnerRecordWithNoBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "mtdbsa": "${mtdItId.value}",
+                       |  "propertyIncome": false,
+                       |  "propertyData": []
+                       |}
+                       |""".stripMargin)))
+    this
+  }
+
   def hasNoBusinessPartnerRecord(nino: Nino) = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
@@ -166,6 +212,16 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(404)))
 
+    this
+  }
+
+  def businessPartnerRecordFails(nino: Nino, status: Int) = {
+    stubFor(
+      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(status)))
     this
   }
 
@@ -747,32 +803,6 @@ trait DesStubs {
             .withStatus(200)
             .withBody(body)))
   }
-
-  def givenTradingName(nino: Nino, tradingName: String) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/$nino"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{"tradingName": "$tradingName"}""")
-        ))
-
-  def givenTradingNameMissing(nino: Nino) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/$nino"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{}""")
-        ))
-
-  def givenTradingNameNotFound(nino: Nino) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(404)
-        ))
 
   def givenClientDetailsForVat(vrn: Vrn) =
     stubFor(
