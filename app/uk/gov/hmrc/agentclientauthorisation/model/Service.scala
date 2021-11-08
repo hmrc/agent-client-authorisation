@@ -119,7 +119,7 @@ case object CgtRefType extends ClientIdType(classOf[CgtRef], "CGTPDRef", "CGTPDR
   override def isValid(value: String): Boolean = CgtRef.isValid(value)
 }
 
-case object PptRefType extends ClientIdType(classOf[PptRef], "PPTReference", "PPTReference", PptRef.apply) {
+case object PptRefType extends ClientIdType(classOf[PptRef], "EtmpRegistrationNumber", "EtmpRegistrationNumber", PptRef.apply) {
   override def isValid(value: String): Boolean = PptRef.isValid(value)
 }
 

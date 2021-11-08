@@ -320,9 +320,9 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def checkKnownFactPpt(pptReferenceNumber: PptRef, dateOfApplication: LocalDate) = Action.async { implicit request =>
+  def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate) = Action.async { implicit request =>
     desConnector
-      .getPptSubscription(pptReferenceNumber)
+      .getPptSubscription(EtmpRegistrationNumberNumber)
       .map {
         case Some(record) =>
           if (record.dateOfApplication != dateOfApplication) PptRegistrationDateDoesNotMatch

@@ -150,7 +150,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |      "key":"HMRC-PPT-ORG",
                      |      "identifiers": [
                      |        {
-                     |          "key":"PPTReference",
+                     |          "key":"EtmpRegistrationNumber",
                      |          "value":"${pptRef.value}"
                      |        }
                      |      ],
@@ -313,7 +313,7 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |      "key": "HMRC-PPT-ORG",
                      |      "identifiers": [
                      |        {
-                     |          "key": "PPTReference",
+                     |          "key": "EtmpRegistrationNumber",
                      |          "value": "${pptRef.value}"
                      |        }
                      |      ],

@@ -102,7 +102,7 @@ trait TestDataSupport {
   val cgtClient: TestClient[CgtRef] = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus: TestClient[CgtRef] = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
   val altItsaClient: TestClient[Nino] = TestClient(personal, "John Smith", MtdIt, NinoType, "MTDITID", nino, nino, nino2)
-  val pptClient: TestClient[PptRef] = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "PPTReference", pptRef, pptRef, PptRef("XAPPT1234567899") )
+  val pptClient: TestClient[PptRef] = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "EtmpRegistrationNumber", pptRef, pptRef, PptRef("XAPPT1234567899") )
 
   val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient)
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient)

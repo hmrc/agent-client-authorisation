@@ -58,7 +58,7 @@ object ErrorResults {
         "VAT_REGISTRATION_DATE_DOES_NOT_MATCH",
         "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC.")))
   val InvitationNotFound: Result = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
-  val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the PptReference was not found")))
+  val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the EtmpRegistrationNumber was not found")))
   val InvalidClientId: Result = BadRequest(toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
   def nonUkAddress(countryCode: String): Result =
     NotImplemented(

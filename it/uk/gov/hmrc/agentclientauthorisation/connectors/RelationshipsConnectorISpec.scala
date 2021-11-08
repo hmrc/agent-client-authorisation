@@ -215,14 +215,14 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
 
   "createPlasticPackagingTaxRelationship" should {
     "return () if the response is 2xx" in {
-      givenCreateRelationship(arn, servicePPT, "PPTReference", pptRef)
+      givenCreateRelationship(arn, servicePPT, "EtmpRegistrationNumber", pptRef)
       val result = await(connector.createPlasticPackagingTaxRelationship(
         invitation(Some("personal"), Ppt, pptRef, pptRef)))
       result shouldBe (())
     }
 
     "Throw an exception if the response is 5xx" in {
-      givenCreateRelationshipFails(arn, servicePPT, "PPTReference", pptRef)
+      givenCreateRelationshipFails(arn, servicePPT, "EtmpRegistrationNumber", pptRef)
 
       assertThrows[UpstreamErrorResponse] {
         await(connector.createPlasticPackagingTaxRelationship(

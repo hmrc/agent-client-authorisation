@@ -145,7 +145,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
       invitation.clientId.value)}"
 
   private def pptRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PPT-ORG/client/PPTReference/${encodePathSegment(
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PPT-ORG/client/EtmpRegistrationNumber/${encodePathSegment(
       invitation.clientId.value
     )}"
 
