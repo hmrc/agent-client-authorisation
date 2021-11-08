@@ -76,7 +76,8 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
     clientIdType match {
-      case ("MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "PPTReference") if currentUser.credentials.providerType == "GovernmentGateway" =>
+      case ("MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber")
+          if currentUser.credentials.providerType == "GovernmentGateway" =>
         Some(ClientIdentifier(currentUser.taxIdentifier))
       case _ => None
     }
@@ -93,13 +94,13 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def getType(clientIdType: String): ClientIdType[TaxIdentifier] =
     clientIdType match {
-      case "NI"           => NinoType
-      case "MTDITID"      => MtdItIdType
-      case "VRN"          => VrnType
-      case "UTR"          => UtrType
-      case "URN"          => UrnType
-      case "CGTPDRef"     => CgtRefType
-      case "PPTReference" => PptRefType
+      case "NI"                     => NinoType
+      case "MTDITID"                => MtdItIdType
+      case "VRN"                    => VrnType
+      case "UTR"                    => UtrType
+      case "URN"                    => UrnType
+      case "CGTPDRef"               => CgtRefType
+      case "EtmpRegistrationNumber" => PptRefType
     }
 
   def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =

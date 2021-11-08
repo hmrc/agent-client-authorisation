@@ -40,7 +40,7 @@ case object EnrolmentNino extends TypeOfEnrolment("HMRC-NI", "NINO", Nino.apply)
 case object EnrolmentTrust extends TypeOfEnrolment("HMRC-TERS-ORG", "SAUTR", Utr.apply)
 case object EnrolmentTrustNT extends TypeOfEnrolment("HMRC-TERSNT-ORG", "URN", Urn.apply)
 case object EnrolmentCgt extends TypeOfEnrolment("HMRC-CGT-PD", "CGTPDRef", CgtRef.apply)
-case object EnrolmentPpt extends TypeOfEnrolment("HMRC-PPT-ORG", "PPTReference", PptRef.apply)
+case object EnrolmentPpt extends TypeOfEnrolment("HMRC-PPT-ORG", "EtmpRegistrationNumber", PptRef.apply)
 
 object TypeOfEnrolment {
 

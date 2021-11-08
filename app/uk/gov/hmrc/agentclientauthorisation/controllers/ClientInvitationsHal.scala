@@ -44,7 +44,7 @@ trait ClientInvitationsHal {
       case CapitalGains =>
         routes.ClientInvitationsController.getInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
       case Ppt =>
-        routes.ClientInvitationsController.getInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
+        routes.ClientInvitationsController.getInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
     }
 
     var links = HalLinks(Vector(HalLink("self", invitationUrl.url)))
@@ -68,7 +68,7 @@ trait ClientInvitationsHal {
           .acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
       case Ppt =>
         routes.ClientInvitationsController
-          .acceptInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
+          .acceptInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
     }
 
     lazy val rejectLink = invitation.service match {
@@ -90,7 +90,7 @@ trait ClientInvitationsHal {
           .rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
       case Ppt =>
         routes.ClientInvitationsController
-          .rejectInvitation("PPTReference", invitation.clientId.value, invitation.invitationId)
+          .rejectInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
     }
 
     if (invitation.status == Pending) {
@@ -116,7 +116,7 @@ trait ClientInvitationsHal {
         case CapitalGains =>
           routes.ClientInvitationsController.getInvitation("CGTPDRef", i.clientId.value, i.invitationId)
         case Ppt =>
-          routes.ClientInvitationsController.getInvitation("PPTReference", i.clientId.value, i.invitationId)
+          routes.ClientInvitationsController.getInvitation("EtmpRegistrationNumber", i.clientId.value, i.invitationId)
       }
       HalLink("invitations", link.toString)
     }.toVector
@@ -138,7 +138,7 @@ trait ClientInvitationsHal {
       case clientId @ ClientIdentifier(CgtRef(_)) =>
         routes.ClientInvitationsController.getInvitations("CGTPDRef", clientId.value, status)
       case clientId @ ClientIdentifier(PptRef(_)) =>
-        routes.ClientInvitationsController.getInvitations("PPTReference", clientId.value, status)
+        routes.ClientInvitationsController.getInvitations("EtmpRegistrationNumber", clientId.value, status)
       case other =>
         throw new RuntimeException(s"'toHalResource' not yet implemented for $other ")
     }
