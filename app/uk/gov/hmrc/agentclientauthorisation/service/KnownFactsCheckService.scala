@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import org.joda.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.model.VatRegDate
+import uk.gov.hmrc.agentclientauthorisation.model.{VatDetails, VatKnownFactCheckResult}
+import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult._
 import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,18 +30,13 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetailsConnector: CitizenDetailsConnector) {
 
-  def clientVatRegistrationDateMatches(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
+  def clientVatRegistrationCheckResult(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Boolean]] =
-    desConnector.getVatRegDate(clientVrn).map {
-      case Some(VatRegDate(Some(effectiveRegistrationDate))) if effectiveRegistrationDate == suppliedVatRegistrationDate =>
-        Some(true)
-      case Some(VatRegDate(Some(_))) =>
-        Some(false)
-      case Some(VatRegDate(None)) =>
-        None
-      case None =>
-        None
+    ec: ExecutionContext): Future[VatKnownFactCheckResult] =
+    desConnector.getVatDetails(clientVrn).map {
+      case Some(VatDetails(Some(_), isInsolvent)) if isInsolvent => VatRecordClientInsolvent
+      case Some(VatDetails(Some(regDate), _))                    => if (regDate == suppliedVatRegistrationDate) VatKnownFactCheckOk else VatKnownFactNotMatched
+      case _                                                     => VatDetailsNotFound
     }
 
   def clientDateOfBirthMatches(clientNino: Nino, suppliedDob: LocalDate)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Boolean]] =
