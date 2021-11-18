@@ -225,7 +225,7 @@ trait DesStubs {
     this
   }
 
-  def hasVatCustomerDetails(vrn: Vrn, vatRegDate: String, isEffectiveRegistrationDatePresent: Boolean) = {
+  def hasVatCustomerDetails(vrn: Vrn, vatRegDate: Option[String], isInsolvent: Boolean = false) = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -238,10 +238,9 @@ trait DesStubs {
                        |         "organisationName" : " TAXPAYER NAME_1",
                        |         "mandationStatus" : "2",
                        |         "businessStartDate" : "2017-04-02",
-                       |         "registrationReason" : "0013"
-                       |         ${if (isEffectiveRegistrationDatePresent)
-                         s""","effectiveRegistrationDate" : "$vatRegDate""""
-                       else ""}
+                       |         "registrationReason" : "0013", """.stripMargin +
+            vatRegDate.map(vrd => s""" "effectiveRegistrationDate": "$vrd", """).getOrElse("""""") +
+                            s""" "isInsolvent" : $isInsolvent
                        |      },
                        |      "bankDetails" : {
                        |         "sortCode" : "16****",
@@ -731,7 +730,8 @@ trait DesStubs {
             "mandationStatus" : "1",
             "registrationReason" : "0001",
             "effectiveRegistrationDate" : "1967-08-13",
-            "businessStartDate" : "1967-08-13"
+            "businessStartDate" : "1967-08-13",
+            "isInsolvent": false
         }}}""".stripMargin)))
 
   def givenCustomerDetailsWithoutIndividual(vrn: Vrn) =
@@ -747,7 +747,8 @@ trait DesStubs {
             "mandationStatus" : "1",
             "registrationReason" : "0001",
             "effectiveRegistrationDate" : "1967-08-13",
-            "businessStartDate" : "1967-08-13"
+            "businessStartDate" : "1967-08-13",
+            "isInsolvent": false
         }}}""".stripMargin)))
 
   def givenCustomerDetailsWithoutOrganisation(vrn: Vrn) =

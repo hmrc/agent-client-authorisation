@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDeta
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Service._
+import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.util.{FailedResultException, valueOps}
@@ -266,11 +267,12 @@ class AgencyInvitationsController @Inject()(
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
     knownFactsCheckService
-      .clientVatRegistrationDateMatches(vrn, vatRegistrationDate)
+      .clientVatRegistrationCheckResult(vrn, vatRegistrationDate)
       .map {
-        case Some(true)  => NoContent
-        case Some(false) => VatRegistrationDateDoesNotMatch
-        case None        => NotFound
+        case VatKnownFactCheckOk      => NoContent
+        case VatKnownFactNotMatched   => VatRegistrationDateDoesNotMatch
+        case VatRecordClientInsolvent => VatClientInsolvent
+        case VatDetailsNotFound       => NotFound
       }
       .recover {
         case e if e.getMessage.contains("MIGRATION") => {

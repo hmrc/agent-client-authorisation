@@ -34,6 +34,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, Citizen, CitizenDetailsConnector, DesConnector, DesignatoryDetails}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Service.Trust
+import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{nino, _}
@@ -390,24 +391,35 @@ class AgencyInvitationsControllerSpec
     val vrn = Vrn("101747641")
     val suppliedDate = LocalDate.parse("2001-02-03")
 
-    "return No Content if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
+    "return VatClientInsolvent if the VAT record shows the client to be insolvent" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
       when(
         kfcService
-          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Some(true))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful VatRecordClientInsolvent)
+
+      await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatClientInsolvent
+    }
+
+    "return No Content if Vrn is known in ETMP, the client is solvent and the effectiveRegistrationDate matched" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(
+        kfcService
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful VatKnownFactCheckOk)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NoContent
     }
 
-    "return Vat Registration Date Does Not Match if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
+    "return Vat Registration Date Does Not Match if Vrn is known in ETMP, client is solvent and the effectiveRegistrationDate did not match" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
       when(
         kfcService
-          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful Some(false))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful VatKnownFactNotMatched)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatRegistrationDateDoesNotMatch
     }
@@ -417,8 +429,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future successful None)
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful VatDetailsNotFound)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NotFound
     }
@@ -434,7 +446,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationDateMatches(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future failed UpstreamErrorResponse("MIGRATION", 403, 423))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe Locked

@@ -19,17 +19,18 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import org.joda.time.LocalDate
 import play.api.libs.json.{JsObject, Reads, __}
 
-case class VatRegDate(effectiveRegistrationDate: Option[LocalDate])
+case class VatDetails(effectiveRegistrationDate: Option[LocalDate], isInsolvent: Boolean)
 
-object VatRegDate {
-  implicit val vatCustomerInfoReads: Reads[VatRegDate] = {
+object VatDetails {
+  implicit val vatCustomerInfoReads: Reads[VatDetails] = {
     (__ \ "approvedInformation").readNullable[JsObject].map {
       case Some(approvedInformation) =>
-        val maybeDate =
+        val maybeDate = {
           (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate").asOpt[String].map(LocalDate.parse)
-        VatRegDate(maybeDate)
-      case None =>
-        VatRegDate(None)
+        }
+        val isInsolvent = (approvedInformation \ "customerDetails" \ "isInsolvent").as[Boolean]
+        VatDetails(maybeDate, isInsolvent)
+      case _ => VatDetails(effectiveRegistrationDate = None, isInsolvent = false)
     }
   }
 }

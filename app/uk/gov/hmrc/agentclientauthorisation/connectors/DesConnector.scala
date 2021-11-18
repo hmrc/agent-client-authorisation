@@ -44,7 +44,7 @@ trait DesConnector {
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
 
-  def getVatRegDate(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatRegDate]]
+  def getVatDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatDetails]]
 
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 
@@ -102,11 +102,11 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     }
   }
 
-  def getVatRegDate(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatRegDate]] = {
+  def getVatDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatDetails]] = {
     val url = s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information"
     getWithDesIfHeaders("GetVatCustomerInformation", url).map { response =>
       response.status match {
-        case status if is2xx(status) => response.json.asOpt[VatRegDate]
+        case status if is2xx(status) => response.json.asOpt[VatDetails]
         case status if is4xx(status) =>
           logger.warn(s"4xx response for getVatRegDate ${response.body}")
           None

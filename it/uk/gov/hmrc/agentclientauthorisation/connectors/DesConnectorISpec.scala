@@ -78,23 +78,32 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     "return VatCustomerInformation for a subscribed VAT customer" when {
 
       "effectiveRegistrationDate is present" in {
-        hasVatCustomerDetails(clientVrn, "2017-04-01", isEffectiveRegistrationDatePresent = true)
+        hasVatCustomerDetails(clientVrn, Some("2017-04-01"))
 
-        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
+        vatCustomerInfo.isInsolvent shouldBe false
+      }
+
+      "effectiveRegistrationDate is present and customer is insolvent" in {
+        hasVatCustomerDetails(clientVrn, Some("2017-04-01"), true)
+
+        val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
+        vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
+        vatCustomerInfo.isInsolvent shouldBe true
       }
 
       "effectiveRegistrationDate is not present" in {
-        hasVatCustomerDetails(clientVrn, "2017-04-01", isEffectiveRegistrationDatePresent = false)
+        hasVatCustomerDetails(clientVrn, None)
 
-        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
 
       "there is no approvedInformation" in {
         hasVatCustomerDetailsWithNoApprovedInformation(clientVrn)
 
-        val vatCustomerInfo = await(connector.getVatRegDate(clientVrn)).get
+        val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe None
       }
     }
@@ -102,14 +111,14 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     "return None if the VAT client is not subscribed" in {
       hasNoVatCustomerDetails(clientVrn)
 
-      await(connector.getVatRegDate(clientVrn)) shouldBe None
+      await(connector.getVatDetails(clientVrn)) shouldBe None
     }
 
     "record metrics for each call" in {
-      hasVatCustomerDetails(clientVrn, "2017-04-01", true)
+      hasVatCustomerDetails(clientVrn, Some("2017-04-01"))
 
-      await(connector.getVatRegDate(clientVrn)).get
-      await(connector.getVatRegDate(clientVrn))
+      await(connector.getVatDetails(clientVrn)).get
+      await(connector.getVatDetails(clientVrn))
 
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetVatCustomerInformation-GET")
     }
@@ -118,7 +127,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       failsVatCustomerDetails(clientVrn, withStatus = 502)
 
       assertThrows[UpstreamErrorResponse] {
-        await(connector.getVatRegDate(clientVrn))
+        await(connector.getVatDetails(clientVrn))
       }
     }
   }

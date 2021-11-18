@@ -193,7 +193,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
     "return No Content if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      hasVatCustomerDetails(vrn, vatRegDate.toString, true)
+      hasVatCustomerDetails(vrn, Some(vatRegDate.toString))
 
       val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
       status(result) shouldBe 204
@@ -202,10 +202,19 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
     "return Vat Registration Date Does Not Match if Vrn is known in ETMP and the effectiveRegistrationDate did not match" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      hasVatCustomerDetails(vrn, "2019-01-01", true)
+      hasVatCustomerDetails(vrn, Some("2019-01-01"))
 
       val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
       result shouldBe VatRegistrationDateDoesNotMatch
+    }
+
+    "return VatClientInsolvent if the client is insolvent" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      hasVatCustomerDetails(vrn, Some("2019-01-01"), true)
+
+      val result = await(controller.checkKnownFactVat(vrn, vatRegDate)(request))
+      result shouldBe VatClientInsolvent
     }
 
     "return Not Found if Vrn is unknown in ETMP" in {
