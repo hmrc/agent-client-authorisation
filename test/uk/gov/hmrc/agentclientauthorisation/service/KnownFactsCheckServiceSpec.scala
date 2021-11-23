@@ -71,17 +71,27 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       await(service.clientVatRegistrationCheckResult(clientVrn, vatRegDateSupplied)) shouldBe VatKnownFactNotMatched
     }
 
-    "return VatDetailsNotFound if the client is solvent and the VAT Customer Information in ETMP does not contain an effectiveRegistrationDate" in {
+    "return VatKnownFactNotMatched if the supplied date does not match the effectiveRegistrationDate from the VAT Customer Information in ETMP" in {
+      val vatRegDateInETMP = LocalDate.parse("2001-02-04")
       val vatRegDateSupplied = LocalDate.parse("2001-02-03")
 
       when(desConnector.getVatDetails(clientVrn))
-        .thenReturn(Future successful Some(VatDetails(None, isInsolvent = false)))
+        .thenReturn(Future successful Some(VatDetails(Some(vatRegDateInETMP), isInsolvent = true)))
+
+      await(service.clientVatRegistrationCheckResult(clientVrn, vatRegDateSupplied)) shouldBe VatKnownFactNotMatched
+    }
+
+    "return VatDetailsNotFound if the VAT Customer Information in ETMP does not contain an effectiveRegistrationDate" in {
+      val vatRegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getVatDetails(clientVrn))
+        .thenReturn(Future successful Some(VatDetails(None, isInsolvent = true)))
 
       await(service.clientVatRegistrationCheckResult(clientVrn, vatRegDateSupplied)) shouldBe VatDetailsNotFound
     }
 
-    "return VatRecordClientInsolvent if the client is insolvent" in {
-      val vatRegDateInETMP = LocalDate.parse("2001-02-04")
+    "return VatRecordClientInsolvent if the supplied date matches the ETMP date but the client is insolvent" in {
+      val vatRegDateInETMP = LocalDate.parse("2001-02-03")
       val vatRegDateSupplied = LocalDate.parse("2001-02-03")
 
       when(desConnector.getVatDetails(clientVrn))

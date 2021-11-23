@@ -34,9 +34,10 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[VatKnownFactCheckResult] =
     desConnector.getVatDetails(clientVrn).map {
-      case Some(VatDetails(Some(_), isInsolvent)) if isInsolvent => VatRecordClientInsolvent
-      case Some(VatDetails(Some(regDate), _))                    => if (regDate == suppliedVatRegistrationDate) VatKnownFactCheckOk else VatKnownFactNotMatched
-      case _                                                     => VatDetailsNotFound
+      case Some(VatDetails(Some(regDate), isInsolvent)) if regDate == suppliedVatRegistrationDate =>
+        if (!isInsolvent) VatKnownFactCheckOk else VatRecordClientInsolvent
+      case Some(VatDetails(Some(regDate), _)) => VatKnownFactNotMatched
+      case _                                  => VatDetailsNotFound
     }
 
   def clientDateOfBirthMatches(clientNino: Nino, suppliedDob: LocalDate)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Boolean]] =
