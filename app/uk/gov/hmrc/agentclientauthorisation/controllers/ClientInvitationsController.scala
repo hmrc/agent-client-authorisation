@@ -22,12 +22,12 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient, invalidInvitationStatus}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentclientauthorisation.model.Service.{MtdIt, PersonalIncomeRecord}
+import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -49,29 +49,15 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   private val strideRoles = Seq(appConfig.oldStrideEnrolment, appConfig.newStrideEnrolment, appConfig.altStrideEnrolment)
 
   def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
-    if (clientIdType == "NI") {
-      onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
-        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
-        acceptInvitation(ClientIdentifier(Nino(clientId)), invitationId)
-      }
-    } else {
-      AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
-        implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
-        acceptInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
-      }
+    AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+      acceptInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
     }
 
   def rejectInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
-    if (clientIdType == "NI") {
-      onlyForClients(PersonalIncomeRecord, NinoType) { implicit request => implicit authNino =>
-        implicit val authTaxId: Option[ClientIdentifier[Nino]] = Some(authNino)
-        rejectInvitation(ClientIdentifier(Nino(clientId)), invitationId)
-      }
-    } else {
-      AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
-        implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
-        rejectInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
-      }
+    AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+      rejectInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
     }
 
   private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
