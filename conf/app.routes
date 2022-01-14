@@ -19,6 +19,7 @@ GET         /known-facts/organisations/trust/:trustTaxIdentifier                
 GET         /known-facts/ppt/:EtmpRegistrationNumberNumber/:dateOfApplication                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPpt(EtmpRegistrationNumberNumber: uk.gov.hmrc.agentmtdidentifiers.model.PptRef, dateOfApplication: LocalDate)
 
 GET         /cgt/subscriptions/:cgtRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCgtSubscriptionDetails(cgtRef: uk.gov.hmrc.agentmtdidentifiers.model.CgtRef)
+GET         /ppt/subscriptions/:pptRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getPptSubscriptionDetails(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
 
 # Client routes
 # --------------------------------
