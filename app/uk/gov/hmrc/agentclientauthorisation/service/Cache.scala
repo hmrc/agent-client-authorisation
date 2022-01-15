@@ -19,11 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
 import com.kenshoo.play.metrics.Metrics
+import play.api.libs.json.JsValue
 
 import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment, Logger, Logging}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, PptSubscription, TrustResponse, VatCustomerDetails}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, TrustResponse, VatCustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -101,9 +102,11 @@ class AgentCacheProvider @Inject()(val environment: Environment, configuration: 
     if (cacheEnabled) new LocalCaffeineCache[CgtSubscriptionResponse]("cgtSubscription", cacheSize, cacheExpires)
     else new DoNotCache[CgtSubscriptionResponse]
 
-  val pptSubscriptionCache: Cache[Option[PptSubscription]] =
-    if (cacheEnabled) new LocalCaffeineCache[Option[PptSubscription]]("pptSubscription", cacheSize, cacheExpires)
-    else new DoNotCache[Option[PptSubscription]]
+  // we cache PPT subscriptions as raw JSON rather than a dedicated type as we don't have a two-way mapping that allows
+  // us to reconstruct the original JSON faithfully. (in other words the Json -> PptSubscription parser is lossy)
+  val pptSubscriptionCache: Cache[Option[JsValue]] =
+    if (cacheEnabled) new LocalCaffeineCache[Option[JsValue]]("pptSubscription", cacheSize, cacheExpires)
+    else new DoNotCache[Option[JsValue]]
 
   val agencyDetailsCache: Cache[Option[AgentDetailsDesResponse]] =
     if (cacheEnabled)
