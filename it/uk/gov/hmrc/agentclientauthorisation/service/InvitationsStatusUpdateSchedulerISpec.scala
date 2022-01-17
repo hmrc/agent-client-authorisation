@@ -13,6 +13,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.MongoAppAndStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -30,6 +31,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val metrics = app.injector.instanceOf[Metrics]
   val schedulerRepository = app.injector.instanceOf[MongoScheduleRepository]
   val invitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
+  val auditService = app.injector.instanceOf(classOf[AuditService])
 
   val invitationsService = new InvitationsService(
     invitationsRepository,
@@ -37,6 +39,7 @@ class InvitationsStatusUpdateSchedulerISpec
     analyticsService,
     desConnector,
     emailService,
+    auditService,
     appConfig,
     metrics)
 

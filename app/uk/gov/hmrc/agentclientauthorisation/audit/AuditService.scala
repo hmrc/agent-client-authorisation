@@ -31,8 +31,8 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-object AgentClientInvitationEvent extends Enumeration {
-  val AgentClientInvitationResponse, AgentClientRelationshipCreated = Value
+object AgentClientInvitationEvent extends Enumeration { //partialAuth expired
+  val AgentClientInvitationResponse, AgentClientRelationshipCreated, HmrcExpiredAgentServiceAuthorisation = Value
   type AgentClientInvitationEvent = Value
 }
 
@@ -69,6 +69,24 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
         "clientResponse"       -> "Expired"
       )
     )
+
+  def sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation: Invitation, deleteStatus: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Unit] = {
+    val details = Seq(
+      "clientNINO"           -> invitation.suppliedClientId,
+      "service"              -> invitation.service,
+      "agentReferenceNumber" -> invitation.arn.value,
+      "deleteStatus"         -> deleteStatus
+    )
+    val dataEvent = DataEvent(
+      auditSource = "agent-client-authorisation",
+      auditType = AgentClientInvitationEvent.HmrcExpiredAgentServiceAuthorisation.toString,
+      tags = hc.toAuditTags(transactionName = "hmrc expired agent:service authorisation", path = ""),
+      detail = hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
+    )
+    send(dataEvent)
+  }
 
   private def clientIdentifierType(clientId: ClientId): String = clientId.underlying match {
     case _: Vrn               => "vrn"
