@@ -62,6 +62,7 @@ class AgencyInvitationsController @Inject()(
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
+  private val pptCache = agentCacheProvider.pptSubscriptionCache
 
   def createInvitation(givenArn: Arn): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
@@ -317,6 +318,19 @@ class AgencyInvitationsController @Inject()(
                 logger.warn(s"unexpected status $c from DES, error: ${cgtError.errors}")
                 InternalServerError(json)
             }
+        }
+      }
+    }
+  }
+
+  def getPptSubscriptionDetails(pptRef: PptRef): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth {
+      pptCache(pptRef.value) {
+        desConnector.getPptSubscriptionRawJson(pptRef)
+      }.map { pptSubscription =>
+        pptSubscription match {
+          case Some(sub) => Ok(Json.toJson(sub))
+          case None      => NotFound
         }
       }
     }

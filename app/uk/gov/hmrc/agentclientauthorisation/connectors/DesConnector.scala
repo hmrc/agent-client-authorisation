@@ -17,14 +17,14 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import java.util.UUID
-
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.libs.json.Reads._
-import play.api.libs.json.Writes
+import play.api.libs.json.{JsValue, Writes}
 import play.utils.UriEncoding
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
@@ -61,6 +61,8 @@ trait DesConnector {
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
   def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
+
+  def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]]
 
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]]
 }
@@ -265,13 +267,13 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     }
   }
 
-  def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] = {
+  def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
     val url = s"$baseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
       getWithDesIfHeaders("GetPptSubscriptionDisplay", url, true).map { response =>
         response.status match {
           case status if is2xx(status) =>
-            response.json.asOpt[PptSubscription](PptSubscription.reads)
+            Some(response.json)
           case status if is4xx(status) =>
             logger.warn(s"$status response from getPptSubscriptionDisplay ${response.body}")
             None
@@ -281,6 +283,9 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
       }
     }
   }
+
+  def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
+    getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
 
   private def getWithDesIfHeaders(apiName: String, url: String, viaIf: Boolean = false)(
     implicit hc: HeaderCarrier,
