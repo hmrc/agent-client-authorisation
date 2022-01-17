@@ -22,6 +22,7 @@ import com.kenshoo.play.metrics.Metrics
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation._
+import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.ClientIdentifier.ClientId
@@ -35,6 +36,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import javax.inject.{Inject, _}
 import scala.collection.Seq
 import scala.concurrent.Future.successful
+import scala.util.{Failure, Success}
 
 case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: String) extends Throwable
 
@@ -47,6 +49,7 @@ class InvitationsService @Inject()(
   analyticsService: PlatformAnalyticsService,
   desConnector: DesConnector,
   emailService: EmailService,
+  auditService: AuditService,
   appConfig: AppConfig,
   metrics: Metrics)
     extends Monitor with Logging {
@@ -330,17 +333,31 @@ class InvitationsService @Inject()(
 
   def cancelOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     monitor("Repository-cancel-old-alt-itsa-invitations") {
-      invitationsRepository
-        .findInvitationsBy(status = Some(PartialAuth))
-        .map(_.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now())))
-        .flatMap { invitations =>
-          val result = invitations.map(invit => {
-            logger.info(s"invitation ${invit.invitationId.value} with status ${invit.status} and " +
-              s"datetime ${invit.mostRecentEvent().time} has been cancelled.")
-            setRelationshipEnded(invit, "HMRC")
-          })
-          Future sequence result map (_ => ())
-        }
+      implicit val hc = HeaderCarrier()
+      for {
+        partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
+        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now()))
+        _ = Future sequence expired.map(invitation => {
+
+          setRelationshipEnded(invitation, "HMRC").transformWith {
+            case Success(invitation) =>
+              logger.info(
+                s"invitation ${invitation.invitationId.value} with status ${invitation.status} and " +
+                  s"datetime ${invitation.mostRecentEvent().time} has been deauthorised.")
+              auditService
+                .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, "success")
+                .fallbackTo(Future.successful(())) // don't fail on audit errors
+                .map(_ => ())
+
+            case Failure(e) =>
+              logger.error(s"expired invitation id ${invitation.invitationId.value} update failed: $e")
+              auditService
+                .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, s"failure $e")
+                .fallbackTo(Future.successful(())) // don't fail on audit errors
+                .map[Invitation](_ => throw e)
+          }
+        })
+      } yield ()
     }
 
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =

@@ -38,6 +38,7 @@ object TestConstants {
   val urn = Urn("TRUSTXX10000100")
 
   val arn = "ABCDEF123456"
+  val arn2 = "KARN3869382"
 
   val invitationIds = Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
 

@@ -53,7 +53,7 @@ class TerminateInvitationsISpec extends BaseISpec {
     new AgentLinkService(agentReferenceRepository, desConnector, metrics)
 
   def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
-    new InvitationsService(invitationsRepository, relationshipConnector, analyticsService, desConnector, emailService, appConfig, metrics)
+    new InvitationsService(invitationsRepository, relationshipConnector, analyticsService, desConnector, emailService, auditService, appConfig, metrics)
 
   def testFailedController(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
     new AgencyInvitationsController(
