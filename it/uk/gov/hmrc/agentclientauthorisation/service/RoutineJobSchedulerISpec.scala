@@ -150,7 +150,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
 
       givenEmailSent(EmailInformation(
         to = Seq("name@example.com"),
-        templateId = "agent_invitation_about_to_expire",
+        templateId = "agent_invitations_about_to_expire",
         parameters = Map(
           "agencyName" -> "ABC Agents",
           "numberOfInvitations" -> "2",
@@ -223,8 +223,8 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         clientId = MtdItId(s"VDBS44578289808"),
         suppliedClientId = Nino(s"AB123456C"),
         detailsForEmail = Some(DetailsForEmail("other@example.com", "DEF Agents", "Client Z")),
-        startDate = now.minusDays(appConfig.altItsaExpiryDays),
-        expiryDate = now.minusDays(appConfig.altItsaExpiryDays).plusDays(21).toLocalDate,
+        startDate = now.minusDays(appConfig.altItsaExpiryDays - 1),
+        expiryDate = now.minusDays(appConfig.altItsaExpiryDays - 1).plusDays(21).toLocalDate,
         origin = None
       )
 
