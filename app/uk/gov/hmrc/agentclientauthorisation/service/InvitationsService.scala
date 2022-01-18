@@ -336,11 +336,11 @@ class InvitationsService @Inject()(
       implicit val hc = HeaderCarrier()
       for {
         partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
-        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now()))
+        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now(DateTimeZone.UTC)))
         _ = Future sequence expired.map(invitation => {
 
           setRelationshipEnded(invitation, "HMRC").transformWith {
-            case Success(invitation) =>
+            case Success(_) =>
               logger.info(
                 s"invitation ${invitation.invitationId.value} with status ${invitation.status} and " +
                   s"datetime ${invitation.mostRecentEvent().time} has been deauthorised.")

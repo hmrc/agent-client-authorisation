@@ -223,8 +223,8 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         clientId = MtdItId(s"VDBS44578289808"),
         suppliedClientId = Nino(s"AB123456C"),
         detailsForEmail = Some(DetailsForEmail("other@example.com", "DEF Agents", "Client Z")),
-        startDate = now.minusDays(appConfig.altItsaExpiryDays - 1),
-        expiryDate = now.minusDays(appConfig.altItsaExpiryDays - 1).plusDays(21).toLocalDate,
+        startDate = now.minusDays(appConfig.altItsaExpiryDays - 2),
+        expiryDate = now.minusDays(appConfig.altItsaExpiryDays - 2).plusDays(21).toLocalDate,
         origin = None
       )
 
@@ -233,7 +233,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
 
       await(invitationsRepository.update(partialAuthInvitation1, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 2)))
       await(invitationsRepository.update(partialAuthInvitation2, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 7)))
-      await(invitationsRepository.update(partialAuthInvitation3, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 0)))
+      await(invitationsRepository.update(partialAuthInvitation3, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays - 1)))
 
       await(invitationsRepository.findByInvitationId(partialAuthInvitation1.invitationId)).head.status shouldBe PartialAuth
       await(invitationsRepository.findByInvitationId(partialAuthInvitation2.invitationId)).head.status shouldBe PartialAuth
