@@ -66,14 +66,14 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     givenGetAgencyDetailsStub(arn)
   }
 
-  def runSuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
+  def runSuccessfulSetRelationshipEndedWithInvitationId[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/relationship-ended")
 
     s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 
-      val response = controller.setRelationshipEnded(invitation.invitationId, "Client")(request)
+      val response = controller.setRelationshipEndedForInvitation(invitation.invitationId, "Client")(request)
 
       status(response) shouldBe 204
 
@@ -82,10 +82,29 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     }
   }
 
+  def runSuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
+    val request = FakeRequest("PUT", "/invitations/set-relationship-ended/:arn/:clientId/:service/:endedBy")
+
+    s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
+
+      val invitation: Invitation = await(createInvitation(arn, testClient))
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val response = controller.setRelationshipEnded(arn, testClient.clientId.value, testClient.service.id)(request)
+
+      status(response) shouldBe 204
+
+      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
+      result.get.status shouldBe DeAuthorised
+      result.get.isRelationshipEnded shouldBe true
+      result.get.relationshipEndedBy shouldBe Some("HMRC")
+    }
+  }
+
   "PUT /invitations/:invitationId/relationship-ended" should {
 
     uiClients.foreach { client =>
-      runSuccessfulSetRelationshipEnded(client)
+      runSuccessfulSetRelationshipEndedWithInvitationId(client)
     }
 
     "return InvitationNotFound when there is no invitation to setRelationshipEnded" in {
@@ -93,7 +112,42 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 
-      val response = controller.setRelationshipEnded(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
+      val response = controller.setRelationshipEndedForInvitation(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
+
+      await(response) shouldBe InvitationNotFound
+    }
+  }
+
+  "PUT /invitations/set-relationship-ended/:arn/:clientId/:service/:endedBy" should {
+
+    uiClients.foreach { client =>
+      runSuccessfulSetRelationshipEnded(client)
+    }
+
+    "update status to Deauthorised for Partialauth" in {
+
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended/:arn/:clientId/:service/:endedBy")
+      givenAuditConnector()
+
+      val invitation: Invitation = await(createInvitation(arn, altItsaClient))
+      await(invitationsRepo.update(invitation, PartialAuth, DateTime.now()))
+
+      val response = controller.setRelationshipEnded(arn, altItsaClient.clientId.value, "HMRC-MTD-IT", Some("Client"))(request)
+
+      status(response) shouldBe NO_CONTENT
+
+      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
+
+      result.get.status shouldBe DeAuthorised
+      result.get.isRelationshipEnded shouldBe true
+      result.get.relationshipEndedBy shouldBe Some("Client")
+    }
+
+    "return status 404 when invitation not found" in {
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended/:arn/:clientId/:service/:endedBy")
+      givenAuditConnector()
+
+      val response = controller.setRelationshipEnded(arn, "123", "HMRC-MTD-IT", Some("blah"))(request)
 
       await(response) shouldBe InvitationNotFound
     }

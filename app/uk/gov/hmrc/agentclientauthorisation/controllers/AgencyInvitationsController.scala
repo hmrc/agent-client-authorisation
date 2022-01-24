@@ -125,7 +125,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def setRelationshipEnded(invitationId: InvitationId, endedBy: String): Action[AnyContent] =
+  def setRelationshipEndedForInvitation(invitationId: InvitationId, endedBy: String): Action[AnyContent] =
     Action.async { implicit request =>
       withBasicAuth {
         invitationsService.findInvitation(invitationId) flatMap {
@@ -138,6 +138,21 @@ class AgencyInvitationsController @Inject()(
           case _    => Future successful NoPermissionOnAgency
         }
       }
+    }
+
+  def setRelationshipEnded(arn: Arn, clientId: String, service: String, endedBy: Option[String] = None): Action[AnyContent] =
+    Action.async { _ =>
+      invitationsService
+        .findInvitationsBy(arn = Some(arn), services = toListOfServices(Some(service)), clientId = Some(clientId))
+        .map(_.find(i => i.status == IAccepted || i.status == PartialAuth))
+        .flatMap {
+          case Some(i) => invitationsService.setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => NoContent)
+          case None =>
+            Future successful InvitationNotFound
+        }
+        .recover {
+          case e: Exception => genericInternalServerError(e.getMessage)
+        }
     }
 
   private def localWithJsonBody(f: AgentInvitation => Future[Result], request: JsValue): Future[Result] =
