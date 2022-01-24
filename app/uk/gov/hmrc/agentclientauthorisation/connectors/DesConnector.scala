@@ -268,7 +268,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
   }
 
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
-    val url = s"$baseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
+    val url = s"${appConfig.ifPlatformBaseUrl}/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
       getWithDesIfHeaders("GetPptSubscriptionDisplay", url, true).map { response =>
         response.status match {
