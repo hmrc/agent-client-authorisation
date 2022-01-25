@@ -140,19 +140,28 @@ class AgencyInvitationsController @Inject()(
       }
     }
 
-  def setRelationshipEnded(arn: Arn, clientId: String, service: String, endedBy: Option[String] = None): Action[AnyContent] =
-    Action.async { _ =>
-      invitationsService
-        .findInvitationsBy(arn = Some(arn), services = toListOfServices(Some(service)), clientId = Some(clientId))
-        .map(_.find(i => i.status == IAccepted || i.status == PartialAuth))
-        .flatMap {
-          case Some(i) => invitationsService.setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => NoContent)
-          case None =>
-            Future successful InvitationNotFound
-        }
-        .recover {
-          case e: Exception => genericInternalServerError(e.getMessage)
-        }
+  def setRelationshipEnded(): Action[AnyContent] =
+    Action.async { implicit request =>
+      request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
+        case Some(JsSuccess(payload, _)) =>
+          invitationsService
+            .findInvitationsBy(
+              arn = Some(payload.arn),
+              services = toListOfServices(Some(payload.service)),
+              clientId = Some(payload.clientId)
+            )
+            .map(_.find(i => i.status == IAccepted || i.status == PartialAuth))
+            .flatMap {
+              case Some(i) => invitationsService.setRelationshipEnded(i, payload.endedBy.getOrElse("HMRC")).map(_ => NoContent)
+              case None =>
+                Future successful InvitationNotFound
+            }
+            .recover {
+              case e: Exception => genericInternalServerError(e.getMessage)
+            }
+        case Some(JsError(e)) => Future successful genericBadRequest(e.mkString)
+        case None             => Future successful genericBadRequest("No JSON found in request body")
+      }
     }
 
   private def localWithJsonBody(f: AgentInvitation => Future[Result], request: JsValue): Future[Result] =

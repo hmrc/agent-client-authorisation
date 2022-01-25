@@ -7,7 +7,7 @@ PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                
 
 POST        /invitations/:urn/replace/utr/:utr                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.replaceUrnInvitationWithUtr(urn: uk.gov.hmrc.agentmtdidentifiers.model.Urn, utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
 PUT         /invitations/:invitationId/relationship-ended                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.setRelationshipEndedForInvitation(invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId, endedBy: String)
-PUT         /invitations/set-relationship-ended/:arn/:clientId/:service                      @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.setRelationshipEnded(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, clientId: String, service: String, endedBy: Option[String])
+PUT         /invitations/set-relationship-ended                                                 @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.setRelationshipEnded()
 
 GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
 GET         /agencies/references/arn/:arn                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecordByArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
