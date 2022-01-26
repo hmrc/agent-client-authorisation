@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
@@ -66,14 +67,14 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     givenGetAgencyDetailsStub(arn)
   }
 
-  def runSuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
+  def runSuccessfulSetRelationshipEndedWithInvitationId[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/relationship-ended")
 
     s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
 
-      val response = controller.setRelationshipEnded(invitation.invitationId, "Client")(request)
+      val response = controller.setRelationshipEndedForInvitation(invitation.invitationId, "Client")(request)
 
       status(response) shouldBe 204
 
@@ -82,10 +83,31 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     }
   }
 
+  def runSuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
+    val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+
+    s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
+
+      val invitation: Invitation = await(createInvitation(arn, testClient))
+      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+
+      val payload = SetRelationshipEndedPayload(arn, testClient.clientId.value, testClient.service.id, None)
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.toJson(payload)))
+
+      status(response) shouldBe 204
+
+      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
+      result.get.status shouldBe DeAuthorised
+      result.get.isRelationshipEnded shouldBe true
+      result.get.relationshipEndedBy shouldBe Some("HMRC")
+    }
+  }
+
   "PUT /invitations/:invitationId/relationship-ended" should {
 
     uiClients.foreach { client =>
-      runSuccessfulSetRelationshipEnded(client)
+      runSuccessfulSetRelationshipEndedWithInvitationId(client)
     }
 
     "return InvitationNotFound when there is no invitation to setRelationshipEnded" in {
@@ -93,9 +115,71 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 
-      val response = controller.setRelationshipEnded(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
+      val response = controller.setRelationshipEndedForInvitation(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
 
       await(response) shouldBe InvitationNotFound
+    }
+  }
+
+  "PUT /invitations/set-relationship-ended" should {
+
+    uiClients.foreach { client =>
+      runSuccessfulSetRelationshipEnded(client)
+    }
+
+    "update status to Deauthorised for Partialauth" in {
+
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+      givenAuditConnector()
+
+      val invitation: Invitation = await(createInvitation(arn, altItsaClient))
+      await(invitationsRepo.update(invitation, PartialAuth, DateTime.now()))
+
+      val payload = SetRelationshipEndedPayload(arn, altItsaClient.clientId.value, altItsaClient.service.id, Some("Client"))
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.toJson(payload)))
+
+      status(response) shouldBe NO_CONTENT
+
+      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
+
+      result.get.status shouldBe DeAuthorised
+      result.get.isRelationshipEnded shouldBe true
+      result.get.relationshipEndedBy shouldBe Some("Client")
+    }
+
+    "return status 404 when invitation not found" in {
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+      givenAuditConnector()
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.parse(
+        s"""{
+          |"arn": "${arn.value}",
+          |"clientId": "AB123456A",
+          |"service": "HMRC-MTD-IT"
+          |}""".stripMargin)))
+
+      await(response) shouldBe InvitationNotFound
+    }
+
+    "return status 400 Bad Request when body empty" in {
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+      givenAuditConnector()
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.parse(
+        s"""{}""".stripMargin)))
+
+      status(response) shouldBe 400
+    }
+
+    "return status 400 Bad Request when body contains wrong fields" in {
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+      givenAuditConnector()
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.parse(
+        s"""{"invalid": "value"}""".stripMargin)))
+
+      status(response) shouldBe 400
     }
   }
 }

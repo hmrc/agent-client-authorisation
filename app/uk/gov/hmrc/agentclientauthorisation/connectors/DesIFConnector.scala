@@ -45,7 +45,7 @@ trait DesConnector {
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
 
   def getVatDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatDetails]]
-
+  //IF
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 
   def getCgtSubscription(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse]
@@ -61,9 +61,9 @@ trait DesConnector {
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
   def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
-
+  //IF
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]]
-
+  //IF
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]]
 }
 
@@ -118,6 +118,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     }
   }
 
+  //IF API#1495 Agent Known Fact Check (Trusts)
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
     val url = getTrustNameUrl(trustTaxIdentifier, appConfig.desIFEnabled)
@@ -267,6 +268,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     }
   }
 
+  //IF API#1712 PPT Subscription Display
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
     val url = s"${appConfig.ifPlatformBaseUrl}/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
@@ -284,6 +286,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     }
   }
 
+  //IF API#1712 PPT Subscription Display
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
     getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
 
