@@ -125,21 +125,6 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def setRelationshipEndedForInvitation(invitationId: InvitationId, endedBy: String): Action[AnyContent] =
-    Action.async { implicit request =>
-      withBasicAuth {
-        invitationsService.findInvitation(invitationId) flatMap {
-          case Some(i) =>
-            invitationsService
-              .setRelationshipEnded(i, endedBy)
-              .map(_ => NoContent)
-              .recoverWith { case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg) }
-          case None => Future successful InvitationNotFound
-          case _    => Future successful NoPermissionOnAgency
-        }
-      }
-    }
-
   def setRelationshipEnded(): Action[AnyContent] =
     Action.async { implicit request =>
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {

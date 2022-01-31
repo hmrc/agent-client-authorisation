@@ -24,7 +24,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,21 +67,6 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     givenGetAgencyDetailsStub(arn)
   }
 
-  def runSuccessfulSetRelationshipEndedWithInvitationId[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
-    val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/relationship-ended")
-
-    s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
-
-      val invitation: Invitation = await(createInvitation(arn, testClient))
-
-      val response = controller.setRelationshipEndedForInvitation(invitation.invitationId, "Client")(request)
-
-      status(response) shouldBe 204
-
-      val result = await(invitationsRepo.findByInvitationId(invitation.invitationId))
-      result.get.status shouldBe DeAuthorised
-    }
-  }
 
   def runSuccessfulSetRelationshipEnded[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
@@ -101,23 +86,6 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       result.get.status shouldBe DeAuthorised
       result.get.isRelationshipEnded shouldBe true
       result.get.relationshipEndedBy shouldBe Some("HMRC")
-    }
-  }
-
-  "PUT /invitations/:invitationId/relationship-ended" should {
-
-    uiClients.foreach { client =>
-      runSuccessfulSetRelationshipEndedWithInvitationId(client)
-    }
-
-    "return InvitationNotFound when there is no invitation to setRelationshipEnded" in {
-      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/relationship-ended")
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-
-      val response = controller.setRelationshipEndedForInvitation(InvitationId("A7GJRTMY4DS3T"), "Agent")(request)
-
-      await(response) shouldBe InvitationNotFound
     }
   }
 

@@ -373,13 +373,13 @@ class InvitationsService @Inject()(
       clientId = Some(clientId)
     ).map(
         _.filter(i => i.status == Accepted || i.status == PartialAuth)
-          .sortBy(_.mostRecentEvent().time) //there could be more than 1 Accepted because of a previous failure...we want the most recent.
+          .sortBy(_.mostRecentEvent().time) //there could be more than 1 because of a previous failure...we want the most recent.
           .headOption
       )
       .flatMap {
         case Some(i) => setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => true)
         case None =>
-          logger.warn(s"could not deauthorise invitation as no invitation was found")
+          logger.warn(s"setRelationshipEnded failed as no invitation was found")
           Future successful false
       }
   }
