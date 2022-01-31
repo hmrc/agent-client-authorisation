@@ -31,13 +31,13 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, Citizen, CitizenDetailsConnector, DesConnector, DesignatoryDetails}
+import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Service.Trust
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{nino, _}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Vrn}
@@ -496,6 +496,43 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentNoEnrolments)
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
+    }
+  }
+
+  "SetRelationshipEnded" should {
+
+    "return No Content when invitation found and updated" in {
+
+      when(
+        invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
+          any[ExecutionContext])
+      ).thenReturn(Future successful true)
+
+      await(
+        controller.setRelationshipEnded()(FakeRequest()
+          .withJsonBody(Json.parse(s"""{
+                                      |"arn": "${arn.value}",
+                                      |"clientId": "${nino.value}",
+                                      |"service": "HMRC-MTD-IT",
+                                      |"endedBy": "Agent"
+                                      |}""".stripMargin)))) shouldBe NoContent
+    }
+
+    "return Not Found when no invitation found" in {
+
+      when(
+        invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
+          any[ExecutionContext])
+      ).thenReturn(Future successful false)
+
+      await(
+        controller.setRelationshipEnded()(FakeRequest()
+          .withJsonBody(Json.parse(s"""{
+                                      |"arn": "${arn.value}",
+                                      |"clientId": "${nino.value}",
+                                      |"service": "HMRC-MTD-IT",
+                                      |"endedBy": "Agent"
+                                      |}""".stripMargin)))) shouldBe InvitationNotFound
     }
   }
 }

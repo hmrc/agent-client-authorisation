@@ -148,6 +148,36 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       result.get.relationshipEndedBy shouldBe Some("Client")
     }
 
+    "update the most recent invitation when there is more than 1 because some previous update failed" in {
+
+      val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
+      givenAuditConnector()
+
+      val olderInvitation: Invitation = await(createInvitation(arn, altItsaClient))
+      await(invitationsRepo.update(olderInvitation, PartialAuth, DateTime.now().minusSeconds(300)))
+
+      val newerInvitation: Invitation = await(createInvitation(arn, altItsaClient))
+      await(invitationsRepo.update(newerInvitation, PartialAuth, DateTime.now()))
+
+      val payload = SetRelationshipEndedPayload(arn, altItsaClient.clientId.value, altItsaClient.service.id, Some("Agent"))
+
+      val response = controller.setRelationshipEnded()(request.withJsonBody(Json.toJson(payload)))
+
+      status(response) shouldBe NO_CONTENT
+
+      val olderInvitationResult = await(invitationsRepo.findByInvitationId(olderInvitation.invitationId))
+
+      olderInvitationResult.get.status shouldBe PartialAuth
+      olderInvitationResult.get.isRelationshipEnded shouldBe false
+      olderInvitationResult.get.relationshipEndedBy shouldBe None
+
+      val newerInvitationResult = await(invitationsRepo.findByInvitationId(newerInvitation.invitationId))
+
+      newerInvitationResult.get.status shouldBe DeAuthorised
+      newerInvitationResult.get.isRelationshipEnded shouldBe true
+      newerInvitationResult.get.relationshipEndedBy shouldBe Some("Agent")
+    }
+
     "return status 404 when invitation not found" in {
       val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
       givenAuditConnector()

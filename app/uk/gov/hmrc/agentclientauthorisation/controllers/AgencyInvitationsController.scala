@@ -145,19 +145,10 @@ class AgencyInvitationsController @Inject()(
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
         case Some(JsSuccess(payload, _)) =>
           invitationsService
-            .findInvitationsBy(
-              arn = Some(payload.arn),
-              services = toListOfServices(Some(payload.service)),
-              clientId = Some(payload.clientId)
-            )
-            .map(_.find(i => i.status == IAccepted || i.status == PartialAuth))
-            .flatMap {
-              case Some(i) => invitationsService.setRelationshipEnded(i, payload.endedBy.getOrElse("HMRC")).map(_ => NoContent)
-              case None =>
-                Future successful InvitationNotFound
-            }
-            .recover {
-              case e: Exception => genericInternalServerError(e.getMessage)
+            .findInvitationAndEndRelationship(payload.arn, payload.clientId, toListOfServices(Some(payload.service)), payload.endedBy)
+            .map {
+              case true  => NoContent
+              case false => InvitationNotFound
             }
         case Some(JsError(e)) => Future successful genericBadRequest(e.mkString)
         case None             => Future successful genericBadRequest("No JSON found in request body")
