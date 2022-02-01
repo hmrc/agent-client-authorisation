@@ -365,6 +365,25 @@ class InvitationsService @Inject()(
       .flatMap(updateInvitationStoreIfMtdItIdExists(_))
       .flatMap(maybeUpdated => Future sequence maybeUpdated.flatten.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
 
+  def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit ec: ExecutionContext) = {
+    implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isAfter _)
+    findInvitationsBy(
+      arn = Some(arn),
+      services = service,
+      clientId = Some(clientId)
+    ).map(
+        _.filter(i => i.status == Accepted || i.status == PartialAuth)
+          .sortBy(_.mostRecentEvent().time) //there could be more than 1 because of a previous failure...we want the most recent.
+          .headOption
+      )
+      .flatMap {
+        case Some(i) => setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => true)
+        case None =>
+          logger.warn(s"setRelationshipEnded failed as no invitation was found")
+          Future successful false
+      }
+  }
+
   private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     Future sequence invitations.map { inv =>
       desConnector

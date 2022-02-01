@@ -125,39 +125,15 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def setRelationshipEndedForInvitation(invitationId: InvitationId, endedBy: String): Action[AnyContent] =
-    Action.async { implicit request =>
-      withBasicAuth {
-        invitationsService.findInvitation(invitationId) flatMap {
-          case Some(i) =>
-            invitationsService
-              .setRelationshipEnded(i, endedBy)
-              .map(_ => NoContent)
-              .recoverWith { case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg) }
-          case None => Future successful InvitationNotFound
-          case _    => Future successful NoPermissionOnAgency
-        }
-      }
-    }
-
   def setRelationshipEnded(): Action[AnyContent] =
     Action.async { implicit request =>
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
         case Some(JsSuccess(payload, _)) =>
           invitationsService
-            .findInvitationsBy(
-              arn = Some(payload.arn),
-              services = toListOfServices(Some(payload.service)),
-              clientId = Some(payload.clientId)
-            )
-            .map(_.find(i => i.status == IAccepted || i.status == PartialAuth))
-            .flatMap {
-              case Some(i) => invitationsService.setRelationshipEnded(i, payload.endedBy.getOrElse("HMRC")).map(_ => NoContent)
-              case None =>
-                Future successful InvitationNotFound
-            }
-            .recover {
-              case e: Exception => genericInternalServerError(e.getMessage)
+            .findInvitationAndEndRelationship(payload.arn, payload.clientId, toListOfServices(Some(payload.service)), payload.endedBy)
+            .map {
+              case true  => NoContent
+              case false => InvitationNotFound
             }
         case Some(JsError(e)) => Future successful genericBadRequest(e.mkString)
         case None             => Future successful genericBadRequest("No JSON found in request body")
