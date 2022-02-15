@@ -183,7 +183,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
              |{
              |  "service":"HMRC-PPT-ORG",
              |  "clientIdType":"EtmpRegistrationNumber",
-             |  "clientId":"XAPPT1234567890"
+             |  "clientId":"XAPPT0000000000"
              |}
            """.stripMargin)
 

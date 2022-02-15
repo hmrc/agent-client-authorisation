@@ -45,7 +45,7 @@ trait TestDataSupport {
   val vrn: Vrn = Vrn("101747696")
   val vrn2: Vrn = Vrn("121747696")
 
-  val pptRef: PptRef = PptRef("XAPPT1234567890")
+  val pptRef: PptRef = PptRef("XAPPT0000000000")
   val pptApplicationDate: LocalDate = LocalDate.parse("2021-10-12")
   val pptDeregistrationDateWhenActive: LocalDate = LocalDate.parse("2050-10-01")
   val pptDeregistrationDateWhenDeregistered: LocalDate = LocalDate.parse("2021-10-01")
@@ -102,7 +102,7 @@ trait TestDataSupport {
   val cgtClient: TestClient[CgtRef] = TestClient(personal, "firstName lastName", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRef, cgtRef, cgtRef2)
   val cgtClientBus: TestClient[CgtRef] = TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
   val altItsaClient: TestClient[Nino] = TestClient(personal, "John Smith", MtdIt, NinoType, "MTDITID", nino, nino, nino2)
-  val pptClient: TestClient[PptRef] = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "EtmpRegistrationNumber", pptRef, pptRef, PptRef("XAPPT1234567899") )
+  val pptClient: TestClient[PptRef] = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "EtmpRegistrationNumber", pptRef, pptRef, PptRef("XAPPT0000000001") )
 
   val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient)
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient)

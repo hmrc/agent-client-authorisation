@@ -34,3 +34,8 @@ tmp
 .idea_modules
 bin
 tags
+.bloop
+.bsp
+project/metals.sbt
+.metals
+.vscode
