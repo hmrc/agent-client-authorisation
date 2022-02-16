@@ -12,14 +12,14 @@ lazy val scoverageSettings = {
     ScoverageKeys.coverageMinimum := 80.00,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true,
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
 }
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.9.0",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.27.0-play-27",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.20.0",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.31.0-play-28",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
   "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.8.0-play-28",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-28",
@@ -35,7 +35,7 @@ def testDeps(scope: String) = Seq(
   "com.github.tomakehurst" % "wiremock-jre8" % "2.26.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalamock" %% "scalamock" % "5.1.0" % scope,
-  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.10" % scope,
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.14" % scope,
   "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % scope
 )
 
@@ -61,11 +61,11 @@ lazy val root = (project in file("."))
     ),
     publishingSettings,
     scoverageSettings,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
     routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.Binders._", "org.joda.time.LocalDate"),
-    unmanagedSourceDirectories in Test += baseDirectory(_ / "testcommon").value,
-    scalafmtOnCompile in Compile := true,
-    scalafmtOnCompile in Test := true,
+    Test / unmanagedSourceDirectories += baseDirectory(_ / "testcommon").value,
+    Compile / scalafmtOnCompile := true,
+    Test / scalafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-Xfatal-warnings",
       "-Ypartial-unification",
@@ -82,12 +82,11 @@ lazy val root = (project in file("."))
   .configs(IntegrationTest)
   .settings(
     majorVersion:=0,
-    Keys.fork in IntegrationTest := true,
+    IntegrationTest / Keys.fork := true,
     Defaults.itSettings,
-    unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
-    unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "testcommon").value,
-    parallelExecution in IntegrationTest := false,
-    scalafmtOnCompile in IntegrationTest := true
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory(_ / "it").value,
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory(_ / "testcommon").value,
+    IntegrationTest / parallelExecution := false,
   )
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
