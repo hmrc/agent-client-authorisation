@@ -8,8 +8,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.{SuspensionDetails, VatCustomerDetails, VatIndividual}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.model.{VatCustomerDetails, VatIndividual}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, SuspensionDetails, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 class AgentServicesControllerISpec extends BaseISpec {

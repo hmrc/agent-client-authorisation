@@ -8,7 +8,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationN
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

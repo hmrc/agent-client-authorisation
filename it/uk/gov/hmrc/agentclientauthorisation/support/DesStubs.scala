@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.{Scenario, StubMapping}
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentclientauthorisation.model.SuspensionDetails
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}

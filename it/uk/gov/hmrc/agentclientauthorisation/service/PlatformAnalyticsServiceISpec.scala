@@ -6,12 +6,13 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
-import uk.gov.hmrc.agentclientauthorisation.model.Service.MtdIt
-import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, MtdItIdType}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
+import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs, PlatformAnalyticsStubs, TestDataSupport}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentmtdidentifiers.model.MtdItIdType
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

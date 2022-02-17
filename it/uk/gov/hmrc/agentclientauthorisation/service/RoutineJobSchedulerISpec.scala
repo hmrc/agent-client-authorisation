@@ -16,7 +16,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImp
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{EmailStub, MongoAppAndStubs, UnitSpec}
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Service}
 import uk.gov.hmrc.domain.Nino
 
 import scala.concurrent.ExecutionContext.Implicits.global

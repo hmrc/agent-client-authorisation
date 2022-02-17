@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers.actions
 import play.api.mvc.{Result, Results}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentmtdidentifiers.model.Service
 
 import scala.concurrent.{ExecutionContext, Future}
 

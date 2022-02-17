@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.{Json, OFormat, Reads}
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 
 case class AgentDetailsDesResponse(agencyDetails: Option[AgencyDetails], suspensionDetails: Option[SuspensionDetails])
 

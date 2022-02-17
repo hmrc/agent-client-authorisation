@@ -28,11 +28,11 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.model
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, BusinessAddress, SuspensionDetails}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, BusinessAddress}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
