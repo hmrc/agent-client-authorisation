@@ -7,10 +7,10 @@ import com.kenshoo.play.metrics.Metrics
 import org.joda.time.DateTime
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord, SchedulerType}
 import uk.gov.hmrc.agentclientauthorisation.support.MongoAppAndStubs
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Service}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService

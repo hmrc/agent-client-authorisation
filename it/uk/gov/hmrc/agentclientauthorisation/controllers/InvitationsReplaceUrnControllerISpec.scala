@@ -4,9 +4,10 @@ import akka.stream.Materializer
 import org.joda.time.{DateTime, LocalDate}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.{ClientIdentifier, Invitation, Service}
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
+import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

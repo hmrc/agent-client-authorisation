@@ -17,10 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import org.joda.time.LocalDate
-import uk.gov.hmrc.agentclientauthorisation.model.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, InvalidTrust, PptSubscription, SuspensionDetails, TrustName, TrustResponse}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, InvalidTrust, PptSubscription, TrustName, TrustResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, PptRef, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, PptRef, SuspensionDetails, Vrn}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
