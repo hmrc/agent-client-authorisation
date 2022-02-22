@@ -16,12 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.util.UUID
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
-
-import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsValue, Writes}
@@ -36,6 +33,7 @@ import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -68,27 +66,16 @@ trait DesConnector {
 }
 
 @Singleton
-class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: AgentCacheProvider, httpClient: HttpClient, metrics: Metrics)
+class DesConnectorImpl @Inject()(
+  appConfig: AppConfig,
+  agentCacheProvider: AgentCacheProvider,
+  httpClient: HttpClient,
+  metrics: Metrics,
+  desIfHeaders: DesIfHeaders)
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
-  private val desEnvironment: String = appConfig.desEnvironment
-  private val desAuthorizationToken: String = appConfig.desAuthToken
   private val baseUrl: String = appConfig.desBaseUrl
-
-  private val ifEnvironment: String = appConfig.ifEnvironment
-  private val ifAuthorizationToken: String = appConfig.ifAuthToken
-
-  private val Environment = "Environment"
-  private val CorrelationId = "CorrelationId"
-  private val Authorization = "Authorization"
-
-  private def outboundHeaders(viaIF: Boolean) =
-    Seq(
-      Environment   -> s"${if (viaIF) { ifEnvironment } else { desEnvironment }}",
-      CorrelationId -> UUID.randomUUID().toString,
-      Authorization -> s"Bearer ${if (viaIF) { ifAuthorizationToken } else { desAuthorizationToken }}"
-    )
 
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
@@ -180,7 +167,10 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
       val url = s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}"
 
       httpClient
-        .POST[DesRegistrationRequest, HttpResponse](url, body = DesRegistrationRequest(isAnAgent = false), headers = outboundHeaders(false))(
+        .POST[DesRegistrationRequest, HttpResponse](
+          url,
+          body = DesRegistrationRequest(isAnAgent = false),
+          headers = desIfHeaders.outboundHeaders(viaIF = false))(
           implicitly[Writes[DesRegistrationRequest]],
           implicitly[HttpReads[HttpResponse]],
           hc,
@@ -294,7 +284,7 @@ class DesConnectorImpl @Inject()(appConfig: AppConfig, agentCacheProvider: Agent
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[HttpResponse] =
     monitor(s"ConsumedAPI-DES-$apiName-GET") {
-      httpClient.GET[HttpResponse](url, headers = outboundHeaders(viaIf))(implicitly[HttpReads[HttpResponse]], hc, ec)
+      httpClient.GET[HttpResponse](url, headers = desIfHeaders.outboundHeaders(viaIf, Some(apiName)))(implicitly[HttpReads[HttpResponse]], hc, ec)
     }
 
   private def getAgentRecordUrl(agentId: TaxIdentifier) =
