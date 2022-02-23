@@ -41,7 +41,8 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val ifPlatformBaseUrl: String = baseUrl("if")
   val ifEnvironment: String = getConf("if.environment")
-  val ifAuthToken: String = getConf("if.authorization-token")
+  val ifAuthTokenAPI1712: String = getConf("if.authorization-token.API1712")
+  val ifAuthTokenAPI1495: String = getConf("if.authorization-token.API1495")
 
   val relationshipsBaseUrl: String = baseUrl("relationships")
 

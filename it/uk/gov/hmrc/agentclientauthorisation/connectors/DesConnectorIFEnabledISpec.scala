@@ -12,9 +12,10 @@ class DesConnectorIFEnabledISpec extends UnitSpec with AppAndStubs {
 
   override protected def additionalConfiguration =
     super.additionalConfiguration ++  Map(
-      "des-if.enabled"                                -> true,
-      "microservice.services.if.environment"          -> "ifEnv",
-      "microservice.services.if.authorization-token"  -> "ifToken"
+      "des-if.enabled"                                        -> true,
+      "microservice.services.if.environment"                  -> "ifEnv",
+      "microservice.services.if.authorization-token.API1712"  -> "ifToken",
+      "microservice.services.if.authorization-token.API1495"  -> "ifToken"
     )
 
   val utr = Utr("0123456789")
