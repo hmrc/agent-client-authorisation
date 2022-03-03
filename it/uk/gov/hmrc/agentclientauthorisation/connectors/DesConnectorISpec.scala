@@ -108,7 +108,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       }
     }
 
-    "return None if the VAT client is not subscribed" in {
+    "return None if the VAT client is not subscribed (404)" in {
       hasNoVatCustomerDetails(clientVrn)
 
       await(connector.getVatDetails(clientVrn)) shouldBe None
@@ -123,8 +123,24 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetVatCustomerInformation-GET")
     }
 
-    "throw Upstream5xxResponse if DES is unavailable" in {
+    "throw UpstreamErrorResponse if DES is unavailable" in {
       failsVatCustomerDetails(clientVrn, withStatus = 502)
+
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.getVatDetails(clientVrn))
+      }
+    }
+
+    "throw UpstreamErrorResponse if DES returns a 400 status (invalid vrn passed by client)" in {
+      failsVatCustomerDetails(clientVrn, withStatus = 400)
+
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.getVatDetails(clientVrn))
+      }
+    }
+
+    "throw UpstreamErrorResponse if DES returns a 403 status (MIGRATION)" in {
+      failsVatCustomerDetails(clientVrn, withStatus = 403)
 
       assertThrows[UpstreamErrorResponse] {
         await(connector.getVatDetails(clientVrn))
