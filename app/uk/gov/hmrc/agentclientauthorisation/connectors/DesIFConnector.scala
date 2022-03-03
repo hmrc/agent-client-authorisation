@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsValue, Writes}
 import play.utils.UriEncoding
@@ -95,12 +96,12 @@ class DesConnectorImpl @Inject()(
     val url = s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information"
     getWithDesIfHeaders("GetVatCustomerInformation", url).map { response =>
       response.status match {
-        case status if is2xx(status) => response.json.asOpt[VatDetails]
-        case status if is4xx(status) =>
-          logger.warn(s"4xx response for getVatRegDate ${response.body}")
+        case OK => response.json.asOpt[VatDetails]
+        case NOT_FOUND =>
+          logger.info(s"${response.status} response for getVatDetails ${response.body}")
           None
         case other =>
-          throw UpstreamErrorResponse(s"unexpected error during 'getVatRegDate', statusCode=$other", other, other)
+          throw UpstreamErrorResponse(response.body, other, other)
       }
     }
   }
