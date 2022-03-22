@@ -94,7 +94,8 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     case _: Utr               => "utr"
     case _: Urn               => "urn"
     case _: CgtRef            => "cgtRef"
-    case _                    => throw new IllegalStateException(s"Unsupported ClientIdType")
+    case _: PptRef            => "pptRef"
+    case _                    => throw new IllegalStateException(s"Unsupported ClientIdType for ID: '$clientId'")
   }
 
   private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(
