@@ -25,15 +25,15 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
-import uk.gov.hmrc.agentclientauthorisation.model.{InvitationStatus, _}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
-import javax.inject.{Inject, _}
+import javax.inject._
 import scala.collection.Seq
 import scala.concurrent.Future.successful
 import scala.util.{Failure, Success}
@@ -258,6 +258,12 @@ class InvitationsService @Inject()(
       invitations <- Future.sequence(identifiers.map {
                       case (service, clientId) =>
                         findInvitationsInfoBy(service = Some(service), clientId = Some(clientId))
+                          .flatMap { clientInvitations =>
+                            if (service == Service.PersonalIncomeRecord)
+                              findInvitationsInfoBy(service = Some(Service.MtdIt), clientId = Some(clientId))
+                                .map(pAuthInvitations => clientInvitations ::: pAuthInvitations)
+                            else Future successful clientInvitations
+                          }
                     })
       invs <- Future.sequence(
                invitations.flatMap(invs => invs.map(inv => isArnSuspendedForService(inv.arn, inv.service).map(isSuspended => (invs, isSuspended)))))
