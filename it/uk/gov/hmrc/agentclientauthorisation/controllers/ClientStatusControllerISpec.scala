@@ -383,6 +383,42 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
       (json \ "hasExistingRelationships").as[Boolean] shouldBe true
     }
 
+    "return 200 OK indicating client has active relationship when they have a PartialAuth" in {
+      givenAuditConnector()
+      givenClientHasNoActiveRelationships
+      givenClientHasNoActiveAfiRelationships
+
+      val invitation = Invitation.createNew(
+        Arn("TARN0000001"),
+        Some("personal"),
+        Service.MtdIt,
+        ClientIdentifier(Nino("AB835673D")),
+        ClientIdentifier(Nino("AB835673D")),
+        None,
+        DateTime.now,
+        LocalDate.now.plusDays(21),
+        None
+      )
+
+      await(repo.insert(invitation))
+      await(repo.update(invitation, PartialAuth, DateTime.now()))
+
+      stubFor(
+        post(urlPathEqualTo(s"/auth/authorise")).willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{"allEnrolments":[{"key":"HMRC-NI","identifiers":[{"key":"NINO","value":"AB835673D"}]}]}""")))
+
+      val response: HttpResponse =
+        new Resource(s"/agent-client-authorisation/status", port, http).get()
+      response.status shouldBe 200
+
+      val json = response.json
+      (json \ "hasPendingInvitations").as[Boolean] shouldBe false
+      (json \ "hasInvitationsHistory").as[Boolean] shouldBe true
+      (json \ "hasExistingRelationships").as[Boolean] shouldBe true
+    }
+
     "return 200 OK indicating client has no active relationships if afi returns 403" in {
       givenAuditConnector()
       givenClientHasNoActiveRelationships

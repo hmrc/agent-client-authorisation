@@ -24,11 +24,10 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.Pending
+import uk.gov.hmrc.agentclientauthorisation.model.{PartialAuth, Pending}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentCacheProvider, InvitationsService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -58,18 +57,12 @@ class ClientStatusController @Inject()(
                        nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
                        hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
                        hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
+                       hasPartialAuthRelationships = nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
-                                                       .map(_.nonEmpty)
-                                                       .recover {
-                                                         case _: UpstreamErrorResponse => false
-                                                       }
-                       hasExistingRelationships <- if (hasExistingAfiRelationships) Future.successful(true)
+                                                       .map(_.fold(false)(_.nonEmpty))
+                       hasExistingRelationships <- if (hasExistingAfiRelationships || hasPartialAuthRelationships) Future.successful(true)
                                                   else
-                                                    relationshipsConnector.getActiveRelationships
-                                                      .map(_.nonEmpty)
-                                                      .recover {
-                                                        case _: UpstreamErrorResponse => false
-                                                      }
+                                                    relationshipsConnector.getActiveRelationships.map(_.fold(false)(_.nonEmpty))
                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
                    }
       } yield Ok(Json.toJson(status))
