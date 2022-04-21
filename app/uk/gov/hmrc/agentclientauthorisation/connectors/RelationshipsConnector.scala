@@ -99,27 +99,29 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         .handleNon2xx("unexepected error during 'createPlasticPackagingTaxRelationship'")
     }
 
-  def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Map[String, Seq[Arn]]] =
+  def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Map[String, Seq[Arn]]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
       http.GET[HttpResponse](url).map { response =>
         response.status match {
-          case status if is2xx(status) => response.json.as[Map[String, Seq[Arn]]]
+          case status if is2xx(status) => response.json.asOpt[Map[String, Seq[Arn]]]
           case other =>
-            throw UpstreamErrorResponse(s"unexpected error during 'getActiveRelationships', statusCode=$other", other)
+            logger.warn(s"unexpected error during 'getActiveRelationships', statusCode=$other")
+            None
         }
       }
     }
 
-  def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[JsObject]] =
+  def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Seq[JsObject]]] =
     monitor(s"ConsumedAPI-AgentFiRelationship-GetActive-GET") {
       val url = s"$afiBaseUrl/agent-fi-relationship/relationships/active"
       http.GET[HttpResponse](url).map { response =>
         response.status match {
-          case status if is2xx(status) => response.json.as[Seq[JsObject]]
-          case Status.NOT_FOUND        => Seq.empty
+          case status if is2xx(status) => response.json.asOpt[Seq[JsObject]]
+          case Status.NOT_FOUND        => Option(Seq.empty)
           case other =>
-            throw UpstreamErrorResponse(s"unexpected error during 'getActiveAfiRelationships', statusCode=$other", other)
+            logger.error(s"unexpected error during 'getActiveAfiRelationships', statusCode=$other")
+            None
         }
       }
     }

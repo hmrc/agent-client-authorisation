@@ -62,10 +62,10 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
                            |}""".stripMargin)))
 
       val result = await(connector.getActiveRelationships)
-      result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"), Arn("AARN1187296"))
-      result("HMRC-MTD-VAT") should contain.only(Arn("AARN1187259"))
-      result("HMRC-TERS-ORG") should contain.only(Arn("AARN1187259"))
-      result("HMRC-PPT-ORG") should contain.only(Arn("AARN1187259"))
+      result.get("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"), Arn("AARN1187296"))
+      result.get("HMRC-MTD-VAT") should contain.only(Arn("AARN1187259"))
+      result.get("HMRC-TERS-ORG") should contain.only(Arn("AARN1187259"))
+      result.get("HMRC-PPT-ORG") should contain.only(Arn("AARN1187259"))
     }
 
     "return the map of active relationships when only one present" in {
@@ -78,7 +78,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
                            |  "HMRC-MTD-IT": ["AARN1187295"]
                            |}""".stripMargin)))
 
-      val result = await(connector.getActiveRelationships)
+      val result = await(connector.getActiveRelationships).get
 
       result("HMRC-MTD-IT") should contain.only(Arn("AARN1187295"))
       result.get("HMRC-MTD-VAT") shouldBe None
@@ -94,7 +94,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
               .withStatus(200)
               .withBody(s"""{}""".stripMargin)))
 
-      val result = await(connector.getActiveRelationships)
+      val result = await(connector.getActiveRelationships).get
 
       result.get("HMRC-MTD-IT") shouldBe None
       result.get("HMRC-MTD-VAT") shouldBe None
