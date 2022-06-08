@@ -42,7 +42,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
   }
 
   "GET /known-facts/individuals/nino/:nino/sa/postcode/:postcode" should {
-    val request = FakeRequest("GET", "/known-facts/individuals/nino/:nino/sa/postcode/:postcode")
+    val request = FakeRequest("GET", "/known-facts/individuals/nino/:nino/sa/postcode/:postcode").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return No Content if Nino is known in ETMP and the postcode matched" in {
       givenAuditConnector()
@@ -144,7 +144,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
   }
 
   "GET /known-facts/individuals/:nino/dob/:dob" should {
-    val request = FakeRequest("GET", "/known-facts/individuals/:nino/dob/:dob")
+    val request = FakeRequest("GET", "/known-facts/individuals/:nino/dob/:dob").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return No Content if Nino is known in citizen details and the dateOfBirth matched" in {
       givenAuditConnector()
@@ -188,7 +188,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
   }
 
   "GET /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate" should {
-    val request = FakeRequest("GET", "/known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate")
+    val request = FakeRequest("GET", "/known-facts/organisations/vat/:vrn/registration-date/:vatRegistrationDate").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return No Content if Vrn is known in ETMP and the effectiveRegistrationDate matched" in {
       givenAuditConnector()
@@ -253,7 +253,7 @@ class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
   }
 
   "GET /known-facts/ppt/:pptRegistrationNumber/:pptDateOfApplication" should {
-    val request = FakeRequest("GET", "/known-facts/ppt/:pptRegistrationNumber/:pptDateOfApplication")
+    val request = FakeRequest("GET", "/known-facts/ppt/:pptRegistrationNumber/:pptDateOfApplication").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return No Content if PptRef is known in ETMP and the dateOfApplication matched" in {
       givenAuditConnector()

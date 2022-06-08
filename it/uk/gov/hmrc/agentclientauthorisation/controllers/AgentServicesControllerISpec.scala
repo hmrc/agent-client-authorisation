@@ -4,7 +4,7 @@ import org.scalatest.Suite
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.ServerProvider
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -33,108 +33,71 @@ class AgentServicesControllerISpec extends BaseISpec {
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
-
-  def getCurrentAgencyName: WSResponse =
+  private def makeGetRequest(url: String) = {
     wsClient
-      .url(s"$url/agent/agency-name")
+      .url(url)
+      .withHttpHeaders("Authorization" -> "Bearer testtoken")
       .get()
       .futureValue
+  }
+
+  private def makePostRequest(url: String, jsValue: JsValue) = {
+    wsClient
+      .url(url)
+      .withHttpHeaders("Authorization" -> "Bearer testtoken")
+      .post(jsValue)
+      .futureValue
+  }
+
+  def getCurrentAgencyName: WSResponse = makeGetRequest(s"$url/agent/agency-name")
 
   def getCurrentAgencyEmail: WSResponse =
-    wsClient
-      .url(s"$url/agent/agency-email")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/agent/agency-email")
 
   def getCurrentAgencyDetails: WSResponse =
-    wsClient
-      .url(s"$url/agent/agency-details")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/agent/agency-details")
 
   def getCurrentSuspensionDetails: WSResponse =
-    wsClient
-    .url(s"$url/agent/suspension-details")
-    .get()
-    .futureValue
+    makeGetRequest(s"$url/agent/suspension-details")
 
   def getAgencyNameFor(arn: Arn): WSResponse =
-    wsClient
-      .url(s"$url/client/agency-name/${arn.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/agency-name/${arn.value}")
 
   def getAgencyEmailFor(arn: Arn): WSResponse =
-    wsClient
-      .url(s"$url/client/agency-email/${arn.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/agency-email/${arn.value}")
 
   def getSuspensionDetailsFor(arn: Arn): WSResponse =
-    wsClient
-      .url(s"$url/client/suspension-details/${arn.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/suspension-details/${arn.value}")
 
   def getAgencyNameClientWithUtr(utr: Utr): WSResponse =
-    wsClient
-      .url(s"$url/client/agency-name/utr/${utr.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/agency-name/utr/${utr.value}")
 
   def getAgencyNames(arns: Seq[Arn]): WSResponse =
-    wsClient
-      .url(s"$url/client/agency-names")
-      .post(Json.toJson(arns.map(_.value)))
-      .futureValue
+    makePostRequest(s"$url/client/agency-names", Json.toJson(arns.map(_.value)))
 
   def getUtrAgencyNames(utrs: Seq[Utr]): WSResponse =
-    wsClient
-      .url(s"$url/client/agency-names/utr")
-      .post(Json.toJson(utrs.map(_.value)))
-      .futureValue
+    makePostRequest(s"$url/client/agency-names/utr", Json.toJson(utrs.map(_.value)))
 
   def getClientNino(mtdItId: MtdItId): WSResponse =
-    wsClient
-      .url(s"$url/client/mtdItId/${mtdItId.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/mtdItId/${mtdItId.value}")
 
   def getClientMtdItId(nino: Nino): WSResponse =
-    wsClient
-      .url(s"$url/client/nino/${nino.value  }")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/nino/${nino.value  }")
 
   def getUtrBusinessName(utr: Utr): WSResponse =
-    wsClient
-      .url(s"$url/client/business-name/utr/${utr.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/business-name/utr/${utr.value}")
 
   def getUtrBusinessNames(utrs: Seq[Utr]): WSResponse =
-    wsClient
-      .url(s"$url/client/business-names/utr")
-      .post(Json.toJson(utrs.map(_.value)))
-      .futureValue
+    makePostRequest(s"$url/client/business-names/utr", Json.toJson(utrs.map(_.value)))
 
   def getTradingNameForNino(nino: Nino): WSResponse =
-    wsClient
-      .url(s"$url/client/trading-name/nino/${nino.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/trading-name/nino/${nino.value}")
 
   def getVatCustomerDetails(vrn: Vrn): WSResponse =
-    wsClient
-      .url(s"$url/client/vat-customer-details/vrn/${vrn.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/vat-customer-details/vrn/${vrn.value}")
 
   def getPptCustomerName(pptRef: PptRef): WSResponse =
-    wsClient
-      .url(s"$url/client/ppt-customer-name/pptref/${pptRef.value}")
-      .get()
-      .futureValue
+    makeGetRequest(s"$url/client/ppt-customer-name/pptref/${pptRef.value}")
 
   "GET /agent/agency-name/utr" should {
     "return Ok and agencyName after successful response" in {

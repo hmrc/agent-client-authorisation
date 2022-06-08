@@ -7,7 +7,6 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdType, Service}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.TaxIdentifier
-import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 
 import scala.concurrent.Future
 
@@ -20,7 +19,7 @@ class AuthActionsISpec extends BaseISpec {
 
   object TestController extends AuthActions(metrics, appConfig ,authConnector, cc) {
 
-    implicit val hc = HeaderCarrier()
+//    implicit val hc = HeaderCarrier()
 
     import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -58,7 +57,7 @@ class AuthActionsISpec extends BaseISpec {
   "OnlyForAgents" should {
     s"return 200 if logged in as Agent" in {
       givenAuthorisedAsAgent(arn)
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithOnlyForAgents(request)
       status(result) shouldBe 200
@@ -66,7 +65,7 @@ class AuthActionsISpec extends BaseISpec {
 
     s"return 401 if not logged in as Agent" in {
       givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef)
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithOnlyForAgents(request)
       status(result) shouldBe 401
@@ -74,7 +73,7 @@ class AuthActionsISpec extends BaseISpec {
 
     s"return 403 if user is not logged in via GovernmentGateway" in {
       givenUnauthorisedForUnsupportedAuthProvider
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithOnlyForAgents(request)
       status(result) shouldBe 403
@@ -84,7 +83,7 @@ class AuthActionsISpec extends BaseISpec {
   "OnlyForClients" should {
     s"return 200 if logged in client" in {
       givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef)
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       testClientList.foreach { testClient =>
         val result: Future[Result] = TestController.testWithOnlyForClients(testClient.service, testClient.clientIdType)(request)
@@ -94,7 +93,7 @@ class AuthActionsISpec extends BaseISpec {
 
     s"return 403 if not logged in through GG or PA via Client" in {
       isNotGGorPA
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       testClientList.foreach { testClient =>
         val result: Future[Result] = TestController.testWithOnlyForClients(testClient.service, testClient.clientIdType)(request)
@@ -104,7 +103,7 @@ class AuthActionsISpec extends BaseISpec {
 
     s"return 403 if not logged in as a Client" in {
       givenUnauthorisedForUnsupportedAffinityGroup
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       testClientList.foreach { testClient =>
         val result: Future[Result] = TestController.testWithOnlyForClients(testClient.service, testClient.clientIdType)(request)
@@ -123,7 +122,7 @@ class AuthActionsISpec extends BaseISpec {
     runUnHappyLoginScenarioForClient(false, true)
 
     s"return 401 for no login" in new LoggedInUser(false, false) {
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride("UTR", utr.value, strideRoles)(request)
 
@@ -132,7 +131,7 @@ class AuthActionsISpec extends BaseISpec {
 
     s"return 403 if not logged in through GG or PA via Client Or Stride User" in {
       isNotGGorPA
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride("UTR", utr.value, strideRoles)(request)
 
@@ -142,7 +141,7 @@ class AuthActionsISpec extends BaseISpec {
 
   def runHappyLoginScenarioForClient(testClient: TestClient[_], forStride: Boolean, forClient: Boolean) = {
     s"return 200 for successful Login if user was ${if(forStride) "stride" else "client"} and requesting ${testClient.service.id}" in new LoggedInUser(forStride, forClient) {
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride(testClient.urlIdentifier, testClient.clientId.value, strideRoles)(request)
 
@@ -152,7 +151,7 @@ class AuthActionsISpec extends BaseISpec {
 
   def runUnHappyLoginScenarioForClient(forStride: Boolean, forClient: Boolean) = {
     s"return 400 for unsupported Service if user was ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forClient) {
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testWithAuthorisedAsClientOrStride("SAUTR", utr.value, strideRoles)(request)
 
@@ -163,7 +162,7 @@ class AuthActionsISpec extends BaseISpec {
   "onlyStride" should {
     "return 200 for successful stride login" in {
       givenOnlyStrideStub("caat", "123ABC")
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 200
@@ -171,14 +170,14 @@ class AuthActionsISpec extends BaseISpec {
 
     "return 401 for incorrect stride login" in {
       givenOnlyStrideStub("maintain-agent-relationships", "123ABC")
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 401
     }
 
     "return 403 if non-stride login" in {
-      implicit val request = FakeRequest("GET", "/path-of-request").withSession(SessionKeys.authToken -> "Bearer XYZ")
+      implicit val request = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
 
       val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 403

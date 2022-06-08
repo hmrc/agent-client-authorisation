@@ -45,7 +45,7 @@ class CgtSubscriptionISPec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 200
@@ -58,7 +58,7 @@ class CgtSubscriptionISPec extends BaseISpec {
       val cgtSub = cgtSubscription.copy(subscriptionDetails = cgtSubscription.subscriptionDetails.copy(typeOfPersonDetails = TypeOfPersonDetails("Trustee", Right(OrganisationName("some org")))))
       getCgtSubscription(cgtRef, 200, Json.toJson(cgtSub).toString())
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 200
@@ -70,7 +70,7 @@ class CgtSubscriptionISPec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 400, Json.toJson(desError).toString())
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 400
@@ -82,7 +82,7 @@ class CgtSubscriptionISPec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 400, desErrors)
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 400
@@ -95,7 +95,7 @@ class CgtSubscriptionISPec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 404, notFoundJson)
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getCgtSubscriptionDetails(cgtRef)(request)
       status(result) shouldBe 404

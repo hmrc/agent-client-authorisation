@@ -30,7 +30,7 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
   "POST /agencies/:arn/invitations/sent" should {
-    val request = FakeRequest("POST", "/agencies/:arn/invitations/sent")
+    val request = FakeRequest("POST", "/agencies/:arn/invitations/sent").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return 201 Created with link to invitation in headers" when {
       "service is ITSA" in {

@@ -48,7 +48,7 @@ class Http @Inject()(wsClient: WSClient) {
 
   private def perform(url: String)(fun: WSRequest => Future[WSResponse])(implicit hc: HeaderCarrier): HttpResponse =
     await(
-      fun(wsClient.url(url).withHttpHeaders(hc.headers(Seq.empty): _*).withRequestTimeout(20000 milliseconds)).map(wsr => HttpResponse(wsr.status, wsr.body)))
+      fun(wsClient.url(url).withHttpHeaders(hc.headers(Seq(hc.names.authorisation)): _*).withRequestTimeout(20000 milliseconds)).map(wsr => HttpResponse(wsr.status, wsr.body)))
 
   private def await[A](future: Future[A]) = Await.result(future, Duration(10, SECONDS))
 

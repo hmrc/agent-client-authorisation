@@ -108,8 +108,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   def runAcceptInvitationsScenario[T<: TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBusiness: Boolean = false): Unit = {
 
-  val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept")
-    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
+  val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept").withHeaders("Authorization" -> "Bearer testtoken")
+    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
     s"accept via $journey ${client.urlIdentifier} ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA) " else "" }invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
@@ -214,8 +214,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   def runRejectInvitationsScenario[T<:TaxIdentifier](client: TestClient[T], journey: String, forStride: Boolean, forBussiness: Boolean = false): Unit = {
-    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject")
-    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId")
+    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/reject").withHeaders("Authorization" -> "Bearer testtoken")
+    val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
     s"reject via $journey ${client.urlIdentifier} ${client.service.id} invitation for ${client.clientId.value} as expected with ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
@@ -257,7 +257,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   "GET /clients/:clientIdType/:clientId/invitations/received/:invitationId" should {
-    val request = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/received/:invitationId")
+    val request = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/received/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return invitation as expected" in new LoggedInUser(false) {
       uiClients.foreach { client =>
@@ -291,7 +291,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   private def runGetAllInvitationsScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, forBusiness: Boolean = false): Unit = {
-    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
+    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received").withHeaders("Authorization" -> "Bearer testtoken")
     s"return 200 for get all ${testClient.service.id} invitations for: ${testClient.clientId.value} logged in ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) {
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))
@@ -315,7 +315,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   }
 
   private def runGetAllInvitationsAltItsaScenario[T<:TaxIdentifier](testClient: TestClient[T], forStride: Boolean, altStride: Boolean = false): Unit = {
-    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received")
+    val request = FakeRequest("GET", "/clients/:service/:identifier/invitations/received").withHeaders("Authorization" -> "Bearer testtoken")
     s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"}" in new LoggedInUser(forStride, forBusiness = false, altStride = altStride) {
       await(createInvitation(arn, testClient))
       await(createInvitation(arn2, testClient))

@@ -9,7 +9,7 @@ lazy val scoverageSettings = {
   Seq(
     // Semicolon-separated list of regexs matching classes to exclude
     ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo;.*\.Routes;.*\.RoutesPrefix;.*Filters?;MicroserviceAuditConnector;Module;GraphiteStartUp;.*\.Reverse[^.]*""",
-    ScoverageKeys.coverageMinimum := 80.00,
+    ScoverageKeys.coverageMinimumStmtTotal := 80.00,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true,
     Test / parallelExecution := false
@@ -18,8 +18,8 @@ lazy val scoverageSettings = {
 
 lazy val compileDeps = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.20.0",
-  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.34.0-play-28",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.24.0",
+  "uk.gov.hmrc" %% "agent-mtd-identifiers" % "0.39.0-play-28",
   "com.github.blemale" %% "scaffeine" % "4.0.1",
   "uk.gov.hmrc" %% "agent-kenshoo-monitoring" % "4.8.0-play-28",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-28",
@@ -35,7 +35,7 @@ def testDeps(scope: String) = Seq(
   "com.github.tomakehurst" % "wiremock-jre8" % "2.26.1" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalamock" %% "scalamock" % "5.1.0" % scope,
-  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.14" % scope,
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.19" % scope,
   "com.vladsch.flexmark" % "flexmark-all" % "0.35.10" % scope
 )
 
@@ -48,7 +48,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "agent-client-authorisation",
     organization := "uk.gov.hmrc",
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.15",
     PlayKeys.playDefaultPort := 9432,
     resolvers ++= Seq(
       Resolver.typesafeRepo("releases"),
@@ -56,8 +56,8 @@ lazy val root = (project in file("."))
     resolvers += "HMRC-local-artefacts-maven" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases-local",
     libraryDependencies ++= tmpMacWorkaround() ++ compileDeps ++ testDeps("test") ++ testDeps("it"),
     libraryDependencies ++= Seq(
-      compilerPlugin("com.github.ghik" % "silencer-plugin" % "1.4.4" cross CrossVersion.full),
-      "com.github.ghik" % "silencer-lib" % "1.4.4" % Provided cross CrossVersion.full
+      compilerPlugin("com.github.ghik" % "silencer-plugin" % "1.7.7" cross CrossVersion.full),
+      "com.github.ghik" % "silencer-lib" % "1.7.7" % Provided cross CrossVersion.full
     ),
     publishingSettings,
     scoverageSettings,
