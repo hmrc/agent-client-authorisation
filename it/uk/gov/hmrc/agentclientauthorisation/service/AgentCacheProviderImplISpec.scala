@@ -27,7 +27,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getCgtSubscription(cgtRef, 200, Json.toJson(cgtSubscription).toString())
 
-      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}")
+      val request = FakeRequest("GET", s"/cgt/subscriptions/${cgtRef.value}").withHeaders(("Authorization" -> "Bearer testtoken"))
 
       val result1 = await(controller.getCgtSubscriptionDetails(cgtRef)(request))
       status(result1) shouldBe 200
@@ -51,7 +51,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getTrustName(utr.value, 200, trustNameJson)
 
-      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${utr.value}")
+      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${utr.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result1 = await(controller.getTrustName(utr.value)(request))
       status(result1) shouldBe 200
@@ -72,7 +72,7 @@ class AgentCacheProviderImplISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getTrustName(urn.value, 200, trustNameJson)
 
-      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${urn.value}")
+      val request = FakeRequest("GET", s"/trusts/agent-known-fact-check/${urn.value}").withHeaders(("Authorization" -> "Bearer testtoken"))
 
       val result1 = await(controller.getTrustName(urn.value)(request))
       status(result1) shouldBe 200

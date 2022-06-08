@@ -24,7 +24,7 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport, Awaiting => MongoAwaiting}
 
 import scala.concurrent.ExecutionContext
@@ -34,7 +34,7 @@ trait AppAndStubs
     with Matchers {
   me: Suite with TestSuite =>
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc = HeaderCarrier(authorization = Some(Authorization("Bearer testtoken")))
   implicit lazy val portNum: Int = port
 
   override lazy val app: Application = appBuilder.build()

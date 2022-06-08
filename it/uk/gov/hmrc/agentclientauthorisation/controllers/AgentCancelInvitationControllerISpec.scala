@@ -68,8 +68,8 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
   }
 
   def runSuccessfulCancelledInvitation[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
-    val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("X-Session-ID" -> "1234")
-    val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId")
+    val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("X-Session-ID" -> "1234").withHeaders("Authorization" -> "Bearer testtoken")
+    val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
     s"return 204 when an ${testClient.service} invitation is successfully cancelled for ${testClient.clientId.value}" in new StubSetup {
 
@@ -98,7 +98,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
   def runUnsuccessfulCanceledInvitation[T<:TaxIdentifier](testClient: TestClient[T]): Unit = {
     s"return NoPermissionOnAgency when the logged in arn doesn't not match the invitation for ${testClient.service} to client: ${testClient.clientId.value}" in {
 
-      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
+      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("Authorization" -> "Bearer testtoken")
 
       givenAuditConnector()
       givenAuthorisedAsAgent(arn2)
@@ -120,7 +120,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
     }
 
     "return InvitationNotFound when there is no invitation to cancel" in {
-      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
+      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("Authorization" -> "Bearer testtoken")
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 

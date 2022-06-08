@@ -86,7 +86,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   }
 
   "GET /agencies/:arn/invitations/sent" should {
-    val request = FakeRequest("GET", "/agencies/:arn/invitations/sent")
+    val request = FakeRequest("GET", "/agencies/:arn/invitations/sent").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return Invitations for Agent without Query Params" in new TestSetup {
 
@@ -228,7 +228,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           LocalDate.now(),
           None))
 
-      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
@@ -252,7 +252,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           None)
       )
 
-      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
@@ -263,7 +263,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
 
-      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/A7GJRTMY4DS3T")
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/A7GJRTMY4DS3T").withHeaders("Authorization" -> "Bearer testtoken")
 
       val response = controller.getSentInvitation(arn, InvitationId("A7GJRTMY4DS3T"))(request)
 
@@ -278,7 +278,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenGetAgencyDetailsStub(arn, Some("my-agency"), Some("email"))
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
-      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 
@@ -305,7 +305,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
 
       val invitation: Invitation = await(createInvitation(arn, testClient.copy[T](clientType = None)))
-      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}")
+      val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
 

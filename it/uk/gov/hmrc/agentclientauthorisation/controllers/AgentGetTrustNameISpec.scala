@@ -21,7 +21,7 @@ class AgentGetTrustNameISpec extends BaseISpec {
     val notFoundJson =
       """{"code": "RESOURCE_NOT_FOUND","reason": "The remote endpoint has indicated that the trust is not found."}"""
 
-    val request = FakeRequest("GET", s"/known-facts/organisations/trust/${utr.value}")
+    val request = FakeRequest("GET", s"/known-facts/organisations/trust/${utr.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return success response for a given utr" in {
       givenAuditConnector()

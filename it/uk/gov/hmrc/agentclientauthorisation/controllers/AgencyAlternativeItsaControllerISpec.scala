@@ -29,7 +29,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
   "PUT /alt-itsa/update/:nino" should {
 
-    val request = FakeRequest("PUT", "/alt-itsa/update/:nino")
+    val request = FakeRequest("PUT", "/alt-itsa/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return 204 when there are no alternative itsa invitations found for the client" in {
 
@@ -214,7 +214,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
   "PUT /agent/alt-itsa/update/:arn" should {
 
-    val request = FakeRequest("PUT", "/agent/alt-itsa/update/:arn")
+    val request = FakeRequest("PUT", "/agent/alt-itsa/update/:arn").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return 204 when there are no alt-itsa invitations found for the agent" in {
 
@@ -560,8 +560,8 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
     "PUT /agencies/:arn/invitations/sent/:invitationId/cancel" should {
 
-      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("X-Session-ID" -> "1234")
-      val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId")
+      val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("X-Session-ID" -> "1234").withHeaders("Authorization" -> "Bearer testtoken")
+      val getResult = FakeRequest("GET", "agencies/:arn/invitations/sent/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
       s"return 204 when a PartialAuth invitation is successfully cancelled" in {
 
@@ -591,7 +591,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
 
       "return InvitationNotFound when there is no invitation to cancel" in {
-        val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel")
+        val request = FakeRequest("PUT", "agencies/:arn/invitations/sent/:invitationId/cancel").withHeaders("Authorization" -> "Bearer testtoken")
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
 

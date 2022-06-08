@@ -57,7 +57,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
   "GET  /clients/invitations/uid/:uid" should {
 
-    val request = FakeRequest("GET", "/clients/invitations/uid/:uid")
+    val request = FakeRequest("GET", "/clients/invitations/uid/:uid").withHeaders(("Authorization" -> "Bearer testtoken"))
 
     "return invitation info for services that are supported by the client's enrolments - has MTD VAT & IT enrolment" in new TestSetup {
 
