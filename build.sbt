@@ -25,6 +25,7 @@ lazy val compileDeps = Seq(
   "uk.gov.hmrc" %% "simple-reactivemongo" % "8.0.0-play-28",
   "uk.gov.hmrc" %% "play-hal" % "3.1.0-play-28",
   "com.typesafe.play" %% "play-json-joda" % "2.9.2",
+  "com.google.guava" % "guava" % "31.1-jre",
   "org.typelevel" %% "cats-core" % "2.6.1"
 )
 

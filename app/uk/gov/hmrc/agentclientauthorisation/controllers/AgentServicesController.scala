@@ -22,8 +22,9 @@ import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
-import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr, BusinessNameByUtr}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr}
+import uk.gov.hmrc.agentclientauthorisation.service.BusinessNamesService
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
@@ -38,6 +39,7 @@ class AgentServicesController @Inject()(
   val env: Environment,
   desConnector: DesConnector,
   cidConnector: CitizenDetailsConnector,
+  businessNamesService: BusinessNamesService,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
 
@@ -88,7 +90,7 @@ class AgentServicesController @Inject()(
   def getBusinessNameUtr(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     if (Utr.isValid(utr.value)) {
       withBasicAuth {
-        businessNameFor(utr).map(name => Ok(Json.obj("businessName" -> name)))
+        businessNamesService.get(utr).map(name => Ok(Json.obj("businessName" -> name)))
       }.recoverWith {
         case e: UpstreamErrorResponse if e.statusCode == 404 =>
           errorResponse(NOT_FOUND, "No business record was matched for the specified UTR")
@@ -151,26 +153,18 @@ class AgentServicesController @Inject()(
     request.body
       .validate[Set[String]]
       .fold(
-        error => Future.successful(BadRequest),
+        errors => {
+          logger.error(s"Incorrect utr values received: $errors")
+          Future.successful(BadRequest)
+        },
         utrs => {
           val validationResult = utrs.map(Utr.isValid).reduceOption(_ && _).getOrElse(false)
-          val defaultName = ""
 
           if (validationResult) {
             withBasicAuth {
-              val businessRecord = utrs.map { utr =>
-                businessNameFor(Utr(utr))
-                  .recover {
-                    case e: UpstreamErrorResponse if e.statusCode == 404 =>
-                      logger.warn("An error happened when trying to get business name for a utr", e)
-                      defaultName
-                    case e if e.getMessage.contains("AGENT_TERMINATED") =>
-                      logger.warn("Termination Found when trying to get business name for a utr", e)
-                      defaultName
-                  }
-                  .map(BusinessNameByUtr(utr, _))
-              }
-              Future.sequence(businessRecord).map(details => Ok(Json.toJson(details)))
+              businessNamesService
+                .get(utrs)
+                .map(businessNamesByUtrs => Ok(Json.toJson(businessNamesByUtrs)))
             }
           } else
             errorResponse(BAD_REQUEST, "Invalid Utr")
@@ -250,11 +244,6 @@ class AgentServicesController @Inject()(
     desConnector
       .getAgencyDetails(identifier)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
-
-  private def businessNameFor(utr: Utr)(implicit hc: HeaderCarrier): Future[String] = {
-    val defaultName = ""
-    desConnector.getBusinessName(utr).map { _.getOrElse(defaultName) }
-  }
 
   private def getAgencyName(clientIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier) =
     desConnector

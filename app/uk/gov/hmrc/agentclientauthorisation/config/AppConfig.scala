@@ -92,4 +92,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val altItsaEnabled: Boolean = servicesConfig.getBoolean("alt-itsa.enabled")
   val altItsaExpiryDays: Int = servicesConfig.getInt("alt-itsa-expiry-days")
   val altItsaExpiryEnable: Boolean = servicesConfig.getBoolean("alt-itsa-expiry-enable")
+
+  lazy val maxCallsPerSecondBusinessNames: Double = servicesConfig.getString("rate-limiter.business-names.max-calls-per-second").toDouble
 }

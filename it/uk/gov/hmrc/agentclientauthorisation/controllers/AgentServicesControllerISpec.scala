@@ -617,24 +617,42 @@ class AgentServicesControllerISpec extends BaseISpec {
         givenDESRespondsWithRegistrationData(utr, isIndividual)
         givenDESReturnsErrorForRegistration(Utr("4000000009"), INTERNAL_SERVER_ERROR, terminatedResponseBody)
 
-        getUtrBusinessNames(Seq(utr, Utr("4000000009"))).status shouldBe INTERNAL_SERVER_ERROR
+        val result = getUtrBusinessNames(Seq(utr, Utr("4000000009")))
+        result.status shouldBe OK
+
+        val records = result.json.as[List[Map[String, String]]]
+        records.size shouldBe 2
+        records.head("utr") shouldBe "2134514321"
+        records(1)("utr") shouldBe "4000000009"
+        records(1)("businessName") shouldBe empty
       }
 
-      s"Error thrown by Des on one of the UTRs $isIndividual" in {
+      s"handle error thrown by Des on one of the UTRs $isIndividual" in {
         isLoggedIn
         givenDESRespondsWithRegistrationData(utr, isIndividual)
         givenDESReturnsErrorForRegistration(Utr("4000000009"), BAD_GATEWAY)
 
-        getUtrBusinessNames(Seq(utr, Utr("4000000009"))).status shouldBe 502
+        val result = getUtrBusinessNames(Seq(utr, Utr("4000000009")))
+        result.status shouldBe OK
+
+        val records = result.json.as[List[Map[String, String]]]
+        records.size shouldBe 2
+        records.head("utr") shouldBe "2134514321"
+        records(1)("utr") shouldBe "4000000009"
+        records(1)("businessName") shouldBe empty
       }
 
-      s"return an exception when there is an unsuccessful response for isIndividual=$isIndividual" in {
+      s"handle an exception when there is an unsuccessful response for isIndividual=$isIndividual" in {
         isLoggedIn
         givenDESReturnsErrorForRegistration(utr, BAD_GATEWAY)
 
         val result = getUtrBusinessNames(Seq(utr))
-        result.status shouldBe BAD_GATEWAY
-        (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
+        result.status shouldBe OK
+
+        val records = result.json.as[List[Map[String, String]]]
+        records.size shouldBe 1
+        records.head("utr") shouldBe "2134514321"
+        records.head("businessName") shouldBe empty
       }
 
       s"return BadRequest when receiving an invalid utr for isIndividual=$isIndividual" in {
