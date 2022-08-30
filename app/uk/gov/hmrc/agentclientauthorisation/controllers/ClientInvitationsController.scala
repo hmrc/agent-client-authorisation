@@ -21,11 +21,11 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnClient, invalidInvitationStatus}
+import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.service.{FriendlyNameService, InvitationsService, StatusUpdateFailure}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
-import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.service.{InvitationsService, StatusUpdateFailure}
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRefType, ClientIdType, ClientIdentifier, InvitationId, MtdItIdType, NinoType, PptRefType, Service, UrnType, UtrType, VrnType}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
@@ -41,6 +41,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
+  friendlyNameService: FriendlyNameService,
   ecp: Provider[ExecutionContextExecutor])
     extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
@@ -111,8 +112,12 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
           invitationsService.acceptInvitation(invitation).andThen {
             case Success(invitation) =>
               val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
-              auditService
-                .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service, isAltItsa)
+              for {
+                _ <- auditService
+                      .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service, isAltItsa)
+                // APB-6204: Update the friendly name in EACD
+                _ <- friendlyNameService.updateFriendlyName(invitation)
+              } yield ()
         }
       )
     }

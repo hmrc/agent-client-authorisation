@@ -1,6 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, putRequestedFor, stubFor, urlPathEqualTo, urlPathMatching, verify}
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -61,6 +62,25 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         "service"      -> s"$serviceText"))
   }
 
+  def givenGroupIdIsKnownForArn(arn: Arn, groupId: String): StrideAuthStubs = {
+    stubFor(
+      get(urlPathEqualTo(s"/enrolment-store-proxy/enrolment-store/enrolments/HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}/groups"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""{ "principalGroupIds": [ "$groupId" ] }""")))
+    this
+  }
+
+  def verifyFriendlyNameChangeRequestSent(): Unit = {
+    eventually {
+      verify(
+        1,
+        putRequestedFor(urlPathMatching(s"\\/enrolment-store-proxy\\/enrolment-store\\/groups\\/.+\\/enrolments\\/.+\\/friendly_name"))
+      )
+    }
+  }
+
   class LoggedInUser(forStride: Boolean, forBusiness: Boolean = false, altStride: Boolean = false) {
     if(forStride) {
       if (altStride) {
@@ -117,6 +137,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
+      givenGroupIdIsKnownForArn(arn, "some-group-id")
 
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
@@ -128,6 +149,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val testHasStatusOf: InvitationStatus = if(client.isAltItsaClient) PartialAuth else Accepted
       testInvitationOpt.map(_.status) shouldBe Some(testHasStatusOf.toString)
       verifyAnalyticsRequestSent(1)
+      if (invitation.service != Service.PersonalIncomeRecord) verifyFriendlyNameChangeRequestSent() // See APB-6204: update friendly name unless service is Personal Income Record
     }
 
     s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
