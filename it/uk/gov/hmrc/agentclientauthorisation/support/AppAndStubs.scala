@@ -54,6 +54,8 @@ trait AppAndStubs
       "microservice.services.afi-relationships.port"         -> wiremockPort,
       "microservice.services.citizen-details.host"           -> wiremockHost,
       "microservice.services.citizen-details.port"           -> wiremockPort,
+      "microservice.services.enrolment-store-proxy.host"     -> wiremockHost,
+      "microservice.services.enrolment-store-proxy.port"     -> wiremockPort,
       "microservice.services.des.host"                       -> wiremockHost,
       "microservice.services.des.port"                       -> wiremockPort,
       "microservice.services.if.host"                        -> wiremockHost,

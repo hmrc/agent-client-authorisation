@@ -50,6 +50,8 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   val citizenDetailsBaseUrl: String = baseUrl("citizen-details")
 
+  val enrolmentStoreProxyUrl: String = baseUrl("enrolment-store-proxy")
+
   val emailBaseUrl: String = baseUrl("email")
 
   val agentInvitationsFrontendExternalUrl: String = getConf("agent-invitations-frontend.external-url")
