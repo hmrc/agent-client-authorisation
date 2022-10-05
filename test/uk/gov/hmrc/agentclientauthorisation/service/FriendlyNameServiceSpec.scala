@@ -98,6 +98,28 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         verify(esp, times(1))
           .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyName))(any[HeaderCarrier], any[ExecutionContext])
       }
+      "succeed when there is '&' in the client name by replacing it with 'and''" in {
+        val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
+        when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
+        when(esp.updateEnrolmentFriendlyName(any[String], any[String], any[String])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(()))
+
+        val friendlyNameService = new FriendlyNameService(esp)
+
+        def invitationWithName(name: String) =
+          invitation.copy(
+            detailsForEmail = Some(
+              DetailsForEmail(
+                agencyEmail = "agency@test.com",
+                agencyName = "Perfect Accounts Ltd",
+                clientName = name
+              )))
+
+        friendlyNameService.updateFriendlyName(invitationWithName("H & R Higgins")).futureValue shouldBe (())
+
+        verify(esp, times(1))
+          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs("H and R Higgins"))(any[HeaderCarrier], any[ExecutionContext])
+      }
       "not be done (but return successfully) if there are no client details available" in {
         val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
         when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))

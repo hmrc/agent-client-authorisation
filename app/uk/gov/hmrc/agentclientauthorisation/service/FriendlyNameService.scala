@@ -42,7 +42,9 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
   private def doUpdateFriendlyName(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
     val maybeEnrolmentKey
       : Option[String] = Try(EnrolmentKey.enrolmentKey(invitation.service.id, invitation.clientId.value)).toOption // don't fail on errors
-    val maybeClientName: Option[String] = invitation.detailsForEmail.map(_.clientName).filter(_.nonEmpty)
+    val maybeClientName: Option[String] = invitation.detailsForEmail
+      .map(_.clientName.replace("&", "and"))
+      .filter(_.nonEmpty)
     enrolmentStoreProxyConnector
       .getPrincipalGroupIdFor(invitation.arn)
       .recover { case _ => None /* don't fail on errors */ }
