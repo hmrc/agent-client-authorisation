@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model.{EnrolmentKey, Service}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.net.URLEncoder
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -43,7 +44,7 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
     val maybeEnrolmentKey
       : Option[String] = Try(EnrolmentKey.enrolmentKey(invitation.service.id, invitation.clientId.value)).toOption // don't fail on errors
     val maybeClientName: Option[String] = invitation.detailsForEmail
-      .map(_.clientName.replace("&", "and"))
+      .map(name => URLEncoder.encode(name.clientName, "UTF-8"))
       .filter(_.nonEmpty)
     enrolmentStoreProxyConnector
       .getPrincipalGroupIdFor(invitation.arn)
