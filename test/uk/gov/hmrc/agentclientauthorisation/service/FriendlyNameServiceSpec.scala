@@ -62,7 +62,8 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
 
   "updateFriendlyName" should {
 
-    val friendlyName = "Bob Smith"
+    val friendlyName = "M, L & J Smith-Doreen's Ltd."
+    val friendlyNameEncoded = "M%2C+L+%26+J+Smith-Doreen%27s+Ltd."
 
     val invitation = Invitation.createNew(
       arn = Arn(arn),
@@ -96,30 +97,9 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         friendlyNameService.updateFriendlyName(invitation).futureValue shouldBe (())
 
         verify(esp, times(1))
-          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyName))(any[HeaderCarrier], any[ExecutionContext])
+          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyNameEncoded))(any[HeaderCarrier], any[ExecutionContext])
       }
-      "succeed when there is '&' in the client name by replacing it with 'and''" in {
-        val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
-        when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
-        when(esp.updateEnrolmentFriendlyName(any[String], any[String], any[String])(any[HeaderCarrier], any[ExecutionContext]))
-          .thenReturn(Future.successful(()))
 
-        val friendlyNameService = new FriendlyNameService(esp)
-
-        def invitationWithName(name: String) =
-          invitation.copy(
-            detailsForEmail = Some(
-              DetailsForEmail(
-                agencyEmail = "agency@test.com",
-                agencyName = "Perfect Accounts Ltd",
-                clientName = name
-              )))
-
-        friendlyNameService.updateFriendlyName(invitationWithName("H & R Higgins")).futureValue shouldBe (())
-
-        verify(esp, times(1))
-          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs("H and R Higgins"))(any[HeaderCarrier], any[ExecutionContext])
-      }
       "not be done (but return successfully) if there are no client details available" in {
         val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
         when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
@@ -160,7 +140,7 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         friendlyNameService.updateFriendlyName(invitation).futureValue shouldBe (()) // method response is still successful
 
         verify(esp, times(1))
-          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyName))(any[HeaderCarrier], any[ExecutionContext])
+          .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyNameEncoded))(any[HeaderCarrier], any[ExecutionContext])
       }
       "not cause the invitation acceptance to fail if the agent's group id cannot be retrieved" in {
         val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
