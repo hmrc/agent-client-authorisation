@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.{DateTime, LocalDate}
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
+import org.bson.types.ObjectId
 import play.api.libs.json._
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
-import uk.gov.hmrc.http.controllers.RestFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
+
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 
 sealed trait InvitationStatus {
 
@@ -89,26 +89,26 @@ object InvitationStatus {
   }
 }
 
-case class StatusChangeEvent(time: DateTime, status: InvitationStatus)
+case class StatusChangeEvent(time: LocalDateTime, status: InvitationStatus)
 
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = new Format[StatusChangeEvent] {
     override def reads(json: JsValue): JsResult[StatusChangeEvent] = {
-      val time = new DateTime((json \ "time").as[Long])
+      val time = Instant.ofEpochMilli((json \ "time").as[Long]).atZone(ZoneOffset.UTC).toLocalDateTime //.parse((json \ "time").as[Long])
       val status = InvitationStatus((json \ "status").as[String])
       JsSuccess(StatusChangeEvent(time, status))
     }
 
     override def writes(o: StatusChangeEvent): JsValue =
       Json.obj(
-        "time"   -> o.time.getMillis,
+        "time"   -> o.time.toInstant(ZoneOffset.UTC).toEpochMilli,
         "status" -> o.status.toString
       )
   }
 }
 
 case class Invitation(
-  id: BSONObjectID = BSONObjectID.generate(),
+  _id: ObjectId = ObjectId.get(),
   invitationId: InvitationId,
   arn: Arn,
   clientType: Option[String],
@@ -146,7 +146,7 @@ object Invitation {
     clientId: ClientId,
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
-    startDate: DateTime,
+    startDate: LocalDateTime,
     expiryDate: LocalDate,
     origin: Option[String]): Invitation =
     Invitation(
@@ -163,8 +163,9 @@ object Invitation {
       events = List(StatusChangeEvent(startDate, Pending))
     )
 
-  implicit val dateWrites = RestFormats.dateTimeWrite
-  implicit val dateReads = RestFormats.dateTimeRead
+  implicit val dateTimeFormats = MongoLocalDateTimeFormat.localDateTimeFormat
+  implicit val localDateFormats = MongoLocalDateTimeFormat.localDateFormat
+  implicit val oidFormat = MongoFormats.Implicits.objectIdFormat
 
   object external {
     implicit val writes: Writes[Invitation] = new Writes[Invitation] {
@@ -177,9 +178,9 @@ object Invitation {
           "arn"                  -> invitation.arn.value,
           "suppliedClientId"     -> invitation.suppliedClientId.value,
           "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
-          "created"              -> invitation.firstEvent().time,
-          "lastUpdated"          -> invitation.mostRecentEvent().time,
-          "expiryDate"           -> invitation.expiryDate,
+          "created"              -> invitation.firstEvent().time.format(DateTimeFormatter.ISO_DATE_TIME),
+          "lastUpdated"          -> invitation.mostRecentEvent().time.format(DateTimeFormatter.ISO_DATE_TIME),
+          "expiryDate"           -> invitation.expiryDate.format(DateTimeFormatter.ISO_DATE),
           "status"               -> invitation.status,
           "invitationId"         -> invitation.invitationId.value,
           "detailsForEmail"      -> invitation.detailsForEmail,
@@ -190,6 +191,19 @@ object Invitation {
         )
     }
   }
+
+  def toInvitationInfo(i: Invitation): InvitationInfo =
+    InvitationInfo(
+      i.invitationId,
+      i.expiryDate,
+      i.status,
+      i.arn,
+      i.service,
+      i.isRelationshipEnded,
+      i.relationshipEndedBy,
+      i.events,
+      (i.service == Service.MtdIt && i.suppliedClientId == i.clientId) || i.status == PartialAuth
+    )
 }
 
 /** Information provided by the agent to offer representation to HMRC */

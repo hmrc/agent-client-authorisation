@@ -17,17 +17,16 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 
+import com.google.inject.AbstractModule
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport, Awaiting => MongoAwaiting}
-
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.test.MongoSupport
 
 trait AppAndStubs
     extends StartAndStopWireMock with GuiceOneServerPerSuite with DataStreamStubs with MetricsTestSupport
@@ -41,6 +40,9 @@ trait AppAndStubs
 
   lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
+    .overrides(moduleWithOverrides)
+
+  protected def moduleWithOverrides = new AbstractModule {}
 
   protected def additionalConfiguration: Map[String, Any] =
     Map(
@@ -93,13 +95,14 @@ trait AppAndStubs
   def nextNino = generator.nextNino
 }
 
-trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongoBeforeTest with Matchers {
+trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
-  override implicit lazy val mongoConnectorForTest: MongoConnector =
-    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
-
-  lazy val db: InvitationsRepository = app.injector.instanceOf[InvitationsRepository]
+  override def moduleWithOverrides: AbstractModule = new AbstractModule {
+    override def configure: Unit = {
+      bind(classOf[MongoComponent]).toInstance(mongoComponent)
+    }
+  }
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)
@@ -107,15 +110,10 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSpecSupport with ResetMongo
 }
 
 trait ResetMongoBeforeTest extends BeforeAndAfterEach {
-  me: Suite with MongoSpecSupport =>
+  me: Suite with MongoSupport =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    dropMongoDb()
+    dropDatabase()
   }
-
-  def dropMongoDb()(implicit ec: ExecutionContext = scala.concurrent.ExecutionContext.global): Unit =
-    Awaiting.await(mongo().drop())
 }
-
-object Awaiting extends MongoAwaiting

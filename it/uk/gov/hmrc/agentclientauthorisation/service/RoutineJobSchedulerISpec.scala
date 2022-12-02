@@ -5,26 +5,27 @@ import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.{AgentClientInvitationEvent, AuditService}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord, SchedulerType}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, RemovePersonalInfo, ScheduleRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{EmailStub, MongoAppAndStubs, UnitSpec}
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Service}
 import uk.gov.hmrc.domain.Nino
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with UnitSpec with MongoAppAndStubs with EmailStub with IntegrationPatience {
+class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem"))
+  with UnitSpec with MongoAppAndStubs with EmailStub with IntegrationPatience {
 
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
@@ -52,9 +53,9 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       val testKit = ActorTestKit()
       val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository, invitationsService, repeatInterval = 60, altItsaExpiryEnable = true)))
 
-      val now = DateTime.now(DateTimeZone.UTC)
+      val now = LocalDateTime.now()
 
-      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
+      await(schedulerRepository.collection.insertOne(ScheduleRecord("uid", now.minusSeconds(2), RemovePersonalInfo)).toFuture())
 
       val pendingInvitation = Invitation.createNew(
         arn = Arn(arn),
@@ -80,7 +81,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
         origin = None
       )
 
-      await(Future sequence List(pendingInvitation, pastPeriodOfRemoval1).map(invitationsRepository.insert))
+      await(Future sequence List(pendingInvitation, pastPeriodOfRemoval1).map(invitationsRepository.collection.insertOne(_).toFuture()))
 
       await(invitationsRepository.findByInvitationId(pendingInvitation.invitationId)).head.detailsForEmail.isDefined shouldBe true
       await(invitationsRepository.findByInvitationId(pastPeriodOfRemoval1.invitationId)).head.detailsForEmail.isDefined shouldBe true
@@ -105,9 +106,9 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       val testKit = ActorTestKit()
       val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository, invitationsService, repeatInterval = 60, altItsaExpiryEnable = true)))
 
-      val now = DateTime.now(DateTimeZone.UTC)
+      val now = LocalDateTime.now()
 
-      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
+      await(schedulerRepository.collection.insertOne(ScheduleRecord("uid", now.minusSeconds(2), RemovePersonalInfo)).toFuture())
 
       val aboutToExpireInvitation1 = Invitation.createNew(
         arn = Arn(arn),
@@ -146,7 +147,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       )
 
       await(Future.sequence(List(aboutToExpireInvitation1, aboutToExpireInvitation2, aboutToExpireInvitation3)
-        .map(invitationsRepository.insert)))
+        .map(invitationsRepository.collection.insertOne(_).toFuture())))
 
       givenEmailSent(EmailInformation(
         to = Seq("name@example.com"),
@@ -188,9 +189,9 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       val testKit = ActorTestKit()
       val actorRef = system.actorOf(Props(new RoutineScheduledJobActor(schedulerRepository, invitationsService, repeatInterval = 60, altItsaExpiryEnable = true)))
 
-      val now = DateTime.now(DateTimeZone.UTC)
+      val now = LocalDateTime.now()
 
-      await(schedulerRepository.insert(ScheduleRecord("uid", now.minusSeconds(2), SchedulerType.RemovePersonalInfo)))
+      await(schedulerRepository.collection.insertOne(ScheduleRecord("uid", now.minusSeconds(2), RemovePersonalInfo)).toFuture())
 
       val partialAuthInvitation1 = Invitation.createNew(
         arn = Arn(arn),
@@ -229,7 +230,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem")) with U
       )
 
       await(Future.sequence(List(partialAuthInvitation1, partialAuthInvitation2, partialAuthInvitation3)
-        .map(invitationsRepository.insert)))
+        .map(invitationsRepository.collection.insertOne(_).toFuture())))
 
       await(invitationsRepository.update(partialAuthInvitation1, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 2)))
       await(invitationsRepository.update(partialAuthInvitation2, PartialAuth, now.minusDays(appConfig.altItsaExpiryDays + 7)))

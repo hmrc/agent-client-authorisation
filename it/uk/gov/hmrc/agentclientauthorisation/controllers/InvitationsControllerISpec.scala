@@ -17,17 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlPathEqualTo}
-import org.joda.time.{DateTime, LocalDate}
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
-import uk.gov.hmrc.agentclientauthorisation.support.{DesStubs, Http, MongoAppAndStubs, Resource}
+import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, Service}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import play.api.test.Helpers._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 
 class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with DesStubs {
 
@@ -47,12 +45,12 @@ class InvitationsControllerISpec extends UnitSpec with MongoAppAndStubs with Des
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now,
         None
       )
 
-      await(repo.insert(invitation))
+      await(repo.collection.insertOne(invitation).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/invitations/${invitation.invitationId.value}", port, http).get()

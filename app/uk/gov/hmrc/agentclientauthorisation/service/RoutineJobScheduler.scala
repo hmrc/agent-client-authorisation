@@ -17,16 +17,16 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.actor.{Actor, ActorSystem, Props}
-import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository, SchedulerType}
+import uk.gov.hmrc.agentclientauthorisation.repository.{RemovePersonalInfo, ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
+import java.time.{Instant, ZoneOffset}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 @Singleton
@@ -65,17 +65,17 @@ class RoutineScheduledJobActor(
       logger.info("RoutineJobSchedulerActor Received message: " + uid)
       logger.info(s"RoutineJobSchedulerActor: alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
       try {
-        scheduleRepository.read(SchedulerType.RemovePersonalInfo).flatMap {
+        scheduleRepository.read(RemovePersonalInfo).flatMap {
           case ScheduleRecord(recordUid, runAt, _) =>
-            val now = DateTime.now()
+            val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
             if (uid == recordUid) {
               val newUid = UUID.randomUUID().toString
               val nextRunAt = (if (runAt.isBefore(now)) now else runAt).plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
-              val delay = new Interval(now, nextRunAt).toPeriod(PeriodType.seconds()).getValue(0).seconds
+              val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
               scheduleRepository
-                .write(newUid, nextRunAt, SchedulerType.RemovePersonalInfo)
+                .write(newUid, nextRunAt, RemovePersonalInfo)
                 .map { _ =>
-                  context.system.scheduler.scheduleOnce(delay, self, newUid)
+                  context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
                   logger.info(s"Starting routine scheduled job, next job is scheduled at $nextRunAt")
                   logger.info(s"alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
                   logger.info(s"Out-of-date alt-ITSA invitations (if found) ${if (altItsaExpiryEnable) "WILL" else "will NOT"} be set to expired.")
@@ -87,7 +87,7 @@ class RoutineScheduledJobActor(
                 }
             } else { //There are several instances of this service running
               val dateTime = if (runAt.isBefore(now)) now else runAt
-              val intervalSeconds = new Interval(now, dateTime).toPeriod(PeriodType.seconds()).getValue(0)
+              val intervalSeconds = dateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
               val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
               context.system.scheduler.scheduleOnce(delay, self, recordUid)
               toFuture(())

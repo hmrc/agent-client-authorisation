@@ -16,21 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.joda.time.LocalDate
+import org.bson.types.ObjectId
 import play.api.libs.functional.syntax._
-import play.api.libs.json.JodaReads._
-import play.api.libs.json.JodaWrites._
 import play.api.libs.json._
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, MtdItIdType, NinoType, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
+
+import java.time.{LocalDate, ZoneOffset}
 
 object InvitationRecordFormat {
 
   def read(
-    id: BSONObjectID,
+    _id: ObjectId,
     invitationId: InvitationId,
     arn: Arn,
     clientType: Option[String],
@@ -54,7 +53,7 @@ object InvitationRecordFormat {
     }
 
     Invitation(
-      id,
+      _id,
       invitationId,
       arn,
       clientType,
@@ -71,15 +70,18 @@ object InvitationRecordFormat {
     )
   }
 
-  implicit val oidFormats = ReactiveMongoFormats.objectIdFormats
-
+  val invitationIdKey = "invitationId"
+  val arnKey = "arn"
+  val clientIdKey = "clientId"
   val arnClientStateKey = "_arnClientStateKey"
   val arnClientServiceStateKey = "_arnClientServiceStateKey"
   val statusKey = "_status"
   val createdKey = "_created"
   val detailsForEmailKey = "detailsForEmail"
 
-  val reads: Reads[Invitation] = ((JsPath \ "id").read[BSONObjectID] and
+  implicit val oidFormat = MongoFormats.Implicits.objectIdFormat
+
+  val reads: Reads[Invitation] = ((JsPath \ "_id").read[ObjectId] and
     (JsPath \ "invitationId").read[InvitationId] and
     (JsPath \ "arn").read[Arn] and
     (JsPath \ "clientType").readNullable[String] and
@@ -99,7 +101,7 @@ object InvitationRecordFormat {
   val writes = new Writes[Invitation] {
     def writes(invitation: Invitation) =
       Json.obj(
-        "id"                   -> invitation.id,
+        "_id"                  -> invitation._id,
         "invitationId"         -> invitation.invitationId,
         "arn"                  -> invitation.arn.value,
         "clientType"           -> invitation.clientType,
@@ -115,7 +117,7 @@ object InvitationRecordFormat {
         "clientActionUrl"      -> invitation.clientActionUrl,
         "expiryDate"           -> invitation.expiryDate,
         "origin"               -> invitation.origin,
-        createdKey             -> invitation.firstEvent().time.getMillis,
+        createdKey             -> invitation.firstEvent().time.toInstant(ZoneOffset.UTC).toEpochMilli,
         statusKey              -> invitation.mostRecentEvent().status.toString,
         arnClientStateKey -> Seq(
           toArnClientStateKey(
@@ -132,6 +134,8 @@ object InvitationRecordFormat {
         arnClientServiceStateKey -> createArnClientServiceStateKeys(invitation)
       )
   }
+
+  implicit val invitationFormat: Format[Invitation] = Format(reads, writes)
 
   def toArnClientStateKey(arn: String, clientIdType: String, clientIdValue: String, status: String): String =
     s"${arn.toLowerCase}~${clientIdType.toLowerCase}~${clientIdValue.toLowerCase.replaceAll(" ", "")}~${status.toLowerCase}"
@@ -153,8 +157,6 @@ object InvitationRecordFormat {
       status.map(_.toString.toLowerCase)
     ).collect { case Some(x) => x }
       .mkString("~")
-
-  val mongoFormat = ReactiveMongoFormats.mongoEntity(Format(reads, writes))
 
   private def variants[A, B, C, D, T](a: A, b: B, c: C, d: D)(fx: (Option[A], Option[B], Option[C], Option[D]) => T): Seq[T] =
     Seq(

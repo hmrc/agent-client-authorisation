@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.binders
 
-import org.joda.time.LocalDate
-import org.joda.time.format.ISODateTimeFormat
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 
+import java.time.LocalDate
 import scala.util.control.NonFatal
 
 object Binders {
@@ -57,7 +56,7 @@ object Binders {
       params.get(key).flatMap(_.headOption).map { param =>
         try {
           assert(param.length == 10)
-          Right(LocalDate.parse(param, ISODateTimeFormat.date()))
+          Right(LocalDate.parse(param))
         } catch {
           case NonFatal(e) => Left(e.getMessage)
         }

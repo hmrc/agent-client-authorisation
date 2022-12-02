@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.DateTime.now
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatus, StatusChangeEvent}
+
+import java.time.LocalDateTime
 
 trait TransitionInvitation {
   def transitionInvitation(invitation: Invitation, newStatus: InvitationStatus): Invitation =
-    invitation.copy(events = invitation.events :+ StatusChangeEvent(now(), newStatus))
+    invitation.copy(events = invitation.events :+ StatusChangeEvent(LocalDateTime.now(), newStatus))
 }

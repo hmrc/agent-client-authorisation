@@ -16,29 +16,34 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.DateTime.parse
 import play.api.libs.json.Json.toJson
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.external._
-import uk.gov.hmrc.agentclientauthorisation.support.TestConstants
+import uk.gov.hmrc.agentclientauthorisation.support.{TestConstants, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+
+import java.time.LocalDateTime
 
 class InvitationSpec extends UnitSpec {
   "Dates in the serialised JSON" should {
     "be in ISO8601 format" in {
-      val created = "2010-01-01T01:00:23.456Z"
-      val lastUpdated = "2010-01-02T04:00:23.456Z"
+      val created = "2010-01-01T01:00:23.456"
+      val lastUpdated = "2010-01-02T04:00:23.456"
+
+      val createdDateTime = LocalDateTime.parse(created)
+      val lastUpdatedDateTime = LocalDateTime.parse(lastUpdated)
 
       val invitation = TestConstants.defaultInvitation.copy(
         invitationId = InvitationId("ABBBBBBBBBBCC"),
         arn = Arn("myAgency"),
         service = Service.MtdIt,
-        events = List(StatusChangeEvent(parse(created), Pending), StatusChangeEvent(parse(lastUpdated), Accepted))
+        events = List(StatusChangeEvent(createdDateTime, Pending), StatusChangeEvent(lastUpdatedDateTime, Accepted))
       )
       val json = toJson(invitation)
 
-      (json \ "created").as[String] shouldBe created
-      (json \ "lastUpdated").as[String] shouldBe lastUpdated
+      implicit val format = MongoLocalDateTimeFormat.localDateTimeFormat
+
+      (json \ "created").as[LocalDateTime] shouldBe createdDateTime
+      (json \ "lastUpdated").as[LocalDateTime] shouldBe lastUpdatedDateTime
     }
   }
 }

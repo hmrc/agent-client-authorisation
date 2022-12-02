@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
@@ -40,6 +39,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAu
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -78,7 +78,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
+      when(mockAgentReferenceRepository.findBy(any(): String))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
       val result = agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest())
@@ -88,7 +88,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
     }
 
     "return none when the record is not found" in {
-      when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
+      when(mockAgentReferenceRepository.findBy(any(): String))
         .thenReturn(Future.successful(None))
 
       val result = agentReferenceController.getAgentReferenceRecord("ABCDEFGH")(FakeRequest())
@@ -97,7 +97,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
     }
 
     "return failure when unable to fetch record from mongo" in {
-      when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
+      when(mockAgentReferenceRepository.findBy(any(): String))
         .thenReturn(Future.failed(new Exception("Error")))
 
       an[Exception] shouldBe thrownBy {
@@ -122,7 +122,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               Option(model.AgencyDetails(Some("anne-mari"), Some("email"), Some(businessAddress))),
               Some(SuspensionDetails(suspensionStatus = false, None))))))
 
-      when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
+      when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
       val result = agentReferenceController.getAgentReferenceRecordByArn(arn)(FakeRequest())
@@ -146,7 +146,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
           val expiryDate = LocalDate.now()
-          val eventTime = DateTime.now()
+          val eventTime = LocalDateTime.now()
 
           val invitationIdAndExpiryDate1 =
             InvitationInfo(
@@ -182,7 +182,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           val listOfInvitations =
             List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
 
-          when(mockAgentReferenceRepository.findBy(any(): String)(any(): ExecutionContext))
+          when(mockAgentReferenceRepository.findBy(any(): String))
             .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
           when(
@@ -214,7 +214,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             Service.Vat,
             false,
             None,
-            List(StatusChangeEvent(DateTime.now(), Pending)))
+            List(StatusChangeEvent(LocalDateTime.now(), Pending)))
 
         val listOfInvitations = List(invitationIdAndExpiryDate3)
 
@@ -224,7 +224,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             any[ExecutionContext]))
           .thenReturn(Future successful listOfInvitations)
 
-        when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
+        when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
         val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
@@ -237,7 +237,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       "no agent-reference-record is found for authorised user: Individual" in {
         clientAuthStub(clientMtdIrvVatEnrolmentsIndividual)
 
-        when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
+        when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(None))
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
@@ -248,7 +248,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       "no agent-reference-record is found for authorised user: Organisation" in {
         clientAuthStub(clientVatEnrolmentsOrganisation)
 
-        when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
+        when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(None))
 
         val result = await(agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest()))
@@ -268,7 +268,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
-        when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
+        when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
         val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
@@ -289,7 +289,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             any[ExecutionContext]))
           .thenReturn(Future successful List.empty)
 
-        when(mockAgentReferenceRepository.findBy(any[String])(any[ExecutionContext]))
+        when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
         val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())

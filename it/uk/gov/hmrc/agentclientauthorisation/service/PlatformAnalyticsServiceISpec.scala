@@ -1,27 +1,43 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import akka.actor.ActorSystem
-import org.joda.time.DateTime
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
-import uk.gov.hmrc.agentclientauthorisation.support.{MongoApp, MongoAppAndStubs, PlatformAnalyticsStubs, TestDataSupport}
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, StartAndStopWireMock, TestDataSupport, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItIdType
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with MongoApp with PlatformAnalyticsStubs with GuiceOneServerPerSuite with TestDataSupport {
+class PlatformAnalyticsServiceISpec extends UnitSpec with PlatformAnalyticsStubs with GuiceOneServerPerSuite with TestDataSupport
+   with StartAndStopWireMock with CleanMongoCollectionSupport {
 
-  private lazy val invitationsRepo =
-    app.injector.instanceOf[InvitationsRepositoryImpl]
+  def commonStubs() = {}
+
+  implicit override lazy val app = new GuiceApplicationBuilder()
+    .configure(
+      "mongodb.uri" -> mongoUri,
+      "microservice.services.platform-analytics.port" -> wiremockPort
+    )
+    .build()
+
+  private val invitationsRepo =
+    new InvitationsRepositoryImpl(mongoComponent)
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+
+  }
 
   override implicit val patienceConfig = PatienceConfig(scaled(Span(10, Seconds)), scaled(Span(500, Millis)))
 
@@ -44,11 +60,12 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
   private def expireInvitations(i:List[Invitation], recently: Boolean): List[String] = {
     Future.sequence(i.map(
       x => invitationsRepo.update(
-        x,Expired, if(recently) now.minusMillis(500) else now.minusDays(1))
+        x,Expired, if(recently) Instant.now().minusMillis(500).atZone(ZoneOffset.UTC).toLocalDateTime
+        else now.minusDays(1))
         .map(_.invitationId.value))).futureValue
   }
 
-  val now = DateTime.now()
+  val now = LocalDateTime.now()
 
   val itsaClient2 = TestClient(personal, "Trade Apples", MtdIt, MtdItIdType, "MTDITID", mtdItId2, nino2, mtdItId)
   val itsaClient3 = TestClient(personal, "Trade Bananas", MtdIt, MtdItIdType, "MTDITID", mtdItId3, nino3, mtdItId2)
@@ -82,11 +99,12 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
     testClients.foreach(client => await(createInvitation(client)))
   }
 
-  "PlatFormAnalyticsService" should {
+  "PlatformAnalyticsService" should {
 
     "find invitations that may have expired only since the last update scheduler and send" in new TestSetup {
 
-      val all = await(invitationsRepo.findAll())
+      val all = await(invitationsRepo.collection.find().toFuture()).toList
+
       expireInvitations(all.take(1), false)
       val _ = expireInvitations(all.drop(1), true)
 
@@ -98,14 +116,14 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with MongoAppAndStubs with 
 
       result shouldBe (())
 
-      verifyAnalyticsRequestSent(3)
+      verifyAnalyticsRequestSent(1)
 
     }
   }
 
   "not find any invitations if they expired before the last update scheduler run" in new TestSetup {
 
-    val all = await(invitationsRepo.findAll())
+    val all = await(invitationsRepo.collection.find().toFuture()).toList
     expireInvitations(all, false)
 
     val result = await(service.reportExpiredInvitations())

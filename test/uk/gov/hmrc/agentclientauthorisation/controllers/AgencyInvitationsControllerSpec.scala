@@ -18,8 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.actor.ActorSystem
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -48,6 +46,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -182,7 +181,7 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentAffinityAndEnrolments)
 
       val inviteCreated = TestConstants.defaultInvitation
-        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+        .copy(_id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
       when(postcodeService.postCodeMatches(any[String](), any[String]())(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(().toFuture)
@@ -234,10 +233,10 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentAffinityAndEnrolments)
 
       val inviteCreated = TestConstants.defaultInvitation
-        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+        .copy(_id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
       val cancelledInvite =
-        inviteCreated.copy(events = List(StatusChangeEvent(DateTime.now(), Pending), StatusChangeEvent(DateTime.now(), Cancelled)))
+        inviteCreated.copy(events = List(StatusChangeEvent(LocalDateTime.now(), Pending), StatusChangeEvent(LocalDateTime.now(), Cancelled)))
 
       when(
         invitationsService
@@ -255,7 +254,7 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentAffinityAndEnrolments)
 
       val inviteCreated = TestConstants.defaultInvitation
-        .copy(id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+        .copy(_id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
 
       when(
         invitationsService
@@ -455,9 +454,9 @@ class AgencyInvitationsControllerSpec
   }
 
   "checkKnownFactIrv" should {
-    val format = DateTimeFormat.forPattern("ddMMyyyy")
+    //val format = DateTimeFormat.forPattern("ddMMyyyy")
     val nino = Nino("AB123456A")
-    val suppliedDateOfBirth = LocalDate.parse("03022001", format)
+    val suppliedDateOfBirth = LocalDate.parse("2001-02-03")
 
     "return No Content if Nino is known in citizen details and the dateOfBirth matched" in {
       agentAuthStub(agentAffinityAndEnrolments)

@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
-import org.joda.time.LocalDate
 import play.api.libs.json._
-import play.api.libs.json.JodaReads
+
+import java.time.LocalDate
 
 case class PptSubscription(customerName: String, dateOfApplication: LocalDate, deregistrationDate: Option[LocalDate])
 
 object PptSubscription {
-
-  implicit val jodaReads = JodaReads.DefaultJodaLocalDateReads
 
   implicit def reads(json: JsValue): JsResult[PptSubscription] = {
     val dateOfApplication = (json \ "legalEntityDetails" \ "dateOfApplication").as[LocalDate]

@@ -68,7 +68,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
     "return a link when agent reference record already exists" in {
       val agentReferenceRecord = AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("obi-wan"))
 
-      when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext]))
+      when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future successful Some(agentReferenceRecord))
       when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
@@ -76,7 +76,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
             Some(AgentDetailsDesResponse(
               Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
               Some(SuspensionDetails(suspensionStatus = false, None))))))
-      when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee"))(any[ExecutionContext]))
+      when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
         .thenReturn(Future.successful(()))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
@@ -85,9 +85,9 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
     }
 
     "create new agent reference record and return a link" in {
-      when(mockAgentReferenceRepository.findByArn(any[Arn])(any[ExecutionContext])).thenReturn(Future successful None)
-      when(mockAgentReferenceRepository.create(any[AgentReferenceRecord])(any[ExecutionContext]))
-        .thenReturn(Future successful 1)
+      when(mockAgentReferenceRepository.findByArn(any[Arn])).thenReturn(Future successful None)
+      when(mockAgentReferenceRepository.create(any[AgentReferenceRecord]))
+        .thenReturn(Future successful Some("id"))
       when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(

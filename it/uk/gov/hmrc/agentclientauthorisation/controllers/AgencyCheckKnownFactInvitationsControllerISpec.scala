@@ -17,13 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.LocalDate
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.LocalDate
 
 class AgencyCheckKnownFactInvitationsControllerISpec extends BaseISpec {
 

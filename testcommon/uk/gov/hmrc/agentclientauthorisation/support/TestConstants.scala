@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Generator, Nino}
+
+import java.time.{LocalDate, LocalDateTime}
 
 object TestConstants {
   val mtdItId1: MtdItId = MtdItId("mtdItId")
@@ -58,6 +59,6 @@ object TestConstants {
     expiryDate = LocalDate.now().plusDays(14),
     detailsForEmail = None,
     clientActionUrl = None,
-    events = List(StatusChangeEvent(DateTime.now(), Pending))
+    events = List(StatusChangeEvent(LocalDateTime.now(), Pending))
   )
 }

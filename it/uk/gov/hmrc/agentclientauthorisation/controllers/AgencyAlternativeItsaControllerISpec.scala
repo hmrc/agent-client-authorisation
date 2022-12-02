@@ -1,7 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
@@ -10,7 +9,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.Future
 
 class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
@@ -41,7 +40,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -60,7 +59,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -82,7 +81,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -104,7 +103,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -117,7 +116,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -140,11 +139,11 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
-      await(invitationsRepo.update(altItsaPending, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
@@ -167,11 +166,11 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
-      await(invitationsRepo.update(altItsaPending, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
@@ -194,11 +193,11 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
-      await(invitationsRepo.update(altItsaPending, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
@@ -226,7 +225,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -245,7 +244,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -267,7 +266,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -280,7 +279,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -304,7 +303,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -317,7 +316,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -340,7 +339,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -353,7 +352,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -366,7 +365,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -391,7 +390,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -404,7 +403,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -417,13 +416,13 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
 
-      await(invitationsRepo.update(altItsaPending1, PartialAuth, DateTime.now()))
-      await(invitationsRepo.update(altItsaPending2, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending1, PartialAuth, LocalDateTime.now()))
+      await(invitationsRepo.update(altItsaPending2, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenMtdItIdIsKnownFor(nino2, mtdItId2)
@@ -460,12 +459,12 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
 
-      await(invitationsRepo.update(altItsaPending1, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending1, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
@@ -491,7 +490,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -504,7 +503,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId2,
           nino2,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -517,14 +516,14 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId3,
           nino3,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now().plusDays(21),
           None)
       )
 
-      await(invitationsRepo.update(altItsaPending1, PartialAuth, DateTime.now()))
-      await(invitationsRepo.update(altItsaPending2, PartialAuth, DateTime.now()))
-      await(invitationsRepo.update(altItsaPending3, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaPending1, PartialAuth, LocalDateTime.now()))
+      await(invitationsRepo.update(altItsaPending2, PartialAuth, LocalDateTime.now()))
+      await(invitationsRepo.update(altItsaPending3, PartialAuth, LocalDateTime.now()))
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenMtdItIdIsKnownFor(nino2, mtdItId2)
@@ -566,7 +565,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
       s"return 204 when a PartialAuth invitation is successfully cancelled" in {
 
         val pending: Invitation = await(createInvitation(arn, altItsaClient))
-        val partialAuth: Invitation = await(invitationsRepo.update(pending, PartialAuth, DateTime.now()))
+        val partialAuth: Invitation = await(invitationsRepo.update(pending, PartialAuth, LocalDateTime.now()))
 
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
@@ -581,11 +580,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
         val invitationStatus = contentAsJson(updatedInvitation).as[TestHalResponseInvitation].status
 
         invitationStatus shouldBe DeAuthorised.toString
-
-        val event = Event("authorisation request", "deauthorised", altItsaClient.service.id.toLowerCase,
-          Seq(DimensionValue(7, altItsaClient.clientType.getOrElse("personal")), DimensionValue(8, partialAuth.invitationId.value), DimensionValue(9, "unknown"), DimensionValue(11, "true")))
-
-        verifySingleEventAnalyticsRequestSent(List(event))
       }
 
 
@@ -612,7 +606,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime,
       LocalDate.now().plusDays(21),
       None)
   }

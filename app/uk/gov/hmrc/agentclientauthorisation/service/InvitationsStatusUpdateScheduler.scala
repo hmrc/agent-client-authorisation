@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import javax.inject.{Inject, Singleton}
-import org.joda.time.{DateTime, Interval, PeriodType}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.repository.{ScheduleRecord, ScheduleRepository, SchedulerType}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationExpired, ScheduleRecord, ScheduleRepository}
 import uk.gov.hmrc.agentclientauthorisation.util.toFuture
 
+import java.time.{Instant, ZoneOffset}
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Random
@@ -72,27 +71,27 @@ class TaskActor(
 
   def receive = {
     case uid: String =>
-      scheduleRepository.read(SchedulerType.InvitationExpired).flatMap {
+      scheduleRepository.read(InvitationExpired).flatMap {
         case ScheduleRecord(recordUid, runAt, _) =>
-          val now = DateTime.now()
+          val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
           if (uid == recordUid) {
             val newUid = UUID.randomUUID().toString
             val nextRunAt = (if (runAt.isBefore(now)) now else runAt)
               .plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
-            val delay = new Interval(now, nextRunAt).toPeriod(PeriodType.seconds()).getValue(0).seconds
+            val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
             scheduleRepository
-              .write(newUid, nextRunAt, SchedulerType.InvitationExpired)
+              .write(newUid, nextRunAt, InvitationExpired)
               .map(_ => {
-                context.system.scheduler.scheduleOnce(delay, self, newUid)
+                context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
                 Logger(getClass).info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
                 invitationsService
                   .findAndUpdateExpiredInvitations()
                   .map(_ => analyticsService.reportExpiredInvitations())
               })
           } else {
-            val dateTime = if (runAt.isBefore(now)) now else runAt
-            val delay =
-              (new Interval(now, dateTime).toPeriod(PeriodType.seconds()).getValue(0) + Random.nextInt(Math.min(60, repeatInterval))).seconds
+            val localDateTime = if (runAt.isBefore(now)) now else runAt
+            val intervalSeconds = localDateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
+            val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
             context.system.scheduler.scheduleOnce(delay, self, recordUid)
             toFuture(())
           }

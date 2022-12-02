@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import org.joda.time.LocalDate
+import java.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.model.{VatDetails, VatKnownFactCheckResult}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult._

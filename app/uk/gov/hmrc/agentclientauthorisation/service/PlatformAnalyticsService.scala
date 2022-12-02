@@ -41,7 +41,7 @@ class PlatformAnalyticsService @Inject()(
   actorSystem: ActorSystem) {
 
   private val interval = appConfig.invitationUpdateStatusInterval
-  private val expiredWithin = interval.seconds.toMillis
+  private val expiredWithin: Long = interval.seconds.toMillis
   private val batchSize = appConfig.gaBatchSize
   private val trackingId = appConfig.gaTrackingId
   private val clientTypeIndex = appConfig.gaClientTypeIndex

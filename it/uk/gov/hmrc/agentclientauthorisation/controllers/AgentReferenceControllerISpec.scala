@@ -1,22 +1,33 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import com.google.inject.AbstractModule
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class AgentReferenceControllerISpec extends BaseISpec {
 
-  lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  val agentReferenceRepo: MongoAgentReferenceRepository = new MongoAgentReferenceRepository(mongoComponent)
+  val invitationsRepo: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mongoComponent)
+
+  override def moduleWithOverrides: AbstractModule = new AbstractModule{
+    override def configure: Unit = {
+      bind(classOf[MongoAgentReferenceRepository]).toInstance(agentReferenceRepo)
+      bind(classOf[InvitationsRepositoryImpl]).toInstance(invitationsRepo)
+    }
+  }                                              //app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   implicit val mat = app.injector.instanceOf[Materializer]
+
+  override implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer XYZ")))
 
   lazy val controller: AgentReferenceController = app.injector.instanceOf[AgentReferenceController]
 
@@ -44,7 +55,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }
@@ -64,7 +75,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      await(agentReferenceRepo.insert(agentReferenceRecord))
+      await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       val response = controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-MTD-VAT", "HMRC-MTD-IT"))
 
@@ -78,7 +89,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      await(agentReferenceRepo.insert(agentReferenceRecord))
+      await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       val response = controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
 
@@ -90,12 +101,12 @@ class AgentReferenceControllerISpec extends BaseISpec {
     "the service is HMRC-MTD-IT and there are ALT-ITSA invitations make updates if client has MTDITID enrolment and return updated list" in {
 
       val altItsaInvitation = await(createInvitation(arn, altItsaClient))
-     await(invitationsRepo.update(altItsaInvitation, PartialAuth, DateTime.now()))
+     await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
 
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      await(agentReferenceRepo.insert(agentReferenceRecord))
+      await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
 
@@ -114,12 +125,12 @@ class AgentReferenceControllerISpec extends BaseISpec {
     "the service is HMRC-MTD-IT and there are ALT-ITSA invitations to update but create relationship fails" in {
 
       val altItsaInvitation = await(createInvitation(arn, altItsaClient))
-      await(invitationsRepo.update(altItsaInvitation, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
 
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
-      await(agentReferenceRepo.insert(agentReferenceRecord))
+      await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
 

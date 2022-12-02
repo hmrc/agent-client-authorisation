@@ -61,7 +61,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       AgentClientInvitationEvent.AgentClientInvitationResponse,
       "Client responded to agent invitation",
       Seq(
-        "invitationId"         -> invitation.id.stringify,
+        "invitationId"         -> invitation._id.toString,
         "agentReferenceNumber" -> invitation.arn.value,
         "clientIdType"         -> clientIdentifierType(invitation.clientId),
         "clientId"             -> invitation.clientId,

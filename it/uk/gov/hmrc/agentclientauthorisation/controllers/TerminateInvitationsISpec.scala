@@ -1,11 +1,9 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import java.nio.charset.StandardCharsets.UTF_8
-import java.util.Base64
 import akka.stream.Materializer
 import com.kenshoo.play.metrics.Metrics
 import org.apache.commons.lang3.RandomStringUtils
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import org.mongodb.scala.model.Filters
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.ControllerComponents
@@ -22,6 +20,9 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderNames
 
+import java.nio.charset.StandardCharsets.UTF_8
+import java.time.{LocalDate, LocalDateTime}
+import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -30,7 +31,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   implicit val mat = app.injector.instanceOf[Materializer]
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val invitationsRepo: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mongoComponent)
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
   val appConfig = app.injector.instanceOf(classOf[AppConfig])
@@ -80,7 +81,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }
@@ -111,17 +112,17 @@ class TerminateInvitationsISpec extends BaseISpec {
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
-      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 7
-      await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 1
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe 7
+      await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 1
 
       val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
 
       status(response) shouldBe 200
       contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
-      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(invitationsRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 7
-      await(agentReferenceRepo.count(Json.obj("arn" -> arn2.value))) shouldBe 1
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe 0
+      await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 0
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn2))).size shouldBe 7
+      await(agentReferenceRepo.collection.find(Filters.equal("arn", arn2.value)).toFuture()).toList.size shouldBe 1
     }
 
     "return 200 no invitations and references to remove" in {
@@ -131,8 +132,8 @@ class TerminateInvitationsISpec extends BaseISpec {
 
       contentAsJson(response).as[JsObject] shouldBe jsonNoDeletedRecords
 
-      await(invitationsRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
-      await(agentReferenceRepo.count(Json.obj("arn" -> arn.value))) shouldBe 0
+      await(invitationsRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 0
+      await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 0
     }
 
     "return 400 for invalid arn" in {

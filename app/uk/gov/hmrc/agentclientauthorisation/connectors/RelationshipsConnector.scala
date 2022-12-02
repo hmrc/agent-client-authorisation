@@ -20,7 +20,6 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 
 import javax.inject._
-import org.joda.time.DateTime
 import play.api.Logging
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
@@ -33,6 +32,7 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -40,8 +40,6 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     extends HttpAPIMonitor with HttpErrorFunctions with Logging {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
-
-  private val ISO_LOCAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
 
   private val baseUrl: String = appConfig.relationshipsBaseUrl
   private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
@@ -69,8 +67,8 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         .handleNon2xx(s"unexpected error during 'createMtdVatRelationship'")
     }
 
-  def createAfiRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
-    val body = Json.obj("startDate" -> acceptedDate.toString(ISO_LOCAL_DATE_TIME_FORMAT))
+  def createAfiRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+    val body = Json.obj("startDate" -> acceptedDate.toString)
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
       http
         .PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body)

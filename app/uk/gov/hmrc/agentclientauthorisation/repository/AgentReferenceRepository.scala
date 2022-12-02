@@ -17,19 +17,18 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.google.inject.ImplementedBy
-import javax.inject._
-import play.api.Logger
-import play.api.libs.json.Json.toJsFieldJsValueWrapper
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.Updates.addToSet
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import play.api.Logging
 import play.api.libs.json._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.BSONObjectID
-import reactivemongo.play.json.ImplicitBSONHandlers
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord.formats
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
+import javax.inject._
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,54 +44,51 @@ object AgentReferenceRecord {
 
 @ImplementedBy(classOf[MongoAgentReferenceRepository])
 trait AgentReferenceRepository {
-  def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int]
-  def findBy(uid: String)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
-  def findByArn(arn: Arn)(implicit ec: ExecutionContext): Future[Option[AgentReferenceRecord]]
-  def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit]
-  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int]
+  def create(agentReferenceRecord: AgentReferenceRecord): Future[Option[String]]
+  def findBy(uid: String): Future[Option[AgentReferenceRecord]]
+  def findByArn(arn: Arn): Future[Option[AgentReferenceRecord]]
+  def updateAgentName(uid: String, newAgentName: String): Future[Unit]
+  def removeAgentReferencesForGiven(arn: Arn): Future[Int]
 }
 
 @Singleton
-class MongoAgentReferenceRepository @Inject()(mongo: ReactiveMongoComponent)
-    extends ReactiveRepository[AgentReferenceRecord, BSONObjectID](
-      "agent-reference",
-      mongo.mongoConnector.db,
-      formats,
-      ReactiveMongoFormats.objectIdFormats) with AgentReferenceRepository with StrictlyEnsureIndexes[AgentReferenceRecord, BSONObjectID] {
+class MongoAgentReferenceRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[AgentReferenceRecord](
+      mongoComponent = mongo,
+      collectionName = "agent-reference",
+      domainFormat = formats,
+      indexes = Seq(
+        IndexModel(ascending("uid"), IndexOptions().unique(true)),
+        IndexModel(ascending("arn"), IndexOptions().unique(true))
+      )
+    ) with AgentReferenceRepository with Logging {
 
-  override def indexes: Seq[Index] =
-    Seq(
-      Index(Seq("uid" -> IndexType.Ascending), unique = true),
-      Index(Seq("arn" -> IndexType.Ascending), unique = true)
-    )
-
-  def create(agentReferenceRecord: AgentReferenceRecord)(implicit ec: ExecutionContext): Future[Int] =
-    insert(agentReferenceRecord).map { result =>
-      result.writeErrors.foreach(error => Logger(getClass).warn(s"Creating MultiInvitationRecord failed: ${error.errmsg}"))
-      result.n
-    }
-
-  def findBy(uid: String)(implicit ex: ExecutionContext): Future[Option[AgentReferenceRecord]] =
-    find(
-      "uid" -> uid
-    ).map(_.headOption)
-
-  def findByArn(arn: Arn)(implicit ex: ExecutionContext): Future[Option[AgentReferenceRecord]] =
-    find(
-      "arn" -> arn.value
-    ).map(_.headOption)
-
-  import ImplicitBSONHandlers._
-
-  def updateAgentName(uid: String, newAgentName: String)(implicit ex: ExecutionContext): Future[Unit] =
+  override def create(agentReferenceRecord: AgentReferenceRecord): Future[Option[String]] =
     collection
-      .update(ordered = false)
-      .one(Json.obj("uid" -> uid), Json.obj("$addToSet" -> Json.obj("normalisedAgentNames" -> newAgentName)))
-      .map(_ => ())
+      .insertOne(agentReferenceRecord)
+      .headOption()
+      .map(_.map(_.getInsertedId.asObjectId().getValue.toString))
 
-  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int] = {
-    val query = Json.obj("arn" -> arn.value)
-    collection.delete().one(query).map(_.n)
-  }
+  override def findBy(uid: String): Future[Option[AgentReferenceRecord]] =
+    collection
+      .find(equal("uid", uid))
+      .headOption()
+
+  override def findByArn(arn: Arn): Future[Option[AgentReferenceRecord]] =
+    collection
+      .find(equal("arn", arn.value))
+      .headOption()
+
+  override def updateAgentName(uid: String, newAgentName: String): Future[Unit] =
+    collection
+      .updateOne(equal("uid", uid), addToSet("normalisedAgentNames", newAgentName))
+      .toFuture()
+      .map(uor => logger.info(s"Matched: ${uor.getMatchedCount}; Updated: ${uor.getModifiedCount}"))
+
+  override def removeAgentReferencesForGiven(arn: Arn): Future[Int] =
+    collection
+      .deleteOne(equal("arn", arn.value))
+      .toFuture()
+      .map(r => r.getDeletedCount.toInt)
 
 }
