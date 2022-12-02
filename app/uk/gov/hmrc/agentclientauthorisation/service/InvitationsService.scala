@@ -311,7 +311,6 @@ class InvitationsService @Inject()(
     if (invitation.events.isEmpty) 0
     else
       currentTime().toEpochSecond(ZoneOffset.UTC) - invitation.firstEvent().time.toEpochSecond(ZoneOffset.UTC)
-  //System.currentTimeMillis() - invitation.firstEvent().time
 
   def removePersonalDetails(): Future[Unit] = {
     val infoRemovalDate =

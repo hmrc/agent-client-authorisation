@@ -94,7 +94,7 @@ case class StatusChangeEvent(time: LocalDateTime, status: InvitationStatus)
 object StatusChangeEvent {
   implicit val statusChangeEventFormat = new Format[StatusChangeEvent] {
     override def reads(json: JsValue): JsResult[StatusChangeEvent] = {
-      val time = Instant.ofEpochMilli((json \ "time").as[Long]).atZone(ZoneOffset.UTC).toLocalDateTime //.parse((json \ "time").as[Long])
+      val time = Instant.ofEpochMilli((json \ "time").as[Long]).atZone(ZoneOffset.UTC).toLocalDateTime
       val status = InvitationStatus((json \ "status").as[String])
       JsSuccess(StatusChangeEvent(time, status))
     }
