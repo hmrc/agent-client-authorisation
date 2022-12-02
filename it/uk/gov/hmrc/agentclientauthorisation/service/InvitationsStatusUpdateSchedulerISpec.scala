@@ -4,9 +4,9 @@ import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import com.kenshoo.play.metrics.Metrics
-import org.scalatest.concurrent.Eventually.eventually
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers._
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
@@ -23,7 +23,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 class InvitationsStatusUpdateSchedulerISpec
-    extends TestKit(ActorSystem("testSystem")) with UnitSpec with CleanMongoCollectionSupport {
+    extends TestKit(ActorSystem("testSystem")) with UnitSpec with Eventually with IntegrationPatience with CleanMongoCollectionSupport {
 
   implicit lazy val app = new GuiceApplicationBuilder()
     .configure("mongodb.uri" -> mongoUri,
