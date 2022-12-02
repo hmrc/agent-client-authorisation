@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
@@ -27,7 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, Tes
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
@@ -56,7 +55,7 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }

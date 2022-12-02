@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import akka.Done
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
@@ -33,6 +32,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
 import scala.collection.Seq
 import scala.concurrent.Future.successful
@@ -73,7 +73,7 @@ class InvitationsService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
-    val expiryDate = startDate.plus(invitationExpiryDuration.toMillis).toLocalDate
+    val expiryDate = startDate.plusSeconds(invitationExpiryDuration.toSeconds).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
       for {
         detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
@@ -81,7 +81,7 @@ class InvitationsService @Inject()(
                        .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
         _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
       } yield {
-        logger.info(s"""Created invitation with id: "${invitation.id.stringify}".""")
+        logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
         invitation
       }
     }
@@ -134,7 +134,7 @@ class InvitationsService @Inject()(
     changeInvitationStatus(invitation, model.Accepted, acceptedDate)
   }
 
-  private def createRelationship(invitation: Invitation, acceptedDate: DateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
+  private def createRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
       case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
@@ -167,8 +167,7 @@ class InvitationsService @Inject()(
       case _ => findInvitationsInfoBy(arn, clientIds, status)
     }
 
-  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
+  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus]): Future[List[InvitationInfo]] =
     invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
 
   def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
@@ -185,7 +184,7 @@ class InvitationsService @Inject()(
       for {
         updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
       } yield {
-        logger info s"""Invitation with id: "${invitation.id.stringify}" has been flagged as isRelationshipEnded = true"""
+        logger info s"""Invitation with id: "${invitation._id.toString}" has been flagged as isRelationshipEnded = true"""
         updatedInvitation
       }
     }
@@ -274,7 +273,7 @@ class InvitationsService @Inject()(
     monitor(s"Repository-Find-And-Update-Expired-Invitations") {
       invitationsRepository
         .findInvitationsBy(status = Some(Pending))
-        .map(invs => invs.filter(_.expiryDate.isBefore(LocalDate.now())))
+        .map(invs => invs.filter(_.expiryDate.isBefore(Instant.now().atZone(ZoneOffset.UTC).toLocalDate)))
         .flatMap { invitations =>
           val result = invitations.map(updateToExpiredAndSendEmail)
           Future.sequence(result).map(_ => ())
@@ -283,18 +282,18 @@ class InvitationsService @Inject()(
 
   private def updateToExpiredAndSendEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] =
     invitationsRepository
-      .update(invitation, Expired, DateTime.now())
+      .update(invitation, Expired, currentTime())
       .flatMap(invitation => {
         logger.info(s"invitation expired id:${invitation.invitationId.value}")
         emailService.sendExpiredEmail(invitation)
       })
 
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: DateTime = currentTime())(
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: LocalDateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
     if (invitation.status == Pending || invitation.status == PartialAuth) {
       monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
-          logger info s"""Invitation with id: "${invitation.id.stringify}" has been $status"""
+          logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
           invitation
         }
       }
@@ -306,19 +305,20 @@ class InvitationsService @Inject()(
       s"The invitation cannot be transitioned to $toStatus because its current status is ${invitation.status}."
     )
 
-  private def currentTime() = DateTime.now(DateTimeZone.UTC)
+  private def currentTime() = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
 
   private def durationOf(invitation: Invitation): Long =
     if (invitation.events.isEmpty) 0
     else
-      System.currentTimeMillis() - invitation.firstEvent().time.getMillis
+      currentTime().toEpochSecond(ZoneOffset.UTC) - invitation.firstEvent().time.toEpochSecond(ZoneOffset.UTC)
 
-  def removePersonalDetails()(implicit ec: ExecutionContext): Future[Unit] = {
-    val infoRemovalDate = DateTime.now().minusSeconds(appConfig.removePersonalInfoExpiryDuration.toSeconds.toInt)
+  def removePersonalDetails(): Future[Unit] = {
+    val infoRemovalDate =
+      Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime.minusSeconds(appConfig.removePersonalInfoExpiryDuration.toSeconds.toInt)
     invitationsRepository.removePersonalDetails(infoRemovalDate)
   }
 
-  def removeAllInvitationsForAgent(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
+  def removeAllInvitationsForAgent(arn: Arn): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
 
   def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] =
@@ -342,7 +342,7 @@ class InvitationsService @Inject()(
       implicit val hc = HeaderCarrier()
       for {
         partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
-        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(DateTime.now(DateTimeZone.UTC)))
+        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(currentTime()))
         _ = Future sequence expired.map(invitation => {
 
           setRelationshipEnded(invitation, "HMRC").transformWith {
@@ -372,7 +372,7 @@ class InvitationsService @Inject()(
       .flatMap(maybeUpdated => Future sequence maybeUpdated.flatten.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
 
   def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit ec: ExecutionContext) = {
-    implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isAfter _)
+    implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isAfter _)
     findInvitationsBy(
       arn = Some(arn),
       services = service,
@@ -401,7 +401,7 @@ class InvitationsService @Inject()(
     }
 
   private def createRelationshipAndUpdateStatus(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
-    val timeNow = DateTime.now(DateTimeZone.UTC)
+    val timeNow = currentTime()
     createRelationship(invitation, timeNow)
       .flatMap(_ => invitationsRepository.update(invitation, Accepted, timeNow))
   }

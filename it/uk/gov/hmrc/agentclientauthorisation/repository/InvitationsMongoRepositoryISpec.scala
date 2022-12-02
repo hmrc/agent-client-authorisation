@@ -16,42 +16,33 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.joda.time.{DateTime, LocalDate}
+import org.bson.types.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
-import org.scalatestplus.mockito.MockitoSugar
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.bson.BSONObjectID
-import reactivemongo.bson.BSONObjectID.parse
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, MtdItId, Service, Urn, Vrn}
-import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsMongoRepositoryISpec
-    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with Eventually with Inside with MockitoSugar with MongoApp
-    with MetricsTestSupport {
+    extends UnitSpec  with Eventually with Inside
+     with DefaultPlayMongoRepositorySupport[Invitation] {
 
-  override implicit lazy val mongoConnectorForTest: MongoConnector =
-    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
-  lazy val mockReactiveMongoComponent: ReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
-  lazy val repository: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mockReactiveMongoComponent) {
-    override def withCurrentTime[A](f: DateTime => A): A = f(now)
-  }
+  override def repository  = new InvitationsRepositoryImpl(mongoComponent)
+
   val date = LocalDate.now()
   val invitationITSA = Invitation(
-    BSONObjectID.generate(),
+    ObjectId.get(),
     InvitationId("ABERULMHCKKW3"),
     Arn(arn),
     Some("personal"),
@@ -67,7 +58,7 @@ class InvitationsMongoRepositoryISpec
     List.empty
   )
   val invitationIRV = Invitation(
-    BSONObjectID.generate(),
+    ObjectId.get(),
     InvitationId("B9SCS2T4NZBAX"),
     Arn(arn),
     Some("personal"),
@@ -84,7 +75,7 @@ class InvitationsMongoRepositoryISpec
   )
 
   val invitationURN = Invitation(
-    BSONObjectID.generate(),
+    ObjectId.get(),
     InvitationId("EPN7M763YPGLJ"),
     Arn(arn),
     Some("personal"),
@@ -100,10 +91,8 @@ class InvitationsMongoRepositoryISpec
     List.empty
   )
 
-  implicit lazy val app: Application = appBuilder
-    .build()
   val invitationVAT = Invitation(
-    BSONObjectID.generate(),
+    ObjectId.get(),
     InvitationId("CZTW1KY6RTAAT"),
     Arn(arn),
     Some("business"),
@@ -118,21 +107,8 @@ class InvitationsMongoRepositoryISpec
     None,
     List.empty)
   val ninoValue = nino1.value
-  private val now = DateTime.now()
+  private val now = LocalDateTime.now()
 
-  override def beforeEach() {
-    super.beforeEach()
-    givenCleanMetricRegistry()
-    await(repository.ensureIndexes)
-    ()
-  }
-
-  protected def appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .configure(mongoConfiguration)
-      .configure(
-        "invitation-status-update-scheduler.enabled" -> false
-      )
 
   "create" should {
     "create a new StatusChangedEvent of Pending" in inside(addInvitation(now, invitationITSA)) {
@@ -145,15 +121,16 @@ class InvitationsMongoRepositoryISpec
 
     "create a new StatusChangedEvent which can be found using a reconstructed id" in {
 
-      val invitation =
-        addInvitation(now, invitationITSA)
+      val invitation = await(repository.create(invitationITSA.arn, clientType = invitationITSA.clientType, service = invitationITSA.service,
+        clientId = invitationITSA.clientId, suppliedClientId = invitationITSA.suppliedClientId, None, startDate = LocalDateTime.now(),
+        expiryDate = LocalDate.now(),None))
 
-      val id: BSONObjectID = invitation.id
-      val stringifieldId: String = id.stringify
-      val reconstructedId: BSONObjectID = parse(stringifieldId).get
-      val foundInvitation: model.Invitation = await(repository.findById(reconstructedId)).head
+      val id: ObjectId = invitation._id
+      val stringifieldId: String = id.toString
+      val reconstructedId: ObjectId = new ObjectId(stringifieldId)
+      val foundInvitation: model.Invitation = await(repository.collection.find(Filters.equal("_id", reconstructedId)).head())
 
-      id shouldBe foundInvitation.id
+      id shouldBe foundInvitation._id
       foundInvitation.isRelationshipEnded shouldBe false
     }
   }
@@ -165,7 +142,7 @@ class InvitationsMongoRepositoryISpec
       val updated = update(created, Accepted, now)
 
       inside(updated) {
-        case Invitation(created.id, _, _, _, _, _, _, _, _, _, _, _, _, events) =>
+        case Invitation(created._id, _, _, _, _, _, _, _, _, _, _, _, _, events) =>
           events shouldBe List(StatusChangeEvent(now, Pending), StatusChangeEvent(now, Accepted))
       }
     }
@@ -178,7 +155,7 @@ class InvitationsMongoRepositoryISpec
       val ended = setRelationshipEnded(created)
 
       inside(ended) {
-        case Invitation(created.id, _, _, _, _, _, _, _, _, isRelationshipEnded, _, _, _, _) =>
+        case Invitation(created._id, _, _, _, _, _, _, _, _, isRelationshipEnded, _, _, _, _) =>
           isRelationshipEnded shouldBe true
       }
     }
@@ -286,11 +263,11 @@ class InvitationsMongoRepositoryISpec
       val clientId2 = MtdItId("MTD-REG-3B")
 
       val invitationITSA1 = invitationITSA.copy(clientId = clientId1)
-      val invitationITSA2 = invitationITSA.copy(clientId = clientId2)
+      val invitationITSA2 = invitationITSA.copy(_id = ObjectId.get(), clientId = clientId2)
 
       val invitations = addInvitations(now, invitationITSA1, invitationITSA2)
 
-      update(invitations.head, Accepted, DateTime.now())
+      update(invitations.head, Accepted, LocalDateTime.now())
 
       val list = listByArn(Arn(arn), Seq.empty[Service], None, Some(Pending), None)
 
@@ -311,9 +288,9 @@ class InvitationsMongoRepositoryISpec
           addInvitations(now.minusDays(20), invitationITSA2) ++
           addInvitations(now.minusDays(10), invitationITSA3)
 
-      update(invitations.head, Expired, DateTime.now())
-      update(invitations(1), Rejected, DateTime.now().minusDays(11))
-      update(invitations(2), Accepted, DateTime.now().minusDays(2))
+      update(invitations.head, Expired, LocalDateTime.now())
+      update(invitations(1), Rejected, LocalDateTime.now().minusDays(11))
+      update(invitations(2), Accepted, LocalDateTime.now().minusDays(2))
 
       val list1 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.minusDays(10).toLocalDate))
       list1.size shouldBe 1
@@ -356,6 +333,7 @@ class InvitationsMongoRepositoryISpec
     "return an empty list when there is no invitation present" in {
 
       getLatestByClientId(urn) shouldBe None
+
     }
 
     "return latest invitation when there are multiple invitations present" in {
@@ -428,7 +406,7 @@ class InvitationsMongoRepositoryISpec
 
       val invitations = addInvitations(now,  invitationIRV, invitationITSA)
 
-      update(invitations.head, Accepted, DateTime.now())
+      update(invitations.head, Accepted, LocalDateTime.now())
 
       val list = listByClientId(Service.MtdIt, mtdItId1, Some(Pending))
 
@@ -451,7 +429,7 @@ class InvitationsMongoRepositoryISpec
             now.plusDays(21).toLocalDate,
             None)
 
-      await(Future.sequence(invitations.map(repository.insert)))
+      await(Future.sequence(invitations.map(invit => repository.collection.insertOne(invit).toFuture())))
 
       val result1: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq(("HMRC-MTD-IT", "MTDITID", "AB523456A")), Some(Pending)))
@@ -532,9 +510,9 @@ class InvitationsMongoRepositoryISpec
       val vatInvitation = Invitation
         .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None, now, now.plusDays(21).toLocalDate, None)
 
-      await(repository.insert(itsaInvitation))
-      await(repository.insert(pirInvitation))
-      await(repository.insert(vatInvitation))
+      await(repository.collection.insertOne(itsaInvitation).toFuture())
+      await(repository.collection.insertOne(pirInvitation).toFuture())
+      await(repository.collection.insertOne(vatInvitation).toFuture())
 
       val result1: Seq[InvitationInfo] =
         await(repository.findInvitationInfoBy(Arn(arn), Seq(("HMRC-MTD-IT", "MTDITID", "ABCD123456C")), Some(Pending)))
@@ -575,7 +553,7 @@ class InvitationsMongoRepositoryISpec
           None,
           List(StatusChangeEvent(now, Pending))))
 
-      val updateTime = DateTime.now()
+      val updateTime = LocalDateTime.now()
       await(repository.update(itsaInvitation, Rejected, updateTime))
       await(repository.update(pirInvitation, Rejected, updateTime))
       await(repository.update(vatInvitation, Rejected, updateTime))
@@ -652,11 +630,9 @@ class InvitationsMongoRepositoryISpec
       val vatInvitation = Invitation
         .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None, now, now.plusDays(21).toLocalDate, None)
 
-      await(repository.insert(itsaInvitation))
-      await(repository.insert(pirInvitation))
-      await(repository.insert(vatInvitation))
-
-      await(repository.refreshAllInvitations)
+      await(repository.collection.insertOne(itsaInvitation).toFuture())
+      await(repository.collection.insertOne(pirInvitation).toFuture())
+      await(repository.collection.insertOne(vatInvitation).toFuture())
     }
   }
 
@@ -675,9 +651,10 @@ class InvitationsMongoRepositoryISpec
         now.minusDays(1),
         now.plusDays(21).toLocalDate,
         None)
-      await(repository.insert(itsaInvitation))
+      await(repository.collection.insertOne(itsaInvitation).toFuture())
       val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       storedInvitation.detailsForEmail shouldBe Some(dfe)
+
       await(repository.removePersonalDetails(now.minusDays(2)))
       val updatedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       updatedInvitation.detailsForEmail shouldBe Some(dfe)
@@ -694,7 +671,7 @@ class InvitationsMongoRepositoryISpec
         now.minusDays(1),
         now.plusDays(21).toLocalDate,
         None)
-      await(repository.insert(itsaInvitation))
+      await(repository.collection.insertOne(itsaInvitation).toFuture())
       val storedInvitation: Invitation = await(repository.findByInvitationId(itsaInvitation.invitationId)).get
       storedInvitation.detailsForEmail shouldBe Some(dfe)
       await(repository.removePersonalDetails(now))
@@ -705,9 +682,9 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
-  private def addInvitation(startDate: DateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
+  private def addInvitation(startDate: LocalDateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
 
-  private def addInvitations(startDate: DateTime, invitations: Invitation*) =
+  private def addInvitations(startDate: LocalDateTime, invitations: Invitation*) =
     await(Future sequence invitations.map {
       case Invitation(_, _, arnValue, clientType, service, clientId, suppliedClientId, _, _, _, _, _, _, _) =>
         repository.create(arnValue, clientType, service, clientId, suppliedClientId, None, startDate, startDate.plusDays(20).toLocalDate, None)
@@ -734,7 +711,7 @@ class InvitationsMongoRepositoryISpec
   private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
     await(repository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status))
 
-  private def update(invitation: Invitation, status: InvitationStatus, updateDate: DateTime) =
+  private def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime) =
     await(repository.update(invitation, status, updateDate))
 
   private def setRelationshipEnded(invitation: Invitation): Invitation =

@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.{DateTime, LocalDate}
 import org.mockito.ArgumentMatchers.{eq => eqs}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -35,6 +34,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -77,7 +77,7 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
           agencyName = "Perfect Accounts Ltd",
           clientName = friendlyName
         )),
-      startDate = DateTime.now().minusDays(1),
+      startDate = LocalDateTime.now().minusDays(1),
       expiryDate = LocalDate.now().plusMonths(1),
       origin = None
     )

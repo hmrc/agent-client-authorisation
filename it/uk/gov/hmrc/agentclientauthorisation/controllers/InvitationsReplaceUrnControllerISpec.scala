@@ -1,7 +1,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, LocalDate}
+import org.mongodb.scala.model.Filters
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
@@ -9,7 +9,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImp
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 
 class InvitationsReplaceUrnControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 
@@ -53,16 +53,16 @@ class InvitationsReplaceUrnControllerISpec extends BaseISpec with PlatformAnalyt
         ClientIdentifier(urn),
         ClientIdentifier(urn),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now,
         None
       )
-      await(invitationsRepo.insert(invitation))
+      await(invitationsRepo.collection.insertOne(invitation).toFuture())
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(request))
 
       status(response) shouldBe 201
-      val utrInvitation = await(invitationsRepo.find("clientId" -> utr.value))
+      val utrInvitation = await(invitationsRepo.collection.find(Filters.equal("clientId",utr.value)).toFuture())
 
       utrInvitation.size shouldBe 1
     }

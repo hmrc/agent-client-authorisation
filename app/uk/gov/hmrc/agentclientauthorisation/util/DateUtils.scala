@@ -16,19 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.util
 
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-import org.joda.time.LocalDate
 
 object DateUtils {
 
   private val dateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d MMMM uuuu", Locale.UK)
 
-  def displayDate(jodaDate: LocalDate): String = {
-    val javaTimeLocalDate = java.time.LocalDate.parse(jodaDate.toString)
-    javaTimeLocalDate.format(dateFormatter)
-  }
-
+  def displayDate(localDate: LocalDate): String =
+    localDate.format(dateFormatter)
 }

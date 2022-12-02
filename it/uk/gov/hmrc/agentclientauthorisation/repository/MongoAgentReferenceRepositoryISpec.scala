@@ -16,70 +16,44 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.scalatestplus.mockito.MockitoSugar
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.modules.reactivemongo.ReactiveMongoComponent
+import org.mongodb.scala.MongoWriteException
 import play.api.test.Helpers._
-import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.agentclientauthorisation.support.{MetricsTestSupport, MongoApp, ResetMongoBeforeTest}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MongoAgentReferenceRepositoryISpec
-    extends UnitSpec with MongoSpecSupport with ResetMongoBeforeTest with MockitoSugar with MongoApp with MetricsTestSupport {
+    extends UnitSpec
+      with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
 
-  override implicit lazy val mongoConnectorForTest: MongoConnector =
-    MongoConnector(mongoUri, Some(MongoApp.failoverStrategyForTest))
-
-  lazy val app: Application = appBuilder
-    .build()
-
-  protected def appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .configure(mongoConfiguration)
-      .configure(
-        "invitation-status-update-scheduler.enabled" -> false
-      )
-
-  lazy val mockReactiveMongoComponent = app.injector.instanceOf[ReactiveMongoComponent]
-
-  lazy val repository = new MongoAgentReferenceRepository(mockReactiveMongoComponent)
-
-  override def beforeEach() {
-    super.beforeEach()
-    givenCleanMetricRegistry()
-    await(repository.ensureIndexes)
-    ()
-  }
+  def repository = new MongoAgentReferenceRepository(mongoComponent)
 
   "AgentReferenceRepository" when {
     def agentReferenceRecord(uid: String, arn: String) = AgentReferenceRecord(uid, Arn(arn), Seq("stan-lee"))
 
     "create" should {
-      "successfully create a record in the repository" in {
-        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
+      "successfully create a record in the agentReferenceRepository" in {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))).isDefined shouldBe true
       }
 
       "throw an error if ARN is duplicated" in {
-        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
-        an[DatabaseException] shouldBe thrownBy {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))).isDefined shouldBe true
+        an[MongoWriteException] shouldBe thrownBy {
           await(repository.create(agentReferenceRecord("SCX39TGE", "VARN0590057")))
         }
       }
 
       "throw an error if UID is duplicated" in {
-        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))) shouldBe 1
-        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))) shouldBe 1
-        an[DatabaseException] shouldBe thrownBy {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGA", "EARN8077593"))).isDefined shouldBe true
+        await(repository.create(agentReferenceRecord("SCX39TGB", "VARN0590057"))).isDefined shouldBe true
+        an[MongoWriteException] shouldBe thrownBy {
           await(repository.create(agentReferenceRecord("SCX39TGB", "AARN5286261")))
         }
       }

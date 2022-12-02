@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
-import org.joda.time.LocalDate
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -37,6 +36,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.time.LocalDate
 import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

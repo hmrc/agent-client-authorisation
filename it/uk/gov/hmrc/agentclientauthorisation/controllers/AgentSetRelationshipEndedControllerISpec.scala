@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -27,7 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImp
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
@@ -56,7 +55,7 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }
@@ -74,7 +73,7 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
     s"return 204 when an ${testClient.service} invitation is successfully updated to isRelationshipEnded flag = true" in new StubSetup {
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
-      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+      await(invitationsRepo.update(invitation, Accepted, LocalDateTime.now()))
 
       val payload = SetRelationshipEndedPayload(arn, testClient.clientId.value, testClient.service.id, None)
 
@@ -101,7 +100,7 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       givenAuditConnector()
 
       val invitation: Invitation = await(createInvitation(arn, altItsaClient))
-      await(invitationsRepo.update(invitation, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(invitation, PartialAuth, LocalDateTime.now()))
 
       val payload = SetRelationshipEndedPayload(arn, altItsaClient.clientId.value, altItsaClient.service.id, Some("Client"))
 
@@ -122,10 +121,10 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       givenAuditConnector()
 
       val olderInvitation: Invitation = await(createInvitation(arn, altItsaClient))
-      await(invitationsRepo.update(olderInvitation, PartialAuth, DateTime.now().minusSeconds(300)))
+      await(invitationsRepo.update(olderInvitation, PartialAuth, LocalDateTime.now().minusSeconds(300)))
 
       val newerInvitation: Invitation = await(createInvitation(arn, altItsaClient))
-      await(invitationsRepo.update(newerInvitation, PartialAuth, DateTime.now()))
+      await(invitationsRepo.update(newerInvitation, PartialAuth, LocalDateTime.now()))
 
       val payload = SetRelationshipEndedPayload(arn, altItsaClient.clientId.value, altItsaClient.service.id, Some("Agent"))
 

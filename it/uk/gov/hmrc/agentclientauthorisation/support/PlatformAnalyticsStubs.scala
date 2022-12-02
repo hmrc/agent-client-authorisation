@@ -2,17 +2,14 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.model.{DimensionValue, Event}
 
 
 
-trait PlatformAnalyticsStubs extends Eventually {
+trait PlatformAnalyticsStubs extends Eventually with IntegrationPatience {
   me: StartAndStopWireMock =>
-
-  override implicit val patienceConfig = PatienceConfig(scaled(Span(10, Seconds)), scaled(Span(500, Millis)))
 
   private implicit val dimensionWrites = Json.writes[DimensionValue]
   private implicit val eventWrites = Json.writes[Event]

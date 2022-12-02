@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
-import org.joda.time.{DateTime, LocalDate}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, PersonalIncomeRecord, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
@@ -28,6 +27,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.Ppt
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStubs with TestDataSupport with RelationshipStubs {
@@ -164,7 +164,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     "return () if the response is 2xx" in {
      anAfiRelationshipIsCreatedWith(arn, nino)
       val result = await(connector.createAfiRelationship(
-        invitation(Some("personal"), PersonalIncomeRecord, nino, nino), DateTime.now()))
+        invitation(Some("personal"), PersonalIncomeRecord, nino, nino), LocalDateTime.now()))
       result shouldBe (())
     }
 
@@ -173,7 +173,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
 
       assertThrows[UpstreamErrorResponse] {
         await(connector.createAfiRelationship(
-          invitation(Some("personal"), PersonalIncomeRecord, nino, nino), DateTime.now()))
+          invitation(Some("personal"), PersonalIncomeRecord, nino, nino), LocalDateTime.now()))
       }
     }
   }

@@ -17,17 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.joda.time.{DateTime, LocalDate}
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, MtdItId, Service, SuspensionDetails, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import play.api.test.Helpers._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 
 class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAppAndStubs with DesStubs {
 
@@ -56,13 +54,13 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation1))
+      await(repo.collection.insertOne(invitation1).toFuture())
 
-      await(repo.update(invitation1, Expired, DateTime.now()))
+      await(repo.update(invitation1, Expired, LocalDateTime.now()))
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000001"),
@@ -71,11 +69,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation2))
+      await(repo.collection.insertOne(invitation2).toFuture())
 
       val invitation3 = Invitation.createNew(
         Arn("TARN0000002"),
@@ -84,11 +82,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now,
         None
       )
-      await(repo.insert(invitation3))
+      await(repo.collection.insertOne(invitation3).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -119,11 +117,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation1))
+      await(repo.collection.insertOne(invitation1).toFuture())
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000001"),
@@ -132,11 +130,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB992751D")),
         ClientIdentifier(MtdItId("KQFL80195230075")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation2))
+      await(repo.collection.insertOne(invitation2).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -166,11 +164,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation1))
+      await(repo.collection.insertOne(invitation1).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -201,11 +199,11 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673C")),
         ClientIdentifier(Nino("AB835673C")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
-      await(repo.insert(invitation))
+      await(repo.collection.insertOne(invitation).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -238,12 +236,12 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now.minusDays(21),
+        LocalDateTime.now.minusDays(21),
         LocalDate.now,
         None
       )
-      await(repo.insert(invitation1))
-      await(repo.update(invitation1, Expired, DateTime.now()))
+      await(repo.collection.insertOne(invitation1).toFuture())
+      await(repo.update(invitation1, Expired, LocalDateTime.now()))
 
       val invitation2 = Invitation.createNew(
         Arn("TARN0000002"),
@@ -252,12 +250,12 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now.minusDays(15),
+        LocalDateTime.now.minusDays(15),
         LocalDate.now.minusDays(5),
         None
       )
-      await(repo.insert(invitation2))
-      await(repo.update(invitation2, Expired, DateTime.now()))
+      await(repo.collection.insertOne(invitation2).toFuture())
+      await(repo.update(invitation2, Expired, LocalDateTime.now()))
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -288,12 +286,12 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Vrn("101747696")),
         ClientIdentifier(Vrn("101747696")),
         None,
-        DateTime.now.minusDays(15),
+        LocalDateTime.now.minusDays(15),
         LocalDate.now.minusDays(5),
         None
       )
-      await(repo.insert(invitation2))
-      await(repo.update(invitation2, Expired, DateTime.now()))
+      await(repo.collection.insertOne(invitation2).toFuture())
+      await(repo.update(invitation2, Expired, LocalDateTime.now()))
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -324,12 +322,12 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
 
-      await(repo.insert(invitation))
+      await(repo.collection.insertOne(invitation).toFuture())
 
       val response: HttpResponse =
         new Resource(s"/agent-client-authorisation/status", port, http).get()
@@ -395,13 +393,13 @@ class ClientStatusControllerISpec extends UnitSpec with AppAndStubs with MongoAp
         ClientIdentifier(Nino("AB835673D")),
         ClientIdentifier(Nino("AB835673D")),
         None,
-        DateTime.now,
+        LocalDateTime.now,
         LocalDate.now.plusDays(21),
         None
       )
 
-      await(repo.insert(invitation))
-      await(repo.update(invitation, PartialAuth, DateTime.now()))
+      await(repo.collection.insertOne(invitation).toFuture())
+      await(repo.update(invitation, PartialAuth, LocalDateTime.now()))
 
       stubFor(
         post(urlPathEqualTo(s"/auth/authorise")).willReturn(

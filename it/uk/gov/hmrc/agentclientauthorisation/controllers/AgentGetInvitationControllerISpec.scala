@@ -17,17 +17,16 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitations
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, MtdItIdType, Service, VrnType}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentGetInvitationControllerISpec extends BaseISpec {
@@ -73,7 +72,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }
@@ -148,7 +147,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     "return Invitations for Agent with Services and CreatedBefore Query Params" in new TestSetup {
 
       val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
-      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now(DateTimeZone.UTC).minusDays(30)))(request)
+      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
 
       status(response) shouldBe 200
 
@@ -224,7 +223,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           clientIdentifier,
           clientIdentifier,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now(),
           None))
 
@@ -247,7 +246,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
           clientIdentifier,
           clientIdentifier,
           None,
-          DateTime.now(),
+          LocalDateTime.now(),
           LocalDate.now(),
           None)
       )
@@ -307,7 +306,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       val invitation: Invitation = await(createInvitation(arn, testClient.copy[T](clientType = None)))
       val request = FakeRequest("GET", s"/agencies/:arn/invitations/sent/${invitation.invitationId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
-      await(invitationsRepo.update(invitation, Accepted, DateTime.now()))
+      await(invitationsRepo.update(invitation, Accepted, LocalDateTime.now()))
 
       val response = controller.getSentInvitation(arn, invitation.invitationId)(request)
 

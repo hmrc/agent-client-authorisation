@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.util
 
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import org.joda.time.LocalDate.parse
+
+import java.time.LocalDate
 
 class DateUtilsSpec extends UnitSpec {
 
@@ -29,11 +30,10 @@ class DateUtilsSpec extends UnitSpec {
       val d3 = "2021-12-01"
       val d4 = "2021-01-02"
 
-      DateUtils.displayDate(parse(d1)) shouldBe "31 July 2020"
-      DateUtils.displayDate(parse(d2)) shouldBe "28 February 2020"
-      DateUtils.displayDate(parse(d3)) shouldBe "1 December 2021"
-      DateUtils.displayDate(parse(d4)) shouldBe "2 January 2021"
-
+      DateUtils.displayDate(LocalDate.parse(d1)) shouldBe "31 July 2020"
+      DateUtils.displayDate(LocalDate.parse(d2)) shouldBe "28 February 2020"
+      DateUtils.displayDate(LocalDate.parse(d3)) shouldBe "1 December 2021"
+      DateUtils.displayDate(LocalDate.parse(d4)) shouldBe "2 January 2021"
     }
   }
 

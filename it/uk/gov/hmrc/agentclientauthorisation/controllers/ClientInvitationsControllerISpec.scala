@@ -1,21 +1,20 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, putRequestedFor, stubFor, urlPathEqualTo, urlPathMatching, verify}
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
+import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs with EmailStub with PlatformAnalyticsStubs {
@@ -34,7 +33,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testClient.clientId,
       testClient.suppliedClientId,
       if(hasEmail) Some(dfe(testClient.clientName)) else None,
-      DateTime.now(DateTimeZone.UTC),
+      LocalDateTime.now(),
       LocalDate.now().plusDays(21),
       None)
   }
@@ -180,12 +179,12 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     s"accepting via $journey to accept an ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val oldInvitation: Invitation = await(createInvitation(arn, client))
       val acceptedStatus: InvitationStatus = if(client.isAltItsaClient) PartialAuth else Accepted
-      await(repository.update(oldInvitation, acceptedStatus, DateTime.now()))
+      await(repository.update(oldInvitation, acceptedStatus, LocalDateTime.now()))
 
       val clientOnDifferentService: TestClient[_ >: MtdItId with Vrn <: TaxIdentifier] = if(client.service == Service.Vat) itsaClient else vatClient
 
       val oldInvitationFromDifferentService: Invitation = await(createInvitation(arn, clientOnDifferentService))
-      await(repository.update(oldInvitationFromDifferentService, Accepted, DateTime.now()))
+      await(repository.update(oldInvitationFromDifferentService, Accepted, LocalDateTime.now()))
 
       val invitation: Invitation = await(createInvitation(arn, client))
       if(!client.isAltItsaClient) givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
@@ -356,7 +355,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     s"return 200 for get all ${testClient.service.id} (ALT-ITSA) invitations for: ${testClient.clientId.value} logged in ${if(forStride) if(altStride) "alt-stride" else "stride" else "client"} and " +
       s"update status to Accepted when PartialAuth exists" in new LoggedInUser(forStride, false, altStride = altStride) {
       val pendingInvitation: Invitation = await(createInvitation(arn, testClient))
-      await(repository.update(pendingInvitation, PartialAuth, DateTime.now()))
+      await(repository.update(pendingInvitation, PartialAuth, LocalDateTime.now()))
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 

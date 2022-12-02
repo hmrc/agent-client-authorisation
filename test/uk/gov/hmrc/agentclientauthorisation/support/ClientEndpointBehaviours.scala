@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import org.bson.types.ObjectId
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -62,7 +62,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def anInvitation(nino: Nino) =
     TestConstants.defaultInvitation.copy(
-      id = BSONObjectID.parse(invitationDbId).get,
+      _id = ObjectId.get,
       invitationId = invitationId,
       arn = arn,
       clientId = ClientIdentifier(mtdItId1),
@@ -71,7 +71,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def aVatInvitation(vrn: Vrn) =
     TestConstants.defaultInvitation.copy(
-      id = BSONObjectID.parse(invitationDbId).get,
+      _id = ObjectId.get,
       invitationId = invitationId,
       arn = arn,
       service = Service.Vat,
@@ -81,7 +81,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
   def aTrustInvitation(utr: Utr) =
     TestConstants.defaultInvitation.copy(
-      id = BSONObjectID.parse(invitationDbId).get,
+      _id = ObjectId.get,
       invitationId = invitationId,
       arn = arn,
       service = Service.Trust,

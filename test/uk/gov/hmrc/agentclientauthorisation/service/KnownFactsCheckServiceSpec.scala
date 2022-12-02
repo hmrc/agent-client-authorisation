@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import org.joda.time.LocalDate
-import org.joda.time.format.DateTimeFormat
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
@@ -31,6 +29,8 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -123,7 +123,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
 
   "clientDateOfBirthMatches" should {
     val clientNino = Nino("AE123456A")
-    val format = DateTimeFormat.forPattern("ddMMyyyy")
+    val format = DateTimeFormatter.ofPattern("ddMMyyyy")
 
     "return Some(true) if the supplied date of birth matches the date of birth returned from citizen details" in {
       val dateOfBirthInCitizenDetails = LocalDate.parse("03022001", format)

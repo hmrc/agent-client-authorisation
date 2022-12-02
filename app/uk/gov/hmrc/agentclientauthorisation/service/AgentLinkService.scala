@@ -18,10 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
+
 import javax.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
+import org.mongodb.scala.MongoWriteException
 import play.api.Logger
-import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
 import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
@@ -81,16 +82,15 @@ class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceR
       AgentReferenceRecord(uid, arn, Seq(normalisedAgentName))
     agentReferenceRecordRepository
       .create(newRecord)
-      .map { result =>
-        if (result == 1) {
+      .map {
+        case Some(_) =>
           logger.info(s"""Created multi invitation record with uid: $uid""")
           newRecord
-        } else
-          throw new Exception("Unexpected failure of agent-reference db record creation")
+        case None => throw new Exception("Unexpected failure of agent-reference db record creation")
       }
       .recoverWith {
-        case e: DatabaseException if e.code.contains(11000) =>
-          if (e.getMessage().contains("arn"))
+        case e: MongoWriteException if e.getError.getMessage.contains("11000") =>
+          if (e.getMessage.contains("arn"))
             agentReferenceRecordRepository
               .findByArn(arn)
               .map(_.getOrElse(throw new IllegalStateException(s"Failure creating agent reference record for ${arn.value}")))
@@ -106,7 +106,7 @@ class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceR
   private def normaliseAgentName(agentName: String) =
     agentName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^A-Za-z0-9-]", "")
 
-  def removeAgentReferencesForGiven(arn: Arn)(implicit ec: ExecutionContext): Future[Int] =
+  def removeAgentReferencesForGiven(arn: Arn): Future[Int] =
     agentReferenceRecordRepository.removeAgentReferencesForGiven(arn)
 
 }

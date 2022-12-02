@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
-import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue}
+import uk.gov.hmrc.agentclientauthorisation.model.MongoLocalDateTimeFormat
 import uk.gov.hmrc.agentclientauthorisation.support.EmbeddedSection.{EmbeddedInvitation, EmbeddedInvitationLinks}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.http.controllers.RestFormats
 
+import java.time.LocalDateTime
 import scala.language.postfixOps
 
 object HalTestHelpers {
@@ -51,8 +51,8 @@ object EmbeddedSection {
     clientIdType: String,
     clientId: String,
     status: String,
-    created: DateTime,
-    lastUpdated: DateTime)
+    created: LocalDateTime,
+    lastUpdated: LocalDateTime)
 }
 
 class EmbeddedSection(embedded: JsValue) {
@@ -70,11 +70,11 @@ class EmbeddedSection(embedded: JsValue) {
 
   private def asInvitation(invitation: JsValue): EmbeddedInvitation = {
 
-    implicit val dateReads = RestFormats.dateTimeRead
+    implicit val dateTimeReads = MongoLocalDateTimeFormat.localDateTimeFormat
 
     def find(path: JsLookupResult) = path.asOpt[String]
     def getString(path: JsLookupResult) = path.as[String]
-    def getDateTime(path: JsLookupResult) = path.as[DateTime]
+    def getDateTime(path: JsLookupResult) = path.as[LocalDateTime]
 
     EmbeddedInvitation(
       underlying = invitation,

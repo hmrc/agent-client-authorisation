@@ -16,20 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import org.joda.time.LocalDate
-import org.joda.time.format._
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CitizenDetailsStub}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CitizenDetailsConnectorISpec extends UnitSpec with AppAndStubs with CitizenDetailsStub {
 
   val connector: CitizenDetailsConnector = app.injector.instanceOf[CitizenDetailsConnector]
   val nino = Nino("AE123456A")
-  val format: DateTimeFormatter = DateTimeFormat.forPattern("ddMMyyyy")
+  val format: DateTimeFormatter = DateTimeFormatter.ofPattern("ddMMyyyy")
 
   "getCitizenDateOfBirth" should {
     "return the date of birth for a given nino" in {
