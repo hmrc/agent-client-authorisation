@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service, SuspensionDetails}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
@@ -39,6 +40,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAu
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
+import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -146,41 +148,28 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
           val expiryDate = LocalDate.now()
-          val eventTime = LocalDateTime.now()
+          val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
 
           val invitationIdAndExpiryDate1 =
-            InvitationInfo(
-              InvitationId("ABERULMHCKKW3"),
-              expiryDate,
-              Pending,
-              arn,
-              Service.MtdIt,
-              false,
-              None,
-              List(StatusChangeEvent(eventTime, Pending)))
+            InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending, arn, Service.MtdIt, false, None, List(StatusChangeEvent(now, Pending)))
           val invitationIdAndExpiryDate2 =
             InvitationInfo(
               InvitationId("B9SCS2T4NZBAX"),
               expiryDate,
               Pending,
               arn,
-              Service.PersonalIncomeRecord,
+              PersonalIncomeRecord,
               false,
               None,
-              List(StatusChangeEvent(eventTime, Pending)))
+              List(StatusChangeEvent(now, Pending)))
           val invitationIdAndExpiryDate3 =
-            InvitationInfo(
-              InvitationId("CZTW1KY6RTAAT"),
-              expiryDate,
-              Pending,
-              arn,
-              Service.Vat,
-              false,
-              None,
-              List(StatusChangeEvent(eventTime, Pending)))
+            InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat, false, None, List(StatusChangeEvent(now, Pending)))
 
-          val listOfInvitations =
-            List(invitationIdAndExpiryDate1, invitationIdAndExpiryDate2, invitationIdAndExpiryDate3)
+          val invitations = List(
+            invitationIdAndExpiryDate1,
+            invitationIdAndExpiryDate2,
+            invitationIdAndExpiryDate3
+          )
 
           when(mockAgentReferenceRepository.findBy(any(): String))
             .thenReturn(Future.successful(Some(agentReferenceRecord)))
@@ -193,7 +182,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
           val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
           status(result) shouldBe 200
-          contentAsJson(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+          val responseOfInvitations = contentAsJson(result).as[List[InvitationInfo]]
+          //event time precisions are different so set to 0 nanos
+          responseOfInvitations.shouldBe(invitations)
         }
       }
 
@@ -205,31 +196,26 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val expiryDate = LocalDate.now()
 
+        val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
         val invitationIdAndExpiryDate3 =
-          InvitationInfo(
-            InvitationId("CZTW1KY6RTAAT"),
-            expiryDate,
-            Pending,
-            arn,
-            Service.Vat,
-            false,
-            None,
-            List(StatusChangeEvent(LocalDateTime.now(), Pending)))
+          InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat, false, None, List(StatusChangeEvent(now, Pending)))
 
-        val listOfInvitations = List(invitationIdAndExpiryDate3)
+        val invitations = List(invitationIdAndExpiryDate3)
 
         when(
           mockInvitationsService.findInvitationsInfoForClient(any[Arn], any[Seq[(String, String, String)]], any[Option[InvitationStatus]])(
             any[HeaderCarrier],
             any[ExecutionContext]))
-          .thenReturn(Future successful listOfInvitations)
+          .thenReturn(Future successful invitations)
 
         when(mockAgentReferenceRepository.findBy(any[String]))
           .thenReturn(Future.successful(Some(agentReferenceRecord)))
 
         val result = agentReferenceController.getInvitationsInfo("ABCDEFGH", Some(Pending))(FakeRequest())
         status(result) shouldBe 200
-        contentAsJson(result).as[List[InvitationInfo]] shouldBe listOfInvitations
+        val responseOfInvitations = contentAsJson(result).as[List[InvitationInfo]]
+        //event time precisions are different so set to 0 nanos
+        responseOfInvitations.shouldBe(invitations)
       }
     }
 
