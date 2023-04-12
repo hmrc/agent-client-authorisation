@@ -40,6 +40,7 @@ import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAu
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
+import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -147,7 +148,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
             AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
 
           val expiryDate = LocalDate.now()
-          val now = LocalDateTime.now()
+          val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
 
           val invitationIdAndExpiryDate1 =
             InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending, arn, Service.MtdIt, false, None, List(StatusChangeEvent(now, Pending)))
@@ -183,9 +184,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           status(result) shouldBe 200
           val responseOfInvitations = contentAsJson(result).as[List[InvitationInfo]]
           //event time precisions are different so set to 0 nanos
-          responseOfInvitations
-            .map(i => i.copy(events = i.events.map(e => e.copy(e.time.withNano(0)))))
-            .shouldBe(invitations.map(i => i.copy(events = i.events.map(e => e.copy(e.time.withNano(0))))))
+          responseOfInvitations.shouldBe(invitations)
         }
       }
 
@@ -197,16 +196,9 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val expiryDate = LocalDate.now()
 
+        val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
         val invitationIdAndExpiryDate3 =
-          InvitationInfo(
-            InvitationId("CZTW1KY6RTAAT"),
-            expiryDate,
-            Pending,
-            arn,
-            Service.Vat,
-            false,
-            None,
-            List(StatusChangeEvent(LocalDateTime.now(), Pending)))
+          InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat, false, None, List(StatusChangeEvent(now, Pending)))
 
         val invitations = List(invitationIdAndExpiryDate3)
 
@@ -223,9 +215,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         status(result) shouldBe 200
         val responseOfInvitations = contentAsJson(result).as[List[InvitationInfo]]
         //event time precisions are different so set to 0 nanos
-        responseOfInvitations
-          .map(i => i.copy(events = i.events.map(e => e.copy(e.time.withNano(0)))))
-          .shouldBe(invitations.map(i => i.copy(events = i.events.map(e => e.copy(e.time.withNano(0))))))
+        responseOfInvitations.shouldBe(invitations)
       }
     }
 
