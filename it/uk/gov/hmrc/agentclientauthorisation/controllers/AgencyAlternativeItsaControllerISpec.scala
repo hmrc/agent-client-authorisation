@@ -9,6 +9,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 
+import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import scala.concurrent.Future
 
@@ -40,7 +41,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -59,7 +60,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -81,7 +82,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -103,7 +104,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -116,7 +117,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -139,7 +140,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -166,7 +167,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -193,7 +194,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -225,7 +226,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -244,7 +245,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -266,7 +267,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -279,7 +280,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -303,7 +304,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -316,7 +317,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -339,7 +340,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -352,7 +353,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -365,7 +366,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -390,7 +391,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -403,7 +404,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -416,7 +417,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -459,7 +460,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -490,7 +491,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -503,7 +504,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId2,
           nino2,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
@@ -516,7 +517,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId3,
           nino3,
           None,
-          LocalDateTime.now(),
+          LocalDateTime.now().truncatedTo(MILLIS),
           LocalDate.now().plusDays(21),
           None)
       )
