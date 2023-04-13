@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
+import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -107,7 +108,7 @@ class InvitationsMongoRepositoryISpec
     None,
     List.empty)
   val ninoValue = nino1.value
-  private val now = LocalDateTime.now()
+  private val now = LocalDateTime.now().truncatedTo(MILLIS)
 
 
   "create" should {
@@ -122,7 +123,9 @@ class InvitationsMongoRepositoryISpec
     "create a new StatusChangedEvent which can be found using a reconstructed id" in {
 
       val invitation = await(repository.create(invitationITSA.arn, clientType = invitationITSA.clientType, service = invitationITSA.service,
-        clientId = invitationITSA.clientId, suppliedClientId = invitationITSA.suppliedClientId, None, startDate = LocalDateTime.now(),
+        clientId = invitationITSA.clientId,
+        suppliedClientId = invitationITSA.suppliedClientId, None,
+        startDate = now,
         expiryDate = LocalDate.now(),None))
 
       val id: ObjectId = invitation._id
@@ -508,7 +511,8 @@ class InvitationsMongoRepositoryISpec
         None)
 
       val vatInvitation = Invitation
-        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None, now, now.plusDays(21).toLocalDate, None)
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
 
       await(repository.collection.insertOne(itsaInvitation).toFuture())
       await(repository.collection.insertOne(pirInvitation).toFuture())
@@ -553,7 +557,7 @@ class InvitationsMongoRepositoryISpec
           None,
           List(StatusChangeEvent(now, Pending))))
 
-      val updateTime = LocalDateTime.now()
+      val updateTime = LocalDateTime.now().truncatedTo(MILLIS)
       await(repository.update(itsaInvitation, Rejected, updateTime))
       await(repository.update(pirInvitation, Rejected, updateTime))
       await(repository.update(vatInvitation, Rejected, updateTime))
