@@ -117,15 +117,7 @@ class EmailService @Inject()(
         "agencyName" -> agencyName,
         "clientName" -> clientName,
         "expiryDate" -> DateUtils.displayDate(invitation.expiryDate),
-        "service" -> (invitation.service.id match {
-          case HMRCMTDIT     => messagesApi(s"service.$HMRCMTDIT")
-          case HMRCPIR       => messagesApi(s"service.$HMRCPIR")
-          case HMRCMTDVAT    => messagesApi(s"service.$HMRCMTDVAT")
-          case HMRCTERSORG   => messagesApi(s"service.$HMRCTERSORG")
-          case HMRCTERSNTORG => messagesApi(s"service.$HMRCTERSNTORG")
-          case HMRCCGTPD     => messagesApi(s"service.$HMRCCGTPD")
-          case HMRCPPTORG    => messagesApi(s"service.$HMRCPPTORG")
-        }),
+        "service"    -> s"service.${invitation.service.id}",
         "additionalInfo" -> {
           if (isAltItsa(invitation))
             s"You must now sign $clientName up to Making Tax Digital for Income Tax."

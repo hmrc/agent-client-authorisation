@@ -23,75 +23,33 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, ClientIdentifier, MtdItId, PptRef, Urn, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, ClientIdentifier, MtdItId, PptRef, Urn, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
 
+  def clientIdType(invitation: Invitation): String = invitation.service match {
+    case MtdIt                => "MTDITID"
+    case PersonalIncomeRecord => "NI"
+    case Vat                  => "VRN"
+    case Trust                => "UTR"
+    case TrustNT              => "URN"
+    case CapitalGains         => "CGTPDRef"
+    case Ppt                  => "EtmpRegistrationNumber"
+    case Cbc | CbcNonUk       => "cbcId"
+  }
+
   def toHalResource(invitation: Invitation): HalResource = {
-    val invitationUrl = invitation.service match {
-      case MtdIt =>
-        routes.ClientInvitationsController
-          .getInvitation("MTDITID", invitation.clientId.value, invitation.invitationId)
-      case PersonalIncomeRecord =>
-        routes.ClientInvitationsController.getInvitation("NI", invitation.clientId.value, invitation.invitationId)
-      case Vat =>
-        routes.ClientInvitationsController.getInvitation("VRN", invitation.clientId.value, invitation.invitationId)
-      case Trust =>
-        routes.ClientInvitationsController.getInvitation("UTR", invitation.clientId.value, invitation.invitationId)
-      case TrustNT =>
-        routes.ClientInvitationsController.getInvitation("URN", invitation.clientId.value, invitation.invitationId)
-      case CapitalGains =>
-        routes.ClientInvitationsController.getInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
-      case Ppt =>
-        routes.ClientInvitationsController.getInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
-    }
+    val invitationUrl = routes.ClientInvitationsController
+      .getInvitation(clientIdType(invitation), invitation.clientId.value, invitation.invitationId)
 
     var links = HalLinks(Vector(HalLink("self", invitationUrl.url)))
 
-    lazy val acceptLink = invitation.service match {
-      case MtdIt =>
-        routes.ClientInvitationsController
-          .acceptInvitation("MTDITID", invitation.clientId.value, invitation.invitationId)
-      case PersonalIncomeRecord =>
-        routes.ClientInvitationsController.acceptInvitation("NI", invitation.clientId.value, invitation.invitationId)
-      case Vat =>
-        routes.ClientInvitationsController.acceptInvitation("VRN", invitation.clientId.value, invitation.invitationId)
-      case Trust =>
-        routes.ClientInvitationsController
-          .acceptInvitation("UTR", invitation.clientId.value, invitation.invitationId)
-      case TrustNT =>
-        routes.ClientInvitationsController
-          .acceptInvitation("URN", invitation.clientId.value, invitation.invitationId)
-      case CapitalGains =>
-        routes.ClientInvitationsController
-          .acceptInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
-      case Ppt =>
-        routes.ClientInvitationsController
-          .acceptInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
-    }
+    lazy val acceptLink = routes.ClientInvitationsController
+      .acceptInvitation(clientIdType(invitation), invitation.clientId.value, invitation.invitationId)
 
-    lazy val rejectLink = invitation.service match {
-      case MtdIt =>
-        routes.ClientInvitationsController
-          .rejectInvitation("MTDITID", invitation.clientId.value, invitation.invitationId)
-      case PersonalIncomeRecord =>
-        routes.ClientInvitationsController.rejectInvitation("NI", invitation.clientId.value, invitation.invitationId)
-      case Vat =>
-        routes.ClientInvitationsController.rejectInvitation("VRN", invitation.clientId.value, invitation.invitationId)
-      case Trust =>
-        routes.ClientInvitationsController
-          .rejectInvitation("UTR", invitation.clientId.value, invitation.invitationId)
-      case TrustNT =>
-        routes.ClientInvitationsController
-          .rejectInvitation("URN", invitation.clientId.value, invitation.invitationId)
-      case CapitalGains =>
-        routes.ClientInvitationsController
-          .rejectInvitation("CGTPDRef", invitation.clientId.value, invitation.invitationId)
-      case Ppt =>
-        routes.ClientInvitationsController
-          .rejectInvitation("EtmpRegistrationNumber", invitation.clientId.value, invitation.invitationId)
-    }
+    lazy val rejectLink = routes.ClientInvitationsController
+      .rejectInvitation(clientIdType(invitation), invitation.clientId.value, invitation.invitationId)
 
     if (invitation.status == Pending) {
       links = links ++ HalLink("accept", acceptLink.url)
@@ -103,21 +61,7 @@ trait ClientInvitationsHal {
 
   private def invitationLinks(invitations: Seq[Invitation]): Vector[HalLink] =
     invitations.map { i =>
-      val link = i.service match {
-        case MtdIt =>
-          routes.ClientInvitationsController.getInvitation("MTDITID", i.clientId.value, i.invitationId)
-        case PersonalIncomeRecord =>
-          routes.ClientInvitationsController.getInvitation("NI", i.clientId.value, i.invitationId)
-        case Vat => routes.ClientInvitationsController.getInvitation("VRN", i.clientId.value, i.invitationId)
-        case Trust =>
-          routes.ClientInvitationsController.getInvitation("UTR", i.clientId.value, i.invitationId)
-        case TrustNT =>
-          routes.ClientInvitationsController.getInvitation("URN", i.clientId.value, i.invitationId)
-        case CapitalGains =>
-          routes.ClientInvitationsController.getInvitation("CGTPDRef", i.clientId.value, i.invitationId)
-        case Ppt =>
-          routes.ClientInvitationsController.getInvitation("EtmpRegistrationNumber", i.clientId.value, i.invitationId)
-      }
+      val link = routes.ClientInvitationsController.getInvitation(clientIdType(i), i.clientId.value, i.invitationId)
       HalLink("invitations", link.toString)
     }.toVector
 
@@ -139,6 +83,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitations("CGTPDRef", clientId.value, status)
       case clientId @ ClientIdentifier(PptRef(_)) =>
         routes.ClientInvitationsController.getInvitations("EtmpRegistrationNumber", clientId.value, status)
+      case clientId @ ClientIdentifier(CbcId(_)) =>
+        routes.ClientInvitationsController.getInvitations("cbcId", clientId.value, status)
       case other =>
         throw new RuntimeException(s"'toHalResource' not yet implemented for $other ")
     }

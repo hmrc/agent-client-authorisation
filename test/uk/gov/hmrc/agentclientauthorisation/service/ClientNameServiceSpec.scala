@@ -17,13 +17,12 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.connectors.Citizen
+import uk.gov.hmrc.agentclientauthorisation.connectors.{Citizen, SimpleCbcSubscription}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.support.MocksWithCache
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, Service, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.support.{MocksWithCache, UnitSpec}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   val clientNameService =
-    new ClientNameService(mockCitizenDetailsConnector, mockDesConnector, agentCacheProvider)
+    new ClientNameService(mockCitizenDetailsConnector, mockDesConnector, mockEisConnector, agentCacheProvider)
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
@@ -42,6 +41,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   val urn = Utr("AAAAA2642468661")
 
   val cgtRef = CgtRef("XMCGTP123456789")
+  val cbcId = CbcId("XAPPT001122334455")
   implicit val hc = HeaderCarrier()
 
   val tpd = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
@@ -161,4 +161,15 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
     }
   }
 
+  "getCbcName" should {
+    "get CBC name from CBC subscription" in {
+      (mockEisConnector
+        .getCbcSubscription(_: CbcId)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(cbcId, *, *)
+        .returns(Future(Some(SimpleCbcSubscription("Johnson and Oldman", true, Some(Seq("email@host.com"))))))
+
+      val result = await(clientNameService.getClientNameByService(cbcId.value, Service.Cbc))
+      result shouldBe Some("Johnson and Oldman")
+    }
+  }
 }

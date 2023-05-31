@@ -23,14 +23,14 @@ import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
-import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.util.{FailedResultException, valueOps}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
@@ -50,6 +50,7 @@ class AgencyInvitationsController @Inject()(
   knownFactsCheckService: KnownFactsCheckService,
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
+  eisConnector: EisConnector,
   authConnector: AuthConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
   agentCacheProvider: AgentCacheProvider)(
@@ -336,6 +337,15 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
+  def getCbcSubscriptionDetails(cbcId: CbcId): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth {
+      eisConnector.getCbcSubscription(cbcId).map {
+        case Some(sub) => Ok(Json.toJson(sub))
+        case None      => NotFound
+      }
+    }
+  }
+
   def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate) = Action.async { implicit request =>
     desConnector
       .getPptSubscription(EtmpRegistrationNumberNumber)
@@ -352,6 +362,21 @@ class AgencyInvitationsController @Inject()(
           logger.warn(s"unexpected error on checkKnownFactPpt $e")
           InternalServerError
       }
+  }
+
+  def checkKnownFactCbc(cbcId: CbcId) = Action.async { implicit request =>
+    request.body.asJson.flatMap(json => (json \ "email").asOpt[String]) match {
+      case Some(email) =>
+        eisConnector.getCbcSubscription(cbcId).map {
+          case Some(subscription) =>
+            val knownFactOk = subscription.emails.exists(_.contains(email.trim))
+            if (knownFactOk) NoContent else Forbidden
+          case None =>
+            logger.warn(s"checkKnownFactCbc: CBC subscription not found for $cbcId")
+            NotFound
+        }
+      case None => Future.successful(BadRequest)
+    }
   }
 
   def removeAllInvitationsAndReferenceForArn(arn: Arn): Action[AnyContent] = Action.async { implicit request =>

@@ -63,7 +63,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
     clientIdType match {
-      case ("MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber")
+      case "MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber" | "cbcId" // TODO can this be rewritten more flexibly?
           if currentUser.credentials.providerType == "GovernmentGateway" =>
         Some(ClientIdentifier(currentUser.taxIdentifier))
       case _ => None
@@ -88,15 +88,21 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       case "URN"                    => UrnType
       case "CGTPDRef"               => CgtRefType
       case "EtmpRegistrationNumber" => PptRefType
+      case "cbcId"                  => CbcIdType
     }
 
-  def getInvitations(service: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
-    AuthorisedClientOrStrideUser(service, identifier, strideRoles) { implicit request => implicit currentUser =>
+  def getInvitations(clientIdType: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =
+    AuthorisedClientOrStrideUser(clientIdType, identifier, strideRoles) { implicit request => implicit currentUser =>
       implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] =
         if (currentUser.credentials.providerType == "GovernmentGateway")
           Some(ClientIdentifier(currentUser.taxIdentifier))
         else None
-      getInvitations(currentUser.service, ClientIdentifier(currentUser.taxIdentifier), status)
+      val taxId = ClientIdentifier(currentUser.taxIdentifier)
+      forThisClientOrStride(taxId) {
+        invitationsService
+          .updateAltItsaForNino(taxId) // TODO!! Why do we have a side-effect in a GET call?!?
+          .flatMap(_ => invitationsService.clientsReceived(taxId, status) map (results => Ok(toHalResource(results, taxId, status))))
+      }
     }
 
   private def acceptInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
@@ -142,16 +148,6 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
         case None                                                    => InvitationNotFound
         case _                                                       => NoPermissionOnClient
       }
-    }
-
-  private def getInvitations[T <: TaxIdentifier](supportedService: Service, taxId: ClientIdentifier[T], status: Option[InvitationStatus])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext,
-    authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
-    forThisClientOrStride(taxId) {
-      invitationsService
-        .updateAltItsaForNino(taxId)
-        .flatMap(_ => invitationsService.clientsReceived(supportedService, taxId, status) map (results => Ok(toHalResource(results, taxId, status))))
     }
 
   private def actionInvitation[T <: TaxIdentifier](

@@ -16,18 +16,21 @@ GET         /known-facts/organisations/vat/:vrn/registration-date/:vatRegistrati
 GET         /known-facts/individuals/nino/:nino/sa/postcode/:postcode                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactItsa(nino: uk.gov.hmrc.domain.Nino, postcode: String)
 GET         /known-facts/individuals/:nino/dob/:dob                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactIrv(nino: uk.gov.hmrc.domain.Nino, dob: LocalDate)
 GET         /known-facts/organisations/trust/:trustTaxIdentifier                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getTrustName(trustTaxIdentifier: String)
-GET         /known-facts/ppt/:EtmpRegistrationNumberNumber/:dateOfApplication                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPpt(EtmpRegistrationNumberNumber: uk.gov.hmrc.agentmtdidentifiers.model.PptRef, dateOfApplication: LocalDate)
+GET         /known-facts/ppt/:EtmpRegistrationNumberNumber/:dateOfApplication                 @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPpt(EtmpRegistrationNumberNumber: uk.gov.hmrc.agentmtdidentifiers.model.PptRef, dateOfApplication: LocalDate)
+POST        /known-facts/cbc/:cbcId                                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactCbc(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
 
 GET         /cgt/subscriptions/:cgtRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCgtSubscriptionDetails(cgtRef: uk.gov.hmrc.agentmtdidentifiers.model.CgtRef)
 GET         /ppt/subscriptions/:pptRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getPptSubscriptionDetails(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
+GET         /cbc/subscriptions/:cbcId                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCbcSubscriptionDetails(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
 
 # Client routes
 # --------------------------------
+# TODO: All these paths should ideally be changed to take an explicit Service (or an enrolment key), not simply rely on the client id type to determine the service!
 PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.acceptInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 GET         /clients/:clientIdType/:clientId/invitations/received/:invitationId               @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
-GET         /clients/:service/:identifier/invitations/received                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(service: String, identifier: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
+GET         /clients/:clientIdType/:identifier/invitations/received                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientIdType: String, identifier: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
 GET         /clients/invitations/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getInvitationsInfo(uid: String, status:  Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
@@ -56,7 +59,8 @@ GET         /client/mtdItId/:mtdItId                                            
 GET         /client/nino/:nino                                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getMtdItIdForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/trading-name/nino/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getTradingNameForNino(nino: uk.gov.hmrc.domain.Nino)
 GET         /client/vat-customer-details/vrn/:vrn                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getVatCustomerDetails(vrn: uk.gov.hmrc.agentmtdidentifiers.model.Vrn)
-GET         /client/ppt-customer-name/pptref/:pptRef                                      @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getPptCustomerName(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
+GET         /client/ppt-customer-name/pptref/:pptRef                                          @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getPptCustomerName(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
+GET         /client/cbc-customer-name/:cbcId                                                  @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCbcCustomerName(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
 
 # Alternative-Itsa routes
 PUT         /alt-itsa/update/:nino                                                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdate(nino: uk.gov.hmrc.domain.Nino)

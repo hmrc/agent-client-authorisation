@@ -97,6 +97,13 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         .handleNon2xx("unexepected error during 'createPlasticPackagingTaxRelationship'")
     }
 
+  def createCountryByCountryRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CountryByCountry-PUT") {
+      http
+        .PUT[String, HttpResponse](cbcRelationshipUrl(invitation), "")
+        .handleNon2xx("unexepected error during 'createCountryByCountryRelationship'")
+    }
+
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Map[String, Seq[Arn]]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
@@ -149,6 +156,16 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PPT-ORG/client/EtmpRegistrationNumber/${encodePathSegment(
       invitation.clientId.value
     )}"
+
+  private def cbcRelationshipUrl(invitation: Invitation): String = {
+    val serviceKey = invitation.service match {
+      case Service.Cbc | Service.CbcNonUk => invitation.service.enrolmentKey
+      case _                              => throw new IllegalArgumentException
+    }
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/$serviceKey/client/cbcId/${encodePathSegment(
+      invitation.clientId.value
+    )}"
+  }
 
   private def afiRelationshipUrl(invitation: Invitation): String = {
     val arn = encodePathSegment(invitation.arn.value)

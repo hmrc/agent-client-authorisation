@@ -11,7 +11,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
@@ -38,6 +38,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val authConnector = app.injector.instanceOf(classOf[AuthConnector])
   val postcodeService = app.injector.instanceOf(classOf[PostcodeService])
   val desConnector = app.injector.instanceOf(classOf[DesConnector])
+  val eisConnector = app.injector.instanceOf(classOf[EisConnector])
   val auditService = app.injector.instanceOf(classOf[AuditService])
   val knownFactsCheckService = app.injector.instanceOf(classOf[KnownFactsCheckService])
   val relationshipConnector = app.injector.instanceOf(classOf[RelationshipsConnector])
@@ -64,11 +65,12 @@ class TerminateInvitationsISpec extends BaseISpec {
       knownFactsCheckService,
       agentLinkService(agentReferenceRepository),
       desConnector,
+      eisConnector,
       authConnector,
       citizenDetailsConnector,
       agentCacheProvider)
 
-  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 7), DeletionCount(appConfig.appName, "agent-reference", 1))))
+  val jsonDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", uiClients.length), DeletionCount(appConfig.appName, "agent-reference", 1))))
   val jsonNoDeletedRecords = Json.toJson[TerminationResponse](TerminationResponse(Seq(DeletionCount(appConfig.appName, "invitations", 0), DeletionCount(appConfig.appName, "agent-reference", 0))))
 
   def createInvitation(arn: Arn,
@@ -112,7 +114,7 @@ class TerminateInvitationsISpec extends BaseISpec {
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
-      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe 7
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe uiClients.length
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 1
 
       val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
@@ -121,7 +123,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
       await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe 0
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 0
-      await(invitationsRepo.findInvitationsBy(arn = Some(arn2))).size shouldBe 7
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn2))).size shouldBe uiClients.length
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn2.value)).toFuture()).toList.size shouldBe 1
     }
 

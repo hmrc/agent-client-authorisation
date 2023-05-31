@@ -29,7 +29,7 @@ import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CgtRef, CgtRefType, ClientIdType, ClientIdentifier, MtdItId, MtdItIdType, NinoType, PptRef, Service, Urn, UrnType, Utr, UtrType, Vrn, VrnType}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, CgtRef, CgtRefType, ClientIdType, ClientIdentifier, MtdItId, MtdItIdType, NinoType, PptRef, Service, Urn, UrnType, Utr, UtrType, Vrn, VrnType}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
@@ -135,9 +135,19 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
             enrolment.delegatedAuthRule
         ))
 
-    TypeOfEnrolment(clientId)
-      .extractIdentifierFrom(trimmedEnrolments)
-      .contains(clientId)
+    // check that among the identifiers that the user has, there is one that matches the clientId provided
+    clientId match {
+      // need to handle Arn separately as it is not one of our managed services
+      case Arn(arn) =>
+        trimmedEnrolments.exists(enrolment =>
+          enrolment.key == "HMRC-AS-AGENT" && enrolment.identifiers.contains(EnrolmentIdentifier("AgentReferenceNumber", arn)))
+      case taxId: TaxIdentifier =>
+        val requiredTaxIdType = ClientIdentifier(taxId).enrolmentId
+        trimmedEnrolments
+          .flatMap(_.identifiers)
+          .filter(_.key == requiredTaxIdType)
+          .exists(_.value == clientId.value)
+    }
   }
 
   def validateClientId(clientIdType: String, clientId: String): Either[Result, (Service, TaxIdentifier)] =
@@ -152,8 +162,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
       case "URN" if UrnType.isValid(clientId)                   => Right((TrustNT, Urn(clientId)))
       case "CGTPDRef" if CgtRefType.isValid(clientId)           => Right((CapitalGains, CgtRef(clientId)))
       case "EtmpRegistrationNumber" if PptRef.isValid(clientId) => Right((Ppt, PptRef(clientId)))
-      case e =>
-        Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
+      case "cbcId" if CbcId.isValid(clientId)                   => Right((Cbc, CbcId(clientId)))
+      case e                                                    => Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }
 
   def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
