@@ -75,7 +75,7 @@ trait BasicUserAuthStubs {
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
 
-  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef, pptRef: PptRef) = {
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef, pptRef: PptRef, cbcId: CbcId) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse()
         .withStatus(200)
@@ -152,6 +152,26 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        {
                      |          "key":"EtmpRegistrationNumber",
                      |          "value":"${pptRef.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key":"HMRC-CBC-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"cbcId",
+                     |          "value":"${cbcId.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key":"HMRC-CBC-NONUK-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"cbcId",
+                     |          "value":"${cbcId.value}"
                      |        }
                      |      ],
                      |      "state": "Activated"

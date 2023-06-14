@@ -21,7 +21,7 @@ import play.api.Environment
 import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr}
 import uk.gov.hmrc.agentclientauthorisation.service.BusinessNamesService
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -39,6 +39,7 @@ class AgentServicesController @Inject()(
   val env: Environment,
   desConnector: DesConnector,
   cidConnector: CitizenDetailsConnector,
+  eisConnector: EisConnector,
   businessNamesService: BusinessNamesService,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
@@ -236,6 +237,21 @@ class AgentServicesController @Inject()(
       case Some(record) => Ok(Json.obj("customerName" -> record.customerName))
       case None =>
         logger.warn(s"PPT customer not found for getPptCustomerName")
+        NotFound
+    }
+  }
+
+  def getCbcCustomerName(cbcId: CbcId): Action[AnyContent] = Action.async { implicit request =>
+    eisConnector.getCbcSubscription(cbcId).map {
+      case Some(subscription) =>
+        subscription.anyAvailableName match {
+          case Some(name) => Ok(Json.obj("customerName" -> name))
+          case None =>
+            logger.warn(s"getCbcCustomerName: CBC subscription exists but no names are available for $cbcId")
+            Ok(Json.obj("customerName" -> "")) // Unlikely to happen but if it does I don't think we want a hard fail
+        }
+      case None =>
+        logger.warn(s"getCbcCustomerName: CBC subscription not found for $cbcId")
         NotFound
     }
   }

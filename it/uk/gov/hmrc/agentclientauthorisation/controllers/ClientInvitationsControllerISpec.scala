@@ -51,6 +51,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       case TrustNT => "maintain a trust or an estate."
       case CapitalGains => "manage their Capital Gains Tax on UK property account."
       case Ppt => "manage their Plastic Packaging Tax."
+      case Cbc | CbcNonUk => "manage their Country-by-Country."
     }
 
     EmailInformation(Seq(dfe.agencyEmail),
@@ -90,7 +91,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     } else if(forBusiness)
       givenClientAllBusCgt(cgtRefBus)
     else
-      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef, cbcId)
   }
 
   trait AddEmailSupportStub {
@@ -151,7 +152,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       if (invitation.service != Service.PersonalIncomeRecord) verifyFriendlyNameChangeRequestSent() // See APB-6204: update friendly name unless service is Personal Income Record
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} (${client.service.id}) ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
@@ -251,7 +252,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       verifyAnalyticsRequestSent(1)
     }
 
-    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
+    s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} (${client.service.id}) combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
       val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
       val result: Result = await(controller.rejectInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400

@@ -143,6 +143,8 @@ class InvitationsService @Inject()(
       case Service.TrustNT              => relationshipsConnector.createTrustRelationship(invitation)
       case Service.CapitalGains         => relationshipsConnector.createCapitalGainsRelationship(invitation)
       case Service.Ppt                  => relationshipsConnector.createPlasticPackagingTaxRelationship(invitation)
+      case Service.Cbc                  => relationshipsConnector.createCountryByCountryRelationship(invitation)
+      case Service.CbcNonUk             => relationshipsConnector.createCountryByCountryRelationship(invitation)
     }
 
     createRelationship.recover {
@@ -207,10 +209,9 @@ class InvitationsService @Inject()(
       invitationsRepository.findLatestInvitationByClientId(clientId)
     }
 
-  def clientsReceived(service: Service, clientId: ClientId, status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[Seq[Invitation]] =
-    monitor(s"Repository-List-Invitations-Received-$service${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status)
+  def clientsReceived(clientId: ClientId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+    monitor(s"Repository-List-Invitations-Received-${clientId.typeId}${status.map(s => s"-$s").getOrElse("")}") {
+      invitationsRepository.findInvitationsBy(clientId = Some(clientId.value), status = status)
     }
 
   def updateAltItsaForNino(clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =

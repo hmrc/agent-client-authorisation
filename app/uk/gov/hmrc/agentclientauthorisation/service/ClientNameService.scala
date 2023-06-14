@@ -17,10 +17,10 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, VatCustomerDetails}
-import uk.gov.hmrc.agentmtdidentifiers.model.{CgtRef, MtdItId, PptRef, Service, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, MtdItId, PptRef, Service, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
@@ -32,6 +32,7 @@ case class ClientNameNotFound() extends Exception
 class ClientNameService @Inject()(
   citizenDetailsConnector: CitizenDetailsConnector,
   desConnector: DesConnector,
+  eisConnector: EisConnector,
   agentCacheProvider: AgentCacheProvider) {
 
   private val trustCache = agentCacheProvider.trustResponseCache
@@ -40,16 +41,17 @@ class ClientNameService @Inject()(
   private val logger = Logger(getClass)
 
   def getClientNameByService(clientId: String, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    service.id match {
-      case HMRCMTDIT if Nino.isValid(clientId) => getCitizenName(Nino(clientId))
-      case HMRCMTDIT                           => getItsaTradingName(MtdItId(clientId))
-      case HMRCPIR                             => getCitizenName(Nino(clientId))
-      case HMRCMTDVAT                          => getVatName(Vrn(clientId))
-      case HMRCTERSORG                         => getTrustName(clientId)
-      case HMRCTERSNTORG                       => getTrustName(clientId)
-      case HMRCCGTPD                           => getCgtName(CgtRef(clientId))
-      case HMRCPPTORG                          => getPptCustomerName(PptRef(clientId))
-      case _                                   => Future successful None
+    service match {
+      case MtdIt if Nino.isValid(clientId) => getCitizenName(Nino(clientId))
+      case MtdIt                           => getItsaTradingName(MtdItId(clientId))
+      case PersonalIncomeRecord            => getCitizenName(Nino(clientId))
+      case Vat                             => getVatName(Vrn(clientId))
+      case Trust                           => getTrustName(clientId)
+      case TrustNT                         => getTrustName(clientId)
+      case CapitalGains                    => getCgtName(CgtRef(clientId))
+      case Ppt                             => getPptCustomerName(PptRef(clientId))
+      case Cbc | CbcNonUk                  => getCbcCustomerName(CbcId(clientId))
+      case _                               => Future successful None
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
@@ -113,4 +115,7 @@ class ClientNameService @Inject()(
 
   def getPptCustomerName(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     desConnector.getPptSubscription(pptRef).map(_.map(_.customerName))
+
+  def getCbcCustomerName(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    eisConnector.getCbcSubscription(cbcId).map(_.flatMap(_.anyAvailableName))
 }

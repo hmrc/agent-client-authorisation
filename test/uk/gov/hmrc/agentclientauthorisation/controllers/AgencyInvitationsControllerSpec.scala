@@ -64,6 +64,7 @@ class AgencyInvitationsControllerSpec
   val appConfig: AppConfig = resettingMock[AppConfig]
   val mockPlayAuthConnector: PlayAuthConnector = resettingMock[PlayAuthConnector]
   override val mockDesConnector = resettingMock[DesConnector]
+  override val mockEisConnector = resettingMock[EisConnector]
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
@@ -80,6 +81,7 @@ class AgencyInvitationsControllerSpec
       kfcService,
       multiInvitationsService,
       mockDesConnector,
+      mockEisConnector,
       mockPlayAuthConnector,
       mockCitizenDetailsConnector,
       agentCacheProvider
