@@ -117,5 +117,5 @@ class ClientNameService @Inject()(
     desConnector.getPptSubscription(pptRef).map(_.map(_.customerName))
 
   def getCbcCustomerName(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    eisConnector.getCbcSubscription(cbcId).map(_.map(_.tradingName))
+    eisConnector.getCbcSubscription(cbcId).map(_.flatMap(_.anyAvailableName))
 }

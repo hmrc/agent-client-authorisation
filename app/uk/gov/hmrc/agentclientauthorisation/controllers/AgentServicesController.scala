@@ -243,7 +243,13 @@ class AgentServicesController @Inject()(
 
   def getCbcCustomerName(cbcId: CbcId): Action[AnyContent] = Action.async { implicit request =>
     eisConnector.getCbcSubscription(cbcId).map {
-      case Some(subscription) => Ok(Json.obj("customerName" -> subscription.tradingName))
+      case Some(subscription) =>
+        subscription.anyAvailableName match {
+          case Some(name) => Ok(Json.obj("customerName" -> name))
+          case None =>
+            logger.warn(s"getCbcCustomerName: CBC subscription exists but no names are available for $cbcId")
+            Ok(Json.obj("customerName" -> "")) // Unlikely to happen but if it does I don't think we want a hard fail
+        }
       case None =>
         logger.warn(s"getCbcCustomerName: CBC subscription not found for $cbcId")
         NotFound

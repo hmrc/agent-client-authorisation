@@ -166,7 +166,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockEisConnector
         .getCbcSubscription(_: CbcId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(cbcId, *, *)
-        .returns(Future(Some(SimpleCbcSubscription("Johnson and Oldman", true, Some(Seq("email@host.com"))))))
+        .returns(Future(Some(SimpleCbcSubscription(Some("Johnson and Oldman"), Seq.empty, true, Some(Seq("email@host.com"))))))
 
       val result = await(clientNameService.getClientNameByService(cbcId.value, Service.Cbc))
       result shouldBe Some("Johnson and Oldman")

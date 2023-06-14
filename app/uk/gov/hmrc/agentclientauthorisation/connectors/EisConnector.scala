@@ -35,9 +35,30 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SimpleCbcSubscription(tradingName: String, isGBUser: Boolean, emails: Option[Seq[String]])
+case class SimpleCbcSubscription(tradingName: Option[String], otherNames: Seq[String], isGBUser: Boolean, emails: Option[Seq[String]]) {
+  def anyAvailableName: Option[String] = tradingName.orElse(otherNames.headOption)
+}
 object SimpleCbcSubscription {
   implicit val format: Format[SimpleCbcSubscription] = Json.format[SimpleCbcSubscription]
+  def fromDisplaySubscriptionForCbCResponse(record: JsObject): SimpleCbcSubscription = {
+    val mIsGBUser = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "isGBUser").asOpt[Boolean]
+    val primaryContacts: Seq[CbcContact] =
+      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "primaryContact").asOpt[Seq[CbcContact]].getOrElse(Seq.empty)
+    val secondaryContacts: Seq[CbcContact] =
+      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "secondaryContact").asOpt[Seq[CbcContact]].getOrElse(Seq.empty)
+    val mTradingName = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
+    val otherNames: Seq[String] = (primaryContacts ++ secondaryContacts).collect {
+      case CbcContact(_, Some(ind: CbcIndividual), _)   => ind.name
+      case CbcContact(_, _, Some(org: CbcOrganisation)) => org.organisationName
+    }
+
+    val emails = (primaryContacts ++ secondaryContacts).map(_.email).collect { case Some(eml) => eml }
+
+    mIsGBUser match {
+      case Some(isGBUser) => SimpleCbcSubscription(mTradingName, otherNames, isGBUser, Some(emails))
+      case _              => throw new RuntimeException("CBC subscription response did not contain complete information")
+    }
+  }
 }
 
 /*
@@ -102,6 +123,15 @@ private object ReadSubscriptionRequestDetail {
   def apply(subscriptionId: String): ReadSubscriptionRequestDetail = new ReadSubscriptionRequestDetail("CBC", subscriptionId)
 }
 
+//-----------------------------------------------------------------------------
+
+private case class CbcIndividual(firstName: String, lastName: String) { def name: String = s"$firstName $lastName" }
+private object CbcIndividual { implicit val format: Format[CbcIndividual] = Json.format[CbcIndividual] }
+private case class CbcOrganisation(organisationName: String)
+private object CbcOrganisation { implicit val format: Format[CbcOrganisation] = Json.format[CbcOrganisation] }
+private case class CbcContact(email: Option[String], individual: Option[CbcIndividual], organisation: Option[CbcOrganisation])
+private object CbcContact { implicit val format: Format[CbcContact] = Json.format[CbcContact] }
+
 //=============================================================================
 @ImplementedBy(classOf[EisConnectorImpl])
 trait EisConnector {
@@ -152,19 +182,6 @@ class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: M
 
   def getCbcSubscription(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[SimpleCbcSubscription]] =
     getCbcSubscriptionJson(cbcId).map { maybeRecord =>
-      maybeRecord.map { record =>
-        val mTradingName = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
-        val mIsGBUser = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "isGBUser").asOpt[Boolean]
-        val primaryContacts =
-          (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "primaryContact").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-        val secondaryContacts =
-          (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "secondaryContact").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-        val emails = (primaryContacts ++ secondaryContacts).flatMap(jsObj => (jsObj \ "email").asOpt[String])
-
-        (mTradingName, mIsGBUser) match {
-          case (Some(tradingName), Some(isGBUser)) => SimpleCbcSubscription(tradingName, isGBUser, Some(emails))
-          case _                                   => throw new RuntimeException("CBC subscription response did not contain complete information")
-        }
-      }
+      maybeRecord.map(SimpleCbcSubscription.fromDisplaySubscriptionForCbCResponse)
     }
 }
