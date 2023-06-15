@@ -101,7 +101,15 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       forThisClientOrStride(taxId) {
         invitationsService
           .updateAltItsaForNino(taxId) // TODO!! Why do we have a side-effect in a GET call?!?
-          .flatMap(_ => invitationsService.clientsReceived(taxId, status) map (results => Ok(toHalResource(results, taxId, status))))
+          .flatMap { _ =>
+            val possibleServices = currentUser.service match {
+              /* TODO [CBC Onboarding] Forced ugly hack. We really need to change the endpoints to include the explicit
+                 service rather than rely on just the client id type (which can be ambiguous as in the case of CBC) */
+              case Service.Cbc | Service.CbcNonUk => Seq(Service.Cbc, Service.CbcNonUk)
+              case svc                            => Seq(svc)
+            }
+            invitationsService.clientsReceived(possibleServices, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
+          }
       }
     }
 
