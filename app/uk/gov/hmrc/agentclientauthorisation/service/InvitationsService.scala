@@ -209,9 +209,10 @@ class InvitationsService @Inject()(
       invitationsRepository.findLatestInvitationByClientId(clientId)
     }
 
-  def clientsReceived(clientId: ClientId, status: Option[InvitationStatus])(implicit ec: ExecutionContext): Future[Seq[Invitation]] =
+  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus])(
+    implicit ec: ExecutionContext): Future[Seq[Invitation]] =
     monitor(s"Repository-List-Invitations-Received-${clientId.typeId}${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(clientId = Some(clientId.value), status = status)
+      invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
     }
 
   def updateAltItsaForNino(clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
