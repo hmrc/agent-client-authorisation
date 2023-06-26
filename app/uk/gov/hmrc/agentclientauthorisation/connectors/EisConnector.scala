@@ -105,7 +105,7 @@ private object RequestCommonForSubscription {
     val acknowledgementReference = UUID.randomUUID().toString.replace("-", "")
 
     RequestCommonForSubscription(
-      regime = "CBC",
+      regime = "CbC",
       receiptDate = ZonedDateTime.now().format(formatter),
       acknowledgementReference = acknowledgementReference,
       originatingSystem = "MDTP",
