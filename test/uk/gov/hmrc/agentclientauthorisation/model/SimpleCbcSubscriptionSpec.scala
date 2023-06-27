@@ -29,11 +29,10 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
                                                                  |			"processingDate": "2020-08-09T11:23:45Z"
                                                                  |		},
                                                                  |		"responseDetail": {
-                                                                 |			"subscriptionID": "yu789428932",
+                                                                 |			"subscriptionID": "XYCBC2764649410",
                                                                  |			"tradingName": "Tools for Traders",
                                                                  |			"isGBUser": true,
-                                                                 |			"primaryContact": [
-                                                                 |				{
+                                                                 |			"primaryContact": {
                                                                  |					"email": "Tim@toolsfortraders.com",
                                                                  |					"phone": "078803423883",
                                                                  |					"mobile": "078803423883",
@@ -41,16 +40,13 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
                                                                  |						"lastName": "Taylor",
                                                                  |						"firstName": "Tim"
                                                                  |					}
+                                                                 |			},
+                                                                 |			"secondaryContact": {
+                                                                 |				"email": "contact@toolsfortraders.com",
+                                                                 |				"organisation": {
+                                                                 |					"organisationName": "Tools for Traders Limited"
                                                                  |				}
-                                                                 |			],
-                                                                 |			"secondaryContact": [
-                                                                 |				{
-                                                                 |					"email": "contact@toolsfortraders.com",
-                                                                 |					"organisation": {
-                                                                 |						"organisationName": "Tools for Traders Limited"
-                                                                 |					}
-                                                                 |				}
-                                                                 |			]
+                                                                 |			}
                                                                  |		}
                                                                  |	}
                                                                  |}""".stripMargin).as[JsObject]
@@ -62,7 +58,7 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
           tradingName = Some("Tools for Traders"),
           otherNames = Seq("Tim Taylor", "Tools for Traders Limited"),
           isGBUser = true,
-          emails = Some(Seq("Tim@toolsfortraders.com", "contact@toolsfortraders.com"))
+          emails = Seq("Tim@toolsfortraders.com", "contact@toolsfortraders.com")
         )
     }
     "return the trading name if available when asked for a name" in {
@@ -70,7 +66,7 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
         tradingName = Some("Tools for Traders"),
         otherNames = Seq("Tim Taylor", "Tools for Traders Limited"),
         isGBUser = true,
-        emails = None
+        emails = Seq("Tim@toolsfortraders.com", "contact@toolsfortraders.com")
       ).anyAvailableName shouldBe Some("Tools for Traders")
     }
     "return any other available name if the trading name is not available" in {
@@ -78,7 +74,7 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
         tradingName = None,
         otherNames = Seq("Tim Taylor", "Tools for Traders Limited"),
         isGBUser = true,
-        emails = None
+        emails = Seq("Tim@toolsfortraders.com", "contact@toolsfortraders.com")
       ).anyAvailableName shouldBe Some("Tim Taylor")
     }
   }
