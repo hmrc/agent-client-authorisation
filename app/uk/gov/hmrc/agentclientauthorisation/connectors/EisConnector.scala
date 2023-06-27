@@ -35,27 +35,37 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SimpleCbcSubscription(tradingName: Option[String], otherNames: Seq[String], isGBUser: Boolean, emails: Option[Seq[String]]) {
+case class SimpleCbcSubscription(tradingName: Option[String], otherNames: Seq[String], isGBUser: Boolean, emails: Seq[String]) {
   def anyAvailableName: Option[String] = tradingName.orElse(otherNames.headOption)
 }
 object SimpleCbcSubscription {
   implicit val format: Format[SimpleCbcSubscription] = Json.format[SimpleCbcSubscription]
   def fromDisplaySubscriptionForCbCResponse(record: JsObject): SimpleCbcSubscription = {
     val mIsGBUser = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "isGBUser").asOpt[Boolean]
-    val primaryContacts: Seq[CbcContact] =
-      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "primaryContact").asOpt[Seq[CbcContact]].getOrElse(Seq.empty)
-    val secondaryContacts: Seq[CbcContact] =
-      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "secondaryContact").asOpt[Seq[CbcContact]].getOrElse(Seq.empty)
     val mTradingName = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
-    val otherNames: Seq[String] = (primaryContacts ++ secondaryContacts).collect {
+    val primaryContact: CbcContact =
+      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "primaryContact")
+        .asOpt[CbcContact]
+        .getOrElse(
+          throw new RuntimeException("CBC subscription response did not contain complete information")
+        )
+    val secondaryContact: CbcContact =
+      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "secondaryContact")
+        .asOpt[CbcContact]
+        .getOrElse(
+          throw new RuntimeException("CBC subscription response did not contain complete information")
+        )
+    val contacts = Seq(primaryContact) ++ Seq(secondaryContact)
+
+    val otherNames: Seq[String] = contacts.collect {
       case CbcContact(_, Some(ind: CbcIndividual), _)   => ind.name
       case CbcContact(_, _, Some(org: CbcOrganisation)) => org.organisationName
     }
 
-    val emails = (primaryContacts ++ secondaryContacts).map(_.email).collect { case Some(eml) => eml }
+    val emails = contacts.map(_.email).collect { case eml => eml }
 
     mIsGBUser match {
-      case Some(isGBUser) => SimpleCbcSubscription(mTradingName, otherNames, isGBUser, Some(emails))
+      case Some(isGBUser) => SimpleCbcSubscription(mTradingName, otherNames, isGBUser, emails)
       case _              => throw new RuntimeException("CBC subscription response did not contain complete information")
     }
   }
@@ -129,7 +139,7 @@ private case class CbcIndividual(firstName: String, lastName: String) { def name
 private object CbcIndividual { implicit val format: Format[CbcIndividual] = Json.format[CbcIndividual] }
 private case class CbcOrganisation(organisationName: String)
 private object CbcOrganisation { implicit val format: Format[CbcOrganisation] = Json.format[CbcOrganisation] }
-private case class CbcContact(email: Option[String], individual: Option[CbcIndividual], organisation: Option[CbcOrganisation])
+private case class CbcContact(email: String, individual: Option[CbcIndividual], organisation: Option[CbcOrganisation])
 private object CbcContact { implicit val format: Format[CbcContact] = Json.format[CbcContact] }
 
 //=============================================================================

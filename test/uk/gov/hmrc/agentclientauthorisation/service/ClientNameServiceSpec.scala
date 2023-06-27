@@ -35,23 +35,23 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
-  val vrn = Vrn("555219930")
+  val vrn: Vrn = Vrn("555219930")
 
-  val utr = Utr("2134514321")
-  val urn = Utr("AAAAA2642468661")
+  val utr: Utr = Utr("2134514321")
+  val urn: Utr = Utr("AAAAA2642468661")
 
-  val cgtRef = CgtRef("XMCGTP123456789")
-  val cbcId = CbcId("XAPPT001122334455")
-  implicit val hc = HeaderCarrier()
+  val cgtRef: CgtRef = CgtRef("XMCGTP123456789")
+  val cbcId: CbcId = CbcId("XAPPT001122334455")
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val tpd = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
-  val tpdBus = TypeOfPersonDetails("Organisation", Right(OrganisationName("Trustee")))
+  val tpd: TypeOfPersonDetails = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
+  val tpdBus: TypeOfPersonDetails = TypeOfPersonDetails("Organisation", Right(OrganisationName("Trustee")))
 
-  val cgtAddressDetails =
+  val cgtAddressDetails: CgtAddressDetails =
     CgtAddressDetails("line1", Some("line2"), Some("line2"), Some("line2"), "GB", Some("postcode"))
 
-  val cgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpd, cgtAddressDetails))
-  val cgtSubscriptionBus = CgtSubscription("CGT", SubscriptionDetails(tpdBus, cgtAddressDetails))
+  val cgtSubscription: CgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpd, cgtAddressDetails))
+  val cgtSubscriptionBus: CgtSubscription = CgtSubscription("CGT", SubscriptionDetails(tpdBus, cgtAddressDetails))
 
   "getClientNameByService" should {
     "get the trading name if the service is ITSA" in {
@@ -166,7 +166,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockEisConnector
         .getCbcSubscription(_: CbcId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(cbcId, *, *)
-        .returns(Future(Some(SimpleCbcSubscription(Some("Johnson and Oldman"), Seq.empty, true, Some(Seq("email@host.com"))))))
+        .returns(Future(Some(SimpleCbcSubscription(Some("Johnson and Oldman"), Seq.empty, isGBUser = true, Seq.empty))))
 
       val result = await(clientNameService.getClientNameByService(cbcId.value, Service.Cbc))
       result shouldBe Some("Johnson and Oldman")

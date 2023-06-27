@@ -102,7 +102,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getInvitationUrl(givenArn: Arn, clientType: String) = onlyForAgents { implicit request => implicit arn =>
+  def getInvitationUrl(givenArn: Arn, clientType: String): Action[AnyContent] = onlyForAgents { implicit request =>implicit arn =>
     forThisAgency(givenArn) {
       for {
         result <- agentLinkService
@@ -277,10 +277,9 @@ class AgencyInvitationsController @Inject()(
         case VatDetailsNotFound       => NotFound
       }
       .recover {
-        case e if e.getMessage.contains("MIGRATION") => {
+        case e if e.getMessage.contains("MIGRATION") =>
           logger.warn(s"Issues with Check Known Fact for VAT: ${e.getMessage}")
           Locked
-        }
         case e =>
           logger.warn(s"Error found for Check Known Fact for VAT: ${e.getMessage}")
           BadGateway
@@ -328,11 +327,9 @@ class AgencyInvitationsController @Inject()(
     withBasicAuth {
       pptCache(pptRef.value) {
         desConnector.getPptSubscriptionRawJson(pptRef)
-      }.map { pptSubscription =>
-        pptSubscription match {
-          case Some(sub) => Ok(Json.toJson(sub))
-          case None      => NotFound
-        }
+      }.map {
+        case Some(sub) => Ok(Json.toJson(sub))
+        case None => NotFound
       }
     }
   }
@@ -346,7 +343,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate) = Action.async { implicit request =>
+  def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate): Action[AnyContent] = Action.async { implicit request =>
     desConnector
       .getPptSubscription(EtmpRegistrationNumberNumber)
       .map {
@@ -364,13 +361,16 @@ class AgencyInvitationsController @Inject()(
       }
   }
 
-  def checkKnownFactCbc(cbcId: CbcId) = Action.async { implicit request =>
+  def checkKnownFactCbc(cbcId: CbcId): Action[AnyContent] = Action.async { implicit request =>
     request.body.asJson.flatMap(json => (json \ "email").asOpt[String]) match {
       case Some(email) =>
         eisConnector.getCbcSubscription(cbcId).map {
           case Some(subscription) =>
-            val knownFactOk = subscription.emails.exists(_.contains(email.trim))
-            if (knownFactOk) NoContent else Forbidden
+            val knownFactOk = subscription.emails.contains(email.trim)
+            if (knownFactOk) { NoContent } else {
+              logger.warn(s"checkKnownFactCbc: email does not match CBC subscription for $cbcId")
+              Forbidden
+            }
           case None =>
             logger.warn(s"checkKnownFactCbc: CBC subscription not found for $cbcId")
             NotFound
@@ -394,10 +394,9 @@ class AgencyInvitationsController @Inject()(
                   DeletionCount(appConfig.appName, "agent-reference", referencesDeleted)
                 ))))
         }).recover {
-          case e => {
+          case e =>
             logger.warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
             genericInternalServerError(e.getMessage)
-          }
         }
       } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
     }
@@ -410,10 +409,9 @@ class AgencyInvitationsController @Inject()(
         if (result.nonEmpty) Created else NoContent
       }
       .recover {
-        case e => {
+        case e =>
           logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
           genericInternalServerError(e.getMessage)
-        }
       }
   }
 
@@ -422,10 +420,9 @@ class AgencyInvitationsController @Inject()(
       .updateAltItsaFor(arn)
       .map(_ => NoContent)
       .recover {
-        case e => {
+        case e =>
           logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
           genericInternalServerError(e.getMessage)
-        }
       }
   }
 }
