@@ -6,7 +6,7 @@ GET         /agencies/:arn/invitations/sent/:invitationId                       
 PUT         /agencies/:arn/invitations/sent/:invitationId/cancel                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cancelInvitation(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
 POST        /invitations/:urn/replace/utr/:utr                                                @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.replaceUrnInvitationWithUtr(urn: uk.gov.hmrc.agentmtdidentifiers.model.Urn, utr: uk.gov.hmrc.agentmtdidentifiers.model.Utr)
-PUT         /invitations/set-relationship-ended                                                 @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.setRelationshipEnded()
+PUT         /invitations/set-relationship-ended                                               @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.setRelationshipEnded()
 
 GET         /agencies/references/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecord(uid: String)
 GET         /agencies/references/arn/:arn                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getAgentReferenceRecordByArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
@@ -30,7 +30,7 @@ PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/
 PUT         /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject        @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.rejectInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 GET         /clients/:clientIdType/:clientId/invitations/received/:invitationId               @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitation(clientIdType: String, clientId: String, invitationId: uk.gov.hmrc.agentmtdidentifiers.model.InvitationId)
 
-GET         /clients/:clientIdType/:identifier/invitations/received                                @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientIdType: String, identifier: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
+GET         /clients/:clientIdType/:identifier/invitations/received                           @uk.gov.hmrc.agentclientauthorisation.controllers.ClientInvitationsController.getInvitations(clientIdType: String, identifier: String, status: Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 
 GET         /clients/invitations/uid/:uid                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgentReferenceController.getInvitationsInfo(uid: String, status:  Option[uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus])
 

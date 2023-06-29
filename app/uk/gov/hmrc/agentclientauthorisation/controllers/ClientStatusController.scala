@@ -67,7 +67,7 @@ class ClientStatusController @Inject()(
                    }
       } yield Ok(Json.toJson(status))
     } {
-      Ok(Json.toJson(ClientStatus(false, false, false)))
+      Ok(Json.toJson(ClientStatus(hasPendingInvitations = false, hasInvitationsHistory = false, hasExistingRelationships = false)))
     }
 
   }
@@ -87,6 +87,7 @@ object ClientStatusController {
       .map(i => s"${i._1}__${i._2}".toLowerCase.replaceAllLiterally(" ", ""))
       .mkString(",")
 
-  val defaultClientStatus = Future.successful(ClientStatus(false, false, false))
+  val defaultClientStatus: Future[ClientStatus] =
+    Future.successful(ClientStatus(hasPendingInvitations = false, hasInvitationsHistory = false, hasExistingRelationships = false))
 
 }

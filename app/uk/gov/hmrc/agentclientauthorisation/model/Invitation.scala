@@ -33,10 +33,10 @@ sealed trait InvitationStatus {
     case status          => Right(status)
   }
 
-  def leftMap[X](f: String => X) =
+  def leftMap[X](f: String => X): Either[X, InvitationStatus] =
     toEither.left.map(f)
 
-  override def toString = InvitationStatus.unapply(this).getOrElse("Unknown")
+  override def toString: String = InvitationStatus.unapply(this).getOrElse("Unknown")
 }
 
 case object Pending extends InvitationStatus
@@ -78,7 +78,7 @@ object InvitationStatus {
     case _              => Unknown(status)
   }
 
-  implicit val invitationStatusFormat = new Format[InvitationStatus] {
+  implicit val invitationStatusFormat: Format[InvitationStatus] = new Format[InvitationStatus] {
     override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
       case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
       case value          => JsSuccess(value)
@@ -92,7 +92,7 @@ object InvitationStatus {
 case class StatusChangeEvent(time: LocalDateTime, status: InvitationStatus)
 
 object StatusChangeEvent {
-  implicit val statusChangeEventFormat = new Format[StatusChangeEvent] {
+  implicit val statusChangeEventFormat: Format[StatusChangeEvent] = new Format[StatusChangeEvent] {
     override def reads(json: JsValue): JsResult[StatusChangeEvent] = {
       val time = Instant.ofEpochMilli((json \ "time").as[Long]).atZone(ZoneOffset.UTC).toLocalDateTime
       val status = InvitationStatus((json \ "status").as[String])
@@ -129,7 +129,7 @@ case class Invitation(
   def mostRecentEvent(): StatusChangeEvent =
     events.last
 
-  def status = mostRecentEvent().status
+  def status: InvitationStatus = mostRecentEvent().status
 
   def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
 
@@ -163,9 +163,9 @@ object Invitation {
       events = List(StatusChangeEvent(startDate, Pending))
     )
 
-  implicit val dateTimeFormats = MongoLocalDateTimeFormat.localDateTimeFormat
-  implicit val localDateFormats = MongoLocalDateTimeFormat.localDateFormat
-  implicit val oidFormat = MongoFormats.Implicits.objectIdFormat
+  implicit val dateTimeFormats: Format[LocalDateTime] = MongoLocalDateTimeFormat.localDateTimeFormat
+  implicit val localDateFormats: Format[LocalDate] = MongoLocalDateTimeFormat.localDateFormat
+  implicit val oidFormat: Format[ObjectId] = MongoFormats.Implicits.objectIdFormat
 
   object external {
     implicit val writes: Writes[Invitation] = new Writes[Invitation] {
@@ -209,13 +209,13 @@ object Invitation {
 /** Information provided by the agent to offer representation to HMRC */
 case class AgentInvitation(service: String, clientType: Option[String], clientIdType: String, clientId: String) {
 
-  lazy val getService = Service.forId(service)
+  lazy val getService: Service = Service.forId(service)
 }
 
 object AgentInvitation {
-  implicit val format = Json.format[AgentInvitation]
+  implicit val format: OFormat[AgentInvitation] = Json.format[AgentInvitation]
 
-  def normalizeClientId(clientId: String) = clientId.replaceAll("\\s", "")
+  def normalizeClientId(clientId: String): String = clientId.replaceAll("\\s", "")
 }
 
 case class InvitationInfo(
@@ -230,5 +230,5 @@ case class InvitationInfo(
   isAltItsa: Boolean = false)
 
 object InvitationInfo {
-  implicit val format = Json.format[InvitationInfo]
+  implicit val format: OFormat[InvitationInfo] = Json.format[InvitationInfo]
 }

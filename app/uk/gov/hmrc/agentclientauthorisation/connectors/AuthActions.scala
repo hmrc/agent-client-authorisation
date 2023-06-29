@@ -248,12 +248,20 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
             enrols.enrolments
               .filter(enrol => Service.supportedServices.map(_.enrolmentKey).contains(enrol.key))
               .map { supportedEnrol =>
-                (
-                  supportedServiceName(supportedEnrol.key).getOrElse(
-                    throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
-                  supportedEnrol.identifiers.head.key,
-                  supportedEnrol.identifiers.head.value.replaceAll(" ", "")
-                )
+                if (supportedEnrol.key == Service.HMRCCBCORG) {
+                  ( // TODO - handle better, multi-identifier lookup? Uk cbc has UTR first
+                    supportedServiceName(supportedEnrol.key).getOrElse(
+                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
+                    supportedEnrol.identifiers.reverse.head.key,
+                    supportedEnrol.identifiers.reverse.head.value.replaceAll(" ", ""))
+                } else {
+                  (
+                    supportedServiceName(supportedEnrol.key).getOrElse(
+                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
+                    supportedEnrol.identifiers.head.key,
+                    supportedEnrol.identifiers.head.value.replaceAll(" ", "")
+                  )
+                }
               }
               .toSeq
 

@@ -102,7 +102,7 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
-  def getInvitationUrl(givenArn: Arn, clientType: String): Action[AnyContent] = onlyForAgents { implicit request =>implicit arn =>
+  def getInvitationUrl(givenArn: Arn, clientType: String): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       for {
         result <- agentLinkService
@@ -329,7 +329,7 @@ class AgencyInvitationsController @Inject()(
         desConnector.getPptSubscriptionRawJson(pptRef)
       }.map {
         case Some(sub) => Ok(Json.toJson(sub))
-        case None => NotFound
+        case None      => NotFound
       }
     }
   }
