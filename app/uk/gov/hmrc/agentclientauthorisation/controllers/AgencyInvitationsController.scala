@@ -366,7 +366,7 @@ class AgencyInvitationsController @Inject()(
       case Some(email) =>
         eisConnector.getCbcSubscription(cbcId).map {
           case Some(subscription) =>
-            val knownFactOk = subscription.emails.contains(email.trim)
+            val knownFactOk = subscription.emails.exists(_.trim.equalsIgnoreCase(email.trim))
             if (knownFactOk) { NoContent } else {
               logger.warn(s"checkKnownFactCbc: email does not match CBC subscription for $cbcId")
               Forbidden

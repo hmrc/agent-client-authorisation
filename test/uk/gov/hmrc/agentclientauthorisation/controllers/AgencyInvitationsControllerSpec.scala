@@ -38,7 +38,7 @@ import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, ClientIdentifier, InvitationId, Service, Vrn}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
@@ -497,6 +497,48 @@ class AgencyInvitationsControllerSpec
       agentAuthStub(agentNoEnrolments)
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe AgentNotSubscribed
+    }
+  }
+
+  "checkKnownFactCbc" should {
+    //val format = DateTimeFormat.forPattern("ddMMyyyy")
+    val cbcId = CbcId("XACBC0000012345")
+    val correctEmail = "client@business.org"
+    val subscriptionRecord =
+      SimpleCbcSubscription(tradingName = Some("My Business"), otherNames = Seq.empty, isGBUser = true, emails = Seq(correctEmail))
+    def makeRequest(email: String) = FakeRequest().withJsonBody(Json.obj("email" -> email))
+
+    "return No Content if cbcId is known and the email matched (case insensitive)" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(mockEisConnector.getCbcSubscription(eqs(cbcId))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(subscriptionRecord)))
+
+      await(controller.checkKnownFactCbc(cbcId)(makeRequest(correctEmail))) shouldBe NoContent
+      // check case insensitivity
+      await(controller.checkKnownFactCbc(cbcId)(makeRequest(correctEmail.toUpperCase))) shouldBe NoContent
+    }
+
+    "return Forbidden if cbcId is known but the email did not match" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(mockEisConnector.getCbcSubscription(eqs(cbcId))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(subscriptionRecord)))
+
+      await(controller.checkKnownFactCbc(cbcId)(makeRequest("incorrect@email.com"))) shouldBe Forbidden
+    }
+
+    "return Not Found if cbcId is unknown" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      when(mockEisConnector.getCbcSubscription(eqs(cbcId))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(None))
+
+      await(controller.checkKnownFactCbc(cbcId)(makeRequest(correctEmail))) shouldBe NotFound
+    }
+
+    "return Bad Request if the body of the request does not contain an email" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+      val badRequest = FakeRequest().withJsonBody(Json.obj("foo" -> "bar"))
+      when(mockEisConnector.getCbcSubscription(eqs(cbcId))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(None))
+
+      await(controller.checkKnownFactCbc(cbcId)(badRequest)) shouldBe BadRequest
     }
   }
 
