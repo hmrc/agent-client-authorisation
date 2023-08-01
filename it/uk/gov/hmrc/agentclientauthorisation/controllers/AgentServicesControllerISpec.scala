@@ -10,7 +10,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{VatCustomerDetails, VatIndividual}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, SuspensionDetails, Utr, Vrn}
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 class AgentServicesControllerISpec extends BaseISpec {
 
@@ -60,14 +60,14 @@ class AgentServicesControllerISpec extends BaseISpec {
   def getCurrentSuspensionDetails: WSResponse =
     makeGetRequest(s"$url/agent/suspension-details")
 
-  def getAgencyNameFor(arn: Arn): WSResponse =
-    makeGetRequest(s"$url/client/agency-name/${arn.value}")
+  def getAgencyNameFor(agentId: TaxIdentifier): WSResponse =
+    makeGetRequest(s"$url/client/agency-name/${agentId.value}")
 
-  def getAgencyEmailFor(arn: Arn): WSResponse =
-    makeGetRequest(s"$url/client/agency-email/${arn.value}")
+  def getAgencyEmailFor(agentId: TaxIdentifier): WSResponse =
+    makeGetRequest(s"$url/client/agency-email/${agentId.value}")
 
-  def getSuspensionDetailsFor(arn: Arn): WSResponse =
-    makeGetRequest(s"$url/client/suspension-details/${arn.value}")
+  def getSuspensionDetailsFor(agentId: TaxIdentifier): WSResponse =
+    makeGetRequest(s"$url/client/suspension-details/${agentId.value}")
 
   def getAgencyNameClientWithUtr(utr: Utr): WSResponse =
     makeGetRequest(s"$url/client/agency-name/utr/${utr.value}")
@@ -274,11 +274,20 @@ class AgentServicesControllerISpec extends BaseISpec {
   }
 
   "GET /client/agency-name/:arn" should {
-    "return Ok and data after successful response" in {
+    "return Ok and data after successful response (with ARN)" in {
       isLoggedIn
       givenDESRespondsWithValidData(arn, "ACME")
 
       val result = getAgencyNameFor(arn)
+      result.status shouldBe OK
+      result.json shouldBe Json.obj("agencyName" -> "ACME")
+    }
+
+    "return Ok and data after successful response (with UTR)" in {
+      isLoggedIn
+      givenDESRespondsWithValidData(utr, "ACME")
+
+      val result = getAgencyNameFor(utr)
       result.status shouldBe OK
       result.json shouldBe Json.obj("agencyName" -> "ACME")
     }
@@ -300,20 +309,28 @@ class AgentServicesControllerISpec extends BaseISpec {
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
     }
 
-    "return BadRequest when receiving an invalid Arn" in {
+    "return BadRequest when receiving an invalid agent id" in {
       val result = getAgencyNameFor(Arn("InvalidArn[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
-      (result.json \ "message").get.as[String] shouldBe "Invalid Arn"
     }
   }
 
   "GET /client/agency-email/:arn" should {
-    "return Ok and data after successful response" in {
+    "return Ok and data after successful response (with ARN)" in {
       isLoggedIn
       givenDESRespondsWithValidData(arn, "ACME")
 
       val result = getAgencyEmailFor(arn)
+      result.status shouldBe OK
+      result.json shouldBe Json.obj("agencyEmail" -> "abc@xyz.com")
+    }
+
+    "return Ok and data after successful response (with UTR)" in {
+      isLoggedIn
+      givenDESRespondsWithValidData(utr, "ACME")
+
+      val result = getAgencyEmailFor(utr)
       result.status shouldBe OK
       result.json shouldBe Json.obj("agencyEmail" -> "abc@xyz.com")
     }
@@ -335,20 +352,28 @@ class AgentServicesControllerISpec extends BaseISpec {
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
     }
 
-    "return BadRequest when receiving an invalid Arn" in {
+    "return BadRequest when receiving an invalid agent id" in {
       val result = getAgencyEmailFor(Arn("InvalidArn[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
-      (result.json \ "message").get.as[String] shouldBe "Invalid Arn"
     }
   }
 
   "GET /client/agent-suspension/:arn" should {
-    "return Ok and data after successful response" in {
+    "return Ok and data after successful response (with ARN)" in {
       isLoggedIn
       givenDESRespondsWithValidData(arn, "ACME", SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
 
       val result = getSuspensionDetailsFor(arn)
+      result.status shouldBe OK
+      result.json shouldBe Json.toJson(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
+    }
+
+    "return Ok and data after successful response (with UTR)" in {
+      isLoggedIn
+      givenDESRespondsWithValidData(utr, "ACME", SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
+
+      val result = getSuspensionDetailsFor(utr)
       result.status shouldBe OK
       result.json shouldBe Json.toJson(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA", "VATC"))))
     }
@@ -370,11 +395,10 @@ class AgentServicesControllerISpec extends BaseISpec {
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_GATEWAY
     }
 
-    "return BadRequest when receiving an invalid Arn" in {
+    "return BadRequest when receiving an invalid agent id" in {
       val result = getSuspensionDetailsFor(Arn("InvalidArn[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
-      (result.json \ "message").get.as[String] shouldBe "Invalid Arn"
     }
   }
 
@@ -411,7 +435,6 @@ class AgentServicesControllerISpec extends BaseISpec {
       val result = getAgencyNameClientWithUtr(Utr("InvalidUtr[][][][][]["))
       result.status shouldBe BAD_REQUEST
       (result.json \ "statusCode").get.as[Int] shouldBe BAD_REQUEST
-      (result.json \ "message").get.as[String] shouldBe "Invalid Utr"
     }
   }
 

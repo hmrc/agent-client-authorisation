@@ -45,7 +45,7 @@ class EmailService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[DetailsForEmail] = {
     val detailsForEmail = for {
-      agencyRecordDetails <- fromOptionF(desConnector.getAgencyDetails(arn), AgencyEmailNotFound(arn))
+      agencyRecordDetails <- fromOptionF(desConnector.getAgencyDetails(Right(arn)), AgencyEmailNotFound(arn))
       agencyName          <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyName), AgencyNameNotFound(arn))
       agencyEmail         <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail), AgencyEmailNotFound(arn))
       clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())

@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.
 import uk.gov.hmrc.agentclientauthorisation.service.BusinessNamesService
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
@@ -47,43 +47,37 @@ class AgentServicesController @Inject()(
   implicit val erFormats: OFormat[ErrorResponse] = Json.format
 
   def getCurrentAgencyName: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    getAgencyName(arn)
+    getAgencyName(Right(arn))
   }
 
   def getCurrentAgencyEmail: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    getAgencyEmail(arn)
+    getAgencyEmail(Right(arn))
   }
 
   def getCurrentAgencyDetails: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    getAgencyDetails(arn)
+    getAgencyDetails(Right(arn))
   }
 
   def getCurrentSuspensionDetails: Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
-    getAgencySuspensionDetails(arn)
+    getAgencySuspensionDetails(Right(arn))
   }
 
-  def getAgencyNameBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    if (Arn.isValid(arn.value)) {
-      getAgencyName(arn)
-    } else errorResponse(BAD_REQUEST, "Invalid Arn")
+  def getAgencyNameBy(agentId: Either[Utr, Arn]): Action[AnyContent] = Action.async { implicit request =>
+    getAgencyName(agentId)
   }
 
-  def getAgencyEmailBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    if (Arn.isValid(arn.value)) {
-      getAgencyEmail(arn)
-    } else errorResponse(BAD_REQUEST, "Invalid Arn")
+  def getAgencyEmailBy(agentId: Either[Utr, Arn]): Action[AnyContent] = Action.async { implicit request =>
+    getAgencyEmail(agentId)
   }
 
-  def getSuspensionDetailsBy(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    if (Arn.isValid(arn.value)) {
-      getAgencySuspensionDetails(arn)
-    } else errorResponse(BAD_REQUEST, "Invalid Arn")
+  def getSuspensionDetailsBy(agentId: Either[Utr, Arn]): Action[AnyContent] = Action.async { implicit request =>
+    getAgencySuspensionDetails(agentId)
   }
 
   def getAgencyNameClientWithUtr(utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     if (Utr.isValid(utr.value)) {
       withBasicAuth {
-        getAgencyName(utr)
+        getAgencyName(Left(utr))
       }
     } else errorResponse(BAD_REQUEST, "Invalid Utr")
   }
@@ -110,7 +104,7 @@ class AgentServicesController @Inject()(
           if (validationResult) {
             withBasicAuth {
               val agencyDetails: Set[Future[Option[AgencyNameByArn]]] = arns.map { arn =>
-                agencyNameFor(Arn(arn)).map(nameOpts => nameOpts.map(name => AgencyNameByArn(arn, name)))
+                agencyNameFor(Right(Arn(arn))).map(nameOpts => nameOpts.map(name => AgencyNameByArn(arn, name)))
               }
 
               Future
@@ -135,7 +129,7 @@ class AgentServicesController @Inject()(
           if (validationResult) {
             withBasicAuth {
               val agencyDetails = utrs.map { utr =>
-                agencyNameFor(Utr(utr)).map(nameOpts => nameOpts.map(name => AgencyNameByUtr(utr, name)))
+                agencyNameFor(Left(Utr(utr))).map(nameOpts => nameOpts.map(name => AgencyNameByUtr(utr, name)))
               }
 
               Future
@@ -256,41 +250,41 @@ class AgentServicesController @Inject()(
     }
   }
 
-  private def agencyNameFor(identifier: TaxIdentifier)(implicit hc: HeaderCarrier): Future[Option[String]] =
+  private def agencyNameFor(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier): Future[Option[String]] =
     desConnector
-      .getAgencyDetails(identifier)
+      .getAgencyDetails(agentId)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
 
-  private def getAgencyName(clientIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier) =
+  private def getAgencyName(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier) =
     desConnector
-      .getAgencyDetails(clientIdentifier)
+      .getAgencyDetails(agentId)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyName)))
       .map {
         case Some(name) => Ok(Json.obj("agencyName" -> name))
         case None       => NoContent
       }
 
-  private def getAgencyEmail(clientIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier) =
+  private def getAgencyEmail(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier) =
     desConnector
-      .getAgencyDetails(clientIdentifier)
+      .getAgencyDetails(agentId)
       .map(_.flatMap(_.agencyDetails.flatMap(_.agencyEmail)))
       .map {
         case Some(email) => Ok(Json.obj("agencyEmail" -> email))
         case None        => NoContent
       }
 
-  private def getAgencyDetails(arn: Arn)(implicit hc: HeaderCarrier) =
+  private def getAgencyDetails(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier) =
     desConnector
-      .getAgencyDetails(arn)
+      .getAgencyDetails(agentId)
       .map(_.flatMap(_.agencyDetails))
       .map {
         case Some(agencyDetails) => Ok(Json.toJson(agencyDetails))
         case None                => NoContent
       }
 
-  private def getAgencySuspensionDetails(arn: Arn)(implicit hc: HeaderCarrier) =
+  private def getAgencySuspensionDetails(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier) =
     desConnector
-      .getAgencyDetails(arn)
+      .getAgencyDetails(agentId)
       .map(details => details.flatMap(_.suspensionDetails))
       .map {
         case Some(suspensionDetails) => Ok(Json.toJson(suspensionDetails))

@@ -54,7 +54,7 @@ class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceR
 
   def agencyName(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] =
     desConnector
-      .getAgencyDetails(arn)
+      .getAgencyDetails(Right(arn))
       .map(
         _.flatMap(_.agencyDetails.flatMap(_.agencyName))
           .map(normaliseAgentName)

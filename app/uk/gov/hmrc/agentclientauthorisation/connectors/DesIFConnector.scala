@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 
@@ -49,7 +49,7 @@ trait DesConnector {
 
   def getCgtSubscription(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse]
 
-  def getAgencyDetails(agentIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]]
+  def getAgencyDetails(agentIdentifier: Either[Utr, Arn])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]]
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
@@ -147,21 +147,24 @@ class DesConnectorImpl @Inject()(
     }
   }
 
-  def getAgencyDetails(agentIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] =
+  def getAgencyDetails(
+    agentIdentifier: Either[Utr, Arn])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] = {
+    val agentIdValue = agentIdentifier.fold(_.value, _.value)
     agentCacheProvider
-      .agencyDetailsCache(agentIdentifier.value) {
+      .agencyDetailsCache(agentIdValue) {
         getWithDesIfHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier)).map { response =>
           response.status match {
             case status if is2xx(status) => response.json.asOpt[AgentDetailsDesResponse]
             case status if is4xx(status) => None
             case _ if response.body.contains("AGENT_TERMINATED") =>
-              logger.warn(s"Discovered a Termination for agent: $agentIdentifier")
+              logger.warn(s"Discovered a Termination for agent: $agentIdValue")
               None
             case other =>
               throw UpstreamErrorResponse(s"unexpected response during 'getAgencyDetails', status: $other, response: ${response.body}", other, other)
           }
         }
       }
+  }
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-DES-GetAgentRegistration-POST") {
@@ -288,16 +291,14 @@ class DesConnectorImpl @Inject()(
       httpClient.GET[HttpResponse](url, headers = desIfHeaders.outboundHeaders(viaIf, Some(apiName)))(implicitly[HttpReads[HttpResponse]], hc, ec)
     }
 
-  private def getAgentRecordUrl(agentId: TaxIdentifier) =
+  private def getAgentRecordUrl(agentId: Either[Utr, Arn]) =
     agentId match {
-      case Arn(arn) =>
+      case Right(Arn(arn)) =>
         val encodedArn = UriEncoding.encodePathSegment(arn, "UTF-8")
         s"$baseUrl/registration/personal-details/arn/$encodedArn"
-      case Utr(utr) =>
+      case Left(Utr(utr)) =>
         val encodedUtr = UriEncoding.encodePathSegment(utr, "UTF-8")
         s"$baseUrl/registration/personal-details/utr/$encodedUtr"
-      case _ =>
-        throw new Exception(s"The client identifier $agentId is not supported.")
     }
 
   private val utrPattern = "^\\d{10}$"

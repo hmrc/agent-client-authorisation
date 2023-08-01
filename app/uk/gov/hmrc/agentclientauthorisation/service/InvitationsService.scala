@@ -249,7 +249,7 @@ class InvitationsService @Inject()(
 
     def isArnSuspendedForService(arn: Arn, service: Service): Future[Option[Boolean]] =
       desConnector
-        .getAgencyDetails(arn)
+        .getAgencyDetails(Right(arn))
         .map(details =>
           details.map(_.suspensionDetails.getOrElse(SuspensionDetails.notSuspended)).map { sd =>
             sd.isRegimeSuspended(service)

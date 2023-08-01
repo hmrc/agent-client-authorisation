@@ -94,13 +94,13 @@ class AgentCacheProviderImplISpec extends BaseISpec {
 
       val request = FakeRequest("GET", s"/agent/agency-name")
 
-      val result1 = await(asaController.getAgencyNameBy(arn)(request))
+      val result1 = await(asaController.getAgencyNameBy(Right(arn))(request))
       status(result1) shouldBe 200
 
-      val result2 = await(asaController.getAgencyNameBy(arn)(request))
+      val result2 = await(asaController.getAgencyNameBy(Right(arn))(request))
       status(result2) shouldBe 200
 
-      val result3 = await(asaController.getAgencyNameBy(arn)(request))
+      val result3 = await(asaController.getAgencyNameBy(Right(arn))(request))
       status(result3) shouldBe 200
 
       //verify DES call is made only once
