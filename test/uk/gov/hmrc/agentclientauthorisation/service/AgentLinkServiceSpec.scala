@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, Busi
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails, Utr}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
@@ -70,7 +70,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
       when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future successful Some(agentReferenceRecord))
-      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+      when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(
@@ -88,7 +88,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.findByArn(any[Arn])).thenReturn(Future successful None)
       when(mockAgentReferenceRepository.create(any[AgentReferenceRecord]))
         .thenReturn(Future successful Some("id"))
-      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+      when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(

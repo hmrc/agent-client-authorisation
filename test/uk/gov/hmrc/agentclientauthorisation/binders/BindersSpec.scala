@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.binders
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import uk.gov.hmrc.agentclientauthorisation.binders.Binders.{InvitationStatusBinder, LocalDateBinder, LocalDateQueryStringBinder}
 import uk.gov.hmrc.agentclientauthorisation.model.Accepted
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 
 import java.time.LocalDate
 
@@ -63,6 +64,18 @@ class BindersSpec extends UnitSpec {
     }
     "unbind" in {
       LocalDateQueryStringBinder.unbind("date", LocalDate.parse("2001-01-02")) shouldBe "2001-01-02"
+    }
+  }
+
+  "AgentIdBinder" should {
+    "accept a valid ARN" in {
+      Binders.agentIdBinder.bind("agentId", "EARN8077593").right.get shouldBe Right(Arn("EARN8077593"))
+    }
+    "accept a valid UTR" in {
+      Binders.agentIdBinder.bind("agentId", "2134514321").right.get shouldBe Left(Utr("2134514321"))
+    }
+    "fail if an invalid identifier is provided" in {
+      Binders.agentIdBinder.bind("agentId", "XXCGT1029384756").isLeft shouldBe true
     }
   }
 }

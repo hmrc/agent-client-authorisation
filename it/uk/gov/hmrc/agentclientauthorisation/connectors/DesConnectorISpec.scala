@@ -171,7 +171,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       givenDESRespondsWithValidData(Arn(arn), "My Agency Ltd")
 
-      val result = await(connector.getAgencyDetails(Arn(arn)))
+      val result = await(connector.getAgencyDetails(Right(Arn(arn))))
       result shouldBe Some(
         AgentDetailsDesResponse(Some(
           AgencyDetails(Some("My Agency Ltd"),
@@ -190,7 +190,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     "return None when DES responds with invalid data" in {
       givenDESRespondsWithoutValidData(Arn(arn))
 
-      val result = await(connector.getAgencyDetails(Arn(arn)))
+      val result = await(connector.getAgencyDetails(Right(Arn(arn))))
 
       result shouldBe Some(AgentDetailsDesResponse(None, None))
     }

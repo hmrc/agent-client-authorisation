@@ -33,7 +33,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, Ag
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.PersonalIncomeRecord
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service, SuspensionDetails}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service, SuspensionDetails, Utr}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, Enrolments, PlayAuthConnector}
@@ -117,7 +117,7 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
       val simplifiedAgentRefRecord: SimplifiedAgentRefRecord =
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
-      when(mockDesConnector.getAgencyDetails(any[Arn])(any[HeaderCarrier], any[ExecutionContext]))
+      when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Some(AgentDetailsDesResponse(
