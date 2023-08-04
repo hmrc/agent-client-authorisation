@@ -44,6 +44,8 @@ class AgentSuspensionContactDetailsRepositoryImpl @Inject()(mongo: MongoComponen
       )
     ) with AgentSuspensionContactDetailsCapturedRepository with Logging {
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   def get(arn: Arn): Future[Option[AgentSuspensionContactDetailsCaptured]] =
     collection
       .find(Filters.equal("arn", arn.value))

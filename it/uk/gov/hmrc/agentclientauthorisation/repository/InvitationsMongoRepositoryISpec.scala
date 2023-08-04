@@ -39,7 +39,7 @@ class InvitationsMongoRepositoryISpec
     extends UnitSpec  with Eventually with Inside
      with DefaultPlayMongoRepositorySupport[Invitation] {
 
-  override def repository  = new InvitationsRepositoryImpl(mongoComponent)
+  override val repository  = new InvitationsRepositoryImpl(mongoComponent)
 
   val date = LocalDate.now()
   val invitationITSA = Invitation(
