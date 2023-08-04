@@ -5,11 +5,12 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.ServerProvider
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.{EmptyBody, WSClient, WSResponse}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{VatCustomerDetails, VatIndividual}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, PptRef, SuspensionDetails, Utr, Vrn}
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentSuspensionContactDetailsCapturedRepository
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 class AgentServicesControllerISpec extends BaseISpec {
@@ -48,6 +49,13 @@ class AgentServicesControllerISpec extends BaseISpec {
       .post(jsValue)
       .futureValue
   }
+
+  private def makePostEmptyRequest(url: String) =
+    wsClient
+    .url(url)
+    .withHttpHeaders("Authorization" -> "Bearer testtoken")
+    .post(EmptyBody)
+    .futureValue
 
   def getCurrentAgencyName: WSResponse = makeGetRequest(s"$url/agent/agency-name")
 
@@ -783,6 +791,30 @@ class AgentServicesControllerISpec extends BaseISpec {
       val result = getPptCustomerName(pptRef)
       result.status shouldBe 200
       (result.json \ "customerName").as[String] shouldBe "Fagan Ltd"
+    }
+  }
+
+  val agentSuspensionDetailsCapturedCollection = app.injector.instanceOf(classOf[AgentSuspensionContactDetailsCapturedRepository])
+
+  "POST /agent/suspension-details-captured/arn/:arn" should {
+    "return Created" in {
+      isLoggedIn
+      val result = makePostEmptyRequest(s"$url/agent/suspension-details-captured/arn/${arn.value}")
+      result.status shouldBe CREATED
+    }
+  }
+
+  "GET /agent/suspension-details-captured/arn/:arn" should {
+    "return OK with details" in {
+      agentSuspensionDetailsCapturedCollection.create(arn).futureValue
+      isLoggedIn
+      val result = makeGetRequest(s"$url/agent/suspension-details-captured/arn/${arn.value}")
+        result.status shouldBe OK
+    }
+    "return NotFound" in {
+      isLoggedIn
+      val result = makeGetRequest(s"$url/agent/suspension-details-captured/arn/${arn.value}")
+      result.status shouldBe NOT_FOUND
     }
   }
 }
