@@ -95,6 +95,8 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent)(implicit ec: Ex
 
   final val ID = "_id"
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   override def create(
     arn: Arn,
     clientType: Option[String],

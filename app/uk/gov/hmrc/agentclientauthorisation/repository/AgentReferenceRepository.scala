@@ -63,6 +63,8 @@ class MongoAgentReferenceRepository @Inject()(mongo: MongoComponent)(implicit ec
       )
     ) with AgentReferenceRepository with Logging {
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   override def create(agentReferenceRecord: AgentReferenceRecord): Future[Option[String]] =
     collection
       .insertOne(agentReferenceRecord)

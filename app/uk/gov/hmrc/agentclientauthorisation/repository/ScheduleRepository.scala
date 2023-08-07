@@ -85,6 +85,8 @@ class MongoScheduleRepository @Inject()(mongoComponent: MongoComponent)(implicit
         .build
     ) with ScheduleRepository with Logging {
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   override def read(schedulerType: SchedulerType): Future[ScheduleRecord] =
     collection
       .find(equal(SchedulerType.mongoName, schedulerType))

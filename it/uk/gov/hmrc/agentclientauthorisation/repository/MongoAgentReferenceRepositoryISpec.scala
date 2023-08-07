@@ -28,7 +28,7 @@ class MongoAgentReferenceRepositoryISpec
     extends UnitSpec
       with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
 
-  def repository = new MongoAgentReferenceRepository(mongoComponent)
+  val repository = new MongoAgentReferenceRepository(mongoComponent)
 
   "AgentReferenceRepository" when {
     def agentReferenceRecord(uid: String, arn: String) = AgentReferenceRecord(uid, Arn(arn), Seq("stan-lee"))

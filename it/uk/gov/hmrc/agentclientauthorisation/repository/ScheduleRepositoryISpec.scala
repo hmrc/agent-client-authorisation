@@ -12,7 +12,7 @@ class ScheduleRepositoryISpec
     extends UnitSpec
       with DefaultPlayMongoRepositorySupport[ScheduleRecord]{
 
-  override def repository = new MongoScheduleRepository(mongoComponent)
+  override val repository = new MongoScheduleRepository(mongoComponent)
 
   val uid = UUID.randomUUID()
   val newDate = LocalDateTime.now()
