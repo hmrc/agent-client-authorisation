@@ -53,7 +53,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
   val ninoAsString: String = nino1.value
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val request: Request[Any] = FakeRequest()
 
   override protected def beforeEach(): Unit = {
@@ -73,9 +73,11 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
-            Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
-              Some(SuspensionDetails(suspensionStatus = false, None))))))
+            Some(
+              AgentDetailsDesResponse(
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
+                None,
+                Some(SuspensionDetails(suspensionStatus = false, None))))))
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
         .thenReturn(Future.successful(()))
 
@@ -91,9 +93,11 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
-            Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
-              Some(SuspensionDetails(suspensionStatus = false, None))))))
+            Some(
+              AgentDetailsDesResponse(
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some(businessAddress))),
+                None,
+                Some(SuspensionDetails(suspensionStatus = false, None))))))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 

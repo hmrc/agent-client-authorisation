@@ -313,7 +313,7 @@ trait DesStubs {
 
   def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String) = {
     stubFor(
-      get(urlEqualTo(s"/trusts/agent-known-fact-check/${trustTaxIdentifier}"))
+      get(urlEqualTo(s"/trusts/agent-known-fact-check/$trustTaxIdentifier"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(
@@ -426,9 +426,7 @@ trait DesStubs {
     s"""
        |{
        |   "isAnOrganisation" : true,
-       |   "contactDetails" : {
-       |      "phoneNumber" : "07000000000"
-       |   },
+       |   "contactDetails" : {},
        |   "isAnAgent" : false,
        |   "safeId" : "XB0000100101711",
        |   "organisation" : {

@@ -173,8 +173,8 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val result = await(connector.getAgencyDetails(Right(Arn(arn))))
       result shouldBe Some(
-        AgentDetailsDesResponse(Some(
-          AgencyDetails(Some("My Agency Ltd"),
+        AgentDetailsDesResponse(
+          Some(AgencyDetails(Some("My Agency Ltd"),
             Some("abc@xyz.com"),
             Some(BusinessAddress("Matheson House",
               Some("Grange Central"),
@@ -182,9 +182,10 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
               Some("Telford"),
               Some("TF3 4ER"),
               "GB")))),
-          Some(SuspensionDetails(
-            false,
-            None))))
+          Some(ContactDetails(Some("07000000000"))),
+          Some(SuspensionDetails(suspensionStatus = false, None))
+        )
+      )
     }
 
     "return None when DES responds with invalid data" in {
@@ -192,13 +193,13 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val result = await(connector.getAgencyDetails(Right(Arn(arn))))
 
-      result shouldBe Some(AgentDetailsDesResponse(None, None))
+      result shouldBe Some(AgentDetailsDesResponse(None, Some(ContactDetails(None)), None))
     }
   }
 
   "getPPTSubscription" should {
     "return a PPT subscription record" in {
-      givenPptSubscription(PptRef("XAPPT1234567890"), true, true, false)
+      givenPptSubscription(PptRef("XAPPT1234567890"), isIndividual = true, deregisteredDetailsPresent = true, isDeregistered = false)
       val result = connector.getPptSubscription(PptRef("XAPPT1234567890")).futureValue
       result shouldBe Some(PptSubscription("Bill Sikes", LocalDate.parse("2021-10-12"), Some(LocalDate.parse("2050-10-01"))))
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetPptSubscriptionDisplay-GET")
