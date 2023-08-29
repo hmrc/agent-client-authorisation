@@ -224,6 +224,7 @@ class AgentServicesControllerISpec extends BaseISpec {
       result.status shouldBe OK
       result.json shouldBe Json.obj(
         "agencyEmail" -> "abc@xyz.com",
+        "agencyTelephone" -> "07345678901",
         "agencyName" -> "ACME",
         "agencyAddress" -> Json.obj(
           "addressLine1" -> "Matheson House",

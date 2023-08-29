@@ -174,16 +174,19 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       val result = await(connector.getAgencyDetails(Right(Arn(arn))))
       result shouldBe Some(
         AgentDetailsDesResponse(Some(
-          AgencyDetails(Some("My Agency Ltd"),
+          AgencyDetails(
+            Some("My Agency Ltd"),
             Some("abc@xyz.com"),
+            Some("07345678901"),
             Some(BusinessAddress("Matheson House",
               Some("Grange Central"),
               Some("Town Centre"),
               Some("Telford"),
               Some("TF3 4ER"),
-              "GB")))),
+              "GB"))
+          )),
           Some(SuspensionDetails(
-            false,
+            suspensionStatus = false,
             None))))
     }
 
