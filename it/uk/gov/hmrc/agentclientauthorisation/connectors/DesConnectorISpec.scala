@@ -85,7 +85,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       }
 
       "effectiveRegistrationDate is present and customer is insolvent" in {
-        hasVatCustomerDetails(clientVrn, Some("2017-04-01"), true)
+        hasVatCustomerDetails(clientVrn, Some("2017-04-01"), isInsolvent = true)
 
         val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))

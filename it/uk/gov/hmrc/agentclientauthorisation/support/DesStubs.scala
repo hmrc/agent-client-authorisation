@@ -26,7 +26,7 @@ import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
 trait DesStubs {
 
-  def hasABusinessPartnerRecord(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+  def hasABusinessPartnerRecord(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB"): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -68,7 +68,7 @@ trait DesStubs {
     this
   }
 
-  def hasABusinessPartnerRecordWithNoBusinessAddressDetails(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+  def hasABusinessPartnerRecordWithNoBusinessAddressDetails(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB"): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -96,7 +96,7 @@ trait DesStubs {
     this
   }
 
-  def hasABusinessPartnerRecordWithBusinessDataWithNoTradingName(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB") = {
+  def hasABusinessPartnerRecordWithBusinessDataWithNoTradingName(nino: Nino, postcode: String = "AA11AA", countryCode: String = "GB"): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -123,7 +123,7 @@ trait DesStubs {
     this
   }
 
-  def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
+  def hasABusinessPartnerRecordWithMtdItId(nino: Nino, mtdItId: MtdItId = mtdItId1): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -166,7 +166,7 @@ trait DesStubs {
     this
   }
 
-  def hasBusinessPartnerRecordWithEmptyBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
+  def hasBusinessPartnerRecordWithEmptyBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -185,7 +185,7 @@ trait DesStubs {
     this
   }
 
-  def hasBusinessPartnerRecordWithNoBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1) = {
+  def hasBusinessPartnerRecordWithNoBusinessData(nino: Nino, mtdItId: MtdItId = mtdItId1): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -204,7 +204,7 @@ trait DesStubs {
     this
   }
 
-  def hasNoBusinessPartnerRecord(nino: Nino) = {
+  def hasNoBusinessPartnerRecord(nino: Nino): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -215,7 +215,7 @@ trait DesStubs {
     this
   }
 
-  def businessPartnerRecordFails(nino: Nino, status: Int) = {
+  def businessPartnerRecordFails(nino: Nino, status: Int): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -225,7 +225,7 @@ trait DesStubs {
     this
   }
 
-  def hasVatCustomerDetails(vrn: Vrn, vatRegDate: Option[String], isInsolvent: Boolean = false) = {
+  def hasVatCustomerDetails(vrn: Vrn, vatRegDate: Option[String], isInsolvent: Boolean = false): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -288,7 +288,7 @@ trait DesStubs {
     this
   }
 
-  def hasVatCustomerDetailsWithNoApprovedInformation(vrn: Vrn) = {
+  def hasVatCustomerDetailsWithNoApprovedInformation(vrn: Vrn): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -300,7 +300,7 @@ trait DesStubs {
     this
   }
 
-  def hasNoVatCustomerDetails(vrn: Vrn) = {
+  def hasNoVatCustomerDetails(vrn: Vrn): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -311,7 +311,7 @@ trait DesStubs {
     this
   }
 
-  def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String) = {
+  def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String): StubMapping = {
     stubFor(
       get(urlEqualTo(s"/trusts/agent-known-fact-check/$trustTaxIdentifier"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -323,7 +323,7 @@ trait DesStubs {
             .withBody(response)))
   }
 
-  def getTrustNameIF(trustTaxIdentifier: TrustTaxIdentifier, status: Int = 200, response: String) = {
+  def getTrustNameIF(trustTaxIdentifier: TrustTaxIdentifier, status: Int = 200, response: String): StubMapping = {
     val identifierType = trustTaxIdentifier match {
       case Utr(_) => "UTR"
       case Urn(_) => "URN"
@@ -339,7 +339,7 @@ trait DesStubs {
             .withBody(response)))
   }
 
-  def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String) = {
+  def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String): StubMapping = {
     stubFor(
       get(urlEqualTo(s"/subscriptions/CGT/ZCGT/${cgtRef.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -351,7 +351,7 @@ trait DesStubs {
             .withBody(response)))
   }
 
-  def failsVatCustomerDetails(vrn: Vrn, withStatus: Int) = {
+  def failsVatCustomerDetails(vrn: Vrn, withStatus: Int): DesStubs = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse()
@@ -376,7 +376,7 @@ trait DesStubs {
           .withStatus(200)
           .withBody(personalDetailsResponseBodyWithoutValidData)))
 
-  def personalDetailsResponseBodyWithValidData(agencyName: String, suspensionDetails: SuspensionDetails) =
+  def personalDetailsResponseBodyWithValidData(agencyName: String, suspensionDetails: SuspensionDetails): String =
     s"""
        |{
        |   "isAnOrganisation" : true,
@@ -422,7 +422,7 @@ trait DesStubs {
        |}
             """.stripMargin
 
-  val personalDetailsResponseBodyWithoutValidData =
+  val personalDetailsResponseBodyWithoutValidData: String =
     s"""
        |{
        |   "isAnOrganisation" : true,
@@ -449,7 +449,7 @@ trait DesStubs {
             """.stripMargin
 
 
-  val failureResponseBody =
+  val failureResponseBody: String =
     """
       |{
       |   "code" : "SOME_FAILURE",
@@ -457,7 +457,7 @@ trait DesStubs {
       |}
     """.stripMargin
 
-  val terminatedResponseBody =
+  val terminatedResponseBody: String =
     """
       |{
       |   "code" : "AGENT_TERMINATED",
@@ -481,27 +481,27 @@ trait DesStubs {
           .withBody(errorMessage)))
 
 
-  def givenNinoIsUnknownFor(mtdbsa: MtdItId) =
+  def givenNinoIsUnknownFor(mtdbsa: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdbsa.value}"))
         .willReturn(aResponse().withStatus(404)))
 
-  def givenMtdItIdIsUnknownFor(nino: Nino) =
+  def givenMtdItIdIsUnknownFor(nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(404)))
 
-  def givenNinoIsKnownFor(mtdbsa: MtdItId, nino: Nino) =
+  def givenNinoIsKnownFor(mtdbsa: MtdItId, nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdbsa.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{ "nino": "${nino.value}" }""")))
 
-  def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId) =
+  def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{ "mtdbsa": "${mtdItId.value}" }""")))
 
-  def givenTradingNameIsKnownFor(nino: Nino, tradingName: String) =
+  def givenTradingNameIsKnownFor(nino: Nino, tradingName: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{
@@ -542,7 +542,7 @@ trait DesStubs {
 }
 """.stripMargin)))
 
-  def givenNoTradingNameFor(nino: Nino) =
+  def givenNoTradingNameFor(nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{
@@ -566,7 +566,7 @@ trait DesStubs {
 """.stripMargin)))
 
 
-  def givenDesReturnsServiceUnavailable() =
+  def givenDesReturnsServiceUnavailable(): StubMapping =
     stubFor(
       get(urlMatching(s"/registration/.*"))
         .willReturn(aResponse().withStatus(503)))
@@ -631,7 +631,7 @@ trait DesStubs {
     if (isIndividual) registrationDataForIndividual else registrationDataForOrganisation
 
 
-  val registrationDataForOrganisation =
+  val registrationDataForOrganisation: String =
     s"""
        |{
        |   "contactDetails" : {},
@@ -658,7 +658,7 @@ trait DesStubs {
        |}
      """.stripMargin
 
-  val registrationDataForIndividual =
+  val registrationDataForIndividual: String =
     s"""
        |{
        |   "isAnIndividual" : true,
@@ -685,7 +685,7 @@ trait DesStubs {
        |}
      """.stripMargin
 
-  val invalidRegistrationData =
+  val invalidRegistrationData: String =
     s"""
        |{
        |   "isAnIndividual" : true,
@@ -708,7 +708,7 @@ trait DesStubs {
      """.stripMargin
 
 
-  def givenCustomerDetailsKnownFor(vrn: Vrn) =
+  def givenCustomerDetailsKnownFor(vrn: Vrn): StubMapping =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{
@@ -732,7 +732,7 @@ trait DesStubs {
             "isInsolvent": false
         }}}""".stripMargin)))
 
-  def givenCustomerDetailsWithoutIndividual(vrn: Vrn) =
+  def givenCustomerDetailsWithoutIndividual(vrn: Vrn): StubMapping =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{
@@ -749,7 +749,7 @@ trait DesStubs {
             "isInsolvent": false
         }}}""".stripMargin)))
 
-  def givenCustomerDetailsWithoutOrganisation(vrn: Vrn) =
+  def givenCustomerDetailsWithoutOrganisation(vrn: Vrn): StubMapping =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse().withStatus(200).withBody(s"""|{
@@ -770,7 +770,7 @@ trait DesStubs {
                                                              	|}
                                                              |}""".stripMargin)))
 
-  def givenNoCustomerDetails(vrn: Vrn) =
+  def givenNoCustomerDetails(vrn: Vrn): StubMapping =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(aResponse().withStatus(200).withBody(s"""|{
@@ -778,7 +778,7 @@ trait DesStubs {
                                                              |}""".stripMargin)))
 
 
-  def givenGetAgencyDetailsStub(arn: Arn, agentName: Option[String] = None, agentEmail: Option[String] = None) = {
+  def givenGetAgencyDetailsStub(arn: Arn, agentName: Option[String] = None, agentEmail: Option[String] = None): StubMapping = {
     val body = s"""
                   | {
                   | "agencyDetails" : {
@@ -803,7 +803,7 @@ trait DesStubs {
             .withBody(body)))
   }
 
-  def givenClientDetailsForVat(vrn: Vrn) =
+  def givenClientDetailsForVat(vrn: Vrn): StubMapping =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .willReturn(
@@ -828,7 +828,7 @@ trait DesStubs {
                 }
               }""".stripMargin)))
 
-  def givenNinoForMtdItId(mtdItId: MtdItId, nino: Nino) =
+  def givenNinoForMtdItId(mtdItId: MtdItId, nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdItId.value}"))
         .willReturn(
@@ -841,7 +841,7 @@ trait DesStubs {
                """.stripMargin)
         )
     )
-  def givenNinoNotFoundForMtdItId(mtdItId: MtdItId) =
+  def givenNinoNotFoundForMtdItId(mtdItId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdItId.value}"))
         .willReturn(
@@ -870,7 +870,7 @@ trait DesStubs {
   //from the spec API1712 changeOfCircumstanceDetails are optional although PPT team advised that there wil always be
   //a deregistrationDate but customers who are actually deregistered will have a date of today or before and customers
   // who are not deregistered will have a date long into the future. TBC
-  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean) = {
+  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean): StubMapping = {
     stubFor(
       get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
         .willReturn(
@@ -892,7 +892,7 @@ trait DesStubs {
                |}""".stripMargin)))
     }
 
-  def givenPptSubscriptionRespondsWith(pptRef: PptRef, status: Int) =
+  def givenPptSubscriptionRespondsWith(pptRef: PptRef, status: Int): StubMapping =
     stubFor(
       get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
         .willReturn(

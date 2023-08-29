@@ -55,8 +55,8 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val cc: ControllerComponents = stubControllerComponents()
   val auditConnector: AuditConnector = resettingMock[AuditConnector]
   val auditService: AuditService = new AuditService(auditConnector)
-  val mockDesConnector = resettingMock[DesConnector]
-  val appConfig = resettingMock[AppConfig]
+  val mockDesConnector: DesConnector = resettingMock[DesConnector]
+  val appConfig: AppConfig = resettingMock[AppConfig]
 
   val mockAgentLinkService: AgentLinkService =
     new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics)
@@ -153,7 +153,15 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
           val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
 
           val invitationIdAndExpiryDate1 =
-            InvitationInfo(InvitationId("ABERULMHCKKW3"), expiryDate, Pending, arn, Service.MtdIt, false, None, List(StatusChangeEvent(now, Pending)))
+            InvitationInfo(
+              InvitationId("ABERULMHCKKW3"),
+              expiryDate,
+              Pending,
+              arn,
+              Service.MtdIt,
+              isRelationshipEnded = false,
+              None,
+              List(StatusChangeEvent(now, Pending)))
           val invitationIdAndExpiryDate2 =
             InvitationInfo(
               InvitationId("B9SCS2T4NZBAX"),
@@ -161,11 +169,19 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
               Pending,
               arn,
               PersonalIncomeRecord,
-              false,
+              isRelationshipEnded = false,
               None,
               List(StatusChangeEvent(now, Pending)))
           val invitationIdAndExpiryDate3 =
-            InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat, false, None, List(StatusChangeEvent(now, Pending)))
+            InvitationInfo(
+              InvitationId("CZTW1KY6RTAAT"),
+              expiryDate,
+              Pending,
+              arn,
+              Service.Vat,
+              isRelationshipEnded = false,
+              None,
+              List(StatusChangeEvent(now, Pending)))
 
           val invitations = List(
             invitationIdAndExpiryDate1,
@@ -200,7 +216,15 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
 
         val now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
         val invitationIdAndExpiryDate3 =
-          InvitationInfo(InvitationId("CZTW1KY6RTAAT"), expiryDate, Pending, arn, Service.Vat, false, None, List(StatusChangeEvent(now, Pending)))
+          InvitationInfo(
+            InvitationId("CZTW1KY6RTAAT"),
+            expiryDate,
+            Pending,
+            arn,
+            Service.Vat,
+            isRelationshipEnded = false,
+            None,
+            List(StatusChangeEvent(now, Pending)))
 
         val invitations = List(invitationIdAndExpiryDate3)
 
