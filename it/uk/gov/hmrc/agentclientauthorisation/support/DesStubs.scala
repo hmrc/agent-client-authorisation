@@ -395,7 +395,8 @@ trait DesStubs {
        |         "addressLine1" : "Matheson House"
        |      },
        |      "agencyName" : "$agencyName",
-       |      "agencyEmail" : "abc@xyz.com"
+       |      "agencyEmail" : "abc@xyz.com",
+       |      "agencyTelephone" : "07345678901"
        |   },
        |   "suspensionDetails": ${Json.toJson(suspensionDetails).toString()},
        |   "organisation" : {
