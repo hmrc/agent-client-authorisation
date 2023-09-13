@@ -18,20 +18,17 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import cats.data.EitherT._
 import cats.instances.future._
-
-import javax.inject.Inject
-import play.api.i18n.{Lang, Langs, Messages, MessagesApi}
-import play.api.LoggerLike
+import play.api.{LoggerLike, Logging}
+import play.api.i18n.{Lang, Langs, MessagesApi}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConnector}
-import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
+import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
 import uk.gov.hmrc.http.HeaderCarrier
-import play.api.Logging
 
-import scala.collection.Seq
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmailService @Inject()(
