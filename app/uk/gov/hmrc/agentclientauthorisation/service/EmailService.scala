@@ -20,7 +20,7 @@ import cats.data.EitherT._
 import cats.instances.future._
 
 import javax.inject.Inject
-import play.api.i18n.{Lang, Langs, MessagesApi}
+import play.api.i18n.{Lang, Langs, Messages, MessagesApi}
 import play.api.LoggerLike
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EmailConnector}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
