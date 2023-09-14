@@ -33,6 +33,16 @@ trait EmailStub {
       )
     }
 
+  def verifyEmailRequestWasSentWithEmailInformation(times: Int, emailInformation: EmailInformation): Unit = {
+    val emailInformationJson = Json.toJson(emailInformation).toString()
+    eventually {
+      verify(
+        times,
+        postRequestedFor(urlPathEqualTo("/hmrc/email"))
+          .withRequestBody(similarToJson(emailInformationJson))
+      )
+    }
+  }
   private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
 
 }
