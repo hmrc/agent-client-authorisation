@@ -23,7 +23,6 @@ import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr}
-import uk.gov.hmrc.agentclientauthorisation.repository.AgentSuspensionContactDetailsCapturedRepository
 import uk.gov.hmrc.agentclientauthorisation.service.BusinessNamesService
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -42,7 +41,6 @@ class AgentServicesController @Inject()(
   cidConnector: CitizenDetailsConnector,
   eisConnector: EisConnector,
   businessNamesService: BusinessNamesService,
-  agentSuspensionContactDetailsCapturedRepository: AgentSuspensionContactDetailsCapturedRepository,
   cc: ControllerComponents)(implicit val appConfig: AppConfig, ec: ExecutionContext, metrics: Metrics)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
 
@@ -249,25 +247,6 @@ class AgentServicesController @Inject()(
       case None =>
         logger.warn(s"getCbcCustomerName: CBC subscription not found for $cbcId")
         NotFound
-    }
-  }
-
-  // indicates if contact detail have been captured already, so the FE knows not to ask for them again.
-  def getSuspensionDetailsAlreadyCaptured(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    withBasicAuth {
-      agentSuspensionContactDetailsCapturedRepository.get(arn).map {
-        case None         => NotFound
-        case Some(record) => Ok(Json.toJson(record))
-      }
-    }
-  }
-
-  // creates a record for the endpoint above. Note, atm we do not have a system for deleting records - this addressed on APB-7330.
-  def createSuspensionDetailsAlreadyCaptured(arn: Arn): Action[AnyContent] = Action.async { implicit request =>
-    withBasicAuth {
-      agentSuspensionContactDetailsCapturedRepository
-        .create(arn)
-        .map(_ => Created)
     }
   }
 
