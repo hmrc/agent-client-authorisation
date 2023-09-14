@@ -106,7 +106,7 @@ class EmailService @Inject()(
       }
     }
 
-  def emailInformation(templateId: String, agencyEmail: String, agencyName: String, clientName: String, invitation: Invitation) =
+  private def emailInformation(templateId: String, agencyEmail: String, agencyName: String, clientName: String, invitation: Invitation) =
     EmailInformation(
       Seq(agencyEmail),
       templateId,
