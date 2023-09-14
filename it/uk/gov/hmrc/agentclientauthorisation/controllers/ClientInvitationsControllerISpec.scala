@@ -46,7 +46,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     val serviceText = service match {
       case MtdIt => "manage their Making Tax Digital for Income Tax."
       case PersonalIncomeRecord => "view their PAYE income record."
-      case Vat => "manage their VAT."
+      case Vat => "manage their Making Tax Digital for VAT."
       case Trust => "maintain a trust or an estate."
       case TrustNT => "maintain a trust or an estate."
       case CapitalGains => "manage their Capital Gains Tax on UK property account."
@@ -131,10 +131,12 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
   val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept").withHeaders("Authorization" -> "Bearer testtoken")
     val getResult = FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
 
+
     s"accept via $journey ${client.urlIdentifier} ${client.service.id} ${if(client.isAltItsaClient)"(ALT-ITSA) " else "" }invitation as expected for ${client.clientId.value} ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBusiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createInvitation(arn, client))
+      val emailInfo = createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service)
       if(!client.isAltItsaClient) givenCreateRelationship(arn, client.service.id, if(client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
-      givenEmailSent(createEmailInfo(dfe(client.clientName),DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service))
+      givenEmailSent(emailInfo)
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
       givenGroupIdIsKnownForArn(arn, "some-group-id")
@@ -149,6 +151,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val testHasStatusOf: InvitationStatus = if(client.isAltItsaClient) PartialAuth else Accepted
       testInvitationOpt.map(_.status) shouldBe Some(testHasStatusOf.toString)
       verifyAnalyticsRequestSent(1)
+      verifyEmailRequestWasSentWithEmailInformation(1, emailInfo)
       if (invitation.service != Service.PersonalIncomeRecord) verifyFriendlyNameChangeRequestSent() // See APB-6204: update friendly name unless service is Personal Income Record
     }
 

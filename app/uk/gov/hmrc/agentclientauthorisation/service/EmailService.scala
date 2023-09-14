@@ -114,7 +114,7 @@ class EmailService @Inject()(
         "agencyName" -> agencyName,
         "clientName" -> clientName,
         "expiryDate" -> DateUtils.displayDate(invitation.expiryDate),
-        "service"    -> s"service.${invitation.service.id}",
+        "service"    -> messagesApi(s"service.${invitation.service.id}"),
         "additionalInfo" -> {
           if (isAltItsa(invitation))
             s"You must now sign $clientName up to Making Tax Digital for Income Tax."
