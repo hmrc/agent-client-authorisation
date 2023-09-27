@@ -75,12 +75,12 @@ object SimpleCbcSubscription {
  Note: Most of the code in this file was copy-pasted from the country-by-country-reporting service repository.
  */
 
-private case class DisplaySubscriptionForCbCRequest(
-  displaySubscriptionForCbCRequest: DisplaySubscriptionDetails
+private case class DisplaySubscriptionForCBCRequest(
+  displaySubscriptionForCBCRequest: DisplaySubscriptionDetails
 )
-private object DisplaySubscriptionForCbCRequest {
-  implicit val format: OFormat[DisplaySubscriptionForCbCRequest] =
-    Json.format[DisplaySubscriptionForCbCRequest]
+private object DisplaySubscriptionForCBCRequest {
+  implicit val format: OFormat[DisplaySubscriptionForCBCRequest] =
+    Json.format[DisplaySubscriptionForCBCRequest]
 }
 
 //-----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ private object RequestCommonForSubscription {
     val acknowledgementReference = UUID.randomUUID().toString.replace("-", "")
 
     RequestCommonForSubscription(
-      regime = "CbC",
+      regime = "CBC",
       receiptDate = ZonedDateTime.now().format(formatter),
       acknowledgementReference = acknowledgementReference,
       originatingSystem = "MDTP",
@@ -155,8 +155,8 @@ class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: M
 
   def getCbcSubscriptionJson(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsObject]] = {
     val conversationId = hc.sessionId.map(_.value).getOrElse(UUID.randomUUID().toString)
-    val request = DisplaySubscriptionForCbCRequest(
-      displaySubscriptionForCbCRequest = DisplaySubscriptionDetails(
+    val request = DisplaySubscriptionForCBCRequest(
+      displaySubscriptionForCBCRequest = DisplaySubscriptionDetails(
         requestCommon = RequestCommonForSubscription().copy(conversationID = Some(conversationId)),
         requestDetail = ReadSubscriptionRequestDetail(IDType = "CbC", IDNumber = cbcId.value)
       )
@@ -175,7 +175,7 @@ class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: M
 
     monitor(s"ConsumedAPI-EIS-dct50d-POST") {
       http
-        .POST[DisplaySubscriptionForCbCRequest, HttpResponse](
+        .POST[DisplaySubscriptionForCBCRequest, HttpResponse](
           config.eisBaseUrl + "/dac6/dct50d/v1",
           request,
           headers = extraHeaders
