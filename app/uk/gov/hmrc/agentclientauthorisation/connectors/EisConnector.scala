@@ -176,7 +176,7 @@ class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: M
     monitor(s"ConsumedAPI-EIS-dct50d-POST") {
       http
         .POST[DisplaySubscriptionForCbCRequest, HttpResponse](
-          config.eisBaseUrl + "/dac/dct50d/v1",
+          config.eisBaseUrl + "/dac6/dct50d/v1",
           request,
           headers = extraHeaders
         )
