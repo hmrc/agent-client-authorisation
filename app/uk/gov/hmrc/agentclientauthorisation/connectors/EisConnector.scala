@@ -41,16 +41,16 @@ case class SimpleCbcSubscription(tradingName: Option[String], otherNames: Seq[St
 object SimpleCbcSubscription {
   implicit val format: Format[SimpleCbcSubscription] = Json.format[SimpleCbcSubscription]
   def fromDisplaySubscriptionForCbCResponse(record: JsObject): SimpleCbcSubscription = {
-    val mIsGBUser = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "isGBUser").asOpt[Boolean]
-    val mTradingName = (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
+    val mIsGBUser = (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "isGBUser").asOpt[Boolean]
+    val mTradingName = (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
     val primaryContact: CbcContact =
-      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "primaryContact")
+      (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "primaryContact")
         .asOpt[CbcContact]
         .getOrElse(
           throw new RuntimeException("CBC subscription response did not contain complete information")
         )
     val secondaryContact: CbcContact =
-      (record \ "displaySubscriptionForCbCResponse" \ "responseDetail" \ "secondaryContact")
+      (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "secondaryContact")
         .asOpt[CbcContact]
         .getOrElse(
           throw new RuntimeException("CBC subscription response did not contain complete information")
