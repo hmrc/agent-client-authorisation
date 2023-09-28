@@ -32,7 +32,7 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
                                                                  |			"subscriptionID": "XYCBC2764649410",
                                                                  |			"tradingName": "Tools for Traders",
                                                                  |			"isGBUser": true,
-                                                                 |			"primaryContact": {
+                                                                 |			"primaryContact": [{
                                                                  |					"email": "Tim@toolsfortraders.com",
                                                                  |					"phone": "078803423883",
                                                                  |					"mobile": "078803423883",
@@ -40,13 +40,13 @@ class SimpleCbcSubscriptionSpec extends UnitSpec {
                                                                  |						"lastName": "Taylor",
                                                                  |						"firstName": "Tim"
                                                                  |					}
-                                                                 |			},
-                                                                 |			"secondaryContact": {
+                                                                 |			}],
+                                                                 |			"secondaryContact": [{
                                                                  |				"email": "contact@toolsfortraders.com",
                                                                  |				"organisation": {
                                                                  |					"organisationName": "Tools for Traders Limited"
                                                                  |				}
-                                                                 |			}
+                                                                 |			}]
                                                                  |		}
                                                                  |	}
                                                                  |}""".stripMargin).as[JsObject]

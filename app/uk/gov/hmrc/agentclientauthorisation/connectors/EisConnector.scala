@@ -45,13 +45,15 @@ object SimpleCbcSubscription {
     val mTradingName = (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "tradingName").asOpt[String]
     val primaryContact: CbcContact =
       (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "primaryContact")
-        .asOpt[CbcContact]
+        .as[Seq[CbcContact]]
+        .headOption
         .getOrElse(
           throw new RuntimeException("CBC subscription response did not contain complete information")
         )
     val secondaryContact: CbcContact =
       (record \ "displaySubscriptionForCBCResponse" \ "responseDetail" \ "secondaryContact")
-        .asOpt[CbcContact]
+        .as[Seq[CbcContact]]
+        .headOption
         .getOrElse(
           throw new RuntimeException("CBC subscription response did not contain complete information")
         )
