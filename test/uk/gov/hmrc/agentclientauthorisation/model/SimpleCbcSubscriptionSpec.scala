@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 class SimpleCbcSubscriptionSpec extends UnitSpec {
 
   val displaySubscriptionForCbCResponse: JsObject = Json.parse("""{
-                                                                 |	"displaySubscriptionForCbCResponse": {
+                                                                 |	"displaySubscriptionForCBCResponse": {
                                                                  |		"responseCommon": {
                                                                  |			"status": "OK",
                                                                  |			"processingDate": "2020-08-09T11:23:45Z"
