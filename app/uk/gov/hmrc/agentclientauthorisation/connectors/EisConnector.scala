@@ -154,11 +154,11 @@ class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: M
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getCbcSubscriptionJson(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsObject]] = {
-    val conversationId = hc.sessionId.map(_.value).getOrElse(UUID.randomUUID().toString)
+    val conversationId = hc.sessionId.map(_.value.drop(8)).getOrElse(UUID.randomUUID().toString)
     val request = DisplaySubscriptionForCBCRequest(
       displaySubscriptionForCBCRequest = DisplaySubscriptionDetails(
         requestCommon = RequestCommonForSubscription().copy(conversationID = Some(conversationId)),
-        requestDetail = ReadSubscriptionRequestDetail(IDType = "CbC", IDNumber = cbcId.value)
+        requestDetail = ReadSubscriptionRequestDetail(IDType = "CBC", IDNumber = cbcId.value)
       )
     )
 
