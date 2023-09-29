@@ -249,11 +249,11 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
               .filter(enrol => Service.supportedServices.map(_.enrolmentKey).contains(enrol.key))
               .map { supportedEnrol =>
                 if (supportedEnrol.key == Service.HMRCCBCORG) {
-                  ( // TODO - handle better, multi-identifier lookup? Uk cbc has UTR first
+                  ( // TODO - handle better, multi-identifier lookup? Uk cbc has UTR after cbcId
                     supportedServiceName(supportedEnrol.key).getOrElse(
                       throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
-                    supportedEnrol.identifiers.reverse.head.key,
-                    supportedEnrol.identifiers.reverse.head.value.replaceAll(" ", ""))
+                    supportedEnrol.identifiers.head.key,
+                    supportedEnrol.identifiers.head.value.replaceAll(" ", ""))
                 } else {
                   (
                     supportedServiceName(supportedEnrol.key).getOrElse(
