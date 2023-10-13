@@ -81,6 +81,37 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
   }
 
+  def givenUtrKnownForCBC(): StrideAuthStubs = {
+    stubFor(
+      post(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/enrolments"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(
+              s"""
+                 |{
+                 |  "service":"HMRC-CBC-ORG",
+                 |  "enrolments":[
+                 |    {
+                 |      "identifiers":[{"key":"cbcId","value":"XECBC8079578736"},{"key":"UTR","value":"8130839560"}],
+                 |      "verifiers":[{"key":"Email","value":"m@j4JelAH.eu"}]
+                 |      }
+                 |   ]
+                 |
+                 |}
+                 |""".stripMargin)))
+    this
+  }
+
+  def verifyQueryKnownFactsRequestSent(): Unit = {
+    eventually {
+      verify(
+        1,
+        postRequestedFor(urlPathEqualTo(s"/enrolment-store-proxy/enrolment-store/enrolments"))
+      )
+    }
+  }
+
   class LoggedInUser(forStride: Boolean, forBusiness: Boolean = false, altStride: Boolean = false) {
     if(forStride) {
       if (altStride) {
@@ -140,6 +171,10 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
       givenGroupIdIsKnownForArn(arn, "some-group-id")
+      if (invitation.clientId.typeId == CbcIdType.id && invitation.service == Service.Cbc) {
+        givenUtrKnownForCBC()
+      }
+
 
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
@@ -152,6 +187,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testInvitationOpt.map(_.status) shouldBe Some(testHasStatusOf.toString)
       verifyAnalyticsRequestSent(1)
       verifyEmailRequestWasSentWithEmailInformation(1, emailInfo)
+      if (invitation.clientId.typeId == CbcIdType.id && invitation.service == Service.Cbc) verifyQueryKnownFactsRequestSent() //APB-7447
       if (invitation.service != Service.PersonalIncomeRecord) verifyFriendlyNameChangeRequestSent() // See APB-6204: update friendly name unless service is Personal Income Record
     }
 

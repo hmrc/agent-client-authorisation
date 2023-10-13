@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
-import uk.gov.hmrc.agentmtdidentifiers.model.{EnrolmentKey, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CbcIdType, EnrolmentKey, Identifier, Service, UtrType}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.net.URLEncoder
@@ -46,40 +46,59 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
     val maybeClientName: Option[String] = invitation.detailsForEmail
       .map(name => URLEncoder.encode(name.clientName, "UTF-8"))
       .filter(_.nonEmpty)
-    enrolmentStoreProxyConnector
-      .getPrincipalGroupIdFor(invitation.arn)
-      .recover { case _ => None /* don't fail on errors */ }
-      .flatMap { maybeGroupId =>
-        val maybeResultFuture = for {
-          enrolmentKey <- maybeEnrolmentKey
-          groupId      <- maybeGroupId
-          clientName   <- maybeClientName
-        } yield enrolmentStoreProxyConnector.updateEnrolmentFriendlyName(groupId, enrolmentKey, clientName)
-        maybeResultFuture match {
-          case Some(future) =>
-            future.transform {
-              case Success(()) =>
-                logger.info(s"updateFriendlyName succeeded for client ${invitation.clientId}, agent ${invitation.arn}")
-                Success(())
-              case Failure(e) =>
-                logger.warn(s"updateFriendlyName failed due to ES19 error for client ${invitation.clientId}, agent ${invitation.arn}: $e")
-                Success(()) // don't fail on errors
-            }
-          case None =>
-            val errors = Seq(
-              (maybeEnrolmentKey, s"Error generating enrolment key"),
-              (maybeClientName, s"Client name not available"),
-              (maybeGroupId, s"Error retrieving agent's group id")
-            ).collect {
-              case (None, msg) => msg
-            }
-            val maybeErrorMessage: Option[String] =
-              if (errors.isEmpty) None
-              else
-                Some(s"updateFriendlyName not attempted for client ${invitation.clientId}, agent ${invitation.arn} due to: " + errors.mkString(", "))
-            maybeErrorMessage.foreach(logger.warn(_))
-            Future.successful(())
-        }
+
+    val enrichedEnrolmentKeyF =
+      if (invitation.clientId.typeId == CbcIdType.id && invitation.service == Service.Cbc) {
+        enrolmentStoreProxyConnector
+          .queryKnownFacts(Service.Cbc, Seq(Identifier(CbcIdType.id, invitation.clientId.value)))
+          .recover {
+            case _ =>
+              None
+          }
+          .map(
+            _.flatMap(
+              _.filter(identifier => identifier.key.toLowerCase == UtrType.id && UtrType.isValid(identifier.value)).headOption
+                .flatMap(identifier =>
+                  maybeEnrolmentKey
+                    .map(enrolmentKey => enrolmentKey + "~" + identifier.toString()))))
+      } else Future.successful(maybeEnrolmentKey)
+
+    (for {
+      maybeGroupId              <- enrolmentStoreProxyConnector.getPrincipalGroupIdFor(invitation.arn).recover { case _ => None /* don't fail on errors */ }
+      maybeEnrichedEnrolmentKey <- enrichedEnrolmentKeyF
+    } yield {
+      val maybeResultFuture = for {
+        enrichedEnrolmentKey <- maybeEnrichedEnrolmentKey
+        groupId              <- maybeGroupId
+        clientName           <- maybeClientName
+      } yield enrolmentStoreProxyConnector.updateEnrolmentFriendlyName(groupId, enrichedEnrolmentKey, clientName)
+      maybeResultFuture match {
+        case Some(future) =>
+          future.transform {
+            case Success(()) =>
+              logger.info(s"updateFriendlyName succeeded for client ${invitation.clientId}, agent ${invitation.arn}")
+              Success(())
+            case Failure(e) =>
+              logger.warn(s"updateFriendlyName failed due to ES19 error for client ${invitation.clientId}, agent ${invitation.arn}: $e")
+              Success(()) // don't fail on errors
+          }
+        case None =>
+          val errors = Seq(
+            (maybeEnrolmentKey, s"Error generating enrolment key"),
+            (maybeClientName, s"Client name not available"),
+            (maybeGroupId, s"Error retrieving agent's group id"),
+            (maybeEnrichedEnrolmentKey, s"Error enriching enrolment key with ${UtrType.id.toUpperCase()} for ${Service.HMRCCBCORG} service")
+          ).collect {
+            case (None, msg) => msg
+          }
+          val maybeErrorMessage: Option[String] =
+            if (errors.isEmpty) None
+            else
+              Some(s"updateFriendlyName not attempted for client ${invitation.clientId}, agent ${invitation.arn} due to: " + errors.mkString(", "))
+          maybeErrorMessage.foreach(logger.warn(_))
+          Future.successful(())
       }
+    }).flatten
+
   }
 }
