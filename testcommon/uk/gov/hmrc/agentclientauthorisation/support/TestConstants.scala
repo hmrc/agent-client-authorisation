@@ -41,8 +41,6 @@ object TestConstants {
   val arn = "ABCDEF123456"
   val arn2 = "KARN3869382"
 
-  val cbcUk = CbcId("XECBC8079578736")
-
   val invitationIds = Seq(InvitationId("ABBBBBBBBBBCA"), InvitationId("ABBBBBBBBBBCB"), InvitationId("ABBBBBBBBBBCC"))
 
   val agentCode = "12345"

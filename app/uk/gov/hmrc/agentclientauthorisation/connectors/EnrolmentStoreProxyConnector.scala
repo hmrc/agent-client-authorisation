@@ -24,10 +24,10 @@ import com.kenshoo.play.metrics.Metrics
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.http.Status
-import play.api.libs.json.{Format, JsObject, Json}
+import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Identifier, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
@@ -37,13 +37,6 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ES19Request(friendlyName: String)
 object ES19Request {
   implicit val format: Format[ES19Request] = Json.format[ES19Request]
-}
-
-// Note: knownFacts accepts identifier or verifier (key/value object), but we only need by identifier
-case class ES20Request(service: String, knownFacts: Seq[Identifier])
-object ES20Request {
-  implicit val format: Format[ES20Request] = Json.format[ES20Request]
-  def forCbcId(cbcId: String): ES20Request = ES20Request("HMRC-CBC-ORG", Seq(Identifier("cbcId", cbcId)))
 }
 
 @ImplementedBy(classOf[EnrolmentStoreProxyConnectorImpl])
@@ -57,10 +50,6 @@ trait EnrolmentStoreProxyConnector {
     implicit
     hc: HeaderCarrier,
     ec: ExecutionContext): Future[Unit]
-
-  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Seq[Identifier]]]
 }
 
 @Singleton
@@ -125,27 +114,4 @@ class EnrolmentStoreProxyConnectorImpl @Inject()(
       }
     }
   }
-
-  // ES20 - query known facts by verifiers or identifiers
-  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Seq[Identifier]]] = {
-    val url = new URL(espBaseUrl, s"/enrolment-store-proxy/enrolment-store/enrolments")
-    val request = ES20Request(service.id, knownFacts)
-    monitor("ConsumedAPI-ES-queryKnownFactsByIdentifiersOrVerifiers-POST") {
-      http.POST[ES20Request, HttpResponse](url.toString, request).map { response =>
-        response.status match {
-          case Status.OK =>
-            (response.json \ "enrolments")
-              .as[Seq[JsObject]]
-              .headOption
-              .map(obj => (obj \ "identifiers").as[Seq[Identifier]])
-          case Status.NO_CONTENT => None
-          case other =>
-            throw UpstreamErrorResponse(response.body, other, other)
-        }
-      }
-    }
-  }
-
 }
