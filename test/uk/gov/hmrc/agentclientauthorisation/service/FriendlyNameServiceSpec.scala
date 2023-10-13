@@ -31,7 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.model.{DetailsForEmail, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.MongoAgentReferenceRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcIdType, Identifier, Service}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{LocalDate, LocalDateTime}
@@ -82,6 +82,7 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
       origin = None
     )
     val enrolmentKey = s"HMRC-MTD-VAT~VRN~${vrn.value}"
+    val cbcEnrolmentKey = s"HMRC-CBC-ORG~cbcId~XECBC8079578736~UTR~8130839560"
 
     val groupId = "0123-4567-89AB"
 
@@ -99,7 +100,29 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         verify(esp, times(1))
           .updateEnrolmentFriendlyName(eqs(groupId), eqs(enrolmentKey), eqs(friendlyNameEncoded))(any[HeaderCarrier], any[ExecutionContext])
       }
+      "succeed for CBC UK with extra ES20 call" in {
+        val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
+        when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
+        when(esp.queryKnownFacts(any[Service], any[Seq[Identifier]])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(Some(Seq[Identifier](Identifier("UTR", "8130839560")))))
+        when(esp.updateEnrolmentFriendlyName(any[String], any[String], any[String])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(()))
 
+        val friendlyNameService = new FriendlyNameService(esp)
+
+        val cbcInvitation = invitation.copy(clientId = cbcUk, suppliedClientId = cbcUk, service = Service.Cbc)
+
+        friendlyNameService.updateFriendlyName(cbcInvitation).futureValue shouldBe (())
+
+        verify(esp, times(1))
+          .updateEnrolmentFriendlyName(eqs(groupId), eqs(cbcEnrolmentKey), eqs(friendlyNameEncoded))(any[HeaderCarrier], any[ExecutionContext])
+
+        verify(esp, times(1))
+          .queryKnownFacts(eqs(Service.Cbc), eqs(Seq(Identifier(CbcIdType.id, cbcInvitation.clientId.value))))(
+            any[HeaderCarrier],
+            any[ExecutionContext])
+
+      }
       "not be done (but return successfully) if there are no client details available" in {
         val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
         when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
@@ -113,6 +136,29 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         friendlyNameService.updateFriendlyName(invitationWithoutDetails).futureValue shouldBe (())
 
         verify(esp, times(0)).updateEnrolmentFriendlyName(any[String], any[String], any[String])(any[HeaderCarrier], any[ExecutionContext])
+      }
+      "not be done (but return successfully) for cbcUk service if ES20 do not return UTR" in {
+        val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
+        when(esp.getPrincipalGroupIdFor(any[Arn])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(Some(groupId)))
+        when(esp.queryKnownFacts(any[Service], any[Seq[Identifier]])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(Some(Seq.empty[Identifier])))
+        when(esp.updateEnrolmentFriendlyName(any[String], any[String], any[String])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(()))
+
+        val friendlyNameService = new FriendlyNameService(esp)
+
+        val cbcInvitation = invitation.copy(clientId = cbcUk, suppliedClientId = cbcUk, service = Service.Cbc)
+
+        friendlyNameService.updateFriendlyName(cbcInvitation).futureValue shouldBe (())
+
+        verify(esp, times(0))
+          .updateEnrolmentFriendlyName(eqs(groupId), eqs(cbcEnrolmentKey), eqs(friendlyNameEncoded))(any[HeaderCarrier], any[ExecutionContext])
+
+        verify(esp, times(1))
+          .queryKnownFacts(eqs(Service.Cbc), eqs(Seq(Identifier(CbcIdType.id, cbcInvitation.clientId.value))))(
+            any[HeaderCarrier],
+            any[ExecutionContext])
+
       }
       "not be done (but return successfully) if the available client name is empty" in {
         val esp: EnrolmentStoreProxyConnector = mock[EnrolmentStoreProxyConnector]
