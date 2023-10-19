@@ -287,7 +287,6 @@ trait DesStubs {
                        |}""".stripMargin)))
     this
   }
-
   def hasVatCustomerDetailsWithNoApprovedInformation(vrn: Vrn) = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
@@ -307,6 +306,62 @@ trait DesStubs {
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
           .withStatus(404)))
+
+    this
+  }
+
+  def hasPillar2CustomerDetails(plrId: PlrId, pillar2RegDate: String, inactive: Boolean = false) = {
+    stubFor(
+      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""{
+                       |                 "plrReference": "${plrId.value}",
+                       |                 "upeDetails": {
+                       |                     "organisationName": "OrgName",
+                       |                     "registrationDate": "${pillar2RegDate}",
+                       |                     "domesticOnly": false,
+                       |                     "filingMember": false
+                       |                 },
+                       |                 "accountingPeriod": {
+                       |                     "startDate": "2023-01-01",
+                       |                     "endDate": "2023-12-31"
+                       |                 },
+                       |                 "upeCorrespAddressDetails": {
+                       |                     "addressLine1": "1 North Street",
+                       |                     "countryCode": "GB"
+                       |                 },
+                       |                 "primaryContactDetails": {
+                       |                     "name": "Some Name",
+                       |                     "emailAddress": "name@email.com"
+                       |                 },
+                       |                 "accountStatus": {
+                       |                     "inactive" : ${inactive}
+                       |                 }
+                       |}""".stripMargin)))
+    this
+  }
+
+  def hasPillar2CustomerDetailsWithNoApprovedInformation(plrId: PlrId) = {
+    stubFor(
+      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody("{}")))
+    this
+  }
+
+  def failsPillar2CustomerDetails(plrId: PlrId, withStatus: Int) = {
+    stubFor(
+      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(aResponse()
+          .withStatus(withStatus)))
 
     this
   }
@@ -342,6 +397,18 @@ trait DesStubs {
   def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/subscriptions/CGT/ZCGT/${cgtRef.value}"))
+        .withHeader("authorization", equalTo("Bearer secret"))
+        .withHeader("environment", equalTo("test"))
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withStatus(status)
+            .withBody(response)))
+  }
+
+  def getPillar2Subscription(plrId: PlrId, status: Int = 200, response: String) = {
+    stubFor(
+      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(

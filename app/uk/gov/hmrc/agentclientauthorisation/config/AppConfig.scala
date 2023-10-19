@@ -43,6 +43,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val ifEnvironment: String = getConf("if.environment")
   val ifAuthTokenAPI1712: String = getConf("if.authorization-token.API1712")
   val ifAuthTokenAPI1495: String = getConf("if.authorization-token.API1495")
+  val ifAuthTokenAPI2143: String = getConf("if.authorization-token.API2143")
 
   val eisBaseUrl: String = baseUrl("eis")
   val eisEnvironment: String = getConf("eis.environment")

@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
@@ -341,6 +342,27 @@ class AgencyInvitationsController @Inject()(
     }
   }
 
+  def getPillar2SubscriptionDetails(plrId: PlrId): Action[AnyContent] = Action.async { implicit request =>
+    withBasicAuth {
+      desConnector
+        .getPillar2Subscription(plrId)
+        .map {
+          _.response match {
+            case Right(sub) => Ok(Json.toJson(sub))
+            case Left(pillar2Error) =>
+              val json = Json.toJson(pillar2Error.errors)
+              pillar2Error.httpResponseCode match {
+                case 400 => BadRequest(json)
+                case 404 => NotFound(json)
+                case c =>
+                  logger.warn(s"unexpected status $c from DES, error: ${pillar2Error.errors}")
+                  InternalServerError(json)
+              }
+          }
+        }
+    }
+  }
+
   def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate): Action[AnyContent] = Action.async { implicit request =>
     desConnector
       .getPptSubscription(EtmpRegistrationNumberNumber)
@@ -373,6 +395,29 @@ class AgencyInvitationsController @Inject()(
             logger.warn(s"checkKnownFactCbc: CBC subscription not found for $cbcId")
             NotFound
         }
+      case None => Future.successful(BadRequest)
+    }
+  }
+
+  def checkKnownFactPillar2(plrId: PlrId): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson.flatMap(json => (json \ "RegistrationDate").asOpt[LocalDate]) match {
+      case Some(registrationDate) =>
+        knownFactsCheckService
+          .clientPillar2RegistrationCheckResult(plrId, registrationDate)
+          .map {
+            case Pillar2KnownFactCheckOk     => NoContent
+            case Pillar2KnownFactNotMatched  => Pillar2RegistrationDateDoesNotMatch
+            case Pillar2RecordClientInactive => Pillar2ClientInactive
+            case Pillar2DetailsNotFound      => NotFound
+          }
+          .recover {
+            case e if e.getMessage.contains("MIGRATION") =>
+              logger.warn(s"Issues with Check Known Fact for Pillar2: ${e.getMessage}")
+              Locked
+            case e =>
+              logger.warn(s"Error found for Check Known Fact for Pillar2: ${e.getMessage}")
+              BadGateway
+          }
       case None => Future.successful(BadRequest)
     }
   }

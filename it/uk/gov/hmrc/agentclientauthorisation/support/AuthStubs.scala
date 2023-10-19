@@ -75,7 +75,7 @@ trait BasicUserAuthStubs {
 trait ClientUserAuthStubs extends BasicUserAuthStubs {
 
 
-  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef, pptRef: PptRef, cbcId: CbcId) = {
+  def givenClientAll(mtdItId: MtdItId, vrn: Vrn, nino: Nino, utr: Utr, urn: Urn, cgtRef: CgtRef, pptRef: PptRef, cbcId: CbcId, plrId: PlrId) = {
     stubFor(post(urlPathEqualTo(s"/auth/authorise"))
       .willReturn(aResponse()
         .withStatus(200)
@@ -172,6 +172,16 @@ trait ClientUserAuthStubs extends BasicUserAuthStubs {
                      |        {
                      |          "key":"cbcId",
                      |          "value":"${cbcId.value}"
+                     |        }
+                     |      ],
+                     |      "state": "Activated"
+                     |    },
+                     |    {
+                     |      "key":"HMRC-PILLAR2-ORG",
+                     |      "identifiers": [
+                     |        {
+                     |          "key":"plrId",
+                     |          "value":"${plrId.value}"
                      |        }
                      |      ],
                      |      "state": "Activated"

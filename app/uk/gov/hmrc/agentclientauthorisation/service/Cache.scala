@@ -20,15 +20,14 @@ import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
 import com.kenshoo.play.metrics.Metrics
 import play.api.libs.json.JsValue
-
-import javax.inject.{Inject, Singleton}
 import play.api.{Configuration, Environment, Logger, Logging}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
-import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, CgtSubscriptionResponse, TrustResponse, VatCustomerDetails}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -107,6 +106,10 @@ class AgentCacheProvider @Inject()(val environment: Environment, configuration: 
   val pptSubscriptionCache: Cache[Option[JsValue]] =
     if (cacheEnabled) new LocalCaffeineCache[Option[JsValue]]("pptSubscription", cacheSize, cacheExpires)
     else new DoNotCache[Option[JsValue]]
+
+  val pillar2SubscriptionCache: Cache[Either[Pillar2Error, Pillar2Record]] =
+    if (cacheEnabled) new LocalCaffeineCache[Either[Pillar2Error, Pillar2Record]]("pillar2Subscription", cacheSize, cacheExpires)
+    else new DoNotCache[Either[Pillar2Error, Pillar2Record]]
 
   val agencyDetailsCache: Cache[Option[AgentDetailsDesResponse]] =
     if (cacheEnabled)

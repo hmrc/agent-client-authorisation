@@ -7,3 +7,4 @@ service.HMRC-CGT-PD=manage their Capital Gains Tax on UK property account.
 service.HMRC-PPT-ORG=manage their Plastic Packaging Tax.
 service.HMRC-CBC-ORG=manage their Country-by-Country.
 service.HMRC-CBC-NONUK-ORG=manage their Country-by-Country.
+service.HMRC-PILLAR2-ORG=manage their Pillar2 Tax.

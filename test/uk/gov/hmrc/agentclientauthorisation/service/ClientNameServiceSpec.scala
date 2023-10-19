@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +37,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
   val vrn: Vrn = Vrn("555219930")
+  val plrId = PlrId("XAPLR2222222222")
 
   val utr: Utr = Utr("2134514321")
   val urn: Utr = Utr("AAAAA2642468661")
@@ -170,6 +172,18 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
       val result = await(clientNameService.getClientNameByService(cbcId.value, Service.Cbc))
       result shouldBe Some("Johnson and Oldman")
+    }
+  }
+
+  "getPillar2Name" should {
+    "get the organisation name if there is no trading name" in {
+      (mockDesConnector
+        .getPillar2Subscription(_: PlrId)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(plrId, *, *)
+        .returns(Future(Pillar2SubscriptionResponse(
+          response = Right(Pillar2Subscription(organisationName = "Organisation name", registrationDate = LocalDate.parse("2001-02-03"))))))
+      val result = await(clientNameService.getClientNameByService(plrId.value, Service.Pillar2))
+      result shouldBe Some("Organisation name")
     }
   }
 }

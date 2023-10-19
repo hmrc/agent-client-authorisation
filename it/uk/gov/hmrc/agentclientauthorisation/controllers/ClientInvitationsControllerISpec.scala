@@ -52,6 +52,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       case CapitalGains => "manage their Capital Gains Tax on UK property account."
       case Ppt => "manage their Plastic Packaging Tax."
       case Cbc | CbcNonUk => "manage their Country-by-Country."
+      case Pillar2 => "manage their Pillar2."
     }
 
     EmailInformation(Seq(dfe.agencyEmail),
@@ -122,7 +123,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     } else if(forBusiness)
       givenClientAllBusCgt(cgtRefBus)
     else
-      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef, cbcId)
+      givenClientAll(mtdItId, vrn, nino, utr, urn, cgtRef, pptRef, cbcId, plrId)
   }
 
   trait AddEmailSupportStub {

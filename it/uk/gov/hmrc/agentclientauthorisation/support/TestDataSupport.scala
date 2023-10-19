@@ -26,6 +26,7 @@ trait TestDataSupport {
   val serviceTERS = "HMRC-TERS-ORG"
   val serviceTERSNT = "HMRC-TERSNT-ORG"
   val servicePPT = "HMRC-PPT-ORG"
+  val servicePillar2 = "HMRC-PILLAR2-ORG"
 
   val nino: Nino = Nino("AB123456A")
   val nino2: Nino = Nino("AB123456B")
@@ -50,6 +51,8 @@ trait TestDataSupport {
   val pptDeregistrationDateWhenDeregistered: LocalDate = LocalDate.parse("2021-10-01")
 
   val cbcId: CbcId = CbcId("XACBC0516273849")
+
+  val plrId = PlrId("XAPLR2222222222")
 
   val postcode: String = "AA11AA"
   val vatRegDate: LocalDate = LocalDate.parse("2018-01-01")
