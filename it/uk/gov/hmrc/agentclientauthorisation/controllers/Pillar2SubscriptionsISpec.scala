@@ -72,14 +72,14 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
 
   val pillar2Subscription = Pillar2Subscription("OrgName", suppliedDate)
 
-  "GET /pillar2/subscriptions/:plrId" should {
+  "GET /pillar2/subscription?plrReference=plrId" should {
 
     "return pillar2 subscription as expected for individuals" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       getPillar2Subscription(plrId, 200, pillar2Record)
 
-      val request = FakeRequest("GET", s"/pillar2/subscriptions/${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
+      val request = FakeRequest("GET", s"/pillar2/subscription?plrReference=${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getPillar2SubscriptionDetails(plrId)(request)
       status(result) shouldBe 200
@@ -91,7 +91,7 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getPillar2Subscription(plrId,  400, Json.toJson(desError).toString())
 
-      val request = FakeRequest("GET", s"/pillar2/subscriptions/${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
+      val request = FakeRequest("GET", s"/pillar2/subscription?plrReference=${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getPillar2SubscriptionDetails(plrId)(request)
       status(result) shouldBe 400
@@ -103,7 +103,7 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getPillar2Subscription(plrId, 400, desErrors)
 
-      val request = FakeRequest("GET", s"/pillar2/subscriptions/${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
+      val request = FakeRequest("GET", s"/pillar2/subscription?plrReference=${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getPillar2SubscriptionDetails(plrId)(request)
       status(result) shouldBe 400
@@ -116,7 +116,7 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
       givenAuthorisedAsAgent(arn)
       getPillar2Subscription(plrId, 404, notFoundJson)
 
-      val request = FakeRequest("GET", s"/pillar2/subscriptions/${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
+      val request = FakeRequest("GET", s"/pillar2/subscription?plrReference=${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 
       val result = controller.getPillar2SubscriptionDetails(plrId)(request)
       status(result) shouldBe 404

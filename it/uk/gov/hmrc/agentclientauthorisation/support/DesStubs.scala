@@ -312,7 +312,7 @@ trait DesStubs {
 
   def hasPillar2CustomerDetails(plrId: PlrId, pillar2RegDate: String, inactive: Boolean = false) = {
     stubFor(
-      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+      get(urlEqualTo(s"/pillar2/subscription?plrReference=${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -346,7 +346,7 @@ trait DesStubs {
 
   def hasPillar2CustomerDetailsWithNoApprovedInformation(plrId: PlrId) = {
     stubFor(
-      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+      get(urlEqualTo(s"/pillar2/subscription?plrReference=${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -357,7 +357,7 @@ trait DesStubs {
 
   def failsPillar2CustomerDetails(plrId: PlrId, withStatus: Int) = {
     stubFor(
-      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+      get(urlEqualTo(s"/pillar2/subscription?plrReference=${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
@@ -408,7 +408,7 @@ trait DesStubs {
 
   def getPillar2Subscription(plrId: PlrId, status: Int = 200, response: String) = {
     stubFor(
-      get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
+      get(urlEqualTo(s"/pillar2/subscription?plrReference=${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(

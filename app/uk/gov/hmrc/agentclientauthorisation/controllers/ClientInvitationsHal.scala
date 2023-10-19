@@ -37,8 +37,7 @@ trait ClientInvitationsHal {
     case CapitalGains         => "CGTPDRef"
     case Ppt                  => "EtmpRegistrationNumber"
     case Cbc | CbcNonUk       => "cbcId"
-    //TODO WG - how do I know string ????
-    case Pillar2 => "pillar2"
+    case Pillar2              => "PLRID"
   }
 
   def toHalResource(invitation: Invitation): HalResource = {

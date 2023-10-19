@@ -152,7 +152,7 @@ class DesConnectorImpl @Inject()(
   }
 
   def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
-    val url = s"$baseUrl/pillar2/subscription/${plrId.value}"
+    val url = s"$baseUrl/pillar2/subscription?plrReference=${plrId.value}"
     agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
       getWithDesIfHeaders("getPillar2Subscription", url).map { response =>
         response.status match {

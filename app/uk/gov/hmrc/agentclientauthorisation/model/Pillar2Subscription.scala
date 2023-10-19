@@ -21,7 +21,6 @@ import play.api.libs.json.{Format, Json}
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-//TODO WG - should we read whole record or only fields we are up to ???
 case class UpeDetails(
   customerIdentification1: Option[String] = None,
   customerIdentification2: Option[String] = None,
