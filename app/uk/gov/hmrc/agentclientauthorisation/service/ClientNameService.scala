@@ -20,7 +20,7 @@ import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, VatCustomerDetails}
-import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, MtdItId, PptRef, Service, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, MtdItId, PlrId, PptRef, Service, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
@@ -51,7 +51,7 @@ class ClientNameService @Inject()(
       case CapitalGains                    => getCgtName(CgtRef(clientId))
       case Ppt                             => getPptCustomerName(PptRef(clientId))
       case Cbc | CbcNonUk                  => getCbcCustomerName(CbcId(clientId))
-      case _                               => Future successful None
+      case Pillar2                         => getPillar2CustomerName(PlrId(clientId))
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
@@ -118,4 +118,7 @@ class ClientNameService @Inject()(
 
   def getCbcCustomerName(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     eisConnector.getCbcSubscription(cbcId).map(_.flatMap(_.anyAvailableName))
+
+  def getPillar2CustomerName(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    desConnector.getPillar2Subscription(plrId).map(_.response.map(_.organisationName).toOption)
 }

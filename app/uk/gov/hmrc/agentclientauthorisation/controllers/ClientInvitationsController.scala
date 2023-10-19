@@ -63,7 +63,8 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
     clientIdType match {
-      case "MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber" | "cbcId" // TODO can this be rewritten more flexibly?
+      case "MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber" | "cbcId" |
+          "pillar2" // TODO can this be rewritten more flexibly?
           if currentUser.credentials.providerType == "GovernmentGateway" =>
         Some(ClientIdentifier(currentUser.taxIdentifier))
       case _ => None
@@ -89,6 +90,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       case "CGTPDRef"               => CgtRefType
       case "EtmpRegistrationNumber" => PptRefType
       case "cbcId"                  => CbcIdType
+      case "pillar2"                => PlrIdType
     }
 
   def getInvitations(clientIdType: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =

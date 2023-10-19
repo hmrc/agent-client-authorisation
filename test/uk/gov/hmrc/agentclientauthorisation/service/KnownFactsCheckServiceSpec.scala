@@ -21,13 +21,13 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.model.VatDetails
+import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult._
-import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
-import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
+import uk.gov.hmrc.agentclientauthorisation.model.{Pillar2Details, Pillar2DetailsResponse, Pillar2Error, VatDetails}
+import uk.gov.hmrc.agentclientauthorisation.support.{TransitionInvitation, UnitSpec}
+import uk.gov.hmrc.agentmtdidentifiers.model.{PlrId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -162,6 +162,70 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
 
       assertThrows[UpstreamErrorResponse] {
         await(service.clientDateOfBirthMatches(clientNino, dateOfBirthSupplied))
+      }
+    }
+  }
+
+  "clientPillar2RegistrationDateMatches" should {
+    val clientPlrId = PlrId("XAPLR2222222222")
+
+    "return Pillar2KnownFactCheckOk if the client is active and the supplied date matches the effectiveRegistrationDate from the Pillar2 Customer Information in ETMP" in {
+      val pillar2RegDateInETMP = LocalDate.parse("2001-02-03")
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, false))))
+
+      await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2KnownFactCheckOk
+    }
+
+    "return Pillar2RecordClientInactive if the client is inactive and the supplied date matches the effectiveRegistrationDate from the Pillar2 Customer Information in ETMP" in {
+      val pillar2RegDateInETMP = LocalDate.parse("2001-02-03")
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, true))))
+
+      await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2RecordClientInactive
+    }
+
+    "return Pillar2KnownFactNotMatched if the client is active and the supplied date does not match the effectiveRegistrationDate from the Pillar2 Customer Information in ETMP" in {
+      val pillar2RegDateInETMP = LocalDate.parse("2001-02-04")
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, false))))
+
+      await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2KnownFactNotMatched
+    }
+
+    "return Pillar2RecordClientInactive if the client is inactive and the supplied date does not match the effectiveRegistrationDate from the Pillar2 Customer Information in ETMP" in {
+      val pillar2RegDateInETMP = LocalDate.parse("2001-02-04")
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, true))))
+
+      await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2RecordClientInactive
+    }
+
+    "return Pillar2DetailsNotFound if the Pillar2 Customer Information in ETMP  return Error" in {
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future successful Pillar2DetailsResponse(Left(Pillar2Error(402, Seq.empty))))
+
+      await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2DetailsNotFound
+    }
+
+    "throw Upstream5xxResponse if DES is unavailable" in {
+      val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
+
+      when(desConnector.getPillar2Details(clientPlrId))
+        .thenReturn(Future failed UpstreamErrorResponse("error", 502, 503))
+
+      assertThrows[UpstreamErrorResponse] {
+        await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied))
       }
     }
   }

@@ -23,7 +23,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, ClientIdentifier, MtdItId, PptRef, Urn, Utr, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, ClientIdentifier, MtdItId, PlrId, PptRef, Urn, Utr, Vrn}
 import uk.gov.hmrc.domain.Nino
 
 trait ClientInvitationsHal {
@@ -37,6 +37,7 @@ trait ClientInvitationsHal {
     case CapitalGains         => "CGTPDRef"
     case Ppt                  => "EtmpRegistrationNumber"
     case Cbc | CbcNonUk       => "cbcId"
+    case Pillar2              => "PLRID"
   }
 
   def toHalResource(invitation: Invitation): HalResource = {
@@ -85,6 +86,8 @@ trait ClientInvitationsHal {
         routes.ClientInvitationsController.getInvitations("EtmpRegistrationNumber", clientId.value, status)
       case clientId @ ClientIdentifier(CbcId(_)) =>
         routes.ClientInvitationsController.getInvitations("cbcId", clientId.value, status)
+      case clientId @ ClientIdentifier(PlrId(_)) =>
+        routes.ClientInvitationsController.getInvitations("pillar2", clientId.value, status)
       case other =>
         throw new RuntimeException(s"'toHalResource' not yet implemented for $other ")
     }

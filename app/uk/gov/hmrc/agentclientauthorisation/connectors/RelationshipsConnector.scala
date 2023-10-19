@@ -104,6 +104,13 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
         .handleNon2xx("unexepected error during 'createCountryByCountryRelationship'")
     }
 
+  def createPillar2Relationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Pillar2-PUT") {
+      http
+        .PUT[String, HttpResponse](pillar2RelationshipUrl(invitation), "")
+        .handleNon2xx("unexepected error during 'createPillar2Relationship'")
+    }
+
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Map[String, Seq[Arn]]]] =
     monitor(s"ConsumedAPI-AgentClientRelationships-GetActive-GET") {
       val url = s"$baseUrl/agent-client-relationships/client/relationships/active"
@@ -166,6 +173,11 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
       invitation.clientId.value
     )}"
   }
+
+  private def pillar2RelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PILLAR2-ORG/client/PLRID/${encodePathSegment(
+      invitation.clientId.value
+    )}"
 
   private def afiRelationshipUrl(invitation: Invitation): String = {
     val arn = encodePathSegment(invitation.arn.value)

@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
+import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.Trust
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
@@ -38,7 +39,7 @@ import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, ClientIdentifier, InvitationId, Service, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, ClientIdentifier, InvitationId, PlrId, Service, Vrn}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
@@ -540,6 +541,63 @@ class AgencyInvitationsControllerSpec
 
       await(controller.checkKnownFactCbc(cbcId)(badRequest)) shouldBe BadRequest
     }
+  }
+
+  "checkKnownFactPillar2" should {
+    val clientPlrId = PlrId("XAPLR2222222222")
+    val suppliedDate = LocalDate.parse("2001-02-03")
+    def makeRequest(registrationDate: LocalDate) = FakeRequest().withJsonBody(Json.obj("RegistrationDate" -> registrationDate.toString))
+
+    "return Pillar2RecordClientInactive if the Pillar2 record shows the client to be inactive" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(
+        kfcService
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful Pillar2RecordClientInactive)
+
+      await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe Pillar2ClientInactive
+    }
+
+    "return No Content if PlrId is known in ETMP, the client is active and the effectiveRegistrationDate matched" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(
+        kfcService
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful Pillar2KnownFactCheckOk)
+
+      await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe NoContent
+    }
+
+    "return Pillar2 Registration Date Does Not Match if PlrId is known in ETMP, client is active and the effectiveRegistrationDate did not match" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(
+        kfcService
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful Pillar2KnownFactNotMatched)
+
+      await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe Pillar2RegistrationDateDoesNotMatch
+    }
+
+    "return Not Found if PlrId is unknown in ETMP" in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      when(
+        kfcService
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful Pillar2DetailsNotFound)
+
+      await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe NotFound
+    }
+
+    "return BadRequest if body of the message do not contain Registration Date " in {
+      agentAuthStub(agentAffinityAndEnrolments)
+
+      await(controller.checkKnownFactPillar2(clientPlrId)(FakeRequest())) shouldBe BadRequest
+    }
+
   }
 
   "SetRelationshipEnded" should {

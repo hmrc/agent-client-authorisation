@@ -29,7 +29,7 @@ import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, CgtRef, CgtRefType, ClientIdType, ClientIdentifier, MtdItId, MtdItIdType, NinoType, PptRef, Service, Urn, UrnType, Utr, UtrType, Vrn, VrnType}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, CgtRef, CgtRefType, ClientIdType, ClientIdentifier, MtdItId, MtdItIdType, NinoType, PlrId, PptRef, Service, Urn, UrnType, Utr, UtrType, Vrn, VrnType}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
@@ -163,6 +163,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
       case "CGTPDRef" if CgtRefType.isValid(clientId)           => Right((CapitalGains, CgtRef(clientId)))
       case "EtmpRegistrationNumber" if PptRef.isValid(clientId) => Right((Ppt, PptRef(clientId)))
       case "cbcId" if CbcId.isValid(clientId)                   => Right((Cbc, CbcId(clientId)))
+      case "pillar2" if PlrId.isValid(clientId)                 => Right((Pillar2, PlrId(clientId)))
       case e                                                    => Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
     }
 

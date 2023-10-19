@@ -18,10 +18,12 @@ GET         /known-facts/individuals/:nino/dob/:dob                             
 GET         /known-facts/organisations/trust/:trustTaxIdentifier                              @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getTrustName(trustTaxIdentifier: String)
 GET         /known-facts/ppt/:EtmpRegistrationNumberNumber/:dateOfApplication                 @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPpt(EtmpRegistrationNumberNumber: uk.gov.hmrc.agentmtdidentifiers.model.PptRef, dateOfApplication: LocalDate)
 POST        /known-facts/cbc/:cbcId                                                           @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactCbc(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
+POST        /known-facts/pillar2/:plrId                                                       @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.checkKnownFactPillar2(plrId: uk.gov.hmrc.agentmtdidentifiers.model.PlrId)
 
 GET         /cgt/subscriptions/:cgtRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCgtSubscriptionDetails(cgtRef: uk.gov.hmrc.agentmtdidentifiers.model.CgtRef)
 GET         /ppt/subscriptions/:pptRef                                                        @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getPptSubscriptionDetails(pptRef: uk.gov.hmrc.agentmtdidentifiers.model.PptRef)
 GET         /cbc/subscriptions/:cbcId                                                         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getCbcSubscriptionDetails(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
+GET         /pillar2/subscriptions/:plrId                                                     @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.getPillar2SubscriptionDetails(plrId: uk.gov.hmrc.agentmtdidentifiers.model.PlrId)
 
 # Client routes
 # --------------------------------

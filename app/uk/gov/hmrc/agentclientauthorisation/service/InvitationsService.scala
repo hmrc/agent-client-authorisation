@@ -145,6 +145,7 @@ class InvitationsService @Inject()(
       case Service.Ppt                  => relationshipsConnector.createPlasticPackagingTaxRelationship(invitation)
       case Service.Cbc                  => relationshipsConnector.createCountryByCountryRelationship(invitation)
       case Service.CbcNonUk             => relationshipsConnector.createCountryByCountryRelationship(invitation)
+      case Service.Pillar2              => relationshipsConnector.createPillar2Relationship(invitation)
     }
 
     createRelationship.recover {

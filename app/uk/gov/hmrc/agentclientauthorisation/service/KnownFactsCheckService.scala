@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import java.time.LocalDate
 import uk.gov.hmrc.agentclientauthorisation.connectors._
-import uk.gov.hmrc.agentclientauthorisation.model.{VatDetails, VatKnownFactCheckResult}
+import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult._
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult._
-import uk.gov.hmrc.agentmtdidentifiers.model.Vrn
+import uk.gov.hmrc.agentclientauthorisation.model.{Pillar2KnownFactCheckResult, VatDetails, VatKnownFactCheckResult}
+import uk.gov.hmrc.agentmtdidentifiers.model.{PlrId, Vrn}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,4 +47,19 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
       case Some(CitizenDateOfBirth(_))                                           => Some(false)
       case None                                                                  => None
     }
+
+  def clientPillar2RegistrationCheckResult(plrId: PlrId, suppliedPillar2RegistrationDate: LocalDate)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Pillar2KnownFactCheckResult] =
+    desConnector
+      .getPillar2Details(plrId)
+      .map {
+        _.response match {
+          case Right(pillarDetails) if (!pillarDetails.inactive && pillarDetails.effectiveRegistrationDate == suppliedPillar2RegistrationDate) =>
+            Pillar2KnownFactCheckOk
+          case Right(pillarDetails) if pillarDetails.inactive => Pillar2RecordClientInactive
+          case Right(_)                                       => Pillar2KnownFactNotMatched
+          case Left(_)                                        => Pillar2DetailsNotFound
+        }
+      }
 }

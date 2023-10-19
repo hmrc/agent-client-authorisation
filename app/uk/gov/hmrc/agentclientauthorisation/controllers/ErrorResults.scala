@@ -59,6 +59,14 @@ object ErrorResults {
         "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC.")))
   val VatClientInsolvent: Result = Forbidden(
     toJson(ErrorBody("VAT_RECORD_CLIENT_INSOLVENT_TRUE", "The vat record shows that the client matching the vrn submitted is insolvent")))
+  val Pillar2RegistrationDateDoesNotMatch: Result = Forbidden(
+    toJson(
+      ErrorBody(
+        "PILLA2_REGISTRATION_DATE_DOES_NOT_MATCH",
+        "The submitted PILLAR2 registration date did not match the client's PILLAR2 registration date as held by HMRC."
+      )))
+  val Pillar2ClientInactive: Result = Forbidden(
+    toJson(ErrorBody("PILLAR2_RECORD_CLIENT_INACTIVE_TRUE", "The pillar2 record shows that the client matching the plrId submitted is inactive")))
   val InvitationNotFound: Result = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the EtmpRegistrationNumber was not found")))
   val InvalidClientId: Result = BadRequest(toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
