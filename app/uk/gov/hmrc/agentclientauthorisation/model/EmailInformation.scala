@@ -21,7 +21,7 @@ case class EmailInformation(
   to: Seq[String],
   templateId: String,
   parameters: Map[String, String],
-  force: Boolean = false,
+  force: Boolean = true, //previously bounced email will be sent. TODO - track bounces to know email is being received.
   eventUrl: Option[String] = None,
   onSendUrl: Option[String] = None)
 
