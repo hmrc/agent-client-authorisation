@@ -71,7 +71,6 @@ case object AccountStatus {
 }
 
 case class Pillar2Record(
-  plrReference: String,
   upeDetails: UpeDetails,
   accountingPeriod: AccountingPeriod,
   upeCorrespAddressDetails: UpeCorrespAddressDetails,

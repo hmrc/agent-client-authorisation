@@ -546,7 +546,7 @@ class AgencyInvitationsControllerSpec
   "checkKnownFactPillar2" should {
     val clientPlrId = PlrId("XAPLR2222222222")
     val suppliedDate = LocalDate.parse("2001-02-03")
-    def makeRequest(registrationDate: LocalDate) = FakeRequest().withJsonBody(Json.obj("RegistrationDate" -> registrationDate.toString))
+    def makeRequest(registrationDate: LocalDate) = FakeRequest().withJsonBody(Json.obj("registrationDate" -> registrationDate.toString))
 
     "return Pillar2RecordClientInactive if the Pillar2 record shows the client to be inactive" in {
       agentAuthStub(agentAffinityAndEnrolments)

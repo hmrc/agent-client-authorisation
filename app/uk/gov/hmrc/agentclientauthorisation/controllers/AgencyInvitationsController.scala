@@ -400,7 +400,7 @@ class AgencyInvitationsController @Inject()(
   }
 
   def checkKnownFactPillar2(plrId: PlrId): Action[AnyContent] = Action.async { implicit request =>
-    request.body.asJson.flatMap(json => (json \ "RegistrationDate").asOpt[LocalDate]) match {
+    request.body.asJson.flatMap(json => (json \ "registrationDate").asOpt[LocalDate]) match {
       case Some(registrationDate) =>
         knownFactsCheckService
           .clientPillar2RegistrationCheckResult(plrId, registrationDate)
