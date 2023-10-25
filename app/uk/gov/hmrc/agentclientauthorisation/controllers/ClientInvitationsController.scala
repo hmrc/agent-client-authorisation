@@ -51,24 +51,23 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
 
   def acceptInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType)
       acceptInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
     }
 
   def rejectInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     AuthorisedClientOrStrideUser(clientIdType, clientId, strideRoles) { implicit request => implicit currentUser =>
-      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType, clientId)
+      implicit val authTaxId: Option[ClientIdentifier[TaxIdentifier]] = getAuthTaxId(clientIdType)
       rejectInvitation(ClientIdentifier(currentUser.taxIdentifier), invitationId)
     }
 
-  private def getAuthTaxId(clientIdType: String, clientId: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] =
-    clientIdType match {
-      case "MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber" | "cbcId" |
-          "pillar2" // TODO can this be rewritten more flexibly?
-          if currentUser.credentials.providerType == "GovernmentGateway" =>
-        Some(ClientIdentifier(currentUser.taxIdentifier))
-      case _ => None
-    }
+  private def getAuthTaxId(clientIdType: String)(implicit currentUser: CurrentUser): Option[ClientIdentifier[TaxIdentifier]] = clientIdType match {
+    // TODO can anyone explain the logic below? Why do we accept any supported id type except Nino? Can this be rewritten more flexibly?
+    case "MTDITID" | "UTR" | "URN" | "VRN" | "CGTPDRef" | "EtmpRegistrationNumber" | "cbcId" | "PLRID"
+        if currentUser.credentials.providerType == "GovernmentGateway" =>
+      Some(ClientIdentifier(currentUser.taxIdentifier))
+    case _ => None
+  }
 
   def getInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     validateClientId(clientIdType, clientId) match {
@@ -90,7 +89,7 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       case "CGTPDRef"               => CgtRefType
       case "EtmpRegistrationNumber" => PptRefType
       case "cbcId"                  => CbcIdType
-      case "pillar2"                => PlrIdType
+      case "PLRID"                  => PlrIdType
     }
 
   def getInvitations(clientIdType: String, identifier: String, status: Option[InvitationStatus]): Action[AnyContent] =

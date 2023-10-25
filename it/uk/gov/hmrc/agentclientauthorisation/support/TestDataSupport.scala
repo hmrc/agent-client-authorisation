@@ -3,7 +3,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.{Cbc, CbcNonUk, MtdIt, PersonalIncomeRecord, Ppt, Trust, TrustNT, Vat}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{Cbc, CbcNonUk, MtdIt, PersonalIncomeRecord, Pillar2, Ppt, Trust, TrustNT, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
@@ -109,6 +109,7 @@ trait TestDataSupport {
   val pptClient: TestClient[PptRef] = TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "EtmpRegistrationNumber", pptRef, pptRef, PptRef("XAPPT0000000001") )
   val cbcClient: TestClient[CbcId] = TestClient(business, "Domestic Corp Ltd", Cbc, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647") )
   val cbcNonUkClient: TestClient[CbcId] = TestClient(business, "Overseas Corp Ltd", CbcNonUk, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647") )
+  val pillar2Client: TestClient[PlrId] = TestClient(business, "Corp Ltd", Pillar2, PlrIdType, "PLRID", plrId, plrId, PlrId("XAPLR2222222222") )
 
   val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
