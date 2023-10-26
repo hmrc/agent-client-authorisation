@@ -16,21 +16,16 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.net.URL
-import java.nio.charset.StandardCharsets.UTF_8
-import java.util.Base64
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-
-import javax.inject._
-import play.api.{Logger, Logging}
 import play.api.mvc._
+import play.api.{Logger, Logging}
 import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, CgtRef, CgtRefType, ClientIdType, ClientIdentifier, MtdItId, MtdItIdType, NinoType, PlrId, PptRef, Service, Urn, UrnType, Utr, UtrType, Vrn, VrnType}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
+import uk.gov.hmrc.agentmtdidentifiers.model.{Enrolment => _, _}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
@@ -42,6 +37,10 @@ import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
+import java.net.URL
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Base64
+import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
@@ -152,19 +151,17 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
 
   def validateClientId(clientIdType: String, clientId: String): Either[Result, (Service, TaxIdentifier)] =
     clientIdType match {
+      // "special" cases
       case "MTDITID" if appConfig.altItsaEnabled & NinoType.isValid(clientId) => Right((MtdIt, Nino(clientId)))
-      case "MTDITID" if MtdItIdType.isValid(clientId) =>
-        Right((MtdIt, MtdItId(clientId)))
-      case "NI" if NinoType.isValid(clientId) =>
-        Right((PersonalIncomeRecord, Nino(clientId)))
-      case "VRN" if VrnType.isValid(clientId)                   => Right((Vat, Vrn(clientId)))
-      case "UTR" if UtrType.isValid(clientId)                   => Right((Trust, Utr(clientId)))
-      case "URN" if UrnType.isValid(clientId)                   => Right((TrustNT, Urn(clientId)))
-      case "CGTPDRef" if CgtRefType.isValid(clientId)           => Right((CapitalGains, CgtRef(clientId)))
-      case "EtmpRegistrationNumber" if PptRef.isValid(clientId) => Right((Ppt, PptRef(clientId)))
-      case "cbcId" if CbcId.isValid(clientId)                   => Right((Cbc, CbcId(clientId)))
-      case "pillar2" if PlrId.isValid(clientId)                 => Right((Pillar2, PlrId(clientId)))
-      case e                                                    => Left(BadRequest(s"Unsupported $e or Invalid ClientId"))
+      case "MTDITID"                                                          => if (MtdItIdType.isValid(clientId)) Right((MtdIt, MtdItId(clientId))) else Left(BadRequest(s"Invalid MTDITID"))
+      case "NI"                                                               => if (NinoType.isValid(clientId)) Right((PersonalIncomeRecord, Nino(clientId))) else Left(BadRequest(s"Invalid NINO"))
+      // "normal" cases
+      case clientIdType =>
+        Service.supportedServices.find(_.supportedClientIdType.id.equalsIgnoreCase(clientIdType)) match {
+          case Some(service) if service.supportedClientIdType.isValid(clientId) =>
+            Right((service, service.supportedClientIdType.createUnderlying(clientId)))
+          case None => Left(BadRequest(s"Unsupported client id type $clientIdType or Invalid ClientId"))
+        }
     }
 
   def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(

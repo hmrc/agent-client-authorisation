@@ -22,7 +22,6 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AgentClientInvitationEvent.Age
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentmtdidentifiers.model._
-import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -49,7 +48,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId"         -> invitationId,
         "agentReferenceNumber" -> arn.value,
-        "clientIdType"         -> clientIdentifierType(clientId),
+        "clientIdType"         -> clientId.typeId,
         "clientId"             -> clientId.value,
         "service"              -> service.id,
         "altITSASource"        -> isAltIsa
@@ -63,7 +62,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       Seq(
         "invitationId"         -> invitation._id.toString,
         "agentReferenceNumber" -> invitation.arn.value,
-        "clientIdType"         -> clientIdentifierType(invitation.clientId),
+        "clientIdType"         -> invitation.clientId.typeId,
         "clientId"             -> invitation.clientId,
         "service"              -> invitation.service.id,
         "clientResponse"       -> "Expired"
@@ -86,18 +85,6 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       detail = hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
     )
     send(dataEvent)
-  }
-
-  private def clientIdentifierType(clientId: ClientId): String = clientId.underlying match {
-    case _: Vrn               => "vrn"
-    case _: Nino | _: MtdItId => "ni"
-    case _: Utr               => "utr"
-    case _: Urn               => "urn"
-    case _: CgtRef            => "cgtRef"
-    case _: PptRef            => "pptRef"
-    case _: CbcId             => "cbcId"
-    case _: PlrId             => "plrId"
-    case _                    => throw new IllegalStateException(s"Unsupported ClientIdType for ID: '$clientId'")
   }
 
   private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(

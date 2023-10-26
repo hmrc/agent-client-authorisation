@@ -193,7 +193,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
 
     s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} ${client.urlIdentifier} (${client.service.id}) ${if(client.isAltItsaClient)"(ALT-ITSA)" else "" } combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(false, forBusiness) {
-      val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
+      val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.reverse /* to make invalid */)
       val result: Result = await(controller.acceptInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
     }
@@ -293,7 +293,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
 
     s"return via $journey bad_request for invalid clientType and clientId: ${client.clientId.value} (${client.service.id}) combination ${if(forStride) "stride" else "client"}" in new LoggedInUser(forStride, forBussiness) {
-      val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.toLowerCase)
+      val invalidClient: TestClient[T] = client.copy[T](urlIdentifier = client.urlIdentifier.reverse /* to make invalid */)
       val result: Result = await(controller.rejectInvitation(invalidClient.urlIdentifier, invalidClient.clientId.value, InvitationId("D123456789"))(request))
       status(result) shouldBe 400
     }
@@ -331,7 +331,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     "return bad_request for invalid clientType and clientId combination" in new LoggedInUser(false) {
       uiClients.foreach { client =>
-        val invalidClient = client.copy(urlIdentifier = client.urlIdentifier.toLowerCase)
+        val invalidClient = client.copy(urlIdentifier = client.urlIdentifier.reverse /* to make invalid */)
         val result = await(controller.getInvitation(invalidClient.urlIdentifier, client.clientId.value, InvitationId("D123456789"))(request))
         status(result) shouldBe 400
       }
