@@ -134,7 +134,7 @@ trait DesStubs {
                        |  {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "${nino.value}",
-                       |  "mtdbsa": "${mtdItId.value}",
+                       |  "mtdId": "${mtdItId.value}",
                        |  "propertyIncome": false,
                        |  "businessData": [
                        |    {
@@ -177,7 +177,7 @@ trait DesStubs {
                        |  {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
-                       |  "mtdbsa": "${mtdItId.value}",
+                       |  "mtdId": "${mtdItId.value}",
                        |  "propertyIncome": false,
                        |  "businessData": []
                        |}
@@ -196,7 +196,7 @@ trait DesStubs {
                        |  {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
-                       |  "mtdbsa": "${mtdItId.value}",
+                       |  "mtdId": "${mtdItId.value}",
                        |  "propertyIncome": false,
                        |  "propertyData": []
                        |}
@@ -321,7 +321,7 @@ trait DesStubs {
                        |                 "plrReference": "${plrId.value}",
                        |                 "upeDetails": {
                        |                     "organisationName": "OrgName",
-                       |                     "registrationDate": "${pillar2RegDate}",
+                       |                     "registrationDate": "$pillar2RegDate",
                        |                     "domesticOnly": false,
                        |                     "filingMember": false
                        |                 },
@@ -338,7 +338,7 @@ trait DesStubs {
                        |                     "emailAddress": "name@email.com"
                        |                 },
                        |                 "accountStatus": {
-                       |                     "inactive" : ${inactive}
+                       |                     "inactive" : $inactive
                        |                 }
                        |}""".stripMargin)))
     this
@@ -368,7 +368,7 @@ trait DesStubs {
 
   def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String) = {
     stubFor(
-      get(urlEqualTo(s"/trusts/agent-known-fact-check/${trustTaxIdentifier}"))
+      get(urlEqualTo(s"/trusts/agent-known-fact-check/$trustTaxIdentifier"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
         .willReturn(
@@ -535,8 +535,6 @@ trait DesStubs {
       |}
     """.stripMargin
 
-
-
   def givenDESReturnsError(
                             identifier: TaxIdentifier,
                             responseCode: Int,
@@ -551,33 +549,33 @@ trait DesStubs {
           .withBody(errorMessage)))
 
 
-  def givenNinoIsUnknownFor(mtdbsa: MtdItId) =
+  def givenNinoIsUnknownFor(mtdId: MtdItId): StubMapping =
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdbsa.value}"))
+      get(urlEqualTo(s"/registration/business-details/mtdId/${mtdId.value}"))
         .willReturn(aResponse().withStatus(404)))
 
-  def givenMtdItIdIsUnknownFor(nino: Nino) =
+  def givenMtdItIdIsUnknownFor(nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(404)))
 
-  def givenNinoIsKnownFor(mtdbsa: MtdItId, nino: Nino) =
+  def givenNinoForMtdItId(mtdId: MtdItId, nino: Nino): StubMapping =
     stubFor(
-      get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdbsa.value}"))
+      get(urlEqualTo(s"/registration/business-details/mtdId/${mtdId.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{ "nino": "${nino.value}" }""")))
 
-  def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId) =
+  def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(aResponse().withStatus(200).withBody(s"""{ "mtdbsa": "${mtdItId.value}" }""")))
+        .willReturn(aResponse().withStatus(200).withBody(s"""{ "mtdId": "${mtdItId.value}" }""")))
 
-  def givenTradingNameIsKnownFor(nino: Nino, tradingName: String) =
+  def givenTradingNameIsKnownFor(nino: Nino, tradingName: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .willReturn(aResponse().withStatus(200).withBody(s"""{
     "safeId" : "XE00001234567890",
     "nino" : "AA123456A",
-    "mtdbsa" : "123456789012345",
+    "mtdId" : "123456789012345",
     "propertyIncome" : false,
     "businessData" : [
         {
@@ -897,28 +895,6 @@ trait DesStubs {
                   }
                 }
               }""".stripMargin)))
-
-  def givenNinoForMtdItId(mtdItId: MtdItId, nino: Nino) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdItId.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         | {
-                         |    "nino":"${nino.value}"
-                         | }
-               """.stripMargin)
-        )
-    )
-  def givenNinoNotFoundForMtdItId(mtdItId: MtdItId) =
-    stubFor(
-      get(urlEqualTo(s"/registration/business-details/mtdbsa/${mtdItId.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(404)
-        )
-    )
 
   private val individualCustomerDetails =
     s"""

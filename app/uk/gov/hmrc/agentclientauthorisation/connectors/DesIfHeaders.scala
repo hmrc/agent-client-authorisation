@@ -38,6 +38,7 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
   private lazy val ifAuthTokenAPI1712: String = appConfig.ifAuthTokenAPI1712
   private lazy val ifAuthTokenAPI1495: String = appConfig.ifAuthTokenAPI1495
   private lazy val ifAuthTokenAPI2143: String = appConfig.ifAuthTokenAPI2143
+  private lazy val ifAuthTokenAPI1171: String = appConfig.ifAuthTokenAPI1171
 
   def outboundHeaders(viaIF: Boolean, apiName: Option[String] = None)(implicit hc: HeaderCarrier): Seq[(String, String)] = {
 
@@ -48,11 +49,18 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
       RequestId     -> hc.requestId.toString
     )
 
+    val api1171 = Seq(
+      "GetRegistrationBusinessDetailsByMtdId",
+      "GetRegistrationBusinessDetailsByNino",
+      "GetTradingNameByNino"
+    )
+
     if (viaIF) {
       apiName.fold(baseHeaders) {
         case "getTrustName"              => baseHeaders :+ Authorization -> s"Bearer $ifAuthTokenAPI1495"
         case "GetPptSubscriptionDisplay" => baseHeaders :+ Authorization -> s"Bearer $ifAuthTokenAPI1712"
         case "getPillar2Subscription"    => baseHeaders :+ Authorization -> s"Bearer $ifAuthTokenAPI2143"
+        case s if api1171.contains(s)    => baseHeaders :+ Authorization -> s"Bearer $ifAuthTokenAPI1171"
         case _ =>
           logger.warn(s"Could not set $Authorization header for IF API '$apiName'")
           baseHeaders

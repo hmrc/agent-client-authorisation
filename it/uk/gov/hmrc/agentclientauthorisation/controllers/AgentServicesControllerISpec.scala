@@ -496,7 +496,7 @@ class AgentServicesControllerISpec extends BaseISpec {
   "GET /client/mtdItId/:mtdItId" should {
     "return Ok and a valid nino in the response" in {
       isLoggedIn
-      givenNinoIsKnownFor(mtdItId, nino)
+      givenNinoForMtdItId(mtdItId, nino)
 
       val result = getClientNino(mtdItId)
       result.status shouldBe OK

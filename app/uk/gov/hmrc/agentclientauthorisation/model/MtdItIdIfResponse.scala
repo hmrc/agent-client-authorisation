@@ -19,10 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.model
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 
-case class MtdItIdDesResponse(mtdbsa: MtdItId)
+case class MtdItIdIfResponse(mtdId: MtdItId)
 
 case class MtdItIdNotFound() extends Exception
 
-object MtdItIdDesResponse {
-  implicit val reads: Reads[MtdItIdDesResponse] = Json.reads
+object MtdItIdIfResponse {
+  implicit val reads: Reads[MtdItIdIfResponse] = Json.reads
 }

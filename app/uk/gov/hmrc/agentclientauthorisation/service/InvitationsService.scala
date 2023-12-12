@@ -63,7 +63,7 @@ class InvitationsService @Inject()(
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
       case NinoType.id =>
         desConnector.getBusinessDetails(Nino(clientId)).map {
-          case Some(record) => record.mtdbsa.map(ClientIdentifier(_))
+          case Some(record) => record.mtdId.map(ClientIdentifier(_))
           case None         => if (appConfig.altItsaEnabled && Nino.isValid(clientId)) Some(ClientIdentifier(clientId, clientIdType)) else None
         }
       case _ => Future successful None
@@ -162,10 +162,9 @@ class InvitationsService @Inject()(
         updateAltItsaFor(Nino(ninoClientId._3)) //if there is an alt-itsa invitation then we want to update it with MTDITID
           .flatMap(_ => findInvitationsInfoBy(arn, clientIds, status))
           .recoverWith {
-            case e: UpstreamErrorResponse => {
+            case e: UpstreamErrorResponse =>
               logger.warn(s"failure when updating alt-Itsa invitations, falling back to existing client data ${e.message}")
               findInvitationsInfoBy(arn, clientIds, status)
-            }
           }
       case _ => findInvitationsInfoBy(arn, clientIds, status)
     }
