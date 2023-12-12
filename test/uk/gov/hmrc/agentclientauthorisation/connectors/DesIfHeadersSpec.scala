@@ -20,6 +20,7 @@ import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.http.{HeaderCarrier, RequestId, SessionId}
 
 import java.util.UUID
 
@@ -42,12 +43,15 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
         "contain correct headers" in {
           val viaIF = false
           val apiName = None
+          val hc: HeaderCarrier = new HeaderCarrier(sessionId = Option(SessionId("testSession")), requestId = Option(RequestId("requestId")))
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "desEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer desAuthToken")
+          headersMap should contain("x-session-id"  -> "Bearer desAuthToken")
+          headersMap should contain("x-request-id"  -> "Bearer desAuthToken")
         }
       }
 
