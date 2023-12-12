@@ -53,7 +53,7 @@ trait DesConnector {
 
   def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
-  def getNinoFor(mtdbsa: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]]
+  def getNinoFor(mtdId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]]
 
   def getMtdIdFor(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]]
 
@@ -81,10 +81,12 @@ class DesConnectorImpl @Inject()(
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val baseUrl: String = appConfig.desBaseUrl
+  private val ifBaseUrl: String = appConfig.ifPlatformBaseUrl // TODO split IFConnector
 
+  /* IF API#1171 Get Business Details (for ITSA customers) */
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
-    val url = s"$baseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
-    getWithDesIfHeaders("getRegistrationBusinessDetailsByNino", url).map { response =>
+    val url = s"$ifBaseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
+    getWithDesIfHeaders("getRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
       response.status match {
         case status if is2xx(status) => response.json.asOpt[BusinessDetails]
         case status if is4xx(status) =>
@@ -233,10 +235,11 @@ class DesConnectorImpl @Inject()(
         }
     }
 
-  def getNinoFor(mtdbsa: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
-    val url = s"$baseUrl/registration/business-details/mtdbsa/${UriEncoding.encodePathSegment(mtdbsa.value, "UTF-8")}"
-    agentCacheProvider.clientNinoCache(mtdbsa.value) {
-      getWithDesIfHeaders("GetRegistrationBusinessDetailsByMtdbsa", url).map { response =>
+  /* IF API#1171 Get Business Details (for ITSA customers) */
+  def getNinoFor(mtdId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
+    val url = s"$ifBaseUrl/registration/business-details/mtdId/${UriEncoding.encodePathSegment(mtdId.value, "UTF-8")}"
+    agentCacheProvider.clientNinoCache(mtdId.value) {
+      getWithDesIfHeaders("GetRegistrationBusinessDetailsByMtdId", url, viaIf = true).map { response =>
         response.status match {
           case status if is2xx(status) => response.json.asOpt[NinoDesResponse].map(_.nino)
           case status if is4xx(status) =>
@@ -249,12 +252,13 @@ class DesConnectorImpl @Inject()(
     }
   }
 
+  /* IF API#1171 Get Business Details (for ITSA customers) */
   def getMtdIdFor(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
-    val url = s"$baseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
+    val url = s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
     agentCacheProvider.clientMtdItIdCache(nino.value) {
-      getWithDesIfHeaders("GetRegistrationBusinessDetailsByNino", url).map { response =>
+      getWithDesIfHeaders("GetRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
         response.status match {
-          case status if is2xx(status) => response.json.asOpt[MtdItIdDesResponse].map(_.mtdbsa)
+          case status if is2xx(status) => response.json.asOpt[MtdItIdIfResponse].map(_.mtdId)
           case status if is4xx(status) =>
             logger.warn(s"4xx response from getMtdItIdFor ${response.body}")
             None
@@ -265,11 +269,12 @@ class DesConnectorImpl @Inject()(
     }
   }
 
+  /* IF API#1171 Get Business Details (for ITSA customers) */
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
     val url =
-      s"$baseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
+      s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
     agentCacheProvider.tradingNameCache(nino.value) {
-      getWithDesIfHeaders("GetTradingNameByNino", url).map { response =>
+      getWithDesIfHeaders("GetTradingNameByNino", url, viaIf = true).map { response =>
         response.status match {
           case status if is2xx(status) => (response.json \ "businessData").toOption.map(_(0) \ "tradingName").flatMap(_.asOpt[String])
           case status if is4xx(status) =>
@@ -301,9 +306,9 @@ class DesConnectorImpl @Inject()(
 
   //IF API#1712 PPT Subscription Display
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
-    val url = s"${appConfig.ifPlatformBaseUrl}/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
+    val url = s"$ifBaseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
-      getWithDesIfHeaders("GetPptSubscriptionDisplay", url, true).map { response =>
+      getWithDesIfHeaders("GetPptSubscriptionDisplay", url, viaIf = true).map { response =>
         response.status match {
           case status if is2xx(status) =>
             Some(response.json)
@@ -343,6 +348,6 @@ class DesConnectorImpl @Inject()(
   private def getTrustNameUrl(trustTaxIdentifier: String, ifEnabled: Boolean): String =
     if (!ifEnabled) s"$baseUrl/trusts/agent-known-fact-check/$trustTaxIdentifier"
     else if (trustTaxIdentifier.matches(utrPattern))
-      s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
-    else s"${appConfig.ifPlatformBaseUrl}/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
+      s"$ifBaseUrl/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
+    else s"$ifBaseUrl/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
 }

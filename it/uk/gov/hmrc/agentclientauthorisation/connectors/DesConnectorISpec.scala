@@ -36,7 +36,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
       response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
-      response.mtdbsa shouldBe None
+      response.mtdId shouldBe None
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
@@ -49,6 +49,26 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
     }
   }
 
+  "getNinoFor(MtdId)" should {
+
+    "return nino" in {
+      givenNinoForMtdItId(mtdItId1, nino)
+
+      val response = await(connector.getNinoFor(mtdItId1)).get
+
+      response.nino shouldBe nino.value
+    }
+
+    "return None if not found" in {
+      givenNinoIsUnknownFor(mtdItId1)
+
+      val response = await(connector.getNinoFor(mtdItId1))
+
+      response shouldBe None
+    }
+
+  }
+
   "getMtdItId" should {
     "return mtdItId for a registered client" in {
       hasABusinessPartnerRecordWithMtdItId(nino, mtdItId1)
@@ -57,7 +77,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
       response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
-      response.mtdbsa shouldBe Some(mtdItId1)
+      response.mtdId shouldBe Some(mtdItId1)
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
     }
 
@@ -67,7 +87,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       val response = await(connector.getBusinessDetails(nino)).get
 
       response.businessData.length shouldBe 0
-      response.mtdbsa shouldBe Some(mtdItId1)
+      response.mtdId shouldBe Some(mtdItId1)
     }
   }
 
@@ -85,7 +105,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       }
 
       "effectiveRegistrationDate is present and customer is insolvent" in {
-        hasVatCustomerDetails(clientVrn, Some("2017-04-01"), true)
+        hasVatCustomerDetails(clientVrn, Some("2017-04-01"), isInsolvent = true)
 
         val vatCustomerInfo = await(connector.getVatDetails(clientVrn)).get
         vatCustomerInfo.effectiveRegistrationDate shouldBe Some(LocalDate.parse("2017-04-01"))
@@ -160,7 +180,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       }
 
       "effectiveRegistrationDate is present  and customer is inactive" in {
-        hasPillar2CustomerDetails(clientPlrId, "2017-04-01", true)
+        hasPillar2CustomerDetails(clientPlrId, "2017-04-01", inactive = true)
         val pillar2CustomerInfo = await(connector.getPillar2Details(clientPlrId)).response.right.get
         pillar2CustomerInfo.effectiveRegistrationDate shouldBe LocalDate.parse("2017-04-01")
         pillar2CustomerInfo.inactive shouldBe true
@@ -293,7 +313,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
   "getPPTSubscription" should {
     "return a PPT subscription record" in {
-      givenPptSubscription(PptRef("XAPPT1234567890"), true, true, false)
+      givenPptSubscription(PptRef("XAPPT1234567890"), isIndividual = true, deregisteredDetailsPresent = true, isDeregistered = false)
       val result = connector.getPptSubscription(PptRef("XAPPT1234567890")).futureValue
       result shouldBe Some(PptSubscription("Bill Sikes", LocalDate.parse("2021-10-12"), Some(LocalDate.parse("2050-10-01"))))
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetPptSubscriptionDisplay-GET")
