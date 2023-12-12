@@ -46,8 +46,7 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
 
     val api1171 = Seq(
       "GetRegistrationBusinessDetailsByMtdId",
-      "getRegistrationBusinessDetailsByNino",
-      "GetRegistrationBusinessDetailsByNino", //TODO rename case sensitive?
+      "GetRegistrationBusinessDetailsByNino",
       "GetTradingNameByNino"
     )
 

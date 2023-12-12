@@ -86,7 +86,7 @@ class DesConnectorImpl @Inject()(
   /* IF API#1171 Get Business Details (for ITSA customers) */
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
     val url = s"$ifBaseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
-    getWithDesIfHeaders("getRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
+    getWithDesIfHeaders("GetRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
       response.status match {
         case status if is2xx(status) => response.json.asOpt[BusinessDetails]
         case status if is4xx(status) =>

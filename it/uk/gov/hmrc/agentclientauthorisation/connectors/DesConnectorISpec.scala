@@ -37,7 +37,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
       response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
       response.mtdId shouldBe None
-      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetRegistrationBusinessDetailsByNino-GET")
     }
 
     "return None if the client is not registered" in {
@@ -57,6 +57,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       val response = await(connector.getNinoFor(mtdItId1)).get
 
       response.nino shouldBe nino.value
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetRegistrationBusinessDetailsByMtdId-GET")
     }
 
     "return None if not found" in {
@@ -78,7 +79,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
       response.businessData.head.businessAddressDetails.map(_.countryCode) shouldBe Some("GB")
       response.businessData.head.businessAddressDetails.flatMap(_.postalCode) shouldBe Some("AA11AA")
       response.mtdId shouldBe Some(mtdItId1)
-      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getRegistrationBusinessDetailsByNino-GET")
+      verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-GetRegistrationBusinessDetailsByNino-GET")
     }
 
     "return mtdItId if the business data is empty" in {
