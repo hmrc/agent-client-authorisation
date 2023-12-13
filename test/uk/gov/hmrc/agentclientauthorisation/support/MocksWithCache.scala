@@ -20,7 +20,7 @@ import com.kenshoo.play.metrics.Metrics
 import com.typesafe.config.Config
 import org.scalamock.scalatest.MockFactory
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -33,6 +33,7 @@ trait MocksWithCache extends MockFactory {
 
   val mockCitizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
   val mockDesConnector: DesConnector = mock[DesConnector]
+  val mockIfConnector: IfConnector = mock[IfConnector]
   val mockEisConnector: EisConnector = mock[EisConnector]
 
   (mockMetrics.defaultRegistry _).expects().returns(new MetricRegistry()).anyNumberOfTimes()

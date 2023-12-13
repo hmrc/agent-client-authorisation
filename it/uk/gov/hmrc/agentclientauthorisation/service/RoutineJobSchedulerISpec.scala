@@ -9,7 +9,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.{AgentClientInvitationEvent, AuditService}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, RemovePersonalInfo, ScheduleRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -30,6 +30,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem"))
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
   val desConnector = app.injector.instanceOf[DesConnector]
+  val ifConnector = app.injector.instanceOf[IfConnector]
   val appConfig = app.injector.instanceOf[AppConfig]
   val emailService = app.injector.instanceOf[EmailService]
   val metrics = app.injector.instanceOf[Metrics]
@@ -42,6 +43,7 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem"))
     relationshipConnector,
     analyticsService,
     desConnector,
+    ifConnector,
     emailService,
     auditService,
     appConfig,

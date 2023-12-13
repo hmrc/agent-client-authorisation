@@ -32,7 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   val clientNameService =
-    new ClientNameService(mockCitizenDetailsConnector, mockDesConnector, mockEisConnector, agentCacheProvider)
+    new ClientNameService(mockCitizenDetailsConnector, mockDesConnector, mockIfConnector, mockEisConnector, agentCacheProvider)
 
   val nino: Nino = Nino("AB123456A")
   val mtdItId: MtdItId = MtdItId("LCLG57411010846")
@@ -57,11 +57,11 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   "getClientNameByService" should {
     "get the trading name if the service is ITSA" in {
-      (mockDesConnector
+      (mockIfConnector
         .getNinoFor(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(mtdItId, *, *)
         .returning(Future(Some(nino)))
-      (mockDesConnector
+      (mockIfConnector
         .getTradingNameForNino(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
         .returns(Future(Some("Mr Tradington")))
@@ -90,11 +90,11 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   }
   "getItsaTradingName" should {
     "get the citizen name if there is no trading name" in {
-      (mockDesConnector
+      (mockIfConnector
         .getNinoFor(_: MtdItId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(mtdItId, *, *)
         .returning(Future(Some(nino)))
-      (mockDesConnector
+      (mockIfConnector
         .getTradingNameForNino(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
         .expects(nino, *, *)
         .returns(Future(Some("")))
@@ -130,7 +130,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
   "getTrustName" should {
     "get trust name from trust details when passed a utr" in {
       val trustDetailsResponse = TrustResponse(Right(TrustName("Trusted")))
-      (mockDesConnector
+      (mockIfConnector
         .getTrustName(_: String)(_: HeaderCarrier, _: ExecutionContext))
         .expects(utr.value, *, *)
         .returns(Future(trustDetailsResponse))
@@ -140,7 +140,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
     }
     "get trust name from trust details when passed a urn" in {
       val trustDetailsResponse = TrustResponse(Right(TrustName("Trusted")))
-      (mockDesConnector
+      (mockIfConnector
         .getTrustName(_: String)(_: HeaderCarrier, _: ExecutionContext))
         .expects(urn.value, *, *)
         .returns(Future(trustDetailsResponse))
