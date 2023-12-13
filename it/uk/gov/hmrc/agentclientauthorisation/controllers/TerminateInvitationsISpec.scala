@@ -11,7 +11,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
@@ -38,6 +38,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val authConnector = app.injector.instanceOf(classOf[AuthConnector])
   val postcodeService = app.injector.instanceOf(classOf[PostcodeService])
   val desConnector = app.injector.instanceOf(classOf[DesConnector])
+  val ifConnector = app.injector.instanceOf(classOf[IfConnector])
   val eisConnector = app.injector.instanceOf(classOf[EisConnector])
   val auditService = app.injector.instanceOf(classOf[AuditService])
   val knownFactsCheckService = app.injector.instanceOf(classOf[KnownFactsCheckService])
@@ -55,7 +56,7 @@ class TerminateInvitationsISpec extends BaseISpec {
     new AgentLinkService(agentReferenceRepository, desConnector, metrics)
 
   def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
-    new InvitationsService(invitationsRepository, relationshipConnector, analyticsService, desConnector, emailService, auditService, appConfig, metrics)
+    new InvitationsService(invitationsRepository, relationshipConnector, analyticsService, desConnector, ifConnector, emailService, auditService, appConfig, metrics)
 
   def testFailedController(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
     new AgencyInvitationsController(
@@ -65,6 +66,7 @@ class TerminateInvitationsISpec extends BaseISpec {
       knownFactsCheckService,
       agentLinkService(agentReferenceRepository),
       desConnector,
+      ifConnector,
       eisConnector,
       authConnector,
       citizenDetailsConnector,

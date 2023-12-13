@@ -8,7 +8,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{TrustTaxIdentifier, Urn, Utr}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DesConnectorIFEnabledISpec extends UnitSpec with AppAndStubs {
+class IfConnectorEnabledISpec extends UnitSpec with AppAndStubs {
 
   override protected def additionalConfiguration =
     super.additionalConfiguration ++  Map(
@@ -21,7 +21,7 @@ class DesConnectorIFEnabledISpec extends UnitSpec with AppAndStubs {
   val utr = Utr("0123456789")
   val urn = Urn("XXTRUST12345678")
 
-  def connector = app.injector.instanceOf[DesConnector]
+  def connector = app.injector.instanceOf[IfConnector]
 
 "API 1495 Get Trust Name with IF enabled" should {
   "have correct headers and call IF selecting the correct url when passed a UTR " in {
@@ -29,7 +29,7 @@ class DesConnectorIFEnabledISpec extends UnitSpec with AppAndStubs {
     val result = await(connector.getTrustName(utr.value))
 
     result shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
-    verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getTrustName-GET")
+    verifyTimerExistsAndBeenUpdated("ConsumedAPI-IF-getTrustName-GET")
   }
 
   "have correct headers and call IF selecting the correct url when passed a URN " in {
@@ -37,7 +37,7 @@ class DesConnectorIFEnabledISpec extends UnitSpec with AppAndStubs {
     val result = await(connector.getTrustName(urn.value))
 
     result shouldBe TrustResponse(Right(TrustName("Nelson James Trust")))
-    verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getTrustName-GET")
+    verifyTimerExistsAndBeenUpdated("ConsumedAPI-IF-getTrustName-GET")
   }
 }
   private val trustNameJson = """{"trustDetails": {"trustName": "Nelson James Trust"}}"""

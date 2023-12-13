@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentclientauthorisation.model.{NinoNotFound, VatCustomerDetails}
 import uk.gov.hmrc.agentmtdidentifiers.model.{CbcId, CgtRef, MtdItId, PlrId, PptRef, Service, Vrn}
@@ -32,6 +32,7 @@ case class ClientNameNotFound() extends Exception
 class ClientNameService @Inject()(
   citizenDetailsConnector: CitizenDetailsConnector,
   desConnector: DesConnector,
+  ifConnector: IfConnector,
   eisConnector: EisConnector,
   agentCacheProvider: AgentCacheProvider) {
 
@@ -55,11 +56,11 @@ class ClientNameService @Inject()(
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    desConnector
+    ifConnector
       .getNinoFor(mtdItId)
       .flatMap { maybeNino =>
         val nino = maybeNino.getOrElse(throw NinoNotFound())
-        desConnector
+        ifConnector
           .getTradingNameForNino(nino)
           .flatMap {
             case Some(n) if n.nonEmpty => Future.successful(Some(n))
@@ -91,7 +92,7 @@ class ClientNameService @Inject()(
 
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     trustCache(trustTaxIdentifier) {
-      desConnector.getTrustName(trustTaxIdentifier)
+      ifConnector.getTrustName(trustTaxIdentifier)
     }.map(_.response).map {
       case Right(trustName) => Some(trustName.name)
       case Left(invalidTrust) =>
@@ -114,7 +115,7 @@ class ClientNameService @Inject()(
     }
 
   def getPptCustomerName(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    desConnector.getPptSubscription(pptRef).map(_.map(_.customerName))
+    ifConnector.getPptSubscription(pptRef).map(_.map(_.customerName))
 
   def getCbcCustomerName(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     eisConnector.getCbcSubscription(cbcId).map(_.flatMap(_.anyAvailableName))

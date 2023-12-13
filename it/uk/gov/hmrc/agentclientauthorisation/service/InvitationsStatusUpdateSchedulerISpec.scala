@@ -9,7 +9,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationExpired, InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
@@ -36,6 +36,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
   val desConnector = app.injector.instanceOf[DesConnector]
+  val ifConnector = app.injector.instanceOf[IfConnector]
   val appConfig = app.injector.instanceOf[AppConfig]
   val emailService = app.injector.instanceOf[EmailService]
   val metrics = app.injector.instanceOf[Metrics]
@@ -48,6 +49,7 @@ class InvitationsStatusUpdateSchedulerISpec
     relationshipConnector,
     analyticsService,
     desConnector,
+    ifConnector,
     emailService,
     auditService,
     appConfig,

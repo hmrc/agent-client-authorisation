@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.IfConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.BusinessDetails
 import uk.gov.hmrc.agentclientauthorisation.service.PostcodeService.normalise
@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PostcodeService @Inject()(desConnector: DesConnector) {
+class PostcodeService @Inject()(ifConnector: IfConnector) {
 
   private val postcodeWithoutSpacesRegex = "^[A-Za-z]{1,2}[0-9]{1,2}[A-Za-z]?[0-9][A-Za-z]{2}$".r
 
@@ -51,7 +51,7 @@ class PostcodeService @Inject()(desConnector: DesConnector) {
     def isUkAddress(details: BusinessDetails) =
       details.businessData.head.businessAddressDetails.map(_.countryCode.toUpperCase).contains("GB")
 
-    desConnector.getBusinessDetails(Nino(clientIdentifier)).flatMap {
+    ifConnector.getBusinessDetails(Nino(clientIdentifier)).flatMap {
       case Some(details) if details.businessData.length != 1                           => failure(PostcodeDoesNotMatch)
       case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => ().toFuture
       case Some(details) if postcodeMatches(details, postcode) =>
