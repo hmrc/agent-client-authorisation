@@ -23,7 +23,7 @@ import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -48,6 +48,7 @@ class InvitationsService @Inject()(
   relationshipsConnector: RelationshipsConnector,
   analyticsService: PlatformAnalyticsService,
   desConnector: DesConnector,
+  ifConnector: IfConnector,
   emailService: EmailService,
   auditService: AuditService,
   appConfig: AppConfig,
@@ -62,7 +63,7 @@ class InvitationsService @Inject()(
     clientIdType match {
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
       case NinoType.id =>
-        desConnector.getBusinessDetails(Nino(clientId)).map {
+        ifConnector.getBusinessDetails(Nino(clientId)).map {
           case Some(record) => record.mtdId.map(ClientIdentifier(_))
           case None         => if (appConfig.altItsaEnabled && Nino.isValid(clientId)) Some(ClientIdentifier(clientId, clientIdType)) else None
         }
@@ -394,7 +395,7 @@ class InvitationsService @Inject()(
 
   private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     Future sequence invitations.map { inv =>
-      desConnector
+      ifConnector
         .getMtdIdFor(Nino(inv.suppliedClientId.value))
         .flatMap {
           case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId).map(Some(_))

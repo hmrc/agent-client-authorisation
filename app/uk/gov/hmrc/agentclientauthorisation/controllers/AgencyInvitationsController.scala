@@ -23,7 +23,7 @@ import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
@@ -51,6 +51,7 @@ class AgencyInvitationsController @Inject()(
   knownFactsCheckService: KnownFactsCheckService,
   agentLinkService: AgentLinkService,
   desConnector: DesConnector,
+  ifConnector: IfConnector,
   eisConnector: EisConnector,
   authConnector: AuthConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
@@ -296,7 +297,7 @@ class AgencyInvitationsController @Inject()(
   def getTrustName(trustTaxIdentifier: String): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
       trustCache(trustTaxIdentifier) {
-        desConnector.getTrustName(trustTaxIdentifier)
+        ifConnector.getTrustName(trustTaxIdentifier)
       }.map(r => Ok(Json.toJson(r)))
     }
   }
@@ -325,7 +326,7 @@ class AgencyInvitationsController @Inject()(
   def getPptSubscriptionDetails(pptRef: PptRef): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
       pptCache(pptRef.value) {
-        desConnector.getPptSubscriptionRawJson(pptRef)
+        ifConnector.getPptSubscriptionRawJson(pptRef)
       }.map {
         case Some(sub) => Ok(Json.toJson(sub))
         case None      => NotFound
@@ -364,7 +365,7 @@ class AgencyInvitationsController @Inject()(
   }
 
   def checkKnownFactPpt(EtmpRegistrationNumberNumber: PptRef, dateOfApplication: LocalDate): Action[AnyContent] = Action.async { implicit request =>
-    desConnector
+    ifConnector
       .getPptSubscription(EtmpRegistrationNumberNumber)
       .map {
         case Some(record) =>

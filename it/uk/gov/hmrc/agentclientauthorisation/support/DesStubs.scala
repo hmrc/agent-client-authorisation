@@ -34,7 +34,7 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""
-                       |  {
+                       |  {   "taxPayerDisplayResponse": {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
                        |  "propertyIncome": false,
@@ -63,7 +63,7 @@ trait DesStubs {
                        |      "seasonal": true
                        |    }
                        |  ]
-                       |}
+                       |}}
               """.stripMargin)))
     this
   }
@@ -76,7 +76,7 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""
-                       |  {
+                       |  {   "taxPayerDisplayResponse":{
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
                        |  "propertyIncome": false,
@@ -91,7 +91,7 @@ trait DesStubs {
                        |      "seasonal": true
                        |    }
                        |  ]
-                       |}
+                       |}}
               """.stripMargin)))
     this
   }
@@ -104,7 +104,7 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""
-                       |  {
+                       |  {   "taxPayerDisplayResponse":{
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
                        |  "propertyIncome": false,
@@ -118,7 +118,7 @@ trait DesStubs {
                        |      "seasonal": true
                        |    }
                        |  ]
-                       |}
+                       |}}
               """.stripMargin)))
     this
   }
@@ -131,7 +131,7 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""
-                       |  {
+                       |  {   "taxPayerDisplayResponse": {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "${nino.value}",
                        |  "mtdId": "${mtdItId.value}",
@@ -161,7 +161,7 @@ trait DesStubs {
                        |      "seasonal": true
                        |    }
                        |  ]
-                       |}
+                       |}}
                        |""".stripMargin)))
     this
   }
@@ -174,12 +174,13 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""
-                       |  {
+                       |  {  "taxPayerDisplayResponse": {
                        |  "safeId": "XV0000100093327",
                        |  "nino": "ZR987654C",
                        |  "mtdId": "${mtdItId.value}",
                        |  "propertyIncome": false,
                        |  "businessData": []
+                       |}
                        |}
                        |""".stripMargin)))
     this
@@ -192,13 +193,13 @@ trait DesStubs {
         .withHeader("environment", equalTo("test"))
         .willReturn(aResponse()
           .withStatus(200)
-          .withBody(s"""
-                       |  {
-                       |  "safeId": "XV0000100093327",
-                       |  "nino": "ZR987654C",
-                       |  "mtdId": "${mtdItId.value}",
-                       |  "propertyIncome": false,
-                       |  "propertyData": []
+          .withBody(s"""{  "taxPayerDisplayResponse": {
+                           |  "safeId": "XV0000100093327",
+                           |  "nino": "ZR987654C",
+                           |  "mtdId": "${mtdItId.value}",
+                           |  "propertyIncome": false,
+                           |  "propertyData": []
+                           |  }
                        |}
                        |""".stripMargin)))
     this
@@ -562,58 +563,65 @@ trait DesStubs {
   def givenNinoForMtdItId(mtdId: MtdItId, nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdId/${mtdId.value}"))
-        .willReturn(aResponse().withStatus(200).withBody(s"""{ "nino": "${nino.value}" }""")))
+        .willReturn(aResponse().withStatus(200).withBody(
+          s"""{"taxPayerDisplayResponse":
+             |{ "nino": "${nino.value}" }
+             |}""".stripMargin)))
 
   def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(aResponse().withStatus(200).withBody(s"""{ "mtdId": "${mtdItId.value}" }""")))
+        .willReturn(aResponse().withStatus(200).withBody(
+          s"""|{"taxPayerDisplayResponse":
+              |  {"mtdId": "${mtdItId.value}" }
+              |}""".stripMargin)))
 
   def givenTradingNameIsKnownFor(nino: Nino, tradingName: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(aResponse().withStatus(200).withBody(s"""{
-    "safeId" : "XE00001234567890",
-    "nino" : "AA123456A",
-    "mtdId" : "123456789012345",
-    "propertyIncome" : false,
-    "businessData" : [
-        {
-            "incomeSourceId" : "123456789012345",
-            "accountingPeriodStartDate" : "2001-01-01",
-            "accountingPeriodEndDate" : "2001-01-01",
-            "tradingName" : "$tradingName",
-            "businessAddressDetails" :
-            {
-                "addressLine1" : "100 SuttonStreet",
-                "addressLine2" : "Wokingham",
-                "addressLine3" : "Surrey",
-                "addressLine4" : "London",
-                "postalCode" : "DH14EJ",
-                "countryCode" : "GB"
-            },
-            "businessContactDetails" :
-            {
-                "phoneNumber" : "01332752856",
-                "mobileNumber" : "07782565326",
-                "faxNumber" : "01332754256",
-                "emailAddress" : "stephen@manncorpone.co.uk"
-            },
-            "tradingStartDate" : "2001-01-01",
-            "cashOrAccruals" : "cash",
-            "seasonal" : true,
-            "cessationDate" : "2001-01-01",
-            "cessationReason" : "002",
-            "paperLess" : true
-        }
-    ]
+        .willReturn(aResponse().withStatus(200).withBody(s"""{"taxPayerDisplayResponse": {
+      "safeId" : "XE00001234567890",
+      "nino" : "AA123456A",
+      "mtdId" : "123456789012345",
+      "propertyIncome" : false,
+      "businessData" : [
+          {
+              "incomeSourceId" : "123456789012345",
+              "accountingPeriodStartDate" : "2001-01-01",
+              "accountingPeriodEndDate" : "2001-01-01",
+              "tradingName" : "$tradingName",
+              "businessAddressDetails" :
+              {
+                  "addressLine1" : "100 SuttonStreet",
+                  "addressLine2" : "Wokingham",
+                  "addressLine3" : "Surrey",
+                  "addressLine4" : "London",
+                  "postalCode" : "DH14EJ",
+                  "countryCode" : "GB"
+              },
+              "businessContactDetails" :
+              {
+                  "phoneNumber" : "01332752856",
+                  "mobileNumber" : "07782565326",
+                  "faxNumber" : "01332754256",
+                  "emailAddress" : "stephen@manncorpone.co.uk"
+              },
+              "tradingStartDate" : "2001-01-01",
+              "cashOrAccruals" : "cash",
+              "seasonal" : true,
+              "cessationDate" : "2001-01-01",
+              "cessationReason" : "002",
+              "paperLess" : true
+          }
+      ]
+    }
 }
 """.stripMargin)))
 
   def givenNoTradingNameFor(nino: Nino) =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(aResponse().withStatus(200).withBody(s"""{
+        .willReturn(aResponse().withStatus(200).withBody(s"""{  "taxPayerDisplayResponse":{
     "businessData" : [
         {
             "incomeSourceId" : "123456789012345",
@@ -630,7 +638,7 @@ trait DesStubs {
             }
         }
     ]
-}
+}}
 """.stripMargin)))
 
 

@@ -21,7 +21,7 @@ import play.api.Environment
 import play.api.libs.json.{JsValue, Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
 import uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.{AgencyNameByArn, AgencyNameByUtr}
 import uk.gov.hmrc.agentclientauthorisation.service.BusinessNamesService
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -38,6 +38,7 @@ class AgentServicesController @Inject()(
   override val authConnector: AuthConnector,
   val env: Environment,
   desConnector: DesConnector,
+  ifConnector: IfConnector,
   cidConnector: CitizenDetailsConnector,
   eisConnector: EisConnector,
   businessNamesService: BusinessNamesService,
@@ -169,7 +170,7 @@ class AgentServicesController @Inject()(
 
   def getNinoForMtdItId(mtdItId: MtdItId): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      desConnector
+      ifConnector
         .getNinoFor(mtdItId)
         .map {
           case Some(nino) => Ok(Json.obj("nino" -> nino.value))
@@ -182,7 +183,7 @@ class AgentServicesController @Inject()(
 
   def getMtdItIdForNino(nino: Nino): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      desConnector
+      ifConnector
         .getMtdIdFor(nino)
         .map {
           case Some(mtdItId) => Ok(Json.obj("mtdItId" -> mtdItId.value))
@@ -195,7 +196,7 @@ class AgentServicesController @Inject()(
 
   def getTradingNameForNino(nino: Nino): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      desConnector
+      ifConnector
         .getTradingNameForNino(nino)
         .flatMap {
           case Some(tn) => Future successful Ok(Json.obj("tradingName" -> tn))
@@ -227,7 +228,7 @@ class AgentServicesController @Inject()(
   }
 
   def getPptCustomerName(pptRef: PptRef): Action[AnyContent] = Action.async { implicit request =>
-    desConnector.getPptSubscription(pptRef).map {
+    ifConnector.getPptSubscription(pptRef).map {
       case Some(record) => Ok(Json.obj("customerName" -> record.customerName))
       case None =>
         logger.warn(s"PPT customer not found for getPptCustomerName")
