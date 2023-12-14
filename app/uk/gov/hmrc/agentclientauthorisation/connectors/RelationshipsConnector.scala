@@ -44,11 +44,11 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
   private val baseUrl: String = appConfig.relationshipsBaseUrl
   private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
 
-  implicit class FutureResponseOps(f: Future[HttpResponse]) {
-    def handleNon2xx(msg: String)(implicit ec: ExecutionContext): Future[Unit] = f.map { response =>
+  private implicit class FutureResponseOps(f: Future[HttpResponse]) {
+    def handleNon2xx(method: String)(implicit ec: ExecutionContext): Future[Unit] = f.map { response =>
       response.status match {
         case status if is2xx(status) => ()
-        case other                   => throw UpstreamErrorResponse(msg, other)
+        case other                   => throw UpstreamErrorResponse(s"Unexpected status $other received by '$method'", other)
       }
     }
   }
@@ -57,14 +57,14 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
       http
         .PUT[String, HttpResponse](mtdItRelationshipUrl(invitation), "")
-        .handleNon2xx(s"unexpected error during 'createMtdItRelationship'")
+        .handleNon2xx(s"createMtdItRelationship")
     }
 
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
       http
         .PUT[String, HttpResponse](mtdVatRelationshipUrl(invitation), "")
-        .handleNon2xx(s"unexpected error during 'createMtdVatRelationship'")
+        .handleNon2xx(s"createMtdVatRelationship")
     }
 
   def createAfiRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
@@ -72,7 +72,7 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     monitor(s"ConsumedAPI-AgentFiRelationship-relationships-${invitation.service.id}-PUT") {
       http
         .PUT[JsObject, HttpResponse](afiRelationshipUrl(invitation), body)
-        .handleNon2xx("unexpected error during 'createAfiRelationship'")
+        .handleNon2xx("createAfiRelationship")
     }
   }
 
@@ -80,35 +80,35 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Trust-PUT") {
       http
         .PUT[String, HttpResponse](trustRelationshipUrl(invitation), "")
-        .handleNon2xx("unexpected error during 'createTrustRelationship")
+        .handleNon2xx("createTrustRelationship")
     }
 
   def createCapitalGainsRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CapitalGains-PUT") {
       http
         .PUT[String, HttpResponse](cgtRelationshipUrl(invitation), "")
-        .handleNon2xx("unexpected error during 'createCapitalGainsRelationship'")
+        .handleNon2xx("createCapitalGainsRelationship")
     }
 
   def createPlasticPackagingTaxRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-PlasticPackagingTax-PUT") {
       http
         .PUT[String, HttpResponse](pptRelationshipUrl(invitation), "")
-        .handleNon2xx("unexepected error during 'createPlasticPackagingTaxRelationship'")
+        .handleNon2xx("createPlasticPackagingTaxRelationship")
     }
 
   def createCountryByCountryRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-CountryByCountry-PUT") {
       http
         .PUT[String, HttpResponse](cbcRelationshipUrl(invitation), "")
-        .handleNon2xx("unexepected error during 'createCountryByCountryRelationship'")
+        .handleNon2xx("createCountryByCountryRelationship")
     }
 
   def createPillar2Relationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-Pillar2-PUT") {
       http
         .PUT[String, HttpResponse](pillar2RelationshipUrl(invitation), "")
-        .handleNon2xx("unexepected error during 'createPillar2Relationship'")
+        .handleNon2xx("createPillar2Relationship")
     }
 
   def getActiveRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Map[String, Seq[Arn]]]] =
