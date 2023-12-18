@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -27,6 +28,8 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
 
   private val Environment = "Environment"
   private val CorrelationId = "CorrelationId"
+  private val SessionId = "x-session-id"
+  private val RequestId = "x-request-id"
   private val Authorization = "Authorization"
 
   private lazy val desEnvironment: String = appConfig.desEnvironment
@@ -37,11 +40,19 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
   private lazy val ifAuthTokenAPI2143: String = appConfig.ifAuthTokenAPI2143
   private lazy val ifAuthTokenAPI1171: String = appConfig.ifAuthTokenAPI1171
 
-  def outboundHeaders(viaIF: Boolean, apiName: Option[String] = None): Seq[(String, String)] = {
+  def outboundHeaders(viaIF: Boolean, apiName: Option[String] = None)(implicit hc: HeaderCarrier): Seq[(String, String)] = {
 
     val baseHeaders = Seq(
       Environment   -> s"${if (viaIF) { ifEnvironment } else { desEnvironment }}",
-      CorrelationId -> UUID.randomUUID().toString
+      CorrelationId -> UUID.randomUUID().toString,
+      SessionId     -> hc.sessionId.map(_.value).getOrElse(""),
+      RequestId     -> hc.requestId.map(_.value).getOrElse("")
+    )
+
+    val api1171 = Seq(
+      "GetRegistrationBusinessDetailsByMtdId",
+      "GetRegistrationBusinessDetailsByNino",
+      "GetTradingNameByNino"
     )
 
     val api1171 = Seq(
