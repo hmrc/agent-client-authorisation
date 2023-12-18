@@ -27,6 +27,7 @@ import java.util.UUID
 class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
 
   val appConfig: AppConfig = mock[AppConfig]
+  val hc: HeaderCarrier = mock[HeaderCarrier]
   val underTest = new DesIfHeaders(appConfig)
 
   when(appConfig.ifEnvironment).thenReturn("ifEnvironment")
@@ -34,7 +35,8 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
   when(appConfig.ifAuthTokenAPI1495).thenReturn("ifAuthTokenAPI1495")
   when(appConfig.desEnvironment).thenReturn("desEnvironment")
   when(appConfig.desAuthToken).thenReturn("desAuthToken")
-
+  when(hc.sessionId).thenReturn(Option(SessionId("testSession")))
+  when(hc.requestId).thenReturn(Option(RequestId("testRequestId")))
   "outboundHeaders" when {
 
     "is DES API" when {
@@ -43,15 +45,14 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
         "contain correct headers" in {
           val viaIF = false
           val apiName = None
-          val hc: HeaderCarrier = new HeaderCarrier(sessionId = Option(SessionId("testSession")), requestId = Option(RequestId("requestId")))
 
           val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "desEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer desAuthToken")
-          headersMap should contain("x-session-id"  -> "Bearer desAuthToken")
-          headersMap should contain("x-request-id"  -> "Bearer desAuthToken")
+          headersMap should contain("x-session-id"  -> "testSession")
+          headersMap should contain("x-request-id"  -> "testRequestId")
         }
       }
 
@@ -60,11 +61,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = false
           val apiName = Some("fancyApi")
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "desEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer desAuthToken")
+          headersMap should contain("x-session-id"  -> "testSession")
+          headersMap should contain("x-request-id"  -> "testRequestId")
         }
       }
 
@@ -73,11 +76,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = false
           val apiName = Some("")
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "desEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer desAuthToken")
+          headersMap should contain("x-session-id"  -> "testSession")
+          headersMap should contain("x-request-id"  -> "testRequestId")
         }
       }
     }
@@ -89,11 +94,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = true
           val apiName = None
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "ifEnvironment")
 
           headersMap should not contain key("Authorization")
+          headersMap should contain("x-session-id" -> "testSession")
+          headersMap should contain("x-request-id" -> "testRequestId")
         }
       }
 
@@ -102,11 +109,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = true
           val apiName = Some("fancyApi")
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "ifEnvironment")
 
           headersMap should not contain key("Authorization")
+          headersMap should contain("x-session-id" -> "testSession")
+          headersMap should contain("x-request-id" -> "testRequestId")
         }
       }
 
@@ -115,11 +124,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = true
           val apiName = Some("getTrustName")
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "ifEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer ifAuthTokenAPI1495")
+          headersMap should contain("x-session-id"  -> "testSession")
+          headersMap should contain("x-request-id"  -> "testRequestId")
         }
       }
 
@@ -128,11 +139,13 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val viaIF = true
           val apiName = Some("GetPptSubscriptionDisplay")
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName).toMap
+          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
 
           assertBaseHeaders(headersMap, "ifEnvironment")
 
           headersMap should contain("Authorization" -> "Bearer ifAuthTokenAPI1712")
+          headersMap should contain("x-session-id"  -> "testSession")
+          headersMap should contain("x-request-id"  -> "testRequestId")
         }
       }
     }

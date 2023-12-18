@@ -45,8 +45,8 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
     val baseHeaders = Seq(
       Environment   -> s"${if (viaIF) { ifEnvironment } else { desEnvironment }}",
       CorrelationId -> UUID.randomUUID().toString,
-      SessionId     -> hc.sessionId.toString,
-      RequestId     -> hc.requestId.toString
+      SessionId     -> hc.sessionId.map(_.value).getOrElse(""),
+      RequestId     -> hc.requestId.map(_.value).getOrElse("")
     )
 
     val api1171 = Seq(
