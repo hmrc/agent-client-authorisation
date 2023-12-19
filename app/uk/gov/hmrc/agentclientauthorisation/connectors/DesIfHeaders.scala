@@ -55,12 +55,6 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
       "GetTradingNameByNino"
     )
 
-    val api1171 = Seq(
-      "GetRegistrationBusinessDetailsByMtdId",
-      "GetRegistrationBusinessDetailsByNino",
-      "GetTradingNameByNino"
-    )
-
     if (viaIF) {
       apiName.fold(baseHeaders) {
         case "getTrustName"              => baseHeaders :+ Authorization -> s"Bearer $ifAuthTokenAPI1495"
