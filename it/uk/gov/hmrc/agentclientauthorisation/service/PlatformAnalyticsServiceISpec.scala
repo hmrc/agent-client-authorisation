@@ -31,8 +31,7 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with PlatformAnalyticsStubs
     )
     .build()
 
-  private val invitationsRepo =
-    new InvitationsRepositoryImpl(mongoComponent)
+  private val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   override def beforeEach(): Unit = {
     super.beforeEach()

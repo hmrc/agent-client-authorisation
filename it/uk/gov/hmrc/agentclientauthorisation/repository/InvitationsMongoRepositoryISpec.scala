@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import com.kenshoo.play.metrics.Metrics
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
 import org.scalatest.Inside
@@ -25,7 +26,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
@@ -36,10 +37,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsMongoRepositoryISpec
-    extends UnitSpec  with Eventually with Inside
+    extends UnitSpec  with Eventually with Inside with AppAndStubs
      with DefaultPlayMongoRepositorySupport[Invitation] {
 
-  override val repository  = new InvitationsRepositoryImpl(mongoComponent)
+  val metrics = app.injector.instanceOf[Metrics]
+  override val repository  = new InvitationsRepositoryImpl(mongoComponent, metrics)
 
   val date = LocalDate.now()
   val invitationITSA = Invitation(

@@ -56,7 +56,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] =
     when(
       invitationsService
-        .findInvitation(eqs(invitationId))(any[ExecutionContext]))
+        .findInvitation(eqs(invitationId)))
 
   def noInvitation: Future[None.type] = Future successful None
 
@@ -99,7 +99,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
     when(invitationsService.rejectInvitation(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
 
   def whenClientReceivedInvitation: OngoingStubbing[Future[Seq[Invitation]]] =
-    when(invitationsService.clientsReceived(any[Seq[Service]], any[ClientIdentifier.ClientId], eqs(None))(any[ExecutionContext]))
+    when(invitationsService.clientsReceived(any[Seq[Service]], any[ClientIdentifier.ClientId], eqs(None)))
 
   def assertCreateITSARelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"

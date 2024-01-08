@@ -34,7 +34,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
-import scala.collection.Seq
 import scala.concurrent.Future.successful
 import scala.util.{Failure, Success}
 
@@ -75,16 +74,14 @@ class InvitationsService @Inject()(
     ec: ExecutionContext): Future[Invitation] = {
     val startDate = currentTime()
     val expiryDate = startDate.plusSeconds(invitationExpiryDuration.toSeconds).toLocalDate
-    monitor(s"Repository-Create-Invitation-${service.id}") {
-      for {
-        detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
-        invitation <- invitationsRepository
-                       .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
-        _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
-      } yield {
-        logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
-        invitation
-      }
+    for {
+      detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
+      invitation <- invitationsRepository
+                     .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
+      _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
+    } yield {
+      logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
+      invitation
     }
   }
 
@@ -96,7 +93,7 @@ class InvitationsService @Inject()(
       case Pending =>
         for {
           // accept the invite
-          _          <- if (isAltItsa) Future successful (()) else createRelationship(invitation, acceptedDate)
+          _          <- if (isAltItsa) Future.successful(()) else createRelationship(invitation, acceptedDate)
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
@@ -183,13 +180,11 @@ class InvitationsService @Inject()(
   }
 
   def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
-    monitor(s"Repository-Change-Invitation-${invitation.service.id}-flagRelationshipEnded") {
-      for {
-        updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
-      } yield {
-        logger info s"""Invitation with id: "${invitation._id.toString}" has been flagged as isRelationshipEnded = true"""
-        updatedInvitation
-      }
+    for {
+      updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
+    } yield {
+      logger info s"""Invitation with id: "${invitation._id.toString}" has been flagged as isRelationshipEnded = true"""
+      updatedInvitation
     }
 
   def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
@@ -200,21 +195,14 @@ class InvitationsService @Inject()(
       _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
     } yield invitation
 
-  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    monitor(s"Repository-Find-Invitation-${invitationId.value.charAt(0)}") {
-      invitationsRepository.findByInvitationId(invitationId)
-    }
+  def findInvitation(invitationId: InvitationId): Future[Option[Invitation]] =
+    invitationsRepository.findByInvitationId(invitationId)
 
-  def findLatestInvitationByClientId(clientId: String)(implicit ec: ExecutionContext): Future[Option[Invitation]] =
-    monitor(s"Repository-Find-Latest-Invitation-$clientId") {
-      invitationsRepository.findLatestInvitationByClientId(clientId)
-    }
+  def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
+    invitationsRepository.findLatestInvitationByClientId(clientId)
 
-  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus])(
-    implicit ec: ExecutionContext): Future[Seq[Invitation]] =
-    monitor(s"Repository-List-Invitations-Received-${clientId.typeId}${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
-    }
+  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
+    invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
 
   def updateAltItsaForNino(clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
@@ -226,24 +214,16 @@ class InvitationsService @Inject()(
     services: Seq[Service] = Seq.empty[Service],
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
-    val csvServices: Seq[String] = if (services.nonEmpty) services.map(s => s"-${s.id}") else Seq("")
-    monitor(s"Repository-List-Invitations-Sent$csvServices") {
-      invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
-    }
-  }
+    createdOnOrAfter: Option[LocalDate] = None): Future[List[Invitation]] =
+    invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
 
-  def findInvitationsInfoBy(
+  private def findInvitationsInfoBy(
     arn: Option[Arn] = None,
-    service: Option[Service] = None,
-    clientId: Option[String] = None,
+    service: Option[Service],
+    clientId: Option[String],
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None)(implicit ec: ExecutionContext): Future[List[InvitationInfo]] =
-    monitor(s"Repository-List-InvitationInfo${service
-      .map(s => s"-${s.id}")
-      .getOrElse("")}${status.map(s => s"-$s").getOrElse("")}") {
-      invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
-    }
+    createdOnOrAfter: Option[LocalDate] = None): Future[List[InvitationInfo]] =
+    invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
 
   def getNonSuspendedInvitations(
     identifiers: Seq[(Service, String)])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[List[InvitationInfo]]] = {
@@ -273,15 +253,13 @@ class InvitationsService @Inject()(
   }
 
   def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
-    monitor(s"Repository-Find-And-Update-Expired-Invitations") {
-      invitationsRepository
-        .findInvitationsBy(status = Some(Pending))
-        .map(invs => invs.filter(_.expiryDate.isBefore(Instant.now().atZone(ZoneOffset.UTC).toLocalDate)))
-        .flatMap { invitations =>
-          val result = invitations.map(updateToExpiredAndSendEmail)
-          Future.sequence(result).map(_ => ())
-        }
-    }
+    invitationsRepository
+      .findInvitationsBy(status = Some(Pending))
+      .map(invs => invs.filter(_.expiryDate.isBefore(Instant.now().atZone(ZoneOffset.UTC).toLocalDate)))
+      .flatMap { invitations =>
+        val result = invitations.map(updateToExpiredAndSendEmail)
+        Future.sequence(result).map(_ => ())
+      }
 
   private def updateToExpiredAndSendEmail(invitation: Invitation)(implicit ec: ExecutionContext): Future[Unit] =
     invitationsRepository
@@ -294,11 +272,9 @@ class InvitationsService @Inject()(
   private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: LocalDateTime = currentTime())(
     implicit ec: ExecutionContext): Future[Invitation] =
     if (invitation.status == Pending || invitation.status == PartialAuth) {
-      monitor(s"Repository-Change-Invitation-${invitation.service.id}-Status-From-${invitation.status}-To-$status") {
-        invitationsRepository.update(invitation, status, timestamp) map { invitation =>
-          logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
-          invitation
-        }
+      invitationsRepository.update(invitation, status, timestamp) map { invitation =>
+        logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
+        invitation
       }
     } else Future failed invalidTransition(invitation, status)
 
@@ -325,49 +301,46 @@ class InvitationsService @Inject()(
     invitationsRepository.removeAllInvitationsForAgent(arn)
 
   def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] =
-    monitor("Repository-Find-invitations-about-to-expire") {
-      invitationsRepository
-        .findInvitationsBy(status = Some(Pending))
-        .map(
-          _.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
-        )
-        .map {
-          _.groupBy(_.arn).map {
-            case (_, list) =>
-              emailService.sendWarningToExpire(list)
-          }
+    invitationsRepository
+      .findInvitationsBy(status = Some(Pending))
+      .map(
+        _.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
+      )
+      .map {
+        _.groupBy(_.arn).map {
+          case (_, list) =>
+            emailService.sendWarningToExpire(list)
         }
-        .map(_ => ())
-    }
+      }
+      .map(_ => ())
 
-  def cancelOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] =
-    monitor("Repository-cancel-old-alt-itsa-invitations") {
-      implicit val hc = HeaderCarrier()
-      for {
-        partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
-        expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(currentTime()))
-        _ = Future sequence expired.map(invitation => {
+  def cancelOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] = {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    for {
+      partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
+      expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(currentTime()))
+      _ = Future sequence expired.map(invitation => {
 
-          setRelationshipEnded(invitation, "HMRC").transformWith {
-            case Success(_) =>
-              logger.info(
-                s"invitation ${invitation.invitationId.value} with status ${invitation.status} and " +
-                  s"datetime ${invitation.mostRecentEvent().time} has been deauthorised.")
-              auditService
-                .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, "success")
-                .fallbackTo(Future.successful(())) // don't fail on audit errors
-                .map(_ => ())
+        setRelationshipEnded(invitation, "HMRC").transformWith {
+          case Success(_) =>
+            logger.info(
+              s"invitation ${invitation.invitationId.value} with status ${invitation.status} and " +
+                s"datetime ${invitation.mostRecentEvent().time} has been deauthorised.")
+            auditService
+              .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, "success")
+              .fallbackTo(Future.successful(())) // don't fail on audit errors
+              .map(_ => ())
 
-            case Failure(e) =>
-              logger.error(s"expired invitation id ${invitation.invitationId.value} update failed: $e")
-              auditService
-                .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, s"failure $e")
-                .fallbackTo(Future.successful(())) // don't fail on audit errors
-                .map[Invitation](_ => throw e)
-          }
-        })
-      } yield ()
-    }
+          case Failure(e) =>
+            logger.error(s"expired invitation id ${invitation.invitationId.value} update failed: $e")
+            auditService
+              .sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation, s"failure $e")
+              .fallbackTo(Future.successful(())) // don't fail on audit errors
+              .map[Invitation](_ => throw e)
+        }
+      })
+    } yield ()
+  }
 
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
     fetchAltItsaInvitationsFor(taxIdentifier)
@@ -415,10 +388,8 @@ class InvitationsService @Inject()(
       case a: Arn  => (None, Some(a))
       case e       => throw new Exception(s"unexpected TaxIdentifier $e for fetch alt-itsa")
     }
-    monitor("Repository-Find-Alt-ITSA-invitations") {
-      invitationsRepository
-        .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(MtdIt))
-        .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
-    }
+    invitationsRepository
+      .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(MtdIt))
+      .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
   }
 }
