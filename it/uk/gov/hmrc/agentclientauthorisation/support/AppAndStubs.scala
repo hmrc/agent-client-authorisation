@@ -112,7 +112,7 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBefo
 trait ResetMongoBeforeTest extends BeforeAndAfterEach {
   me: Suite with MongoSupport =>
 
-  override def beforeEach(): Unit = {
+  override protected def beforeEach(): Unit = {
     super.beforeEach()
     dropDatabase()
   }

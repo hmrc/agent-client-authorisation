@@ -31,7 +31,8 @@ class TerminateInvitationsISpec extends BaseISpec {
   implicit val mat = app.injector.instanceOf[Materializer]
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
-  lazy val invitationsRepo: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mongoComponent)
+
+  lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
   val appConfig = app.injector.instanceOf(classOf[AppConfig])

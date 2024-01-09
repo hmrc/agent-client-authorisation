@@ -35,13 +35,13 @@ trait StartAndStopWireMock extends BeforeAndAfterEach with BeforeAndAfterAll {
   protected val wiremockBaseUrl: String = s"http://$wiremockHost:$wiremockPort"
   val wireMockServer = new WireMockServer(wireMockConfig().port(wiremockPort))
 
-  override def beforeAll() = {
+  override protected def beforeAll() = {
     wireMockServer.stop()
     wireMockServer.start()
     WireMock.configureFor(wiremockHost, wiremockPort)
   }
 
-  override def beforeEach() = {
+  override protected def beforeEach() = {
     Thread.sleep(100)
     WireMock.reset()
     commonStubs()

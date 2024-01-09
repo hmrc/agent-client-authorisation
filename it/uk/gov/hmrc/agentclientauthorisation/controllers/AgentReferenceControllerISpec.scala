@@ -1,7 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import akka.stream.Materializer
-import com.google.inject.AbstractModule
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
@@ -16,14 +15,7 @@ import scala.concurrent.Future
 class AgentReferenceControllerISpec extends BaseISpec {
 
   val agentReferenceRepo: MongoAgentReferenceRepository = new MongoAgentReferenceRepository(mongoComponent)
-  val invitationsRepo: InvitationsRepositoryImpl = new InvitationsRepositoryImpl(mongoComponent)
-
-  override def moduleWithOverrides: AbstractModule = new AbstractModule{
-    override def configure: Unit = {
-      bind(classOf[MongoAgentReferenceRepository]).toInstance(agentReferenceRepo)
-      bind(classOf[InvitationsRepositoryImpl]).toInstance(invitationsRepo)
-    }
-  }                                              //app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   implicit val mat = app.injector.instanceOf[Materializer]
 

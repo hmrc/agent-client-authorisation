@@ -101,22 +101,20 @@ class AgencyInvitationsControllerSpec
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None)))
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None)))
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(any[ExecutionContext]))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None)))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
-    when(
-      invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None))(
-        any[ExecutionContext]))
+    when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None)))
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
     ()
   }
@@ -124,7 +122,7 @@ class AgencyInvitationsControllerSpec
   "replace URN invitation with UTR" should {
     "return 404 when no invitation found" in {
 
-      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+      when(invitationsService.findLatestInvitationByClientId(any[String]))
         .thenReturn(Future.successful(None))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
@@ -134,7 +132,7 @@ class AgencyInvitationsControllerSpec
 
     "return 204 when there is an invitation which isn't pending or existing" in {
 
-      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+      when(invitationsService.findLatestInvitationByClientId(any[String]))
         .thenReturn(Future.successful(Some(invitationExpired)))
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
@@ -144,7 +142,7 @@ class AgencyInvitationsControllerSpec
 
     "return 201 and end existing relationship when an active invitation is found" in {
 
-      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+      when(invitationsService.findLatestInvitationByClientId(any[String]))
         .thenReturn(Future.successful(Some(invitationActive)))
       when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
         .thenReturn(Future.successful(invitationActive))
@@ -163,7 +161,7 @@ class AgencyInvitationsControllerSpec
     }
 
     "return 201 when a pending invitation is found" in {
-      when(invitationsService.findLatestInvitationByClientId(any[String])(any[ExecutionContext]))
+      when(invitationsService.findLatestInvitationByClientId(any[String]))
         .thenReturn(Future.successful(Some(invitationPending)))
       when(
         invitationsService
@@ -245,7 +243,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext]))
+          .findInvitation(any[InvitationId]))
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful cancelledInvite)
@@ -263,7 +261,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext]))
+          .findInvitation(any[InvitationId]))
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future failed StatusUpdateFailure(Accepted, "already accepted"))
@@ -278,7 +276,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId])(any[ExecutionContext]))
+          .findInvitation(any[InvitationId]))
         .thenReturn(Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
