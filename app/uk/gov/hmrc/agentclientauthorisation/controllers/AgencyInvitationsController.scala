@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
+import uk.gov.hmrc.agentclientauthorisation.repository.{CreateInvitationConflict, CreateInvitationSuccess}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.util.{FailedResultException, valueOps}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
@@ -76,7 +77,6 @@ class AgencyInvitationsController @Inject()(
           val normalizedClientId = AgentInvitation.normalizeClientId(agentInvitation.clientId)
           checkForErrors(agentInvitation.copy(clientId = normalizedClientId))
             .flatMap(_.fold(makeInvitation(givenArn, agentInvitation))(error => Future successful error))
-
         },
         invitationJson.get
       )
@@ -95,9 +95,9 @@ class AgencyInvitationsController @Inject()(
       }
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
         for {
-          _          <- invitationsService.setRelationshipEnded(i, "HMRC")
-          invitation <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
-          _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitationStatus(invitation))
+          _                      <- invitationsService.setRelationshipEnded(i, "HMRC")
+          createInvitationResult <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
+          _                      <- futures.delayed(500.millisecond)(invitationsService.acceptInvitationStatus(createInvitationResult.invitation))
         } yield Created
       case Some(_) => Future successful NoContent
       case _       => Future successful NotFound
@@ -163,7 +163,10 @@ class AgencyInvitationsController @Inject()(
       case Some(taxId) =>
         invitationsService
           .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId, originHeader)
-          .map(invitation => Created.withHeaders(location(invitation): _*))
+          .map {
+            case CreateInvitationSuccess(i)  => Created.withHeaders(location(i): _*)
+            case CreateInvitationConflict(i) => Conflict.withHeaders(location(i): _*)
+          }
     }
   }
 

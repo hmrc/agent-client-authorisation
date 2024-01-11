@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, Monitor}
+import uk.gov.hmrc.agentclientauthorisation.repository.{CreateInvitationResult, CreateInvitationSuccess, InvitationsRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model._
@@ -72,18 +72,23 @@ class InvitationsService @Inject()(
 
   def create(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId, originHeader: Option[String])(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Invitation] = {
+    ec: ExecutionContext): Future[CreateInvitationResult] = {
     val startDate = currentTime()
     val expiryDate = startDate.plusSeconds(invitationExpiryDuration.toSeconds).toLocalDate
     monitor(s"Repository-Create-Invitation-${service.id}") {
       for {
         detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
-        invitation <- invitationsRepository
-                       .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
-        _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
+        _ = Thread.sleep(500)
+        createResult <- invitationsRepository
+                         .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
+        _ = createResult match {
+          case CreateInvitationSuccess(invitation) =>
+            logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
+            analyticsService.reportSingleEventAnalyticsRequest(invitation)
+          case _ => logger.warn(s"Duplicate create invitation request from origin: ${originHeader.getOrElse("")}")
+        }
       } yield {
-        logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
-        invitation
+        createResult
       }
     }
   }

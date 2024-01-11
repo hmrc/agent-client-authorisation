@@ -30,9 +30,15 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
-import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
+sealed trait CreateInvitationResult {
+  val invitation: Invitation
+}
+
+case class CreateInvitationSuccess(invitation: Invitation) extends CreateInvitationResult
+
+case class CreateInvitationConflict(invitation: Invitation) extends CreateInvitationResult
 @ImplementedBy(classOf[InvitationsRepositoryImpl])
 trait InvitationsRepository {
   def create(
@@ -44,7 +50,7 @@ trait InvitationsRepository {
     detailsForEmail: Option[DetailsForEmail],
     startDate: LocalDateTime,
     expiryDate: LocalDate,
-    origin: Option[String]): Future[Invitation]
+    origin: Option[String]): Future[CreateInvitationResult]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime): Future[Invitation]
   def setRelationshipEnded(invitation: Invitation, endedBy: String): Future[Invitation]
@@ -84,6 +90,17 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent)(implicit ec: Ex
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey)),
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey, InvitationRecordFormat.createdKey)),
         IndexModel(ascending(InvitationRecordFormat.createdKey))
+//        IndexModel(
+//          ascending(
+//            InvitationRecordFormat.arnKey,
+//            InvitationRecordFormat.serviceKey,
+//            InvitationRecordFormat.clientIdKey,
+//            InvitationRecordFormat.statusKey),
+//          IndexOptions()
+//            .name("testIndex")
+//            .unique(true)
+//            .partialFilterExpression(BsonDocument(InvitationRecordFormat.statusKey -> "Pending"))
+//        )
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(InvitationId.idFormats),
@@ -91,6 +108,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent)(implicit ec: Ex
         Codecs.playFormatCodec(StatusChangeEvent.statusChangeEventFormat),
         Codecs.playFormatCodec(MongoLocalDateTimeFormat.localDateTimeFormat)
       )
+      //replaceIndexes = true
     ) with InvitationsRepository with Logging {
 
   final val ID = "_id"
@@ -106,12 +124,19 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent)(implicit ec: Ex
     detailsForEmail: Option[DetailsForEmail],
     startDate: LocalDateTime,
     expiryDate: LocalDate,
-    origin: Option[String]): Future[Invitation] = {
+    origin: Option[String]): Future[CreateInvitationResult] = {
     val invitation = Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)
     collection
-      .insertOne(invitation)
-      .toFuture()
-      .map(_ => invitation)
+      .find(equal(
+        InvitationRecordFormat.arnClientServiceStateKey,
+        InvitationRecordFormat.toArnClientServiceStateKey(Some(arn), Some(clientId.value), Some(service), Some(Pending))
+      ))
+      .first()
+      .headOption()
+      .flatMap {
+        case Some(i) => Future successful CreateInvitationConflict(i)
+        case None    => collection.insertOne(invitation).toFuture().map(_ => CreateInvitationSuccess(invitation))
+      }
   }
 
   override def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime): Future[Invitation] =

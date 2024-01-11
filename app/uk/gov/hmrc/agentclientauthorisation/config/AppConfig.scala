@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.config
 
-import java.net.URLDecoder
-
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.agentclientauthorisation.model.BasicAuthentication
+import uk.gov.hmrc.agentservice.HodApiConfig
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.net.URLDecoder
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
 
 @Singleton
@@ -102,4 +102,8 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val altItsaExpiryEnable: Boolean = servicesConfig.getBoolean("alt-itsa-expiry-enable")
 
   lazy val maxCallsPerSecondBusinessNames: Double = servicesConfig.getString("rate-limiter.business-names.max-calls-per-second").toDouble
+
+  val desConfigBundle = HodApiConfig(desBaseUrl, Seq("Authorization"        -> desAuthToken, "Environment"       -> desEnvironment))
+  val ifApi1171Bundle = HodApiConfig(ifPlatformBaseUrl, Seq("Authorization" -> ifAuthTokenAPI1171, "Environment" -> ifEnvironment))
+
 }

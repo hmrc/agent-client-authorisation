@@ -11,4 +11,7 @@
 
 # Add all the application routes to the prod.routes file
 
+POST        /agent-client-authorisation/test-only/customer-data-check/service/:service/client/:clientId   @uk.gov.hmrc.agentclientauthorisation.refactored.controllers.CustomerDataController.customerDataCheck(service: String, clientId: String)
+
+
 ->         /                          prod.Routes

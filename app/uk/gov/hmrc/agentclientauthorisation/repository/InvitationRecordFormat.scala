@@ -78,6 +78,7 @@ object InvitationRecordFormat {
   val statusKey = "_status"
   val createdKey = "_created"
   val detailsForEmailKey = "detailsForEmail"
+  val serviceKey = "service"
 
   implicit val oidFormat = MongoFormats.Implicits.objectIdFormat
 
