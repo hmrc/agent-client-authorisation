@@ -49,7 +49,7 @@ object Binders {
       def bind(key: String, value: String): Either[String, Either[L, R]] = {
         val resR = bindR.bind(key, value)
         lazy val resL = bindL.bind(key, value)
-        lazy val err = (resR.right.toSeq ++ resL.left.toSeq).mkString(", ")
+        lazy val err = (resR.toSeq ++ resL.left.toSeq).mkString(", ")
         if (resR.exists(isValidR)) resR.map(Right(_))
         else if (resL.exists(isValidL)) resL.map(Left(_))
         else Left(err)

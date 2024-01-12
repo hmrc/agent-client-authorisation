@@ -60,7 +60,7 @@ class PlatformAnalyticsService @Inject()(
           .grouped(batchSize)
           .foreach { batch =>
             sendAnalyticsRequest(batch, Some(makeGAClientId))(
-              HeaderCarrier(extraHeaders = Seq("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
+              HeaderCarrier(extraHeaders = List("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
               ec)
           }
       }
