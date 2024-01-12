@@ -104,34 +104,40 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def assertCreateITSARelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
+
     val details = event.detail.toSeq
-    details should contain allOf ("invitationId" -> invitationId.value,
-    "agentReferenceNumber"                       -> arn.value,
-    "clientIdType"                               -> "ni",
-    "clientId"                                   -> mtdItId1.value,
-    "service"                                    -> "HMRC-MTD-IT")
+
+    details should contain("invitationId"         -> invitationId.value)
+    details should contain("agentReferenceNumber" -> arn.value)
+    details should contain("clientIdType"         -> "ni")
+    details should contain("clientId"             -> mtdItId1.value)
+    details should contain("service"              -> "HMRC-MTD-IT")
   }
 
   def assertCreateIRVRelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
+
     val details = event.detail.toSeq
-    details should contain allOf ("invitationId" -> invitationId.value,
-    "agentReferenceNumber"                       -> arn.value,
-    "clientIdType"                               -> "ni",
-    "clientId"                                   -> nino.value,
-    "service"                                    -> "PERSONAL-INCOME-RECORD")
+
+    details should contain("invitationId"         -> invitationId.value)
+    details should contain("agentReferenceNumber" -> arn.value)
+    details should contain("clientIdType"         -> "ni")
+    details should contain("clientId"             -> nino.value)
+    details should contain("service"              -> "PERSONAL-INCOME-RECORD")
   }
 
   def assertCreateTrustRelationshipEvent(event: DataEvent) = {
     event.auditSource shouldBe "agent-client-authorisation"
     event.auditType shouldBe "AgentClientRelationshipCreated"
+
     val details = event.detail.toSeq
-    details should contain allOf ("invitationId" -> invitationId.value,
-    "agentReferenceNumber"                       -> arn.value,
-    "clientIdType"                               -> "utr",
-    "clientId"                                   -> utr.value,
-    "service"                                    -> "HMRC-TERS-ORG")
+
+    details should contain("invitationId"         -> invitationId.value)
+    details should contain("agentReferenceNumber" -> arn.value)
+    details should contain("clientIdType"         -> "utr")
+    details should contain("clientId"             -> utr.value)
+    details should contain("service"              -> "HMRC-TERS-ORG")
   }
 
   def verifyAgentClientRelationshipCreatedAuditEvent(service: String) =

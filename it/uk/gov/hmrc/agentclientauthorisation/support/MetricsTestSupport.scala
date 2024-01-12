@@ -33,7 +33,7 @@ trait MetricsTestSupport {
 
   def givenCleanMetricRegistry(): Unit = {
     val registry = app.injector.instanceOf[Metrics].defaultRegistry
-    for (metric <- JavaConverters.asScalaIterator[String](registry.getMetrics.keySet().iterator())) {
+    for (metric <- JavaConverters.asScala[String](registry.getMetrics.keySet().iterator())) {
       registry.remove(metric)
     }
     metricsRegistry = registry

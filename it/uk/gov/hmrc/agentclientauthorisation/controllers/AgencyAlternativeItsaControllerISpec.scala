@@ -21,9 +21,9 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     super.beforeEach()
-    await(invitationsRepo.ensureIndexes)
+    await(invitationsRepo.ensureIndexes())
     ()
   }
 

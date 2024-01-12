@@ -62,9 +62,9 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
   private val agentEnrolId = "AgentReferenceNumber"
   private val isAnAgent = true
 
-  def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request ⇒
+  def onlyForAgents(action: AgentAuthAction)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
     authorised(authProvider).retrieve(affinityGroup and allEnrolments) {
-      case Some(affinityG) ~ allEnrols ⇒
+      case Some(affinityG) ~ allEnrols =>
         (isAgent(affinityG), extractEnrolmentData(allEnrols.enrolments, agentEnrol, agentEnrolId)) match {
           case (`isAnAgent`, Some(arn)) => action(request)(Arn(arn))
           case (_, None)                => Future successful AgentNotSubscribed
@@ -283,18 +283,18 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
     enrolls.find(_.key == enrolKey).flatMap(_.getIdentifier(enrolId)).map(_.value)
 
   def handleFailure: PartialFunction[Throwable, Result] = {
-    case _: NoActiveSession ⇒
+    case _: NoActiveSession =>
       GenericUnauthorized
 
-    case _: InsufficientEnrolments ⇒
+    case _: InsufficientEnrolments =>
       logger.warn(s"Logged in user does not have required enrolments")
       GenericForbidden
 
-    case _: UnsupportedAuthProvider ⇒
+    case _: UnsupportedAuthProvider =>
       logger.warn(s"user logged in with unsupported auth provider")
       GenericForbidden
 
-    case _: UnsupportedAffinityGroup ⇒
+    case _: UnsupportedAffinityGroup =>
       logger.warn(s"user logged in with unsupported AffinityGroup")
       GenericForbidden
   }

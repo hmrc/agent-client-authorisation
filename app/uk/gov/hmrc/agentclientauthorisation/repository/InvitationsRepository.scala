@@ -200,7 +200,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
       collection
         .find(equal(InvitationRecordFormat.arnClientServiceStateKey, searchKey))
         .sort(descending("events.time"))
-        .headOption
+        .headOption()
     }
 
   override def findInvitationsBy(

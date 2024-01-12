@@ -58,14 +58,14 @@ class Resource(path: String, port: Int, http: Http) {
 
   private def url() = s"http://localhost:$port$path"
 
-  def get()(implicit hc: HeaderCarrier = HeaderCarrier()) = http.get(url)(hc)
+  def get()(implicit hc: HeaderCarrier = HeaderCarrier()) = http.get(url())(hc)
 
   def postAsJson(body: String)(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    http.post(url, body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
+    http.post(url(), body, Seq(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON))(hc)
 
   def postEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    http.post(url, "")(hc)
+    http.post(url(), "")(hc)
 
   def putEmpty()(implicit hc: HeaderCarrier = HeaderCarrier()) =
-    http.put(url, "")(hc)
+    http.put(url(), "")(hc)
 }

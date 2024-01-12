@@ -30,10 +30,10 @@ class AgentReferenceControllerISpec extends BaseISpec {
     trustClient,
     cgtClient)
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     super.beforeEach()
-    await(agentReferenceRepo.ensureIndexes)
-    await(invitationsRepo.ensureIndexes)
+    await(agentReferenceRepo.ensureIndexes())
+    await(invitationsRepo.ensureIndexes())
     ()
   }
 

@@ -111,35 +111,35 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       "effectiveRegistrationDate is present  and customer is active" in {
         hasPillar2CustomerDetails(clientPlrId, "2017-04-01")
-        val pillar2CustomerInfo = await(connector.getPillar2Details(clientPlrId)).response.right.get
+        val pillar2CustomerInfo = await(connector.getPillar2Details(clientPlrId)).response.toOption.get
         pillar2CustomerInfo.effectiveRegistrationDate shouldBe LocalDate.parse("2017-04-01")
         pillar2CustomerInfo.inactive shouldBe false
       }
 
       "effectiveRegistrationDate is present  and customer is inactive" in {
         hasPillar2CustomerDetails(clientPlrId, "2017-04-01", inactive = true)
-        val pillar2CustomerInfo = await(connector.getPillar2Details(clientPlrId)).response.right.get
+        val pillar2CustomerInfo = await(connector.getPillar2Details(clientPlrId)).response.toOption.get
         pillar2CustomerInfo.effectiveRegistrationDate shouldBe LocalDate.parse("2017-04-01")
         pillar2CustomerInfo.inactive shouldBe true
       }
 
       "record metrics for each call" in {
         hasPillar2CustomerDetails(clientPlrId, "2017-04-01")
-        await(connector.getPillar2Details(clientPlrId)).response.right.get
+        await(connector.getPillar2Details(clientPlrId)).response.toOption.get
         await(connector.getPillar2Details(clientPlrId))
         verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getPillar2Subscription-GET")
       }
 
       "there is no approvedInformation" in {
         hasPillar2CustomerDetailsWithNoApprovedInformation(clientPlrId)
-        val pillar2Error = await(connector.getPillar2Details(clientPlrId)).response.left.get
+        val pillar2Error = await(connector.getPillar2Details(clientPlrId)).response.left.toOption.get
         pillar2Error.httpResponseCode shouldBe NOT_FOUND
       }
     }
 
     "return pillar2Error with status 404  if the Pillar2 client is not subscribed (404)" in {
       failsPillar2CustomerDetails(clientPlrId, withStatus = NOT_FOUND)
-      val pillar2Error = await(connector.getPillar2Details(clientPlrId)).response.left.get
+      val pillar2Error = await(connector.getPillar2Details(clientPlrId)).response.left.toOption.get
       pillar2Error.httpResponseCode shouldBe NOT_FOUND
     }
 
@@ -165,33 +165,33 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
     "return a Pillar2 subscription record" in {
       hasPillar2CustomerDetails(clientPlrId, "2017-04-01")
-      val pillar2Subscription = await(connector.getPillar2Subscription(clientPlrId)).response.right.get
+      val pillar2Subscription = await(connector.getPillar2Subscription(clientPlrId)).response.toOption.get
       pillar2Subscription.registrationDate shouldBe LocalDate.parse("2017-04-01")
       pillar2Subscription.organisationName shouldBe "OrgName"
       verifyTimerExistsAndBeenUpdated("ConsumedAPI-DES-getPillar2Subscription-GET")
     }
     "return pillar2Error with status 404  if the Pillar2 client is not subscribed (404)" in {
       failsPillar2CustomerDetails(clientPlrId, withStatus = NOT_FOUND)
-      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.get
+      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.toOption.get
       pillar2Error.httpResponseCode shouldBe NOT_FOUND
     }
     "return pillar2Error with status 400 if DES returns a 400 status (invalid PlrId passed by client)" in {
       failsPillar2CustomerDetails(clientPlrId, withStatus = BAD_REQUEST)
-      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.get
+      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.toOption.get
       pillar2Error.httpResponseCode shouldBe BAD_REQUEST
 
     }
 
     "return pillar2Error with status 403 if DES returns a 403 status (MIGRATION)" in {
       failsPillar2CustomerDetails(clientPlrId, withStatus = FORBIDDEN)
-      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.get
+      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.toOption.get
       pillar2Error.httpResponseCode shouldBe FORBIDDEN
 
     }
 
     "return pillar2Error with status 502 if DES is unavailable (502)" in {
       failsPillar2CustomerDetails(clientPlrId, withStatus = BAD_GATEWAY)
-      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.get
+      val pillar2Error = await(connector.getPillar2Subscription(clientPlrId)).response.left.toOption.get
       pillar2Error.httpResponseCode shouldBe BAD_GATEWAY
     }
   }

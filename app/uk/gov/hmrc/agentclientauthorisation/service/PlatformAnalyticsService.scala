@@ -29,7 +29,6 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.util.hashing.{MurmurHash3 => MH3}
-import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -84,7 +84,7 @@ object ClientStatusController {
   def toCacheKey(identifiers: Seq[(Service, String)]): String =
     identifiers
       .sortBy(_._1.enrolmentKey)
-      .map(i => s"${i._1}__${i._2}".toLowerCase.replaceAllLiterally(" ", ""))
+      .map(i => s"${i._1}__${i._2}".toLowerCase.replace(" ", ""))
       .mkString(",")
 
   val defaultClientStatus: Future[ClientStatus] =
