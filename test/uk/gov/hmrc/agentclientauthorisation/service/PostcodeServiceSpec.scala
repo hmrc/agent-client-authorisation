@@ -95,7 +95,7 @@ class PostcodeServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfter
 
     "return 403 if a business partner record is returned with multiple business data records" in {
       when(ifConnector.getBusinessDetails(nino1)).thenReturn(Future successful Some(BusinessDetails(
-        Array(BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA")))), BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))),
+        Array(BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA")))), BusinessData(Some(BusinessAddressDetails("GB", Some("AA11AA"))))).toIndexedSeq,
         Some(MtdItId("mtdItId"))
       )))
       await(service.postCodeMatches(nino1.value, "AA11AA").failed) match {

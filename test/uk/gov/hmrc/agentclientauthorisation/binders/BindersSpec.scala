@@ -69,10 +69,10 @@ class BindersSpec extends UnitSpec {
 
   "AgentIdBinder" should {
     "accept a valid ARN" in {
-      Binders.agentIdBinder.bind("agentId", "EARN8077593").right.get shouldBe Right(Arn("EARN8077593"))
+      Binders.agentIdBinder.bind("agentId", "EARN8077593").toOption.get shouldBe Right(Arn("EARN8077593"))
     }
     "accept a valid UTR" in {
-      Binders.agentIdBinder.bind("agentId", "2134514321").right.get shouldBe Left(Utr("2134514321"))
+      Binders.agentIdBinder.bind("agentId", "2134514321").toOption.get shouldBe Left(Utr("2134514321"))
     }
     "fail if an invalid identifier is provided" in {
       Binders.agentIdBinder.bind("agentId", "XXCGT1029384756").isLeft shouldBe true

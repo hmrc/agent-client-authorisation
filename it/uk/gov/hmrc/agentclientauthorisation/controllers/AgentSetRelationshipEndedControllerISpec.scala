@@ -38,10 +38,10 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     super.beforeEach()
-    await(agentReferenceRepo.ensureIndexes)
-    await(invitationsRepo.ensureIndexes)
+    await(agentReferenceRepo.ensureIndexes())
+    await(invitationsRepo.ensureIndexes())
     ()
   }
 

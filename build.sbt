@@ -17,7 +17,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "agent-client-authorisation",
     organization := "uk.gov.hmrc",
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.13.10",
     majorVersion := 1,
     PlayKeys.playDefaultPort := 9432,
     resolvers ++= Seq(
@@ -28,10 +28,7 @@ lazy val root = (project in file("."))
     Compile / scalafmtOnCompile := true,
     Test / scalafmtOnCompile := true,
     scalacOptions ++= Seq(
-      "-Xfatal-warnings",
-      "-Ypartial-unification",
       "-Xlint:-missing-interpolator,_",
-      "-Yno-adapted-args",
       "-Ywarn-value-discard",
       "-Ywarn-dead-code",
       "-deprecation",
@@ -54,6 +51,10 @@ lazy val root = (project in file("."))
     IntegrationTest / unmanagedSourceDirectories += baseDirectory(_ / "it").value,
     IntegrationTest / unmanagedSourceDirectories += baseDirectory(_ / "testcommon").value,
     IntegrationTest / parallelExecution := false,
+  )
+  .settings(
+    //fix for scoverage compile errors for scala 2.13.10
+    libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
   )
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)

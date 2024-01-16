@@ -57,7 +57,7 @@ class MongoAgentReferenceRepository @Inject()(mongo: MongoComponent)(implicit ec
       mongoComponent = mongo,
       collectionName = "agent-reference",
       domainFormat = formats,
-      indexes = Seq(
+      indexes = List(
         IndexModel(ascending("uid"), IndexOptions().unique(true)),
         IndexModel(ascending("arn"), IndexOptions().unique(true))
       )

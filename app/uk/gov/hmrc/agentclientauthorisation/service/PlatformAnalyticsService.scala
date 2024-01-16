@@ -29,7 +29,6 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.util.hashing.{MurmurHash3 => MH3}
-import scala.collection.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -60,7 +59,7 @@ class PlatformAnalyticsService @Inject()(
           .grouped(batchSize)
           .foreach { batch =>
             sendAnalyticsRequest(batch, Some(makeGAClientId))(
-              HeaderCarrier(extraHeaders = Seq("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
+              HeaderCarrier(extraHeaders = List("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
               ec)
           }
       }

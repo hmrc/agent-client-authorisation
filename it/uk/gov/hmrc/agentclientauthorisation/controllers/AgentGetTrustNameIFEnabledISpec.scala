@@ -7,10 +7,10 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 
 class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
-  implicit val mat = app.injector.instanceOf[Materializer]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-  override protected def additionalConfiguration =
-    super.additionalConfiguration + ("mongodb.uri" -> mongoUri, "des-if.enabled" -> true)
+  override protected def additionalConfiguration: Map[String, Any] =
+    super.additionalConfiguration + ("mongodb.uri" -> mongoUri) + ("des-if.enabled" -> true)
 
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]

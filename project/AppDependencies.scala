@@ -11,10 +11,10 @@ object AppDependencies {
     "uk.gov.hmrc.mongo"  %% "hmrc-mongo-play-28"        % mongoVer,
     "uk.gov.hmrc"        %% "play-hal"                  % "3.4.0-play-28",
     "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "1.15.0",
-    "uk.gov.hmrc"        %% "agent-kenshoo-monitoring"  % "5.4.0",
-    "com.github.blemale" %% "scaffeine"                 % "4.0.1",
+    "uk.gov.hmrc"        %% "agent-kenshoo-monitoring"  % "5.5.0",
+    "com.github.blemale" %% "scaffeine"                 % "5.2.1",
     "com.google.guava"   %  "guava"                     % "31.1-jre",
-    "org.typelevel"      %% "cats-core"                 % "2.6.1"
+    "org.typelevel"      %% "cats-core"                 % "2.9.0"
   )
 
   val test = Seq(
@@ -24,7 +24,7 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "bootstrap-test-play-28"   % bootstrapVer % "test, it",
     "com.github.tomakehurst" %  "wiremock-jre8"            % "2.26.1"   % "test, it",
     "org.pegdown"            %  "pegdown"                  % "1.6.0"    % "test, it",
-    "org.scalamock"          %% "scalamock"                % "5.1.0"    % "test, it",
+    "org.scalamock"          %% "scalamock"                % "5.2.0"    % "test, it",
     "com.typesafe.akka"      %% "akka-actor-testkit-typed" % "2.6.21"   % "test, it",
     "com.vladsch.flexmark"   %  "flexmark-all"             % "0.35.10"  % "test, it"
   )

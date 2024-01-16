@@ -112,7 +112,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: MongoComponent)(implicit
         Filters.equal(SchedulerType.mongoName, schedulerType),
         Updates.combine(set("uid", newUid), set("runAt", newRunAt), set(SchedulerType.mongoName, schedulerType))
       )
-      .toFuture
+      .toFuture()
       .map(_ => ())
       .recover {
         case ex: MongoWriteException => logger.error(s"Updating uid and runAt failed with error: ${ex.getMessage}")
