@@ -45,35 +45,21 @@ class CustomerDataService @Inject()(connector: HodCustomerDataConnector, appConf
     // TODO - impl postRequest
     connector
       .getRequest(apiConfig, requestConfig)
-      .map(hodResponse => checkResponse(service)(knownFact, hodResponse))
+      .map(hodResponse => checkFirstResponse(service)(knownFact, hodResponse))
   }
 
-  private def checkResponse(service: String)(mKnownFact: Option[String], hr: HodResponse[_]): CustomerDataCheckResponse =
+  private def checkFirstResponse(service: String)(mKnownFact: Option[String], hr: HodResponse[_]): CustomerDataCheckResponse =
     if (hr.customerIsInsolvent.contains(true))
       CustomerDataCheckUnsuccessful(hr.statusCode, "INSOLVENT_CUSTOMER")
-    else
-      (hr.knownFact, hr.customerName) match {
-        case (Some(kf), Some(cn)) =>
-          mKnownFact.fold(
-            CustomerDataCheckSuccess(
-              customerName = cn,
-              isUkCustomer = hr.isUkCustomer,
-              clientId = hr.clientIdLkUp,
-              knownFactSupplied = false
-            ): CustomerDataCheckResponse)(
-            suppliedKf => {
-              if (agentServiceSupport.knownFactCheck(service)(suppliedKf, kf))
-                CustomerDataCheckSuccess(
-                  customerName = cn,
-                  isUkCustomer = hr.isUkCustomer,
-                  clientId = hr.clientIdLkUp,
-                  knownFactSupplied = true
-                )
-              else
-                CustomerDataCheckUnsuccessful(hr.statusCode, "KNOWN_FACT_CHECK_FAILED")
-            }
-          )
-        case _ => CustomerDataCheckUnsuccessful(hr.statusCode, "CUSTOMER_NAME_EMPTY")
-      }
+    else {
+      CustomerDataCheckSuccess(
+        hr.statusCode,
+        customerName = hr.customerName,
+        isUkCustomer = hr.isUkCustomer,
+        clientIdLkUp = hr.clientIdLkUp,
+        knownFactSupplied = mKnownFact.isDefined,
+        knownFactCheck = agentServiceSupport.knownFactCheck(service)(mKnownFact, hr.knownFact)
+      )
+    }
 
 }

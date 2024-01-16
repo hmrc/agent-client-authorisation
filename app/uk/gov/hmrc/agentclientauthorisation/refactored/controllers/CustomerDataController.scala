@@ -20,7 +20,7 @@ import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.refactored.services.CustomerDataService
-import uk.gov.hmrc.agentservice.{CustomerDataCheckRequest, CustomerDataCheckSuccess, CustomerDataCheckUnsuccessful}
+import uk.gov.hmrc.agentservice.{CustomerDataCheckRequest, CustomerDataCheckResponse, CustomerDataCheckSuccess, CustomerDataCheckUnsuccessful}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -37,11 +37,11 @@ class CustomerDataController @Inject()(cc: ControllerComponents, cds: CustomerDa
     cds
       .customerDataCheck(service, clientId, mKnownFact)
       .map {
-        case a: CustomerDataCheckUnsuccessful if a.hodResponseCode == 503 =>
+        case a: CustomerDataCheckResponse if a.hodResponseCode == 503 =>
           logger.warn(s"service: $service, clientId: ***${clientId.drop(4)}, status: ${a.hodResponseCode}, message: ${a.message}")
           InternalServerError(Json.toJson(a))
-        case a: CustomerDataCheckUnsuccessful => Forbidden(Json.toJson(a))
-        case a: CustomerDataCheckSuccess      => Ok(Json.toJson(a))
+        //case a: CustomerDataCheckUnsuccessful => Forbidden(Json.toJson(a))
+        case a: CustomerDataCheckSuccess => Ok(Json.toJson(a))
       }
   }
 

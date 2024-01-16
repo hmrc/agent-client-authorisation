@@ -38,12 +38,13 @@ class HodCustomerDataConnector @Inject()(httpV2: HttpClientV2) {
       .get(url)
       .setHeader(apiConfig.headers: _*)
       .execute[HttpResponse]
-      .map { response =>
+      .map(response =>
         response.status match {
-          case OK    => response.json.as[HodResponse[T]](requestConfig.jsonReads)
-          case other => HodResponse.apply(other)
-        }
-      }
+          case OK => response.json.as[HodResponse[T]](requestConfig.jsonReads)
+          case other =>
+            println(s">>>>>BAD")
+            HodResponse.apply(other)
+      })
   }
 
 }
