@@ -18,8 +18,10 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.auth.core.{Enrolment => AuthEnrolment}
 import uk.gov.hmrc.domain.{Nino, SaAgentReference}
 import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 
@@ -453,7 +455,7 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
   def authorisedAsValidClientWithAffinityGroup[A](request: FakeRequest[A], clientVatEnrolKey: String, clientITEnrolKey: String)(implicit hc: HeaderCarrier): FakeRequest[A] =
     authenticatedClientAffinityGroup(request, clientVatEnrolKey, clientITEnrolKey)
 
-  def authorisedAsNinoClient[A](request: FakeRequest[A], nino: Nino)(implicit hc: HeaderCarrier): FakeRequest[A] = {
+  def authorisedAsNinoClient[A](request: FakeRequest[A], nino: Nino, affinityGroup: String = "Individual")(implicit hc: HeaderCarrier): FakeRequest[A] = {
     givenAuthorisedFor(
       payload =
         """
@@ -473,7 +475,7 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
       responseBody =
         s"""
            |{
-           |"affinityGroup" : "Individual",
+           |"affinityGroup" : s"$affinityGroup",
            |"confidenceLevel" : 200,
            |"allEnrolments":
            |[
@@ -540,6 +542,37 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
          |  }
          |]
          |}""".stripMargin
+    )
+    request.withSession(
+      SessionKeys.authToken -> "Bearer XYZ",
+      SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse("ClientSession123456")
+    )
+  }
+
+  def authenticatedClient[A](request: FakeRequest[A], confidenceLevel: Int = 250, affinityGroup: String = "Individual", enrolments: Set[AuthEnrolment])(implicit hc: HeaderCarrier): FakeRequest[A] = {
+    givenAuthorisedFor(
+      payload =
+        """
+          |{
+          |"authorise" : [ {
+          | "authProviders" : [ "GovernmentGateway" ]
+          |}, {
+          |"$or" : [ {
+          | "affinityGroup" : "Individual"
+          |},{
+          | "affinityGroup" : "Organisation"
+          |}]
+          |}],
+          |"retrieve" : [ "affinityGroup", "confidenceLevel",
+          |"allEnrolments" ]
+          | }""".stripMargin,
+      responseBody =
+        s"""
+           |{
+           |"affinityGroup" : "$affinityGroup",
+           |"confidenceLevel" : $confidenceLevel,
+           |"allEnrolments": ${Json.toJson(enrolments)}
+           |}""".stripMargin.replaceAll("enrolment", "key")
     )
     request.withSession(
       SessionKeys.authToken -> "Bearer XYZ",

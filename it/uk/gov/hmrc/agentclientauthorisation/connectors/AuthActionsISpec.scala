@@ -4,8 +4,9 @@ import play.api.mvc._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{HMRCCGTPD, HMRCMTDIT, HMRCMTDVAT}
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdType, Service}
-import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.{AuthConnector, EnrolmentIdentifier, Enrolment => AuthEnrolment}
 import uk.gov.hmrc.domain.TaxIdentifier
 
 import scala.concurrent.Future
@@ -42,6 +43,9 @@ class AuthActionsISpec extends BaseISpec {
       super.onlyStride(strideRole) { _ =>
           Future.successful(Ok)
       }
+
+    def testMultiEnrolledClient(implicit request: Request[AnyContent]): Future[Result] =
+      super.withMultiEnrolledClient{ enrols => Future.successful(Ok(s"$enrols"))}
   }
 
   class LoggedInUser(forStride: Boolean, forClient: Boolean) {
@@ -181,6 +185,68 @@ class AuthActionsISpec extends BaseISpec {
 
       val result: Future[Result] = TestController.testOnlyForStride("caat")(request)
       status(result) shouldBe 403
+    }
+  }
+
+  "withMultiEnrolledClient" should {
+    "return 200 for Individual when low confidence level if CGT only" in {
+      implicit val fakeRequest = FakeRequest("GET", "/path-of-request")
+        .withHeaders("Authorization" -> "Bearer XYZ")
+      authenticatedClient(
+        request = fakeRequest,
+        confidenceLevel = 50,
+        enrolments = Set(
+          AuthEnrolment(key = HMRCCGTPD,
+            identifiers = Seq(EnrolmentIdentifier("CGTPDRef","cgtRef")), state = "Activated")))
+      val result = TestController.testMultiEnrolledClient(fakeRequest)
+      status(result) shouldBe 200
+       bodyOf(result.futureValue).contains("HMRC-CGT-PD") shouldBe true
+    }
+    "return 200 for Individual with high confidence level" in {
+       implicit val fakeRequest = FakeRequest("GET", "/path-of-request")
+          .withHeaders("Authorization" -> "Bearer XYZ")
+      authenticatedClient(request = fakeRequest,
+        enrolments = Set(AuthEnrolment(key = HMRCMTDIT,
+          identifiers = Seq(EnrolmentIdentifier("MTDITID", "itsaRef")), state = "Activated")))
+      val result = TestController.testMultiEnrolledClient(fakeRequest)
+      status(result) shouldBe 200
+      bodyOf(result.futureValue).contains("HMRC-MTD-IT") shouldBe true
+
+    }
+
+    "return 403 for Individual with low confidence level"   in {
+      implicit val fakeRequest = FakeRequest("GET", "/path-of-request")
+        .withHeaders("Authorization" -> "Bearer XYZ")
+      authenticatedClient(request = fakeRequest,
+        confidenceLevel = 50,
+        enrolments = Set(AuthEnrolment(key = HMRCMTDIT,
+          identifiers = Seq(EnrolmentIdentifier("MTDITID", "itsaRef")), state = "Activated")))
+      val result = TestController.testMultiEnrolledClient(fakeRequest)
+      status(result) shouldBe 403
+    }
+    "return 200 for Organisation" in {
+       implicit val fakeRequest = FakeRequest("GET", "/path-of-request")
+         .withHeaders("Authorization" -> "Bearer XYZ")
+       authenticatedClient(request = fakeRequest,
+         affinityGroup = "Organisation",
+         confidenceLevel = 50,
+         enrolments = Set(AuthEnrolment(key = HMRCMTDVAT,
+           identifiers = Seq(EnrolmentIdentifier("VRN", "vatRef")), state = "Activated")))
+       val result = TestController.testMultiEnrolledClient(fakeRequest)
+       status(result) shouldBe 200
+      bodyOf(result.futureValue).contains("HMRC-MTD-VAT") shouldBe true
+    }
+    "return 200 for Organisation with NINO" in {
+         implicit val fakeRequest = FakeRequest("GET", "/path-of-request")
+           .withHeaders("Authorization" -> "Bearer XYZ")
+         authenticatedClient(request = fakeRequest,
+           affinityGroup = "Organisation",                                                       
+           confidenceLevel = 50,
+           enrolments = Set(AuthEnrolment(key = "HMRC-NI",
+             identifiers = Seq(EnrolmentIdentifier("NINO", "ninoRef")), state = "Activated")))
+         val result = TestController.testMultiEnrolledClient(fakeRequest)
+         status(result) shouldBe 200
+         bodyOf(result.futureValue).contains("HMRC-MTD-IT") shouldBe true
     }
   }
 

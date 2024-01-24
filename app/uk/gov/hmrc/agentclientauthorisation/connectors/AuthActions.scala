@@ -237,8 +237,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
         .map(ninoEnrol => ("HMRC-MTD-IT", ninoEnrol.identifiers.head.key, ninoEnrol.identifiers.head.value.replaceAll(" ", "")))
     else None
 
-  protected def withMultiEnrolledClient[A](
-    body: Seq[(String, String, String)] => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+  protected def withMultiEnrolledClient(
+    body: Seq[(String, String, String)] => Future[Result])(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(affinityGroup and confidenceLevel and allEnrolments) {
         case Some(affinity) ~ confidence ~ enrols =>
@@ -273,7 +273,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
 
           (affinity, confidence) match {
             case (Individual, cl) if cl >= L200 || isCgtOnlyClient => body(clientIds)
-            case (Organisation, _)                                 => body(clientIdTypePlusIds)
+            case (Organisation, _)                                 => body(clientIds)
             case _                                                 => Future successful GenericForbidden
           }
         case _ => Future successful GenericUnauthorized
