@@ -33,6 +33,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 
+import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -74,8 +75,8 @@ class IfConnectorImpl @Inject()(
 
   /* IF API#1171 Get Business Details (for ITSA customers) */
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]] = {
-    val url = s"$ifBaseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}"
-    getWithDesIfHeaders("GetRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
+    val url = new URL(s"$ifBaseUrl/registration/business-details/nino/${encodePathSegment(nino.value)}")
+    getWithIFHeaders("GetRegistrationBusinessDetailsByNino", url, viaIF = true).map { response =>
       response.status match {
         case status if is2xx(status) => (response.json \ "taxPayerDisplayResponse").asOpt[BusinessDetails]
         case status if is4xx(status) =>
@@ -92,7 +93,7 @@ class IfConnectorImpl @Inject()(
 
     val url = getTrustNameUrl(trustTaxIdentifier, appConfig.desIFEnabled)
 
-    getWithDesIfHeaders("getTrustName", url, appConfig.desIFEnabled).map { response =>
+    getWithIFHeaders("getTrustName", url, appConfig.desIFEnabled).map { response =>
       response.status match {
         case status if is2xx(status) =>
           TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
@@ -111,9 +112,9 @@ class IfConnectorImpl @Inject()(
 
   /* Get Business Details (for ITSA customers) */
   def getNinoFor(mtdId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]] = {
-    val url = s"$ifBaseUrl/registration/business-details/mtdId/${UriEncoding.encodePathSegment(mtdId.value, "UTF-8")}"
+    val url = new URL(s"$ifBaseUrl/registration/business-details/mtdId/${UriEncoding.encodePathSegment(mtdId.value, "UTF-8")}")
     agentCacheProvider.clientNinoCache(mtdId.value) {
-      getWithDesIfHeaders("GetRegistrationBusinessDetailsByMtdId", url, viaIf = true).map { response =>
+      getWithIFHeaders("GetRegistrationBusinessDetailsByMtdId", url, viaIF = true).map { response =>
         response.status match {
           case status if is2xx(status) => (response.json \ "taxPayerDisplayResponse").asOpt[NinoDesResponse].map(_.nino)
           case status if is4xx(status) =>
@@ -128,9 +129,9 @@ class IfConnectorImpl @Inject()(
 
   /* IF API#1171 Get Business Details (for ITSA customers) */
   def getMtdIdFor(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]] = {
-    val url = s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
+    val url = new URL(s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}")
     agentCacheProvider.clientMtdItIdCache(nino.value) {
-      getWithDesIfHeaders("GetRegistrationBusinessDetailsByNino", url, viaIf = true).map { response =>
+      getWithIFHeaders("GetRegistrationBusinessDetailsByNino", url, viaIF = true).map { response =>
         response.status match {
           case status if is2xx(status) => (response.json \ "taxPayerDisplayResponse").asOpt[MtdItIdIfResponse].map(_.mtdId)
           case status if is4xx(status) =>
@@ -146,9 +147,9 @@ class IfConnectorImpl @Inject()(
   /* IF API#1171 Get Business Details (for ITSA customers) */
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
     val url =
-      s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}"
+      new URL(s"$ifBaseUrl/registration/business-details/nino/${UriEncoding.encodePathSegment(nino.value, "UTF-8")}")
     agentCacheProvider.tradingNameCache(nino.value) {
-      getWithDesIfHeaders("GetTradingNameByNino", url, viaIf = true).map { response =>
+      getWithIFHeaders("GetTradingNameByNino", url, viaIF = true).map { response =>
         response.status match {
           case status if is2xx(status) =>
             (response.json \ "taxPayerDisplayResponse" \ "businessData").toOption.map(_(0) \ "tradingName").flatMap(_.asOpt[String])
@@ -164,9 +165,9 @@ class IfConnectorImpl @Inject()(
 
   //IF API#1712 PPT Subscription Display
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
-    val url = s"$ifBaseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"
+    val url = new URL(s"$ifBaseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display")
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
-      getWithDesIfHeaders("GetPptSubscriptionDisplay", url, viaIf = true).map { response =>
+      getWithIFHeaders("GetPptSubscriptionDisplay", url, viaIF = true).map { response =>
         response.status match {
           case status if is2xx(status) =>
             Some(response.json)
@@ -184,18 +185,25 @@ class IfConnectorImpl @Inject()(
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
     getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
 
-  private def getWithDesIfHeaders(apiName: String, url: String, viaIf: Boolean)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[HttpResponse] =
+  private def isInternalHost(url: URL): Boolean =
+    appConfig.internalHostPatterns.exists(_.pattern.matcher(url.getHost).matches())
+
+  private def getWithIFHeaders(apiName: String, url: URL, viaIF: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+    val headersConfig = desIfHeaders.headersConfig(viaIF, Some(apiName), hc, isInternalHost(url))
     monitor(s"ConsumedAPI-IF-$apiName-GET") {
-      httpClient.GET[HttpResponse](url, headers = desIfHeaders.outboundHeaders(viaIf, Some(apiName)))(implicitly[HttpReads[HttpResponse]], hc, ec)
+      httpClient
+        .GET[HttpResponse](url, headers = headersConfig.explicitHeaders)(implicitly[HttpReads[HttpResponse]], headersConfig.hc, ec)
     }
+  }
 
   private val utrPattern = "^\\d{10}$"
 
-  private def getTrustNameUrl(trustTaxIdentifier: String, ifEnabled: Boolean): String =
-    if (!ifEnabled) s"${appConfig.desBaseUrl}/trusts/agent-known-fact-check/$trustTaxIdentifier"
-    else if (trustTaxIdentifier.matches(utrPattern))
-      s"$ifBaseUrl/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
-    else s"$ifBaseUrl/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
+  private def getTrustNameUrl(trustTaxIdentifier: String, IFEnabled: Boolean): URL = {
+    val url =
+      if (!IFEnabled) s"${appConfig.desBaseUrl}/trusts/agent-known-fact-check/$trustTaxIdentifier"
+      else if (trustTaxIdentifier.matches(utrPattern))
+        s"$ifBaseUrl/trusts/agent-known-fact-check/UTR/$trustTaxIdentifier"
+      else s"$ifBaseUrl/trusts/agent-known-fact-check/URN/$trustTaxIdentifier"
+    new URL(url)
+  }
 }

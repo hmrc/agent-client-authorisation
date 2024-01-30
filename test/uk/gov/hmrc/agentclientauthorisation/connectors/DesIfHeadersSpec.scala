@@ -20,69 +20,81 @@ import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import uk.gov.hmrc.http.{HeaderCarrier, RequestId, SessionId}
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HeaderNames, RequestId, SessionId}
 
 import java.util.UUID
 
 class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
 
   val appConfig: AppConfig = mock[AppConfig]
-  val hc: HeaderCarrier = mock[HeaderCarrier]
   val underTest = new DesIfHeaders(appConfig)
 
   when(appConfig.ifEnvironment).thenReturn("ifEnvironment")
   when(appConfig.ifAuthTokenAPI1712).thenReturn("ifAuthTokenAPI1712")
   when(appConfig.ifAuthTokenAPI1495).thenReturn("ifAuthTokenAPI1495")
+  when(appConfig.ifAuthTokenAPI2143).thenReturn("ifAuthTokenAPI2143")
+  when(appConfig.ifAuthTokenAPI1171).thenReturn("ifAuthTokenAPI1171")
+
   when(appConfig.desEnvironment).thenReturn("desEnvironment")
   when(appConfig.desAuthToken).thenReturn("desAuthToken")
-  when(hc.sessionId).thenReturn(Option(SessionId("testSession")))
-  when(hc.requestId).thenReturn(Option(RequestId("testRequestId")))
-  "outboundHeaders" when {
+  when(appConfig.internalHostPatterns).thenReturn(Seq("\"^.*\\\\.service$\"", "^.*\\.mdtp$", "^localhost$").map(_.r))
+
+  "headersConfig" when {
 
     "is DES API" when {
 
-      "apiName is not provided" should {
+      "is internally hosted" should {
         "contain correct headers" in {
           val viaIF = false
           val apiName = None
+          val isInternalHost = true
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
 
-          assertBaseHeaders(headersMap, "desEnvironment")
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
 
-          headersMap should contain("Authorization" -> "Bearer desAuthToken")
-          headersMap should contain("x-session-id"  -> "testSession")
-          headersMap should contain("x-request-id"  -> "testRequestId")
+          headers should contain("Environment" -> "desEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should not contain key(HeaderNames.authorisation)
+          headers should not contain key(HeaderNames.xSessionId)
+          headers should not contain key(HeaderNames.xRequestId)
+
+          headerCarrier.authorization.get should be(Authorization("Bearer desAuthToken"))
+          headerCarrier.sessionId.get should be(SessionId("session-xyz"))
+          headerCarrier.requestId.get should be(RequestId("requestId"))
         }
       }
 
-      "apiName is provided" should {
+      "is externally hosted" should {
         "contain correct headers" in {
           val viaIF = false
-          val apiName = Some("fancyApi")
+          val apiName = Some("DES_API")
+          val isInternalHost = false
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
 
-          assertBaseHeaders(headersMap, "desEnvironment")
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
 
-          headersMap should contain("Authorization" -> "Bearer desAuthToken")
-          headersMap should contain("x-session-id"  -> "testSession")
-          headersMap should contain("x-request-id"  -> "testRequestId")
-        }
-      }
-
-      "apiName provided is empty" should {
-        "contain correct headers" in {
-          val viaIF = false
-          val apiName = Some("")
-
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
-
-          assertBaseHeaders(headersMap, "desEnvironment")
-
-          headersMap should contain("Authorization" -> "Bearer desAuthToken")
-          headersMap should contain("x-session-id"  -> "testSession")
-          headersMap should contain("x-request-id"  -> "testRequestId")
+          headers should contain("Environment" -> "desEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should contain(HeaderNames.authorisation -> "Bearer desAuthToken")
+          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headerCarrier == hc should be(true)
         }
       }
     }
@@ -90,47 +102,53 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
     "is IF API" when {
 
       "apiName is not provided" should {
-        "contain correct headers" in {
+        "throw an exception" in {
           val viaIF = true
           val apiName = None
+          val isInternalHost = false
+          val hc = HeaderCarrier()
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
-
-          assertBaseHeaders(headersMap, "ifEnvironment")
-
-          headersMap should not contain key("Authorization")
-          headersMap should contain("x-session-id" -> "testSession")
-          headersMap should contain("x-request-id" -> "testRequestId")
+          an[RuntimeException] shouldBe thrownBy {
+            underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
+          }
         }
       }
 
-      "apiName provided is not well known" should {
-        "contain correct headers" in {
+      "apiName is not recognised" should {
+        "throw an exception" in {
           val viaIF = true
-          val apiName = Some("fancyApi")
+          val apiName = Some("Unknown_API")
+          val isInternalHost = false
+          val hc = HeaderCarrier()
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
-
-          assertBaseHeaders(headersMap, "ifEnvironment")
-
-          headersMap should not contain key("Authorization")
-          headersMap should contain("x-session-id" -> "testSession")
-          headersMap should contain("x-request-id" -> "testRequestId")
+          an[RuntimeException] shouldBe thrownBy {
+            underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
+          }
         }
       }
-
       "apiName provided is 'getTrustName'" should {
         "contain correct headers" in {
           val viaIF = true
           val apiName = Some("getTrustName")
+          val isInternalHost = false
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
 
-          assertBaseHeaders(headersMap, "ifEnvironment")
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
 
-          headersMap should contain("Authorization" -> "Bearer ifAuthTokenAPI1495")
-          headersMap should contain("x-session-id"  -> "testSession")
-          headersMap should contain("x-request-id"  -> "testRequestId")
+          headers should contain("Environment" -> "ifEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1495")
+          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headerCarrier == hc should be(true)
         }
       }
 
@@ -138,22 +156,80 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
         "contain correct headers" in {
           val viaIF = true
           val apiName = Some("GetPptSubscriptionDisplay")
+          val isInternalHost = false
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
 
-          val headersMap = underTest.outboundHeaders(viaIF, apiName)(hc).toMap
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
 
-          assertBaseHeaders(headersMap, "ifEnvironment")
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
 
-          headersMap should contain("Authorization" -> "Bearer ifAuthTokenAPI1712")
-          headersMap should contain("x-session-id"  -> "testSession")
-          headersMap should contain("x-request-id"  -> "testRequestId")
+          headers should contain("Environment" -> "ifEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1712")
+          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headerCarrier == hc should be(true)
+        }
+      }
+
+      "apiName provided is 'getPillar2Subscription'" should {
+        "contain correct headers" in {
+          val viaIF = true
+          val apiName = Some("getPillar2Subscription")
+          val isInternalHost = false
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
+
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
+
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
+
+          headers should contain("Environment" -> "ifEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI2143")
+          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headerCarrier == hc should be(true)
+        }
+      }
+
+      "apiName provided is 'GetRegistrationBusinessDetailsByMtdId'" should {
+        "contain correct headers" in {
+          val viaIF = true
+          val apiName = Some("GetRegistrationBusinessDetailsByMtdId")
+          val isInternalHost = false
+          val hc = HeaderCarrier(
+            authorization = Some(Authorization("Bearer sessionToken")),
+            sessionId = Some(SessionId("session-xyz")),
+            requestId = Some(RequestId("requestId"))
+          )
+
+          val headersConfig = underTest.headersConfig(viaIF, apiName, hc, isInternalHost)
+
+          val headers = headersConfig.explicitHeaders.toMap
+          val headerCarrier = headersConfig.hc
+
+          headers should contain("Environment" -> "ifEnvironment")
+          headers should contain key ("CorrelationId")
+          UUID.fromString(headers("CorrelationId")) should not be null
+          headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1171")
+          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headerCarrier == hc should be(true)
         }
       }
     }
   }
 
-  private def assertBaseHeaders(headersMap: Map[String, String], environment: String) = {
-    headersMap should contain("Environment" -> environment)
-    headersMap should contain key ("CorrelationId")
-    UUID.fromString(headersMap("CorrelationId")) should not be null
-  }
 }

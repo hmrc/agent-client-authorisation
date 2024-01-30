@@ -33,6 +33,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 
+import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -68,8 +69,8 @@ class DesConnectorImpl @Inject()(
   private val baseUrl: String = appConfig.desBaseUrl
 
   def getVatDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatDetails]] = {
-    val url = s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information"
-    getWithDesIfHeaders("GetVatCustomerInformation", url).map { response =>
+    val url = new URL(s"$baseUrl/vat/customer/vrn/${encodePathSegment(vrn.value)}/information")
+    getWithDesHeaders("GetVatCustomerInformation", url, viaIF = false).map { response =>
       response.status match {
         case OK => response.json.asOpt[VatDetails]
         case NOT_FOUND =>
@@ -83,9 +84,9 @@ class DesConnectorImpl @Inject()(
 
   def getCgtSubscription(cgtRef: CgtRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[CgtSubscriptionResponse] = {
 
-    val url = s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}"
+    val url = new URL(s"$baseUrl/subscriptions/CGT/ZCGT/${cgtRef.value}")
 
-    getWithDesIfHeaders("getCgtSubscription", url).map { response =>
+    getWithDesHeaders("getCgtSubscription", url, viaIF = false).map { response =>
       val result = response.status match {
         case 200 =>
           Right(response.json.as[CgtSubscription])
@@ -101,9 +102,9 @@ class DesConnectorImpl @Inject()(
   }
 
   def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
-    val url = s"$baseUrl/pillar2/subscription?plrReference=${plrId.value}"
+    val url = new URL(s"$baseUrl/pillar2/subscription?plrReference=${plrId.value}")
     agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
-      getWithDesIfHeaders(apiName = "getPillar2Subscription", url = url, viaIf = true).map { response =>
+      getWithDesHeaders(apiName = "getPillar2Subscription", url = url, viaIF = true).map { response =>
         response.status match {
           case 200 =>
             response.json.asOpt[Pillar2Record].toRight(Pillar2Error(NOT_FOUND, Seq.empty[DesError]))
@@ -138,7 +139,7 @@ class DesConnectorImpl @Inject()(
     val agentIdValue = agentIdentifier.fold(_.value, _.value)
     agentCacheProvider
       .agencyDetailsCache(agentIdValue) {
-        getWithDesIfHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier)).map { response =>
+        getWithDesHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier), viaIF = false).map { response =>
           response.status match {
             case status if is2xx(status) => response.json.asOpt[AgentDetailsDesResponse]
             case status if is4xx(status) => None
@@ -152,18 +153,17 @@ class DesConnectorImpl @Inject()(
       }
   }
 
-  def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+  def getBusinessName(utr: Utr)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
+    val url = new URL(s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}")
+    val headersConfig = desIfHeaders.headersConfig(viaIF = false, apiName = None, hc = hc, isInternalHost(url))
+
     monitor("ConsumedAPI-DES-GetAgentRegistration-POST") {
-      val url = s"$baseUrl/registration/individual/utr/${UriEncoding.encodePathSegment(utr.value, "UTF-8")}"
 
       httpClient
-        .POST[DesRegistrationRequest, HttpResponse](
-          url,
-          body = DesRegistrationRequest(isAnAgent = false),
-          headers = desIfHeaders.outboundHeaders(viaIF = false))(
+        .POST[DesRegistrationRequest, HttpResponse](url, body = DesRegistrationRequest(isAnAgent = false), headers = headersConfig.explicitHeaders)(
           implicitly[Writes[DesRegistrationRequest]],
           implicitly[HttpReads[HttpResponse]],
-          hc,
+          headersConfig.hc,
           ec
         )
         .map { response =>
@@ -181,11 +181,12 @@ class DesConnectorImpl @Inject()(
           }
         }
     }
+  }
 
   def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]] = {
-    val url = s"$baseUrl/vat/customer/vrn/${UriEncoding.encodePathSegment(vrn.value, "UTF-8")}/information"
+    val url = new URL(s"$baseUrl/vat/customer/vrn/${UriEncoding.encodePathSegment(vrn.value, "UTF-8")}/information")
     agentCacheProvider.vatCustomerDetailsCache(vrn.value) {
-      getWithDesIfHeaders("GetVatOrganisationNameByVrn", url).map { response =>
+      getWithDesHeaders("GetVatOrganisationNameByVrn", url, viaIF = false).map { response =>
         response.status match {
           case status if is2xx(status) =>
             (response.json \ "approvedInformation" \ "customerDetails").asOpt[VatCustomerDetails]
@@ -199,21 +200,24 @@ class DesConnectorImpl @Inject()(
     }
   }
 
-  private def getWithDesIfHeaders(apiName: String, url: String, viaIf: Boolean = false)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[HttpResponse] =
-    monitor(s"ConsumedAPI-DES-$apiName-GET") {
-      httpClient.GET[HttpResponse](url, headers = desIfHeaders.outboundHeaders(viaIf, Some(apiName)))(implicitly[HttpReads[HttpResponse]], hc, ec)
-    }
+  private def isInternalHost(url: URL): Boolean =
+    appConfig.internalHostPatterns.exists(_.pattern.matcher(url.getHost).matches())
 
-  private def getAgentRecordUrl(agentId: Either[Utr, Arn]) =
+  private def getWithDesHeaders(apiName: String, url: URL, viaIF: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+    val headersConfig = desIfHeaders.headersConfig(viaIF, Some(apiName), hc, isInternalHost(url))
+    monitor(s"ConsumedAPI-DES-$apiName-GET") {
+      httpClient
+        .GET[HttpResponse](url, headers = headersConfig.explicitHeaders)(implicitly[HttpReads[HttpResponse]], headersConfig.hc, ec)
+    }
+  }
+
+  private def getAgentRecordUrl(agentId: Either[Utr, Arn]): URL =
     agentId match {
       case Right(Arn(arn)) =>
         val encodedArn = UriEncoding.encodePathSegment(arn, "UTF-8")
-        s"$baseUrl/registration/personal-details/arn/$encodedArn"
+        new URL(s"$baseUrl/registration/personal-details/arn/$encodedArn")
       case Left(Utr(utr)) =>
         val encodedUtr = UriEncoding.encodePathSegment(utr, "UTF-8")
-        s"$baseUrl/registration/personal-details/utr/$encodedUtr"
+        new URL(s"$baseUrl/registration/personal-details/utr/$encodedUtr")
     }
-
 }

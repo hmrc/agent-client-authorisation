@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.agentclientauthorisation.config
 
-import java.net.URLDecoder
+import play.api.Configuration
 
+import java.net.URLDecoder
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.agentclientauthorisation.model.BasicAuthentication
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration.Duration
+import scala.util.matching.Regex
 
 @Singleton
-class AppConfig @Inject()(servicesConfig: ServicesConfig) {
+class AppConfig @Inject()(servicesConfig: ServicesConfig, config: Configuration) {
 
   val appName = "agent-client-authorisation"
 
@@ -102,4 +104,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   val altItsaExpiryEnable: Boolean = servicesConfig.getBoolean("alt-itsa-expiry-enable")
 
   lazy val maxCallsPerSecondBusinessNames: Double = servicesConfig.getString("rate-limiter.business-names.max-calls-per-second").toDouble
+
+  val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
 }
