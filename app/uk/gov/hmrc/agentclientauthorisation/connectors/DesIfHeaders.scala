@@ -49,7 +49,7 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
       } else {
         desEnvironment
       }}",
-      CorrelationId -> UUID.randomUUID().toString,
+      CorrelationId -> UUID.randomUUID().toString
     )
 
     val additionalHeaders =
