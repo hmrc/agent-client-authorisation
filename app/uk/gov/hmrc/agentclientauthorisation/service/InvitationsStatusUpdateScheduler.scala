@@ -33,7 +33,6 @@ import scala.util.Random
 class InvitationsStatusUpdateScheduler @Inject()(
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
-  analyticsService: PlatformAnalyticsService,
   actorSystem: ActorSystem,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
@@ -47,7 +46,6 @@ class InvitationsStatusUpdateScheduler @Inject()(
       new TaskActor(
         scheduleRepository,
         invitationsService,
-        analyticsService,
         interval
       )
     })
@@ -62,11 +60,7 @@ class InvitationsStatusUpdateScheduler @Inject()(
 
 }
 
-class TaskActor(
-  scheduleRepository: ScheduleRepository,
-  invitationsService: InvitationsService,
-  analyticsService: PlatformAnalyticsService,
-  repeatInterval: Int)(implicit ec: ExecutionContext)
+class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(implicit ec: ExecutionContext)
     extends Actor {
 
   def receive = {
@@ -83,10 +77,9 @@ class TaskActor(
               .write(newUid, nextRunAt, InvitationExpired)
               .map(_ => {
                 context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
-                Logger(getClass).info(s"Starting update invitation status job, next job is scheduled at $nextRunAt")
-                invitationsService
-                  .findAndUpdateExpiredInvitations()
-                  .map(_ => analyticsService.reportExpiredInvitations())
+                Logger(getClass).info(s"started 'findAndUpdateExpiredInvitations' job, next job is scheduled at $nextRunAt")
+                invitationsService.findAndUpdateExpiredInvitations()
+                Logger(getClass).info("finished 'findAndUpdateExpiredInvitations' job")
               })
           } else {
             val localDateTime = if (runAt.isBefore(now)) now else runAt

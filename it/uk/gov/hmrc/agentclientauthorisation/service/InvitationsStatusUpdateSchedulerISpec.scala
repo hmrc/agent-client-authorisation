@@ -59,7 +59,7 @@ class InvitationsStatusUpdateSchedulerISpec
 
   val testKit = ActorTestKit()
 
-  val actorRef = system.actorOf(Props(new TaskActor(schedulerRepository,invitationsService, analyticsService, 60)))
+  val actorRef = system.actorOf(Props(new TaskActor(schedulerRepository, invitationsService, 60)))
 
   "InvitationsStatusUpdateScheduler" should {
 

@@ -167,9 +167,6 @@ trait TestDataSupport {
     override def removeAllInvitationsForAgent(arn: Arn): Future[Int] =
       Future failed new Exception(s"Unable to remove Invitations for ${arn.value}")
 
-    override def getExpiredInvitationsForGA(expiredWithin: Long): Future[List[Invitation]] =
-      Future failed new Exception(s"Unable to retrieve Expired Invitations")
-
     override def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to retrieve latest invitation for a client")
 

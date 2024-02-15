@@ -252,6 +252,7 @@ class InvitationsService @Inject()(
     } yield invs.filter(!_._2.getOrElse(false)).map(_._1)
   }
 
+  //this is called via scheduled job
   def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     invitationsRepository
       .findInvitationsBy(status = Some(Pending))
@@ -291,16 +292,22 @@ class InvitationsService @Inject()(
     else
       currentTime().toEpochSecond(ZoneOffset.UTC) - invitation.firstEvent().time.toEpochSecond(ZoneOffset.UTC)
 
-  def removePersonalDetails(): Future[Unit] = {
+  //this is called via scheduled job
+  def removePersonalDetails()(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.info("started 'removePersonalDetails' job")
     val infoRemovalDate =
       Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime.minusSeconds(appConfig.removePersonalInfoExpiryDuration.toSeconds.toInt)
-    invitationsRepository.removePersonalDetails(infoRemovalDate)
+    invitationsRepository
+      .removePersonalDetails(infoRemovalDate)
+      .map(_ => logger.info("finished 'removePersonalDetails' job"))
   }
 
   def removeAllInvitationsForAgent(arn: Arn): Future[Int] =
     invitationsRepository.removeAllInvitationsForAgent(arn)
 
-  def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] =
+  //this is called via scheduled job
+  def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.info("started 'prepareAndSendWarningEmail' job")
     invitationsRepository
       .findInvitationsBy(status = Some(Pending))
       .map(
@@ -312,10 +319,14 @@ class InvitationsService @Inject()(
             emailService.sendWarningToExpire(list)
         }
       }
-      .map(_ => ())
+      .map(_ => logger.info("finished 'prepareAndSendWarningEmail' job"))
+  }
 
+  //this is called via scheduled job
   def cancelOldAltItsaInvitations()(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
+    logger.info("started 'cancelOldAltItsaInvitations' job")
+
     for {
       partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
       expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(currentTime()))
@@ -339,7 +350,7 @@ class InvitationsService @Inject()(
               .map[Invitation](_ => throw e)
         }
       })
-    } yield ()
+    } yield logger.info("finished 'cancelOldAltItsaInvitations' job")
   }
 
   def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =

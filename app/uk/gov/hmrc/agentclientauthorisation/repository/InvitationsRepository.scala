@@ -69,7 +69,6 @@ trait InvitationsRepository {
     status: Option[InvitationStatus]): Future[List[InvitationInfo]]
   def removePersonalDetails(startDate: LocalDateTime): Future[Unit]
   def removeAllInvitationsForAgent(arn: Arn): Future[Int]
-  def getExpiredInvitationsForGA(expiredWithin: Long): Future[List[Invitation]]
   def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation]
 }
 
@@ -81,6 +80,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
       domainFormat = InvitationRecordFormat.invitationFormat,
       indexes = Seq(
         IndexModel(ascending(InvitationRecordFormat.invitationIdKey), IndexOptions().name("invitationIdIndex").unique(true).sparse(true)),
+        IndexModel(ascending(InvitationRecordFormat.statusKey), IndexOptions().name("findInvitationsByStatusIndex")),
         IndexModel(ascending(InvitationRecordFormat.arnClientStateKey)),
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey)),
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey, InvitationRecordFormat.createdKey)),
@@ -298,18 +298,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
           logger.info(s"Deleted ${deleteManyResult.getDeletedCount} records for provided ARN")
           deleteManyResult.getDeletedCount.toInt
         })
-    }
-
-  override def getExpiredInvitationsForGA(expiredWithin: Long): Future[List[Invitation]] =
-    monitor(s"InvitationsRepository-getExpiredInvitationsForGA") {
-      collection
-        .find(
-          and(
-            equal("events.status", "Expired"),
-            gte("events.time", Instant.from(LocalDateTime.now.minusSeconds(expiredWithin).atZone(ZoneOffset.UTC)).toEpochMilli)))
-        .sort(descending(InvitationRecordFormat.createdKey))
-        .toFuture()
-        .map(_.toList)
     }
 
 }

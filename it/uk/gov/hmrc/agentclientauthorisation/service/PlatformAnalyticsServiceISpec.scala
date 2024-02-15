@@ -47,13 +47,9 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with PlatformAnalyticsStubs
   val intervalMillis = appConfig.invitationUpdateStatusInterval.seconds.toMillis
   val batchSize = appConfig.gaBatchSize
 
-  private val actorSystem = app.injector.instanceOf[ActorSystem]
-
   private lazy val service = new PlatformAnalyticsService(
-    invitationsRepo,
     analyticsConnector,
-    appConfig,
-    actorSystem
+    appConfig
   )
 
   private def expireInvitations(i:List[Invitation], recently: Boolean): List[String] = {
@@ -98,38 +94,4 @@ class PlatformAnalyticsServiceISpec extends UnitSpec with PlatformAnalyticsStubs
     testClients.foreach(client => await(createInvitation(client)))
   }
 
-  "PlatformAnalyticsService" should {
-
-    "find invitations that may have expired only since the last update scheduler and send" in new TestSetup {
-
-      val all = await(invitationsRepo.collection.find().toFuture()).toList
-
-      expireInvitations(all.take(1), false)
-      val _ = expireInvitations(all.drop(1), true)
-
-      givenPlatformAnalyticsRequestSent(false)
-      givenPlatformAnalyticsRequestSent(false)
-      givenPlatformAnalyticsRequestSent(true)
-
-      val result = await(service.reportExpiredInvitations())
-
-      result shouldBe (())
-
-      verifyAnalyticsRequestSent(1)
-
-    }
-  }
-
-  "not find any invitations if they expired before the last update scheduler run" in new TestSetup {
-
-    val all = await(invitationsRepo.collection.find().toFuture()).toList
-    expireInvitations(all, false)
-
-    val result = await(service.reportExpiredInvitations())
-
-    result shouldBe (())
-
-    verifyAnalyticsRequestWasNotSent()
-
-  }
 }

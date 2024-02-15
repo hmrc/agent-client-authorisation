@@ -19,29 +19,19 @@ package uk.gov.hmrc.agentclientauthorisation.service
 import java.util.UUID
 
 import akka.Done
-import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.PlatformAnalyticsConnector
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.util.hashing.{MurmurHash3 => MH3}
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PlatformAnalyticsService @Inject()(
-  repository: InvitationsRepository,
-  connector: PlatformAnalyticsConnector,
-  appConfig: AppConfig,
-  actorSystem: ActorSystem) {
+class PlatformAnalyticsService @Inject()(connector: PlatformAnalyticsConnector, appConfig: AppConfig) {
 
-  private val interval = appConfig.invitationUpdateStatusInterval
-  private val expiredWithin: Long = interval.seconds.toSeconds
-  private val batchSize = appConfig.gaBatchSize
   private val trackingId = appConfig.gaTrackingId
   private val clientTypeIndex = appConfig.gaClientTypeIndex
   private val invitationIdIndex = appConfig.gaInvitationIdIndex
@@ -49,20 +39,6 @@ class PlatformAnalyticsService @Inject()(
   private val altItsaIndex = appConfig.gaAltItsaIndex
 
   val logger = Logger(getClass)
-
-  def reportExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
-    repository
-      .getExpiredInvitationsForGA(expiredWithin)
-      .map { expired =>
-        logger.info(s"sending GA events for expired invitations (total size: ${expired.size})")
-        expired
-          .grouped(batchSize)
-          .foreach { batch =>
-            sendAnalyticsRequest(batch, Some(makeGAClientId))(
-              HeaderCarrier(extraHeaders = List("AuthorisationRequestSendEvent-Batch-Size" -> s"${batch.size}")),
-              ec)
-          }
-      }
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
     logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
