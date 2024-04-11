@@ -215,6 +215,7 @@ class AgentServicesControllerISpec extends BaseISpec {
       val result = getCurrentAgencyDetails
       result.status shouldBe OK
       result.json shouldBe Json.obj(
+        "agencyDetails" -> Json.obj(
         "agencyEmail" -> "abc@xyz.com",
         "agencyTelephone" -> "07345678901",
         "agencyName" -> "ACME",
@@ -225,15 +226,17 @@ class AgentServicesControllerISpec extends BaseISpec {
           "addressLine4" -> "Telford",
           "postalCode" -> "TF3 4ER",
           "countryCode" -> "GB"
-        ))
+        )), "suspensionDetails" -> Json.obj(
+          "suspensionStatus" -> false),
+        "uniqueTaxReference" -> "01234567890")
     }
 
-    "return NoContent after successful response but there is no agencyDetails" in {
+    "return OK after successful response but there are no agencyDetails, uniqueTaxReference or suspensionDetails" in {
       givenAuthorisedAsAgent(arn)
       givenDESRespondsWithoutValidData(arn)
 
       val result = getCurrentAgencyDetails
-      result.status shouldBe NO_CONTENT
+      result.status shouldBe OK
     }
 
     "return an exception when there is an unsuccessful response" in {

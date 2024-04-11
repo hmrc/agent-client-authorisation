@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
+import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.utr
 import uk.gov.hmrc.agentclientauthorisation.support.{AkkaMaterializerSpec, ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.PersonalIncomeRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service, SuspensionDetails, Utr}
@@ -118,11 +119,11 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
         SimplifiedAgentRefRecord("ABCDEFGH", arn, "anne-mari")
 
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(
-          Future.successful(
-            Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("anne-mari"), Some("email"), Some("phone"), Some(businessAddress))),
-              Some(SuspensionDetails(suspensionStatus = false, None))))))
+        .thenReturn(Future.successful(Some(AgentDetailsDesResponse(
+          Some(utr),
+          Option(model.AgencyDetails(Some("anne-mari"), Some("email"), Some("phone"), Some(businessAddress))),
+          Some(SuspensionDetails(suspensionStatus = false, None))
+        ))))
 
       when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future.successful(Some(agentReferenceRecord)))
