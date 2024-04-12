@@ -20,7 +20,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, DesStubs, UnitSpec}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, PlrId, SuspensionDetails, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, PlrId, SuspensionDetails, Utr, Vrn}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import java.time.LocalDate
@@ -203,7 +203,9 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val result = await(connector.getAgencyDetails(Right(Arn(arn))))
       result shouldBe Some(
-        AgentDetailsDesResponse(Some(
+        AgentDetailsDesResponse(
+          Some(Utr("01234567890")),
+          Some(
           AgencyDetails(
             Some("My Agency Ltd"),
             Some("abc@xyz.com"),
@@ -225,7 +227,7 @@ class DesConnectorISpec extends UnitSpec with AppAndStubs with DesStubs {
 
       val result = await(connector.getAgencyDetails(Right(Arn(arn))))
 
-      result shouldBe Some(AgentDetailsDesResponse(None, None))
+      result shouldBe Some(AgentDetailsDesResponse(None, None, None))
     }
   }
 

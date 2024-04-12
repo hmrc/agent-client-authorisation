@@ -277,7 +277,6 @@ class AgentServicesController @Inject()(
   private def getAgencyDetails(agentId: Either[Utr, Arn])(implicit hc: HeaderCarrier) =
     desConnector
       .getAgencyDetails(agentId)
-      .map(_.flatMap(_.agencyDetails))
       .map {
         case Some(agencyDetails) => Ok(Json.toJson(agencyDetails))
         case None                => NoContent

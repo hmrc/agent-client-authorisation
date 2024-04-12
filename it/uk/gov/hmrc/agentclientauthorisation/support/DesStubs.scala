@@ -487,7 +487,8 @@ trait DesStubs {
        |   "isAnASAgent" : true,
        |   "isAnIndividual" : false,
        |   "businessPartnerExists" : true,
-       |   "agentReferenceNumber" : "TestARN"
+       |   "agentReferenceNumber" : "TestARN",
+       |   "uniqueTaxReference": "01234567890"
        |}
             """.stripMargin
 

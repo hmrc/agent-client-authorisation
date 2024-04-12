@@ -71,11 +71,11 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future successful Some(agentReferenceRecord))
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(
-          Future.successful(
-            Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
-              Some(SuspensionDetails(suspensionStatus = false, None))))))
+        .thenReturn(Future.successful(Some(AgentDetailsDesResponse(
+          Some(utr),
+          Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+          Some(SuspensionDetails(suspensionStatus = false, None))
+        ))))
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
         .thenReturn(Future.successful(()))
 
@@ -89,11 +89,11 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.create(any[AgentReferenceRecord]))
         .thenReturn(Future successful Some("id"))
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(
-          Future.successful(
-            Some(AgentDetailsDesResponse(
-              Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
-              Some(SuspensionDetails(suspensionStatus = false, None))))))
+        .thenReturn(Future.successful(Some(AgentDetailsDesResponse(
+          Some(utr),
+          Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+          Some(SuspensionDetails(suspensionStatus = false, None))
+        ))))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 
