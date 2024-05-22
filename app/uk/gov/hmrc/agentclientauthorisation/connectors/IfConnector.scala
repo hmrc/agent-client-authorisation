@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
 import play.api.Logging
+import play.api.http.Status.NOT_FOUND
 import play.api.libs.json.Reads._
 import play.api.libs.json.JsValue
 import play.utils.UriEncoding
@@ -58,6 +59,10 @@ trait IfConnector {
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]]
 
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]]
+
+  def getPillar2Details(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2DetailsResponse]
+
+  def getPillar2Subscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2SubscriptionResponse]
 
 }
 
@@ -184,6 +189,40 @@ class IfConnectorImpl @Inject()(
   //IF API#1712 PPT Subscription Display
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
     getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
+
+  //IF API#2143 Pillar 2 Subscription Display
+  def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
+    val url = new URL(s"$ifBaseUrl/pillar2/subscription?plrReference=${plrId.value}")
+    agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
+      getWithIFHeaders(apiName = "getPillar2Subscription", url = url, viaIF = true).map { response =>
+        response.status match {
+          case 200 =>
+            response.json.asOpt[Pillar2Record].toRight(Pillar2Error(NOT_FOUND, Seq.empty[DesError]))
+          case _ =>
+            Try((response.json \ "failures").asOpt[Seq[DesError]] match {
+              case Some(e) => Left(Pillar2Error(response.status, e))
+              case None    => Left(Pillar2Error(response.status, Seq(response.json.as[DesError])))
+            }).toOption
+              .getOrElse(Left(Pillar2Error(response.status, Seq.empty[DesError])))
+        }
+      }
+    }
+  }
+
+  override def getPillar2Subscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2SubscriptionResponse] =
+    getPillar2RecordSubscription(plrId)
+      .map(_.map(Pillar2Subscription.fromPillar2Record))
+      .map(Pillar2SubscriptionResponse)
+
+  override def getPillar2Details(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2DetailsResponse] =
+    getPillar2RecordSubscription(plrId)
+      .map(_.left.map {
+        case e @ Pillar2Error(NOT_FOUND, _) => e
+        case e =>
+          throw UpstreamErrorResponse("e.errors.toString()", e.httpResponseCode)
+      })
+      .map(_.map(Pillar2Details.fromPillar2Record))
+      .map(Pillar2DetailsResponse)
 
   private def isInternalHost(url: URL): Boolean =
     appConfig.internalHostPatterns.exists(_.pattern.matcher(url.getHost).matches())

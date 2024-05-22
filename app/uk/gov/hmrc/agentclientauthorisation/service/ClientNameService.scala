@@ -121,5 +121,5 @@ class ClientNameService @Inject()(
     eisConnector.getCbcSubscription(cbcId).map(_.flatMap(_.anyAvailableName))
 
   def getPillar2CustomerName(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
-    desConnector.getPillar2Subscription(plrId).map(_.response.map(_.organisationName).toOption)
+    ifConnector.getPillar2Subscription(plrId).map(_.response.map(_.organisationName).toOption)
 }

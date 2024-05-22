@@ -29,7 +29,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetailsConnector: CitizenDetailsConnector) {
+class KnownFactsCheckService @Inject()(desConnector: DesConnector, ifConnector: IfConnector, citizenDetailsConnector: CitizenDetailsConnector) {
 
   def clientVatRegistrationCheckResult(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
@@ -51,7 +51,7 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, citizenDetail
   def clientPillar2RegistrationCheckResult(plrId: PlrId, suppliedPillar2RegistrationDate: LocalDate)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Pillar2KnownFactCheckResult] =
-    desConnector
+    ifConnector
       .getPillar2Details(plrId)
       .map {
         _.response match {

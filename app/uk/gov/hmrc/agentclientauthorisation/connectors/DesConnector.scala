@@ -36,7 +36,6 @@ import uk.gov.hmrc.http._
 import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 @ImplementedBy(classOf[DesConnectorImpl])
 trait DesConnector {
@@ -51,9 +50,6 @@ trait DesConnector {
 
   def getVatCustomerDetails(vrn: Vrn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[VatCustomerDetails]]
 
-  def getPillar2Details(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2DetailsResponse]
-
-  def getPillar2Subscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2SubscriptionResponse]
 }
 
 @Singleton
@@ -100,39 +96,6 @@ class DesConnectorImpl @Inject()(
       CgtSubscriptionResponse(result)
     }
   }
-
-  def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
-    val url = new URL(s"$baseUrl/pillar2/subscription?plrReference=${plrId.value}")
-    agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
-      getWithDesHeaders(apiName = "getPillar2Subscription", url = url, viaIF = true).map { response =>
-        response.status match {
-          case 200 =>
-            response.json.asOpt[Pillar2Record].toRight(Pillar2Error(NOT_FOUND, Seq.empty[DesError]))
-          case _ =>
-            Try((response.json \ "failures").asOpt[Seq[DesError]] match {
-              case Some(e) => Left(Pillar2Error(response.status, e))
-              case None    => Left(Pillar2Error(response.status, Seq(response.json.as[DesError])))
-            }).toOption
-              .getOrElse(Left(Pillar2Error(response.status, Seq.empty[DesError])))
-        }
-      }
-    }
-  }
-
-  def getPillar2Subscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2SubscriptionResponse] =
-    getPillar2RecordSubscription(plrId)
-      .map(_.map(Pillar2Subscription.fromPillar2Record))
-      .map(Pillar2SubscriptionResponse)
-
-  def getPillar2Details(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Pillar2DetailsResponse] =
-    getPillar2RecordSubscription(plrId)
-      .map(_.left.map {
-        case e @ Pillar2Error(NOT_FOUND, _) => e
-        case e =>
-          throw UpstreamErrorResponse("e.errors.toString()", e.httpResponseCode)
-      })
-      .map(_.map(Pillar2Details.fromPillar2Record))
-      .map(Pillar2DetailsResponse)
 
   def getAgencyDetails(
     agentIdentifier: Either[Utr, Arn])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] = {

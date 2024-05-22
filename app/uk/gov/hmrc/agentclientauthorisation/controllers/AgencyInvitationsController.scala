@@ -345,7 +345,7 @@ class AgencyInvitationsController @Inject()(
 
   def getPillar2SubscriptionDetails(plrId: PlrId): Action[AnyContent] = Action.async { implicit request =>
     withBasicAuth {
-      desConnector
+      ifConnector
         .getPillar2Subscription(plrId)
         .map {
           _.response match {
