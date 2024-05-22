@@ -190,7 +190,7 @@ class IfConnectorImpl @Inject()(
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
     getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
 
-  //IF API#1712 PPT Subscription Display
+  //IF API#2143 Pillar 2 Subscription Display
   def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
     val url = new URL(s"$ifBaseUrl/pillar2/subscription?plrReference=${plrId.value}")
     agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
