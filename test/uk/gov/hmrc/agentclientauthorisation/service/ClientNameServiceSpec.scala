@@ -177,7 +177,7 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
   "getPillar2Name" should {
     "get the organisation name if there is no trading name" in {
-      (mockDesConnector
+      (mockIfConnector
         .getPillar2Subscription(_: PlrId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(plrId, *, *)
         .returns(Future(Pillar2SubscriptionResponse(

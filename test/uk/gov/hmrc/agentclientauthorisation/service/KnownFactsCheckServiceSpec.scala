@@ -37,9 +37,10 @@ import scala.concurrent.Future
 class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with TransitionInvitation {
 
   val desConnector: DesConnector = mock[DesConnector]
+  val ifConnector: IfConnector = mock[IfConnector]
   val citizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
 
-  val service = new KnownFactsCheckService(desConnector, citizenDetailsConnector)
+  val service = new KnownFactsCheckService(desConnector, ifConnector, citizenDetailsConnector)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -173,7 +174,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val pillar2RegDateInETMP = LocalDate.parse("2001-02-03")
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, false))))
 
       await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2KnownFactCheckOk
@@ -183,7 +184,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val pillar2RegDateInETMP = LocalDate.parse("2001-02-03")
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, true))))
 
       await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2RecordClientInactive
@@ -193,7 +194,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val pillar2RegDateInETMP = LocalDate.parse("2001-02-04")
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, false))))
 
       await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2KnownFactNotMatched
@@ -203,7 +204,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
       val pillar2RegDateInETMP = LocalDate.parse("2001-02-04")
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future successful Pillar2DetailsResponse(Right(Pillar2Details(pillar2RegDateInETMP, true))))
 
       await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2RecordClientInactive
@@ -212,7 +213,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
     "return Pillar2DetailsNotFound if the Pillar2 Customer Information in ETMP  return Error" in {
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future successful Pillar2DetailsResponse(Left(Pillar2Error(402, Seq.empty))))
 
       await(service.clientPillar2RegistrationCheckResult(clientPlrId, pillar2RegDateSupplied)) shouldBe Pillar2DetailsNotFound
@@ -221,7 +222,7 @@ class KnownFactsCheckServiceSpec extends UnitSpec with MockitoSugar with BeforeA
     "throw Upstream5xxResponse if DES is unavailable" in {
       val pillar2RegDateSupplied = LocalDate.parse("2001-02-03")
 
-      when(desConnector.getPillar2Details(clientPlrId))
+      when(ifConnector.getPillar2Details(clientPlrId))
         .thenReturn(Future failed UpstreamErrorResponse("error", 502, 503))
 
       assertThrows[UpstreamErrorResponse] {
