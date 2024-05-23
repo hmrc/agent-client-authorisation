@@ -192,7 +192,7 @@ class IfConnectorImpl @Inject()(
 
   //IF API#2143 Pillar 2 Subscription Display
   def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
-    val url = new URL(s"$ifBaseUrl/pillar2/subscription?plrReference=${plrId.value}")
+    val url = new URL(s"$ifBaseUrl/pillar2/subscription/${plrId.value}")
     agentCacheProvider.pillar2SubscriptionCache(plrId.value) {
       getWithIFHeaders(apiName = "getPillar2Subscription", url = url, viaIF = true).map { response =>
         response.status match {
