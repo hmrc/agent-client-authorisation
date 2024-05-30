@@ -44,11 +44,11 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
         logger.warn("Lock acquired. Starting query....")
         for {
           queryResult <- invitationsRepository.findDuplicateInvitations
-          _ = logger.warn(s"Found: ${queryResult.size} duplicate invitations. Now deleting the duplicates...")
+          _ = logger.warn(s"Found: ${queryResult.map(_.toDelete).sum} duplicate invitations. Now deleting the duplicates...")
           objectIds <- Future.sequence(queryResult.map(invitationsRepository.getObjectIdsForInvitations))
-          _ = objectIds.flatten.map(id => invitationsRepository.deleteOne(id))
-          check <- invitationsRepository.findDuplicateInvitations
-        } yield logger.warn(s"Query complete. Check: ${check.size} duplicates remain.")
+          _         <- Future.sequence(objectIds.flatten.map(id => invitationsRepository.deleteOne(id)))
+          check     <- invitationsRepository.findDuplicateInvitations
+        } yield logger.warn(s"Query complete. Check: ${check.map(_.toDelete).sum} duplicates remain.")
       }
       .map {
         case Some(_) => logger.warn(s"$LOCK_ID has been released.")

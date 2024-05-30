@@ -308,7 +308,6 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
         })
     }
 
-
   override def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]] =
     collection
       .aggregate[Document](
