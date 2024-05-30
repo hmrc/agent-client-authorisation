@@ -688,6 +688,190 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
+
+  "findDuplicateInvitations" should {
+    "return Seq[DuplicateInvitationResult]" in {
+      val itsaInvitation1 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      val vatInvitation = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+
+      val pirInvitation = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.PersonalIncomeRecord,
+        Nino("AB123456B"),
+        Nino("AB123456A"),
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+
+      lazy val vatInvitation2 = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+      lazy val itsaInvitation2 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      await(repository.collection.insertOne(itsaInvitation1).toFuture())
+      await(repository.collection.insertOne(vatInvitation).toFuture())
+      await(repository.collection.insertOne(pirInvitation).toFuture())
+      await(repository.collection.insertOne(vatInvitation2).toFuture())
+      await(repository.collection.insertOne(itsaInvitation2).toFuture())
+
+      val result = await(repository.findDuplicateInvitations)
+
+      result.size shouldBe 2
+
+      result.contains(
+        DuplicateInvitationResult(1, InvitationDetails(arn,"AA000003D","HMRC-MTD-IT"))) shouldBe true
+
+      result.contains(
+        DuplicateInvitationResult(1, InvitationDetails(arn, "442820662","HMRC-MTD-VAT"))) shouldBe true
+
+    }
+  }
+
+  "getObjectIdsForInvitations" should {
+    "return Seq[ObjectId]" in {
+
+      val itsaInvitation1 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      val vatInvitation = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+
+      val pirInvitation = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.PersonalIncomeRecord,
+        Nino("AB123456B"),
+        Nino("AB123456A"),
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+
+      lazy val vatInvitation2 = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+      lazy val itsaInvitation2 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      await(repository.collection.insertOne(itsaInvitation1).toFuture())
+      await(repository.collection.insertOne(vatInvitation).toFuture())
+      await(repository.collection.insertOne(pirInvitation).toFuture())
+      await(repository.collection.insertOne(vatInvitation2).toFuture())
+      await(repository.collection.insertOne(itsaInvitation2).toFuture())
+
+      val result = await(repository.getObjectIdsForInvitations(
+        DuplicateInvitationResult(1,InvitationDetails(arn, nino.value, "HMRC-MTD-IT"))))
+
+      result.head shouldBe itsaInvitation2._id
+
+    }
+  }
+
+  "deleteOne" should {
+    "delete one invitation" in {
+
+
+      val itsaInvitation1 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      val vatInvitation = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+
+      val pirInvitation = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.PersonalIncomeRecord,
+        Nino("AB123456B"),
+        Nino("AB123456A"),
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+
+      lazy val vatInvitation2 = Invitation
+        .createNew(Arn(arn), Some("personal"), Service.Vat, Vrn("442820662"), Vrn("442820662"), None,
+          now, now.plusDays(21).toLocalDate, None)
+
+      lazy val itsaInvitation2 = Invitation.createNew(
+        Arn(arn),
+        Some("personal"),
+        Service.MtdIt,
+        MtdItId("ABCD123456C"),
+        nino,
+        None,
+        now,
+        now.plusDays(21).toLocalDate,
+        None)
+
+      await(repository.collection.insertOne(itsaInvitation1).toFuture())
+      await(repository.collection.insertOne(vatInvitation).toFuture())
+      await(repository.collection.insertOne(pirInvitation).toFuture())
+      await(repository.collection.insertOne(vatInvitation2).toFuture())
+      await(repository.collection.insertOne(itsaInvitation2).toFuture())
+
+      val result = await(repository.deleteOne(itsaInvitation1._id))
+
+      val check = await(repository.collection.find().toFuture()).size shouldBe 4
+    }
+  }
+
   private def addInvitation(startDate: LocalDateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
 
   private def addInvitations(startDate: LocalDateTime, invitations: Invitation*) =

@@ -19,9 +19,11 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
+import org.mongodb.scala.Document
+import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Updates}
+import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -70,6 +72,12 @@ trait InvitationsRepository {
   def removePersonalDetails(startDate: LocalDateTime): Future[Unit]
   def removeAllInvitationsForAgent(arn: Arn): Future[Int]
   def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation]
+
+  def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]]
+
+  def getObjectIdsForInvitations(duplicateInvitationResult: DuplicateInvitationResult): Future[Seq[ObjectId]]
+
+  def deleteOne(id: ObjectId): Future[Unit]
 }
 
 @Singleton
@@ -299,5 +307,42 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
           deleteManyResult.getDeletedCount.toInt
         })
     }
+
+
+  override def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]] =
+    collection
+      .aggregate[Document](
+        List(
+          Aggregates.filter(equal("_status", "Pending")),
+          Aggregates
+            .group(
+              Document("""{ _key: {arnValue: "$arn", suppliedClientIdValue: "$suppliedClientId", serviceValue: "$service" }}"""),
+              Accumulators.sum("counter", 1))
+            .toBsonDocument,
+          Aggregates.filter(Filters.gt("counter", 1))
+        )
+      )
+      .map(DuplicateInvitationResult.fromDocument)
+      .toFuture()
+
+  override def getObjectIdsForInvitations(duplicateInvitationResult: DuplicateInvitationResult): Future[Seq[ObjectId]] =
+    collection
+      .find(
+        Filters
+          .and(
+            equal("arn", duplicateInvitationResult.invitationDetails.arn),
+            equal("suppliedClientId", duplicateInvitationResult.invitationDetails.suppliedClientId),
+            equal("service", duplicateInvitationResult.invitationDetails.service)
+          ))
+      .sort(descending("_created"))
+      .limit(duplicateInvitationResult.toDelete)
+      .map(_._id)
+      .toFuture()
+
+  override def deleteOne(id: ObjectId): Future[Unit] =
+    collection
+      .deleteOne(Filters.equal(ID, id))
+      .toFuture()
+      .map(_ => ())
 
 }
