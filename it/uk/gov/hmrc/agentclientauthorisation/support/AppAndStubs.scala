@@ -100,7 +100,7 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBefo
 
   override def moduleWithOverrides: AbstractModule = new AbstractModule {
     override def configure: Unit = {
-      bind(classOf[MongoComponent]).toInstance(mongoComponent)
+     // bind(classOf[MongoComponent]).toInstance(mongoComponent)
     }
   }
 

@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
+import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Updates}
@@ -84,14 +85,19 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
         IndexModel(ascending(InvitationRecordFormat.arnClientStateKey)),
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey)),
         IndexModel(ascending(InvitationRecordFormat.arnClientServiceStateKey, InvitationRecordFormat.createdKey)),
-        IndexModel(ascending(InvitationRecordFormat.createdKey))
+        IndexModel(ascending(InvitationRecordFormat.createdKey)),
+        IndexModel(
+          ascending(InvitationRecordFormat.arnKey, InvitationRecordFormat.serviceKey, InvitationRecordFormat.suppliedClientIdKey),
+          IndexOptions().partialFilterExpression(BsonDocument(InvitationRecordFormat.statusKey -> "Pending")).unique(true)
+        )
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(InvitationId.idFormats),
         Codecs.playFormatCodec(Format(Arn.arnReads, Arn.arnWrites)),
         Codecs.playFormatCodec(StatusChangeEvent.statusChangeEventFormat),
         Codecs.playFormatCodec(MongoLocalDateTimeFormat.localDateTimeFormat)
-      )
+      ),
+      replaceIndexes = true
     ) with InvitationsRepository with Logging with Monitor {
 
   final val ID = "_id"
