@@ -333,15 +333,15 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
             equal("suppliedClientId", duplicateInvitationResult.invitationDetails.suppliedClientId),
             equal("service", duplicateInvitationResult.invitationDetails.service)
           ))
-      .sort(descending("_created"))
+      .sort(ascending("_created"))
       .limit(duplicateInvitationResult.toDelete)
       .map(_._id)
       .toFuture()
 
   override def deleteMany(ids: Seq[ObjectId]): Future[Unit] =
     collection
-      .deleteMany(Filters.in(ID, ids))
+      .deleteMany(Filters.in(ID, ids: _*))
       .toFuture()
-      .map(_ => ())
+      .map(dr => logger.warn(s"deleted count ${dr.getDeletedCount}"))
 
 }

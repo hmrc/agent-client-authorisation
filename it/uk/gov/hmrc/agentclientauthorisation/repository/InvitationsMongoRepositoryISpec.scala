@@ -808,13 +808,13 @@ class InvitationsMongoRepositoryISpec
       val result = await(repository.getObjectIdsForInvitations(
         DuplicateInvitationResult(1,InvitationDetails(arn, nino.value, "HMRC-MTD-IT"))))
 
-      result.head shouldBe itsaInvitation2._id
+      result.head shouldBe itsaInvitation1._id
 
     }
   }
 
-  "deleteOne" should {
-    "delete one invitation" in {
+  "deleteMany" should {
+    "delete many invitations" in {
 
 
       val itsaInvitation1 = Invitation.createNew(
@@ -866,9 +866,9 @@ class InvitationsMongoRepositoryISpec
       await(repository.collection.insertOne(vatInvitation2).toFuture())
       await(repository.collection.insertOne(itsaInvitation2).toFuture())
 
-      val result = await(repository.deleteOne(itsaInvitation1._id))
+      val result = await(repository.deleteMany(List(itsaInvitation1._id, itsaInvitation2._id)))
 
-      val check = await(repository.collection.find().toFuture()).size shouldBe 4
+      val check = await(repository.collection.find().toFuture()).size shouldBe 3
     }
   }
 

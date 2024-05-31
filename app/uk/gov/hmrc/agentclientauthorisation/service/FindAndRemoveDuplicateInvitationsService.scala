@@ -46,13 +46,19 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
           queryResult <- invitationsRepository.findDuplicateInvitations
           _ = logger.warn(s"Found: ${queryResult.map(_.toDelete).sum} duplicate invitations. Now deleting the duplicates...")
           objectIds <- Future.sequence(queryResult.map(invitationsRepository.getObjectIdsForInvitations))
-          _         <- invitationsRepository.deleteMany(objectIds.flatten)
-          check     <- invitationsRepository.findDuplicateInvitations
-        } yield logger.warn(s"Query complete. Check: ${check.map(_.toDelete).sum} duplicates remain.")
+          objectIdCount = objectIds.flatten.size
+          toDeleteCount = queryResult.map(_.toDelete).sum
+          _ = logger.warn(s"object id count: $objectIdCount; marked for deletion: $toDeleteCount")
+          _ = if (objectIdCount != toDeleteCount) throw new Exception("check your logic....") else ()
+          _ <- invitationsRepository.deleteMany(objectIds.flatten)
+        } yield ()
       }
       .map {
-        case Some(_) => logger.warn(s"$LOCK_ID has been released.")
-        case None    => logger.warn(s"Failed to take lock $LOCK_ID")
+        case Some(_) =>
+          invitationsRepository.findDuplicateInvitations
+            .map(check => logger.warn(s"Query complete. Check: ${check.map(_.toDelete).sum} duplicates remain."))
+
+        case None => logger.warn(s"Failed to take lock $LOCK_ID")
       }
   } else logger.warn("Startup mongo query not enabled.")
 }
