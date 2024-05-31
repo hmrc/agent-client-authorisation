@@ -46,7 +46,7 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
           queryResult <- invitationsRepository.findDuplicateInvitations
           _ = logger.warn(s"Found: ${queryResult.map(_.toDelete).sum} duplicate invitations. Now deleting the duplicates...")
           objectIds <- Future.sequence(queryResult.map(invitationsRepository.getObjectIdsForInvitations))
-          _         <- Future.sequence(objectIds.flatten.map(id => invitationsRepository.deleteOne(id)))
+          _         <- invitationsRepository.deleteMany(objectIds.flatten)
           check     <- invitationsRepository.findDuplicateInvitations
         } yield logger.warn(s"Query complete. Check: ${check.map(_.toDelete).sum} duplicates remain.")
       }

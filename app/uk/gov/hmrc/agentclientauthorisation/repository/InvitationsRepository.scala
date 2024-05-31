@@ -77,7 +77,7 @@ trait InvitationsRepository {
 
   def getObjectIdsForInvitations(duplicateInvitationResult: DuplicateInvitationResult): Future[Seq[ObjectId]]
 
-  def deleteOne(id: ObjectId): Future[Unit]
+  def deleteMany(ids: Seq[ObjectId]): Future[Unit]
 }
 
 @Singleton
@@ -338,9 +338,9 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
       .map(_._id)
       .toFuture()
 
-  override def deleteOne(id: ObjectId): Future[Unit] =
+  override def deleteMany(ids: Seq[ObjectId]): Future[Unit] =
     collection
-      .deleteOne(Filters.equal(ID, id))
+      .deleteMany(Filters.in(ID, ids))
       .toFuture()
       .map(_ => ())
 
