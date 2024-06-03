@@ -25,6 +25,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.util.Random
 @Singleton
 class FindAndRemoveDuplicateInvitationsService @Inject()(
   invitationsRepository: InvitationsRepository,
@@ -35,6 +36,8 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
   private val LOCK_ID = "startup-lock"
 
   private val enabled = appConfig.startupMongoQueryEnabled
+
+  Thread.sleep(Random.nextLong(2000))
 
   if (enabled) {
     val lockService: LockService = LockService(mongoLockRepository, lockId = LOCK_ID, ttl = 1.minute)
@@ -50,7 +53,7 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
           toDeleteCount = queryResult.map(_.toDelete).sum
           _ = logger.warn(s"object id count: $objectIdCount; marked for deletion: $toDeleteCount")
           _ = if (objectIdCount != toDeleteCount) throw new Exception("check your logic....") else ()
-          // _ <- invitationsRepository.deleteMany(objectIds.flatten)
+           _ <- invitationsRepository.deleteMany(objectIds.flatten)
         } yield ()
       }
       .map {
