@@ -22,7 +22,7 @@ import com.kenshoo.play.metrics.Metrics
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Updates}
+import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
 import uk.gov.hmrc.agentclientauthorisation.model._

@@ -106,4 +106,5 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig, config: Configuration)
   lazy val maxCallsPerSecondBusinessNames: Double = servicesConfig.getString("rate-limiter.business-names.max-calls-per-second").toDouble
 
   val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
+
 }

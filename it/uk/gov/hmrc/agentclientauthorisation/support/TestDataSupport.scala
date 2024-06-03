@@ -1,5 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
