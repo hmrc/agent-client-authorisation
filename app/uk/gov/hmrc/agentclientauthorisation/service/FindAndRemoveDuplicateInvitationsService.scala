@@ -50,7 +50,7 @@ class FindAndRemoveDuplicateInvitationsService @Inject()(
           toDeleteCount = queryResult.map(_.toDelete).sum
           _ = logger.warn(s"object id count: $objectIdCount; marked for deletion: $toDeleteCount")
           _ = if (objectIdCount != toDeleteCount) throw new Exception("check your logic....") else ()
-          _ <- invitationsRepository.deleteMany(objectIds.flatten)
+          // _ <- invitationsRepository.deleteMany(objectIds.flatten)
         } yield ()
       }
       .map {
