@@ -16,12 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.google.inject.AbstractModule
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound, Invitation}
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.Service
@@ -312,8 +310,6 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
 
       bodyOf(response) shouldBe
         """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
-
-
 
     }
 

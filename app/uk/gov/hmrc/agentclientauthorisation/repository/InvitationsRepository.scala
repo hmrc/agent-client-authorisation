@@ -97,7 +97,7 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
         Codecs.playFormatCodec(StatusChangeEvent.statusChangeEventFormat),
         Codecs.playFormatCodec(MongoLocalDateTimeFormat.localDateTimeFormat)
       ),
-      replaceIndexes = true
+      replaceIndexes = false
     ) with InvitationsRepository with Logging with Monitor {
 
   final val ID = "_id"
