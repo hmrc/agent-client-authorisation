@@ -50,7 +50,6 @@ class TerminateInvitationsISpec extends BaseISpec {
   val citizenDetailsConnector = app.injector.instanceOf[CitizenDetailsConnector]
 
   implicit val futures = app.injector.instanceOf(classOf[Futures])
-  implicit val metrics = app.injector.instanceOf(classOf[Metrics])
   implicit val cc = app.injector.instanceOf(classOf[ControllerComponents])
 
   def agentLinkService(agentReferenceRepository: AgentReferenceRepository) =

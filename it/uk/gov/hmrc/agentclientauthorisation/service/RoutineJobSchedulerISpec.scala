@@ -33,7 +33,6 @@ class RoutineJobSchedulerISpec extends TestKit(ActorSystem("testSystem"))
   val ifConnector = app.injector.instanceOf[IfConnector]
   val appConfig = app.injector.instanceOf[AppConfig]
   val emailService = app.injector.instanceOf[EmailService]
-  val metrics = app.injector.instanceOf[Metrics]
   val schedulerRepository = app.injector.instanceOf[MongoScheduleRepository]
   val invitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
   val auditService = app.injector.instanceOf(classOf[AuditService])

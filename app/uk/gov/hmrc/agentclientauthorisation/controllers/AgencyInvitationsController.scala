@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
+import org.mongodb.scala.MongoException
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -164,6 +165,10 @@ class AgencyInvitationsController @Inject()(
         invitationsService
           .create(arn, agentInvitation.clientType, agentInvitation.getService, taxId, suppliedClientId, originHeader)
           .map(invitation => Created.withHeaders(location(invitation): _*))
+          .recover {
+            case e: MongoException if e.getMessage.contains("E11000 duplicate key error") =>
+              duplicateInvitationError
+          }
     }
   }
 

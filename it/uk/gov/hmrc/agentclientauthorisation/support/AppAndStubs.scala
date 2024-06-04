@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentclientauthorisation.support
 
 
 import com.google.inject.AbstractModule
+import com.kenshoo.play.metrics.Metrics
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 import uk.gov.hmrc.mongo.MongoComponent
@@ -41,6 +43,8 @@ trait AppAndStubs
   lazy val appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(additionalConfiguration)
     .overrides(moduleWithOverrides)
+
+
 
   protected def moduleWithOverrides = new AbstractModule {}
 
@@ -98,11 +102,11 @@ trait AppAndStubs
 trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
-  override def moduleWithOverrides: AbstractModule = new AbstractModule {
-    override def configure: Unit = {
-     // bind(classOf[MongoComponent]).toInstance(mongoComponent)
-    }
-  }
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  lazy implicit val metrics: Metrics = app.injector.instanceOf(classOf[Metrics])
+  lazy val invitationsRepositoryImpl =
+    new InvitationsRepositoryImpl(mongoComponent, metrics)
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)
