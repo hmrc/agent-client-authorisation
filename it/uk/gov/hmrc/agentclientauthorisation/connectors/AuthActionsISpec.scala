@@ -14,7 +14,6 @@ import scala.concurrent.Future
 class AuthActionsISpec extends BaseISpec {
 
   val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
-  val metrics: Metrics = app.injector.instanceOf[Metrics]
   val cc: ControllerComponents = app.injector.instanceOf[ControllerComponents]
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 

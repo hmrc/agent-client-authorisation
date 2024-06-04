@@ -294,22 +294,27 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2)
     }
 
+
     "return 204 when MtdItId found and replace Nino on multiple records for the same client" in {
 
-      val altItsaPending1 = await(
-        invitationsRepo.create(
-          arn,
-          Some("personal"),
-          Service.MtdIt,
-          nino,
-          nino,
-          None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
-          None)
+      val altItsa1 = Invitation(
+        invitationId = InvitationId.create(arn.value, nino.value, Service.MtdIt.id)(Service.MtdIt.invitationIdPrefix),
+        arn = arn,
+        clientType = Some("personal"),
+        service = Service.MtdIt,
+        clientId = nino,
+        suppliedClientId = nino,
+        expiryDate = LocalDate.now,
+        detailsForEmail = None,
+        clientActionUrl = None,
+        origin = None,
+        events = List(
+          StatusChangeEvent(LocalDateTime.now, Expired))
       )
 
-      val altItsaPending2 = await(
+      await(invitationsRepo.collection.insertOne(altItsa1).toFuture())
+
+      val altItsa2 = await(
         invitationsRepo.create(
           arn,
           Some("personal"),
@@ -323,11 +328,12 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
       )
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
+      givenMtdItIdIsKnownFor(nino, mtdItId)
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
+      await(invitationsRepo.findByInvitationId(altItsa1.invitationId)).get.clientId.underlying shouldBe mtdItId
+      await(invitationsRepo.findByInvitationId(altItsa2.invitationId)).get.clientId.underlying shouldBe mtdItId
     }
 
     "return 204 when MtdItId found and replace Nino on multiple records for different clients" in {

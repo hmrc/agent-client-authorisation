@@ -2,7 +2,7 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import uk.gov.hmrc.agentclientauthorisation.support._
 
-class BaseISpec extends
+trait BaseISpec extends
   UnitSpec with
   MongoAppAndStubs with
   AgentAuthStubs with

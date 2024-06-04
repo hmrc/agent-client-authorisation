@@ -173,15 +173,6 @@ trait TestDataSupport {
 
     override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation] =
       Future failed new Exception(s"Unable to replace Nino for a client")
-
-    override def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]] =
-    Future failed new Exception(s"Unable to find duplicate invitations")
-
-    override def getObjectIdsForInvitations(duplicateInvitationResult: DuplicateInvitationResult): Future[Seq[ObjectId]] =
-      Future failed new Exception(s"Unable to get object ids")
-
-    override def deleteMany(ids: Seq[ObjectId]): Future[Unit] =
-      Future failed new Exception(s"Unable to delete one")
   }
 
   /*

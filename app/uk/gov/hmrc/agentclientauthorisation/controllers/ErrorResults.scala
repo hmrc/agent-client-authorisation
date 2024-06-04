@@ -70,6 +70,13 @@ object ErrorResults {
   val InvitationNotFound: Result = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the EtmpRegistrationNumber was not found")))
   val InvalidClientId: Result = BadRequest(toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
+  val duplicateInvitationError: Result = Forbidden(
+    toJson(
+      ErrorBody(
+        "DUPLICATE_AUTHORISATION_REQUEST",
+        "An authorisation request for this service has already been created and is awaiting the client’s response."
+      ))
+  )
   def nonUkAddress(countryCode: String): Result =
     NotImplemented(
       toJson(

@@ -107,5 +107,4 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig, config: Configuration)
 
   val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
 
-  val startupMongoQueryEnabled: Boolean = config.get[Boolean]("startupMongoQueryEnabled")
 }

@@ -16,18 +16,22 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
+import com.google.inject.AbstractModule
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound}
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
+import uk.gov.hmrc.agentmtdidentifiers.model.Service
+
+import java.time.{LocalDate, LocalDateTime}
 
 class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
 
-  lazy val repo = app.injector.instanceOf(classOf[InvitationsRepository])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
+
 
   "POST /agencies/:arn/invitations/sent" should {
     val request = FakeRequest("POST", "/agencies/:arn/invitations/sent").withHeaders("Authorization" -> "Bearer testtoken")
@@ -283,6 +287,34 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
       val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
 
       status(response) shouldBe 403
+    }
+
+    "return 403 when duplicate invitation" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      givenClientDetailsForVat(vrn)
+      givenPlatformAnalyticsRequestSent(true)
+      await(invitationsRepositoryImpl.collection.insertOne(
+        Invitation.createNew(arn, Some("business"),Service.Vat,vrn,vrn,None,LocalDateTime.now(),LocalDate.now,None))
+        .toFuture())
+
+      val requestBody = Json.parse(
+        """{
+          |  "service": "HMRC-MTD-VAT",
+          |  "clientIdType": "vrn",
+          |  "clientId": "101747696"
+          |}""".stripMargin)
+
+      val response = await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+
+      status(response) shouldBe 403
+
+      bodyOf(response) shouldBe
+        """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
+
+
+
     }
 
     "return 401 when agent is not authorised" in {
