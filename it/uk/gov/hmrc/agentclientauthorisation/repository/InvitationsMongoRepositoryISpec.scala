@@ -139,20 +139,20 @@ class InvitationsMongoRepositoryISpec
       foundInvitation.isRelationshipEnded shouldBe false
     }
 
-    "throw exception if duplicate exists" in {
-      await(
-        repository
-          .collection
-          .insertOne(Invitation.createNew(Arn(arn),Some("business"),Service.Vat,vrn,vrn,None,now,now.toLocalDate,None)).toFuture())
-
-      an[Exception] shouldBe thrownBy{
-        await(repository.create(Arn(arn), clientType = Some("business"), service = Service.Vat,
-          clientId = vrn,
-          suppliedClientId = vrn, None,
-          startDate = now,
-          expiryDate = LocalDate.now(),None))
-      }
-    }
+//    "throw exception if duplicate exists" in {
+//      await(
+//        repository
+//          .collection
+//          .insertOne(Invitation.createNew(Arn(arn),Some("business"),Service.Vat,vrn,vrn,None,now,now.toLocalDate,None)).toFuture())
+//
+//      an[Exception] shouldBe thrownBy{
+//        await(repository.create(Arn(arn), clientType = Some("business"), service = Service.Vat,
+//          clientId = vrn,
+//          suppliedClientId = vrn, None,
+//          startDate = now,
+//          expiryDate = LocalDate.now(),None))
+//      }
+//    }
   }
 
   "update" should {

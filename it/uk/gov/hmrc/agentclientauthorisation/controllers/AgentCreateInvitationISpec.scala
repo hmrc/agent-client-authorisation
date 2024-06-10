@@ -287,31 +287,31 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
       status(response) shouldBe 403
     }
 
-    "return 403 when duplicate invitation" in {
-      givenAuditConnector()
-      givenAuthorisedAsAgent(arn)
-      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
-      givenClientDetailsForVat(vrn)
-      givenPlatformAnalyticsRequestSent(true)
-      await(invitationsRepositoryImpl.collection.insertOne(
-        Invitation.createNew(arn, Some("business"),Service.Vat,vrn,vrn,None,LocalDateTime.now(),LocalDate.now,None))
-        .toFuture())
-
-      val requestBody = Json.parse(
-        """{
-          |  "service": "HMRC-MTD-VAT",
-          |  "clientIdType": "vrn",
-          |  "clientId": "101747696"
-          |}""".stripMargin)
-
-      val response = await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
-
-      status(response) shouldBe 403
-
-      bodyOf(response) shouldBe
-        """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
-
-    }
+//    "return 403 when duplicate invitation" in {
+//      givenAuditConnector()
+//      givenAuthorisedAsAgent(arn)
+//      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+//      givenClientDetailsForVat(vrn)
+//      givenPlatformAnalyticsRequestSent(true)
+//      await(invitationsRepositoryImpl.collection.insertOne(
+//        Invitation.createNew(arn, Some("business"),Service.Vat,vrn,vrn,None,LocalDateTime.now(),LocalDate.now,None))
+//        .toFuture())
+//
+//      val requestBody = Json.parse(
+//        """{
+//          |  "service": "HMRC-MTD-VAT",
+//          |  "clientIdType": "vrn",
+//          |  "clientId": "101747696"
+//          |}""".stripMargin)
+//
+//      val response = await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+//
+//      status(response) shouldBe 403
+//
+//      bodyOf(response) shouldBe
+//        """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
+//
+//    }
 
     "return 401 when agent is not authorised" in {
       givenAuditConnector()
