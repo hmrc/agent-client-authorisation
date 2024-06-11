@@ -48,6 +48,7 @@ Invitations can have one of the following status:
 |Rejected|Prevents Agent being authorised to act on a client's behalf|
 |Expired|Client did not respond to the Agent's Invitation within 21 days|
 |Cancelled|Agent cancels the invitation they sent out, preventing a client from responding|
+|Deauthorised|Agent, client or HMRC terminates a relationship|
 
 Note: Invitations with "Pending" or "PartialAuth" statuses are the only editable status.
   
