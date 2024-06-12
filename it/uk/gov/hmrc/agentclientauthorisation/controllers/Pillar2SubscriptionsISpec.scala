@@ -45,7 +45,8 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
   val pillar2Record =
     s"""
       |{
-      |                 "plrReference": "${plrId.value}",
+      |  "success": {
+      |                 "formBundleNumber": "123456789123",
       |                 "upeDetails": {
       |                     "organisationName": "OrgName",
       |                     "registrationDate": "${suppliedDate}",
@@ -67,7 +68,7 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
       |                 "accountStatus": {
       |                     "inactive" : false
       |                 }
-      |}
+      |}}
       |""".stripMargin
 
   val pillar2Subscription = Pillar2Subscription("OrgName", suppliedDate)

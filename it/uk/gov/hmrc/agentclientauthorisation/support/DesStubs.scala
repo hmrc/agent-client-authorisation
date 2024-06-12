@@ -319,7 +319,8 @@ trait DesStubs {
         .willReturn(aResponse()
           .withStatus(200)
           .withBody(s"""{
-                       |                 "plrReference": "${plrId.value}",
+                       |   "success": {
+                       |                 "formBundleNumber": "123456789123",
                        |                 "upeDetails": {
                        |                     "organisationName": "OrgName",
                        |                     "registrationDate": "$pillar2RegDate",
@@ -341,7 +342,7 @@ trait DesStubs {
                        |                 "accountStatus": {
                        |                     "inactive" : $inactive
                        |                 }
-                       |}""".stripMargin)))
+                       |}}""".stripMargin)))
     this
   }
 
