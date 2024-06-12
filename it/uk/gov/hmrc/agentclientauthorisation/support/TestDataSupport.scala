@@ -1,5 +1,6 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import org.mongodb.scala.Document
 import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
@@ -173,6 +174,10 @@ trait TestDataSupport {
 
     override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation] =
       Future failed new Exception(s"Unable to replace Nino for a client")
+
+    override def getIndexes: Future[Seq[Document]] = ???
+
+    override def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]] = ???
   }
 
   /*
