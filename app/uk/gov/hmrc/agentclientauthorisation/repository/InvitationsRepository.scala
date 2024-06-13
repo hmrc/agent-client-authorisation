@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
 import com.kenshoo.play.metrics.Metrics
-import org.mongodb.scala.Document
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
@@ -72,8 +71,6 @@ trait InvitationsRepository {
   def removePersonalDetails(startDate: LocalDateTime): Future[Unit]
   def removeAllInvitationsForAgent(arn: Arn): Future[Int]
   def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation]
-  def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]]
-  def getIndexes: Future[Seq[Document]]
 }
 
 @Singleton
@@ -308,24 +305,5 @@ class InvitationsRepositoryImpl @Inject()(mongo: MongoComponent, metrics: Metric
           deleteManyResult.getDeletedCount.toInt
         })
     }
-
-  override def findDuplicateInvitations: Future[Seq[DuplicateInvitationResult]] =
-    collection
-      .aggregate[Document](
-        List(
-          Aggregates.filter(equal("_status", "Pending")),
-          Aggregates
-            .group(
-              Document("""{ _key: {arnValue: "$arn", suppliedClientIdValue: "$suppliedClientId", serviceValue: "$service" }}"""),
-              Accumulators.sum("counter", 1))
-            .toBsonDocument,
-          Aggregates.filter(Filters.gt("counter", 1))
-        )
-      )
-      .map(DuplicateInvitationResult.fromDocument)
-      .toFuture()
-
-  override def getIndexes: Future[Seq[Document]] =
-    collection.listIndexes().toFuture()
 
 }
