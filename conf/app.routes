@@ -72,3 +72,5 @@ PUT         /agent/alt-itsa/update/:arn                                         
 # --------------------------------
 
 DELETE      /agent/:arn/terminate                                                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.removeAllInvitationsAndReferenceForArn(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
+
+GET         /cache/test/:arn         @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.cacheTest(arn: String)

@@ -183,6 +183,18 @@ class AgencyInvitationsController @Inject()(
       case _            => Seq.empty[Service]
     }
 
+  def cacheTest(arn: String): Action[AnyContent] = Action.async { implicit request =>
+    val invitations = List.fill(10)(arn)
+
+    val invitationsWithOptLinks: Future[List[String]] = for {
+      invitationsWithLink <- Future sequence invitations.map { invite =>
+                              agentLinkService.getInvitationUrl(Arn(invite), "test")
+                            }
+    } yield invitationsWithLink
+
+    invitationsWithOptLinks.map(invitations => Ok(invitations.toString()))
+  }
+
   def getSentInvitations(
     givenArn: Arn,
     clientType: Option[String],

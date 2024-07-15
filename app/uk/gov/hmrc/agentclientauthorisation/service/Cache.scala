@@ -66,11 +66,13 @@ class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit
   def apply(key: String)(body: => Future[T])(implicit ec: ExecutionContext): Future[T] =
     underlying.getIfPresent(key) match {
       case Some(v) =>
+        logger.info(s"@@@ CACHE SIZE IS: '${underlying.estimatedSize()}' @@@")
         record("Count-" + name + "-from-cache")
         Future.successful(v)
       case None =>
         body.andThen {
           case Success(v) =>
+            logger.info(s"@@@ CACHE SIZE IS: '${underlying.estimatedSize()}' @@@")
             logger.debug(s"Missing $name cache hit, storing new value.")
             record("Count-" + name + "-from-source")
             underlying.put(key, v)

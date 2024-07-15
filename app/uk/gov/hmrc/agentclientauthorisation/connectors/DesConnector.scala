@@ -102,17 +102,9 @@ class DesConnectorImpl @Inject()(
     val agentIdValue = agentIdentifier.fold(_.value, _.value)
     agentCacheProvider
       .agencyDetailsCache(agentIdValue) {
-        getWithDesHeaders("getAgencyDetails", getAgentRecordUrl(agentIdentifier), viaIF = false).map { response =>
-          response.status match {
-            case status if is2xx(status) => response.json.asOpt[AgentDetailsDesResponse]
-            case status if is4xx(status) => None
-            case _ if response.body.contains("AGENT_TERMINATED") =>
-              logger.warn(s"Discovered a Termination for agent: $agentIdValue")
-              None
-            case other =>
-              throw UpstreamErrorResponse(s"unexpected response during 'getAgencyDetails', status: $other, response: ${response.body}", other, other)
-          }
-        }
+        logger.info(s"@@@ MAKING API CALL FOR: '$agentIdValue' @@@")
+        Thread.sleep(500)
+        Future.successful(Some(AgentDetailsDesResponse(Some(Utr("123")), Some(AgencyDetails(Some("John"), None, None, None)), None)))
       }
   }
 
