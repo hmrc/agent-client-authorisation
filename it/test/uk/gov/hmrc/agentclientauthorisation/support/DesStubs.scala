@@ -31,43 +31,40 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |  {   "taxPayerDisplayResponse": {
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "ZR987654C",
-                         |  "propertyIncome": false,
-                         |  "businessData": [
-                         |    {
-                         |      "incomeSourceId": "XWIS00000000219",
-                         |      "accountingPeriodStartDate": "2017-05-06",
-                         |      "accountingPeriodEndDate": "2018-05-05",
-                         |      "tradingName": "Surname DADTN",
-                         |      "businessAddressDetails": {
-                         |        "addressLine1": "100 Sutton Street",
-                         |        "addressLine2": "Wokingham",
-                         |        "addressLine3": "Surrey",
-                         |        "addressLine4": "London",
-                         |        "postalCode": "$postcode",
-                         |        "countryCode": "$countryCode"
-                         |      },
-                         |      "businessContactDetails": {
-                         |        "phoneNumber": "01111222333",
-                         |        "mobileNumber": "04444555666",
-                         |        "faxNumber": "07777888999",
-                         |        "emailAddress": "aaa@aaa.com"
-                         |      },
-                         |      "tradingStartDate": "2016-05-06",
-                         |      "cashOrAccruals": "cash",
-                         |      "seasonal": true
-                         |    }
-                         |  ]
-                         |}}
-              """.stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {   "taxPayerDisplayResponse": {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingName": "Surname DADTN",
+                       |      "businessAddressDetails": {
+                       |        "addressLine1": "100 Sutton Street",
+                       |        "addressLine2": "Wokingham",
+                       |        "addressLine3": "Surrey",
+                       |        "addressLine4": "London",
+                       |        "postalCode": "$postcode",
+                       |        "countryCode": "$countryCode"
+                       |      },
+                       |      "businessContactDetails": {
+                       |        "phoneNumber": "01111222333",
+                       |        "mobileNumber": "04444555666",
+                       |        "faxNumber": "07777888999",
+                       |        "emailAddress": "aaa@aaa.com"
+                       |      },
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}}
+              """.stripMargin)))
     this
   }
 
@@ -76,29 +73,26 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |  {   "taxPayerDisplayResponse":{
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "ZR987654C",
-                         |  "propertyIncome": false,
-                         |  "businessData": [
-                         |    {
-                         |      "incomeSourceId": "XWIS00000000219",
-                         |      "accountingPeriodStartDate": "2017-05-06",
-                         |      "accountingPeriodEndDate": "2018-05-05",
-                         |      "tradingName": "Surname DADTN",
-                         |      "tradingStartDate": "2016-05-06",
-                         |      "cashOrAccruals": "cash",
-                         |      "seasonal": true
-                         |    }
-                         |  ]
-                         |}}
-              """.stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {   "taxPayerDisplayResponse":{
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingName": "Surname DADTN",
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}}
+              """.stripMargin)))
     this
   }
 
@@ -107,28 +101,25 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |  {   "taxPayerDisplayResponse":{
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "ZR987654C",
-                         |  "propertyIncome": false,
-                         |  "businessData": [
-                         |    {
-                         |      "incomeSourceId": "XWIS00000000219",
-                         |      "accountingPeriodStartDate": "2017-05-06",
-                         |      "accountingPeriodEndDate": "2018-05-05",
-                         |      "tradingStartDate": "2016-05-06",
-                         |      "cashOrAccruals": "cash",
-                         |      "seasonal": true
-                         |    }
-                         |  ]
-                         |}}
-              """.stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {   "taxPayerDisplayResponse":{
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}}
+              """.stripMargin)))
     this
   }
 
@@ -137,44 +128,41 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |  {   "taxPayerDisplayResponse": {
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "${nino.value}",
-                         |  "mtdId": "${mtdItId.value}",
-                         |  "propertyIncome": false,
-                         |  "businessData": [
-                         |    {
-                         |      "incomeSourceId": "XWIS00000000219",
-                         |      "accountingPeriodStartDate": "2017-05-06",
-                         |      "accountingPeriodEndDate": "2018-05-05",
-                         |      "tradingName": "Surname DADTN",
-                         |      "businessAddressDetails": {
-                         |        "addressLine1": "100 Sutton Street",
-                         |        "addressLine2": "Wokingham",
-                         |        "addressLine3": "Surrey",
-                         |        "addressLine4": "London",
-                         |        "postalCode": "AA11AA",
-                         |        "countryCode": "GB"
-                         |      },
-                         |      "businessContactDetails": {
-                         |        "phoneNumber": "01111222333",
-                         |        "mobileNumber": "04444555666",
-                         |        "faxNumber": "07777888999",
-                         |        "emailAddress": "aaa@aaa.com"
-                         |      },
-                         |      "tradingStartDate": "2016-05-06",
-                         |      "cashOrAccruals": "cash",
-                         |      "seasonal": true
-                         |    }
-                         |  ]
-                         |}}
-                         |""".stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {   "taxPayerDisplayResponse": {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "${nino.value}",
+                       |  "mtdId": "${mtdItId.value}",
+                       |  "propertyIncome": false,
+                       |  "businessData": [
+                       |    {
+                       |      "incomeSourceId": "XWIS00000000219",
+                       |      "accountingPeriodStartDate": "2017-05-06",
+                       |      "accountingPeriodEndDate": "2018-05-05",
+                       |      "tradingName": "Surname DADTN",
+                       |      "businessAddressDetails": {
+                       |        "addressLine1": "100 Sutton Street",
+                       |        "addressLine2": "Wokingham",
+                       |        "addressLine3": "Surrey",
+                       |        "addressLine4": "London",
+                       |        "postalCode": "AA11AA",
+                       |        "countryCode": "GB"
+                       |      },
+                       |      "businessContactDetails": {
+                       |        "phoneNumber": "01111222333",
+                       |        "mobileNumber": "04444555666",
+                       |        "faxNumber": "07777888999",
+                       |        "emailAddress": "aaa@aaa.com"
+                       |      },
+                       |      "tradingStartDate": "2016-05-06",
+                       |      "cashOrAccruals": "cash",
+                       |      "seasonal": true
+                       |    }
+                       |  ]
+                       |}}
+                       |""".stripMargin)))
     this
   }
 
@@ -183,21 +171,18 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |  {  "taxPayerDisplayResponse": {
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "ZR987654C",
-                         |  "mtdId": "${mtdItId.value}",
-                         |  "propertyIncome": false,
-                         |  "businessData": []
-                         |}
-                         |}
-                         |""".stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""
+                       |  {  "taxPayerDisplayResponse": {
+                       |  "safeId": "XV0000100093327",
+                       |  "nino": "ZR987654C",
+                       |  "mtdId": "${mtdItId.value}",
+                       |  "propertyIncome": false,
+                       |  "businessData": []
+                       |}
+                       |}
+                       |""".stripMargin)))
     this
   }
 
@@ -206,20 +191,17 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{  "taxPayerDisplayResponse": {
-                         |  "safeId": "XV0000100093327",
-                         |  "nino": "ZR987654C",
-                         |  "mtdId": "${mtdItId.value}",
-                         |  "propertyIncome": false,
-                         |  "propertyData": []
-                         |  }
-                         |}
-                         |""".stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""{  "taxPayerDisplayResponse": {
+                           |  "safeId": "XV0000100093327",
+                           |  "nino": "ZR987654C",
+                           |  "mtdId": "${mtdItId.value}",
+                           |  "propertyIncome": false,
+                           |  "propertyData": []
+                           |  }
+                       |}
+                       |""".stripMargin)))
     this
   }
 
@@ -228,11 +210,8 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(404)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(404)))
 
     this
   }
@@ -242,11 +221,8 @@ trait DesStubs {
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(status)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(status)))
     this
   }
 
@@ -255,66 +231,61 @@ trait DesStubs {
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(
-              s"""{
-                 |   "approvedInformation" : {
-                 |      "customerDetails" : {
-                 |         "organisationName" : " TAXPAYER NAME_1",
-                 |         "mandationStatus" : "2",
-                 |         "businessStartDate" : "2017-04-02",
-                 |         "registrationReason" : "0013", """.stripMargin +
-                vatRegDate.map(vrd => s""" "effectiveRegistrationDate": "$vrd", """).getOrElse("""""") +
-                s""" "isInsolvent" : $isInsolvent
-                   |      },
-                   |      "bankDetails" : {
-                   |         "sortCode" : "16****",
-                   |         "accountHolderName" : "***********************",
-                   |         "bankAccountNumber" : "****9584"
-                   |      },
-                   |      "deregistration" : {
-                   |         "effectDateOfCancellation" : "2018-03-01",
-                   |         "lastReturnDueDate" : "2018-02-24",
-                   |         "deregistrationReason" : "0001"
-                   |      },
-                   |      "PPOB" : {
-                   |         "address" : {
-                   |            "line4" : "VAT PPOB Line5",
-                   |            "postCode" : "HA0 3ET",
-                   |            "countryCode" : "GB",
-                   |            "line2" : "VAT PPOB Line2",
-                   |            "line3" : "VAT PPOB Line3",
-                   |            "line1" : "VAT PPOB Line1"
-                   |         },
-                   |         "contactDetails" : {
-                   |            "mobileNumber" : "012345678902",
-                   |            "emailAddress" : "testsignuptcooo37@hmrc.co.uk",
-                   |            "faxNumber" : "012345678903",
-                   |            "primaryPhoneNumber" : "012345678901"
-                   |         },
-                   |         "websiteAddress" : "www.tumbleweed.com"
-                   |      },
-                   |      "flatRateScheme" : {
-                   |         "FRSCategory" : "003",
-                   |         "limitedCostTrader" : true,
-                   |         "FRSPercentage" : 59.99
-                   |      },
-                   |      "returnPeriod" : {
-                   |         "stdReturnPeriod" : "MA"
-                   |      },
-                   |      "businessActivities" : {
-                   |         "primaryMainCode" : "10410",
-                   |         "mainCode3" : "10710",
-                   |         "mainCode2" : "10611",
-                   |         "mainCode4" : "10720"
-                   |      }
-                   |   }
-                   |}""".stripMargin
-            )
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""{
+                       |   "approvedInformation" : {
+                       |      "customerDetails" : {
+                       |         "organisationName" : " TAXPAYER NAME_1",
+                       |         "mandationStatus" : "2",
+                       |         "businessStartDate" : "2017-04-02",
+                       |         "registrationReason" : "0013", """.stripMargin +
+            vatRegDate.map(vrd => s""" "effectiveRegistrationDate": "$vrd", """).getOrElse("""""") +
+                            s""" "isInsolvent" : $isInsolvent
+                       |      },
+                       |      "bankDetails" : {
+                       |         "sortCode" : "16****",
+                       |         "accountHolderName" : "***********************",
+                       |         "bankAccountNumber" : "****9584"
+                       |      },
+                       |      "deregistration" : {
+                       |         "effectDateOfCancellation" : "2018-03-01",
+                       |         "lastReturnDueDate" : "2018-02-24",
+                       |         "deregistrationReason" : "0001"
+                       |      },
+                       |      "PPOB" : {
+                       |         "address" : {
+                       |            "line4" : "VAT PPOB Line5",
+                       |            "postCode" : "HA0 3ET",
+                       |            "countryCode" : "GB",
+                       |            "line2" : "VAT PPOB Line2",
+                       |            "line3" : "VAT PPOB Line3",
+                       |            "line1" : "VAT PPOB Line1"
+                       |         },
+                       |         "contactDetails" : {
+                       |            "mobileNumber" : "012345678902",
+                       |            "emailAddress" : "testsignuptcooo37@hmrc.co.uk",
+                       |            "faxNumber" : "012345678903",
+                       |            "primaryPhoneNumber" : "012345678901"
+                       |         },
+                       |         "websiteAddress" : "www.tumbleweed.com"
+                       |      },
+                       |      "flatRateScheme" : {
+                       |         "FRSCategory" : "003",
+                       |         "limitedCostTrader" : true,
+                       |         "FRSPercentage" : 59.99
+                       |      },
+                       |      "returnPeriod" : {
+                       |         "stdReturnPeriod" : "MA"
+                       |      },
+                       |      "businessActivities" : {
+                       |         "primaryMainCode" : "10410",
+                       |         "mainCode3" : "10710",
+                       |         "mainCode2" : "10611",
+                       |         "mainCode4" : "10720"
+                       |      }
+                       |   }
+                       |}""".stripMargin)))
     this
   }
   def hasVatCustomerDetailsWithNoApprovedInformation(vrn: Vrn) = {
@@ -322,12 +293,9 @@ trait DesStubs {
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody("{}")
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody("{}")))
 
     this
   }
@@ -337,11 +305,8 @@ trait DesStubs {
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(404)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(404)))
 
     this
   }
@@ -351,35 +316,33 @@ trait DesStubs {
       get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{
-                         |                 "plrReference": "${plrId.value}",
-                         |                 "upeDetails": {
-                         |                     "organisationName": "OrgName",
-                         |                     "registrationDate": "$pillar2RegDate",
-                         |                     "domesticOnly": false,
-                         |                     "filingMember": false
-                         |                 },
-                         |                 "accountingPeriod": {
-                         |                     "startDate": "2023-01-01",
-                         |                     "endDate": "2023-12-31"
-                         |                 },
-                         |                 "upeCorrespAddressDetails": {
-                         |                     "addressLine1": "1 North Street",
-                         |                     "countryCode": "GB"
-                         |                 },
-                         |                 "primaryContactDetails": {
-                         |                     "name": "Some Name",
-                         |                     "emailAddress": "name@email.com"
-                         |                 },
-                         |                 "accountStatus": {
-                         |                     "inactive" : $inactive
-                         |                 }
-                         |}""".stripMargin)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(s"""{
+                       |   "success": {
+                       |                 "formBundleNumber": "123456789123",
+                       |                 "upeDetails": {
+                       |                     "organisationName": "OrgName",
+                       |                     "registrationDate": "$pillar2RegDate",
+                       |                     "domesticOnly": false,
+                       |                     "filingMember": false
+                       |                 },
+                       |                 "accountingPeriod": {
+                       |                     "startDate": "2023-01-01",
+                       |                     "endDate": "2023-12-31"
+                       |                 },
+                       |                 "upeCorrespAddressDetails": {
+                       |                     "addressLine1": "1 North Street",
+                       |                     "countryCode": "GB"
+                       |                 },
+                       |                 "primaryContactDetails": {
+                       |                     "name": "Some Name",
+                       |                     "emailAddress": "name@email.com"
+                       |                 },
+                       |                 "accountStatus": {
+                       |                     "inactive" : $inactive
+                       |                 }
+                       |}}""".stripMargin)))
     this
   }
 
@@ -388,12 +351,9 @@ trait DesStubs {
       get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody("{}")
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody("{}")))
     this
   }
 
@@ -402,16 +362,13 @@ trait DesStubs {
       get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
         .withHeader("environment", equalTo("test"))
-        .willReturn(
-          aResponse()
-            .withStatus(withStatus)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(withStatus)))
 
     this
   }
 
-  def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String) =
+  def getTrustName(trustTaxIdentifier: String, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/trusts/agent-known-fact-check/$trustTaxIdentifier"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -420,9 +377,8 @@ trait DesStubs {
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withStatus(status)
-            .withBody(response)
-        )
-    )
+            .withBody(response)))
+  }
 
   def getTrustNameIF(trustTaxIdentifier: TrustTaxIdentifier, status: Int = 200, response: String) = {
     val identifierType = trustTaxIdentifier match {
@@ -437,12 +393,10 @@ trait DesStubs {
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withStatus(status)
-            .withBody(response)
-        )
-    )
+            .withBody(response)))
   }
 
-  def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String) =
+  def getCgtSubscription(cgtRef: CgtRef, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/subscriptions/CGT/ZCGT/${cgtRef.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -451,11 +405,10 @@ trait DesStubs {
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withStatus(status)
-            .withBody(response)
-        )
-    )
+            .withBody(response)))
+  }
 
-  def getPillar2Subscription(plrId: PlrId, status: Int = 200, response: String) =
+  def getPillar2Subscription(plrId: PlrId, status: Int = 200, response: String) = {
     stubFor(
       get(urlEqualTo(s"/pillar2/subscription/${plrId.value}"))
         .withHeader("authorization", equalTo("Bearer secret"))
@@ -464,45 +417,33 @@ trait DesStubs {
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withStatus(status)
-            .withBody(response)
-        )
-    )
+            .withBody(response)))
+  }
 
   def failsVatCustomerDetails(vrn: Vrn, withStatus: Int) = {
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .willReturn(
-          aResponse()
-            .withStatus(withStatus)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(withStatus)))
 
     this
   }
 
-  def givenDESRespondsWithValidData(
-    identifier: TaxIdentifier,
-    agencyName: String,
-    suspensionDetails: SuspensionDetails = SuspensionDetails.notSuspended
-  ): StubMapping =
+  def givenDESRespondsWithValidData(identifier: TaxIdentifier, agencyName: String, suspensionDetails: SuspensionDetails = SuspensionDetails.notSuspended): StubMapping =
     stubFor(
-      get(urlEqualTo(s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(personalDetailsResponseBodyWithValidData(agencyName, suspensionDetails))
-        )
-    )
+      get(urlEqualTo(
+        s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(personalDetailsResponseBodyWithValidData(agencyName, suspensionDetails))))
 
   def givenDESRespondsWithoutValidData(identifier: TaxIdentifier): StubMapping =
     stubFor(
-      get(urlEqualTo(s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(personalDetailsResponseBodyWithoutValidData)
-        )
-    )
+      get(urlEqualTo(
+        s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(personalDetailsResponseBodyWithoutValidData)))
 
   def personalDetailsResponseBodyWithValidData(agencyName: String, suspensionDetails: SuspensionDetails) =
     s"""
@@ -580,6 +521,7 @@ trait DesStubs {
        |}
             """.stripMargin
 
+
   val failureResponseBody =
     """
       |{
@@ -596,61 +538,50 @@ trait DesStubs {
       |}
     """.stripMargin
 
-  def givenDESReturnsError(identifier: TaxIdentifier, responseCode: Int, errorMessage: String = failureResponseBody): StubMapping =
+  def givenDESReturnsError(
+                            identifier: TaxIdentifier,
+                            responseCode: Int,
+                            errorMessage: String = failureResponseBody): StubMapping =
     stubFor(
-      get(urlEqualTo(s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
+      get(urlEqualTo(
+        s"/registration/personal-details/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .inScenario("DES failure")
         .whenScenarioStateIs(Scenario.STARTED)
-        .willReturn(
-          aResponse()
-            .withStatus(responseCode)
-            .withBody(errorMessage)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(responseCode)
+          .withBody(errorMessage)))
+
 
   def givenNinoIsUnknownFor(mtdId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdId/${mtdId.value}"))
-        .willReturn(aResponse().withStatus(404))
-    )
+        .willReturn(aResponse().withStatus(404)))
 
   def givenMtdItIdIsUnknownFor(nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(aResponse().withStatus(404))
-    )
+        .willReturn(aResponse().withStatus(404)))
 
   def givenNinoForMtdItId(mtdId: MtdItId, nino: Nino): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/mtdId/${mtdId.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{"taxPayerDisplayResponse":
-                         |{ "nino": "${nino.value}" }
-                         |}""".stripMargin)
-        )
-    )
+        .willReturn(aResponse().withStatus(200).withBody(
+          s"""{"taxPayerDisplayResponse":
+             |{ "nino": "${nino.value}" }
+             |}""".stripMargin)))
 
   def givenMtdItIdIsKnownFor(nino: Nino, mtdItId: MtdItId): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""|{"taxPayerDisplayResponse":
-                          |  {"mtdId": "${mtdItId.value}" }
-                          |}""".stripMargin)
-        )
-    )
+        .willReturn(aResponse().withStatus(200).withBody(
+          s"""|{"taxPayerDisplayResponse":
+              |  {"mtdId": "${mtdItId.value}" }
+              |}""".stripMargin)))
 
   def givenTradingNameIsKnownFor(nino: Nino, tradingName: String): StubMapping =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{"taxPayerDisplayResponse": {
+        .willReturn(aResponse().withStatus(200).withBody(s"""{"taxPayerDisplayResponse": {
       "safeId" : "XE00001234567890",
       "nino" : "AA123456A",
       "mtdId" : "123456789012345",
@@ -687,17 +618,12 @@ trait DesStubs {
       ]
     }
 }
-""".stripMargin)
-        )
-    )
+""".stripMargin)))
 
   def givenNoTradingNameFor(nino: Nino) =
     stubFor(
       get(urlEqualTo(s"/registration/business-details/nino/${nino.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{  "taxPayerDisplayResponse":{
+        .willReturn(aResponse().withStatus(200).withBody(s"""{  "taxPayerDisplayResponse":{
     "businessData" : [
         {
             "incomeSourceId" : "123456789012345",
@@ -715,86 +641,73 @@ trait DesStubs {
         }
     ]
 }}
-""".stripMargin)
-        )
-    )
+""".stripMargin)))
+
 
   def givenDesReturnsServiceUnavailable() =
     stubFor(
       get(urlMatching(s"/registration/.*"))
-        .willReturn(aResponse().withStatus(503))
-    )
+        .willReturn(aResponse().withStatus(503)))
 
   def givenDESRespondsWithRegistrationData(identifier: TaxIdentifier, isIndividual: Boolean): StubMapping =
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(registrationData(isIndividual))
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(registrationData(isIndividual))))
 
   def givenDESRespondsWithoutRegistrationData(identifier: TaxIdentifier): StubMapping =
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(invalidRegistrationData)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(invalidRegistrationData)))
 
-  def givenDESReturnsErrorForRegistration(identifier: TaxIdentifier, responseCode: Int, errorMessage: String = failureResponseBody): StubMapping =
+  def givenDESReturnsErrorForRegistration(
+                                           identifier: TaxIdentifier,
+                                           responseCode: Int,
+                                           errorMessage: String = failureResponseBody): StubMapping =
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .inScenario("DES failure")
         .whenScenarioStateIs(Scenario.STARTED)
-        .willReturn(
-          aResponse()
-            .withStatus(responseCode)
-            .withBody(errorMessage)
-        )
-    )
+        .willReturn(aResponse()
+          .withStatus(responseCode)
+          .withBody(errorMessage)))
 
-  def givenDESReturnsErrorFirstAndValidDataLater(identifier: TaxIdentifier, isIndividual: Boolean, responseCode: Int): StubMapping = {
+  def givenDESReturnsErrorFirstAndValidDataLater(
+                                                  identifier: TaxIdentifier,
+                                                  isIndividual: Boolean,
+                                                  responseCode: Int): StubMapping = {
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .inScenario("Retry")
         .whenScenarioStateIs(Scenario.STARTED)
-        .willReturn(
-          aResponse()
-            .withStatus(responseCode)
-            .withBody(failureResponseBody)
-        )
-        .willSetStateTo("DES Failure #2")
-    )
+        .willReturn(aResponse()
+          .withStatus(responseCode)
+          .withBody(failureResponseBody))
+        .willSetStateTo("DES Failure #2"))
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .inScenario("Retry")
         .whenScenarioStateIs("DES Failure #2")
-        .willReturn(
-          aResponse()
-            .withStatus(responseCode)
-            .withBody(failureResponseBody)
-        )
-        .willSetStateTo("DES Success")
-    )
+        .willReturn(aResponse()
+          .withStatus(responseCode)
+          .withBody(failureResponseBody))
+        .willSetStateTo("DES Success"))
     stubFor(
       post(urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}"))
         .inScenario("Retry")
         .whenScenarioStateIs("DES Success")
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(registrationData(isIndividual))
-        )
-        .willSetStateTo(Scenario.STARTED)
-    )
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withBody(registrationData(isIndividual)))
+        .willSetStateTo(Scenario.STARTED))
   }
 
   private def registrationData(isIndividual: Boolean) =
     if (isIndividual) registrationDataForIndividual else registrationDataForOrganisation
+
 
   val registrationDataForOrganisation =
     s"""
@@ -872,13 +785,11 @@ trait DesStubs {
        |}
      """.stripMargin
 
+
   def givenCustomerDetailsKnownFor(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{
+        .willReturn(aResponse().withStatus(200).withBody(s"""{
                                                      "approvedInformation" :
     {
         "customerDetails" :
@@ -897,17 +808,12 @@ trait DesStubs {
             "effectiveRegistrationDate" : "1967-08-13",
             "businessStartDate" : "1967-08-13",
             "isInsolvent": false
-        }}}""".stripMargin)
-        )
-    )
+        }}}""".stripMargin)))
 
   def givenCustomerDetailsWithoutIndividual(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""{
+        .willReturn(aResponse().withStatus(200).withBody(s"""{
                                                      "approvedInformation" :
     {
         "customerDetails" :
@@ -919,47 +825,36 @@ trait DesStubs {
             "effectiveRegistrationDate" : "1967-08-13",
             "businessStartDate" : "1967-08-13",
             "isInsolvent": false
-        }}}""".stripMargin)
-        )
-    )
+        }}}""".stripMargin)))
 
   def givenCustomerDetailsWithoutOrganisation(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""|{
-                          |"approvedInformation" : {
-                          |     "customerDetails" : {
-                          |         "individual" : {
-                          |             "title" : "0001",
-                          |             "firstName" : "Ronald",
-                          |             "middleName" : "A",
-                          |             "lastName" : "McDonald"
-                          |         },
-                          |         "tradingName" : "MCD",
-                          |         "mandationStatus" : "1",
-                          |         "registrationReason" : "0001",
-                          |         "effectiveRegistrationDate" : "1967-08-13",
-                          |         "businessStartDate" : "1967-08-13"
-                          |         }
-                          |}
-                          |}""".stripMargin)
-        )
-    )
+        .willReturn(aResponse().withStatus(200).withBody(s"""|{
+                                                             |"approvedInformation" : {
+                                                             |     "customerDetails" : {
+                                                             |         "individual" : {
+                                                             |             "title" : "0001",
+                                                             |             "firstName" : "Ronald",
+                                                             |             "middleName" : "A",
+                                                             |             "lastName" : "McDonald"
+                                                             |         },
+                                                             |         "tradingName" : "MCD",
+                                                             |         "mandationStatus" : "1",
+                                                             |         "registrationReason" : "0001",
+                                                             |         "effectiveRegistrationDate" : "1967-08-13",
+                                                             |         "businessStartDate" : "1967-08-13"
+                                                             |         }
+                                                             	|}
+                                                             |}""".stripMargin)))
 
   def givenNoCustomerDetails(vrn: Vrn) =
     stubFor(
       get(urlEqualTo(s"/vat/customer/vrn/${vrn.value}/information"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""|{
-                          |    "approvedInformation" :{}
-                          |}""".stripMargin)
-        )
-    )
+        .willReturn(aResponse().withStatus(200).withBody(s"""|{
+                                                             |    "approvedInformation" :{}
+                                                             |}""".stripMargin)))
+
 
   def givenGetAgencyDetailsStub(arn: Arn, agentName: Option[String] = None, agentEmail: Option[String] = None) = {
     val body = s"""
@@ -983,9 +878,7 @@ trait DesStubs {
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withBody(body)
-        )
-    )
+            .withBody(body)))
   }
 
   def givenClientDetailsForVat(vrn: Vrn) =
@@ -1011,9 +904,7 @@ trait DesStubs {
                     "businessStartDate": "1967-08-13"
                   }
                 }
-              }""".stripMargin)
-        )
-    )
+              }""".stripMargin)))
 
   private val individualCustomerDetails =
     s"""
@@ -1032,33 +923,30 @@ trait DesStubs {
        |  }
        |""".stripMargin
 
-  // from the spec API1712 changeOfCircumstanceDetails are optional although PPT team advised that there wil always be
-  // a deregistrationDate but customers who are actually deregistered will have a date of today or before and customers
+  //from the spec API1712 changeOfCircumstanceDetails are optional although PPT team advised that there wil always be
+  //a deregistrationDate but customers who are actually deregistered will have a date of today or before and customers
   // who are not deregistered will have a date long into the future. TBC
-  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean) =
+  def givenPptSubscription(pptRef: PptRef, isIndividual: Boolean, deregisteredDetailsPresent: Boolean, isDeregistered: Boolean) = {
     stubFor(
       get(urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display"))
         .willReturn(
           aResponse()
-            .withStatus(200)
-            .withBody(s"""
-                         |{
-                         |"legalEntityDetails": {
-                         |  "dateOfApplication": "2021-10-12",
-                         |  "customerDetails": {
-                         |    ${if (isIndividual) individualCustomerDetails else organisationCustomerDetails}
-                         |  }
-                         | }${if (deregisteredDetailsPresent) {
-                          s""",
+            .withStatus(200).withBody(
+            s"""
+               |{
+               |"legalEntityDetails": {
+               |  "dateOfApplication": "2021-10-12",
+               |  "customerDetails": {
+               |    ${if(isIndividual) individualCustomerDetails else organisationCustomerDetails}
+               |  }
+               | }${if(deregisteredDetailsPresent){s""",
                |"changeOfCircumstanceDetails": {
                | "deregistrationDetails": {
-               |    "deregistrationDate": ${if (isDeregistered) """ "2021-10-01" """ else """ "2050-10-01" """}
+               |    "deregistrationDate": ${if(isDeregistered)""" "2021-10-01" """ else """ "2050-10-01" """}
                |  }
-               | }"""
-                        } else { """""" }}
-                         |}""".stripMargin)
-        )
-    )
+               | }"""} else {""""""}}
+               |}""".stripMargin)))
+    }
 
   def givenPptSubscriptionRespondsWith(pptRef: PptRef, status: Int) =
     stubFor(
@@ -1068,4 +956,7 @@ trait DesStubs {
             .withStatus(status)
         )
     )
-}
+  }
+
+
+

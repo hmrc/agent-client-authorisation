@@ -1,19 +1,3 @@
-/*
- * Copyright 2024 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.apache.pekko.stream.Materializer
@@ -60,31 +44,32 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
 
   val pillar2Record =
     s"""
-       |{
-       |                 "plrReference": "${plrId.value}",
-       |                 "upeDetails": {
-       |                     "organisationName": "OrgName",
-       |                     "registrationDate": "$suppliedDate",
-       |                     "domesticOnly": false,
-       |                     "filingMember": false
-       |                 },
-       |                 "accountingPeriod": {
-       |                     "startDate": "2023-01-01",
-       |                     "endDate": "2023-12-31"
-       |                 },
-       |                 "upeCorrespAddressDetails": {
-       |                     "addressLine1": "1 North Street",
-       |                     "countryCode": "GB"
-       |                 },
-       |                 "primaryContactDetails": {
-       |                     "name": "Some Name",
-       |                     "emailAddress": "name@email.com"
-       |                 },
-       |                 "accountStatus": {
-       |                     "inactive" : false
-       |                 }
-       |}
-       |""".stripMargin
+      |{
+      |  "success": {
+      |                 "formBundleNumber": "123456789123",
+      |                 "upeDetails": {
+      |                     "organisationName": "OrgName",
+      |                     "registrationDate": "${suppliedDate}",
+      |                     "domesticOnly": false,
+      |                     "filingMember": false
+      |                 },
+      |                 "accountingPeriod": {
+      |                     "startDate": "2023-01-01",
+      |                     "endDate": "2023-12-31"
+      |                 },
+      |                 "upeCorrespAddressDetails": {
+      |                     "addressLine1": "1 North Street",
+      |                     "countryCode": "GB"
+      |                 },
+      |                 "primaryContactDetails": {
+      |                     "name": "Some Name",
+      |                     "emailAddress": "name@email.com"
+      |                 },
+      |                 "accountStatus": {
+      |                     "inactive" : false
+      |                 }
+      |}}
+      |""".stripMargin
 
   val pillar2Subscription = Pillar2Subscription("OrgName", suppliedDate)
 
@@ -105,7 +90,7 @@ class Pillar2SubscriptionsISpec extends BaseISpec {
     "handle single 400 from DES" in {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
-      getPillar2Subscription(plrId, 400, Json.toJson(desError).toString())
+      getPillar2Subscription(plrId,  400, Json.toJson(desError).toString())
 
       val request = FakeRequest("GET", s"/pillar2/subscription/${plrId.value}").withHeaders("Authorization" -> "Bearer testtoken")
 

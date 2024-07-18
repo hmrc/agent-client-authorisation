@@ -199,7 +199,7 @@ class IfConnectorImpl @Inject() (
       getWithIFHeaders(apiName = "getPillar2Subscription", url = url, viaIF = true).map { response =>
         response.status match {
           case 200 =>
-            response.json.asOpt[Pillar2Record].toRight(Pillar2Error(NOT_FOUND, Seq.empty[DesError]))
+            (response.json \ "success").asOpt[Pillar2Record].toRight(Pillar2Error(NOT_FOUND, Seq.empty[DesError]))
           case _ =>
             Try((response.json \ "failures").asOpt[Seq[DesError]] match {
               case Some(e) => Left(Pillar2Error(response.status, e))
