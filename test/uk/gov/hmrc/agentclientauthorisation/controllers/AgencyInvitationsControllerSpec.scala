@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import akka.actor.ActorSystem
-import com.kenshoo.play.metrics.Metrics
+import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -32,20 +31,21 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.Trust
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.{failure, valueOps}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcId, ClientIdentifier, InvitationId, PlrId, Service, Vrn}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.Trust
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -93,7 +93,8 @@ class AgencyInvitationsControllerSpec
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
       mockPlayAuthConnector
-        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any[HeaderCarrier], any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any[HeaderCarrier], any[ExecutionContext])
+    )
       .thenReturn(returnValue)
 
   override protected def beforeEach(): Unit = {
@@ -101,17 +102,20 @@ class AgencyInvitationsControllerSpec
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None)))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))
+    )
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None)))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))
+    )
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None)))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))
+    )
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
     when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None)))
@@ -150,7 +154,9 @@ class AgencyInvitationsControllerSpec
         invitationsService
           .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
             any[HeaderCarrier],
-            any[ExecutionContext]))
+            any[ExecutionContext]
+          )
+      )
         .thenReturn(Future successful invitationActive)
       when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
         .thenReturn(Future successful invitationActive)
@@ -167,7 +173,9 @@ class AgencyInvitationsControllerSpec
         invitationsService
           .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
             any[HeaderCarrier],
-            any[ExecutionContext]))
+            any[ExecutionContext]
+          )
+      )
         .thenReturn(Future successful invitationActive)
       when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(invitationActive))
@@ -197,7 +205,9 @@ class AgencyInvitationsControllerSpec
           any[Service](),
           any[ClientIdentifier.ClientId],
           any[ClientIdentifier.ClientId],
-          any[Option[String]])(any[HeaderCarrier], any[ExecutionContext]))
+          any[Option[String]]
+        )(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful inviteCreated)
 
       val response = await(controller.createInvitation(arn)(FakeRequest().withJsonBody(jsonBody)))
@@ -243,7 +253,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId]))
+          .findInvitation(any[InvitationId])
+      )
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful cancelledInvite)
@@ -261,7 +272,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId]))
+          .findInvitation(any[InvitationId])
+      )
         .thenReturn(Future successful Some(inviteCreated))
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future failed StatusUpdateFailure(Accepted, "already accepted"))
@@ -276,7 +288,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService
-          .findInvitation(any[InvitationId]))
+          .findInvitation(any[InvitationId])
+      )
         .thenReturn(Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
@@ -398,7 +411,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful VatRecordClientInsolvent)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatClientInsolvent
@@ -409,7 +423,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful VatKnownFactCheckOk)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NoContent
@@ -420,7 +435,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful VatKnownFactNotMatched)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe VatRegistrationDateDoesNotMatch
@@ -431,7 +447,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful VatDetailsNotFound)
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe NotFound
@@ -448,7 +465,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientVatRegistrationCheckResult(eqs(vrn), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future failed UpstreamErrorResponse("MIGRATION", 403, 423))
 
       await(controller.checkKnownFactVat(vrn, suppliedDate)(FakeRequest())) shouldBe Locked
@@ -457,7 +475,7 @@ class AgencyInvitationsControllerSpec
   }
 
   "checkKnownFactIrv" should {
-    //val format = DateTimeFormat.forPattern("ddMMyyyy")
+    // val format = DateTimeFormat.forPattern("ddMMyyyy")
     val nino = Nino("AB123456A")
     val suppliedDateOfBirth = LocalDate.parse("2001-02-03")
 
@@ -466,7 +484,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Some(true))
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NoContent
@@ -477,7 +496,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Some(false))
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe DateOfBirthDoesNotMatch
@@ -488,7 +508,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientDateOfBirthMatches(eqs(nino), eqs(suppliedDateOfBirth))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful None)
 
       await(controller.checkKnownFactIrv(nino, suppliedDateOfBirth)(FakeRequest())) shouldBe NotFound
@@ -502,7 +523,7 @@ class AgencyInvitationsControllerSpec
   }
 
   "checkKnownFactCbc" should {
-    //val format = DateTimeFormat.forPattern("ddMMyyyy")
+    // val format = DateTimeFormat.forPattern("ddMMyyyy")
     val cbcId = CbcId("XACBC0000012345")
     val correctEmail = "client@business.org"
     val subscriptionRecord =
@@ -553,7 +574,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Pillar2RecordClientInactive)
 
       await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe Pillar2ClientInactive
@@ -564,7 +586,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Pillar2KnownFactCheckOk)
 
       await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe NoContent
@@ -575,7 +598,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Pillar2KnownFactNotMatched)
 
       await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe Pillar2RegistrationDateDoesNotMatch
@@ -586,7 +610,8 @@ class AgencyInvitationsControllerSpec
 
       when(
         kfcService
-          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext]))
+          .clientPillar2RegistrationCheckResult(eqs(clientPlrId), eqs(suppliedDate))(any[HeaderCarrier], any[ExecutionContext])
+      )
         .thenReturn(Future successful Pillar2DetailsNotFound)
 
       await(controller.checkKnownFactPillar2(clientPlrId)(makeRequest(suppliedDate))) shouldBe NotFound
@@ -606,34 +631,42 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
-          any[ExecutionContext])
+          any[ExecutionContext]
+        )
       ).thenReturn(Future successful true)
 
       await(
-        controller.setRelationshipEnded()(FakeRequest()
-          .withJsonBody(Json.parse(s"""{
-                                      |"arn": "${arn.value}",
-                                      |"clientId": "${nino.value}",
-                                      |"service": "HMRC-MTD-IT",
-                                      |"endedBy": "Agent"
-                                      |}""".stripMargin)))) shouldBe NoContent
+        controller.setRelationshipEnded()(
+          FakeRequest()
+            .withJsonBody(Json.parse(s"""{
+                                        |"arn": "${arn.value}",
+                                        |"clientId": "${nino.value}",
+                                        |"service": "HMRC-MTD-IT",
+                                        |"endedBy": "Agent"
+                                        |}""".stripMargin))
+        )
+      ) shouldBe NoContent
     }
 
     "return Not Found when no invitation found" in {
 
       when(
         invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
-          any[ExecutionContext])
+          any[ExecutionContext]
+        )
       ).thenReturn(Future successful false)
 
       await(
-        controller.setRelationshipEnded()(FakeRequest()
-          .withJsonBody(Json.parse(s"""{
-                                      |"arn": "${arn.value}",
-                                      |"clientId": "${nino.value}",
-                                      |"service": "HMRC-MTD-IT",
-                                      |"endedBy": "Agent"
-                                      |}""".stripMargin)))) shouldBe InvitationNotFound
+        controller.setRelationshipEnded()(
+          FakeRequest()
+            .withJsonBody(Json.parse(s"""{
+                                        |"arn": "${arn.value}",
+                                        |"clientId": "${nino.value}",
+                                        |"service": "HMRC-MTD-IT",
+                                        |"endedBy": "Agent"
+                                        |}""".stripMargin))
+        )
+      ) shouldBe InvitationNotFound
     }
   }
 }

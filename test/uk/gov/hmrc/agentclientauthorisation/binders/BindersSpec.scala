@@ -32,7 +32,8 @@ class BindersSpec extends UnitSpec {
 
     "reject unknown status" in {
       InvitationStatusBinder.bind("status", Map("status" -> Seq("NotAStatus"))) shouldBe Some(
-        Left("Cannot parse parameter status as InvitationStatus: status of [NotAStatus] is not a valid InvitationStatus"))
+        Left("Cannot parse parameter status as InvitationStatus: status of [NotAStatus] is not a valid InvitationStatus")
+      )
     }
 
     "reject zero status arguments" in {

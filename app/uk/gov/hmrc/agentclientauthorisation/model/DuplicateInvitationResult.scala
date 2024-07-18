@@ -29,7 +29,7 @@ object DuplicateInvitationResult {
 
     val counter = doc.get[BsonInt32]("counter").map(_.getValue).getOrElse(throw new Exception("no counter!"))
 
-    val toDelete = counter - 1 //leave one invitation
+    val toDelete = counter - 1 // leave one invitation
 
     val invitationDetails = Json.parse(doc.toSeq.head._2.toString).as[InvitationDetails]
 

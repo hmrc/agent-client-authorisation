@@ -23,12 +23,10 @@ import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 import play.core.DefaultWebCommands
 
-/**
-  * Normalise the request path. The API platform strips the context
-  * '/agent-client-authorisation' from the URL before forwarding the request.
-  * Re-add it here if necessary.
+/** Normalise the request path. The API platform strips the context '/agent-client-authorisation' from the URL before forwarding the request. Re-add
+  * it here if necessary.
   */
-class ApiPlatformRequestHandler @Inject()(router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters)
+class ApiPlatformRequestHandler @Inject() (router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters)
     extends DefaultHttpRequestHandler(new DefaultWebCommands(), None, router, errorHandler, configuration, filters.filters) {
 
   override def handlerForRequest(request: RequestHeader): (RequestHeader, Handler) =

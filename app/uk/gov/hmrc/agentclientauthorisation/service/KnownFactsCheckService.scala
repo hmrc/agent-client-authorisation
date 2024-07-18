@@ -29,11 +29,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class KnownFactsCheckService @Inject()(desConnector: DesConnector, ifConnector: IfConnector, citizenDetailsConnector: CitizenDetailsConnector) {
+class KnownFactsCheckService @Inject() (desConnector: DesConnector, ifConnector: IfConnector, citizenDetailsConnector: CitizenDetailsConnector) {
 
-  def clientVatRegistrationCheckResult(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[VatKnownFactCheckResult] =
+  def clientVatRegistrationCheckResult(clientVrn: Vrn, suppliedVatRegistrationDate: LocalDate)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[VatKnownFactCheckResult] =
     desConnector.getVatDetails(clientVrn).map {
       case Some(VatDetails(Some(regDate), isInsolvent)) if regDate == suppliedVatRegistrationDate =>
         if (!isInsolvent) VatKnownFactCheckOk else VatRecordClientInsolvent
@@ -48,14 +49,15 @@ class KnownFactsCheckService @Inject()(desConnector: DesConnector, ifConnector: 
       case None                                                                  => None
     }
 
-  def clientPillar2RegistrationCheckResult(plrId: PlrId, suppliedPillar2RegistrationDate: LocalDate)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Pillar2KnownFactCheckResult] =
+  def clientPillar2RegistrationCheckResult(plrId: PlrId, suppliedPillar2RegistrationDate: LocalDate)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Pillar2KnownFactCheckResult] =
     ifConnector
       .getPillar2Details(plrId)
       .map {
         _.response match {
-          case Right(pillarDetails) if (!pillarDetails.inactive && pillarDetails.effectiveRegistrationDate == suppliedPillar2RegistrationDate) =>
+          case Right(pillarDetails) if !pillarDetails.inactive && pillarDetails.effectiveRegistrationDate == suppliedPillar2RegistrationDate =>
             Pillar2KnownFactCheckOk
           case Right(pillarDetails) if pillarDetails.inactive => Pillar2RecordClientInactive
           case Right(_)                                       => Pillar2KnownFactNotMatched

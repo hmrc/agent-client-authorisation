@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationExpired, ScheduleRecord, ScheduleRepository}
@@ -30,7 +30,7 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 @Singleton
-class InvitationsStatusUpdateScheduler @Inject()(
+class InvitationsStatusUpdateScheduler @Inject() (
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
   actorSystem: ActorSystem,
@@ -63,32 +63,30 @@ class InvitationsStatusUpdateScheduler @Inject()(
 class TaskActor(scheduleRepository: ScheduleRepository, invitationsService: InvitationsService, repeatInterval: Int)(implicit ec: ExecutionContext)
     extends Actor {
 
-  def receive = {
-    case uid: String =>
-      scheduleRepository.read(InvitationExpired).flatMap {
-        case ScheduleRecord(recordUid, runAt, _) =>
-          val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
-          if (uid == recordUid) {
-            val newUid = UUID.randomUUID().toString
-            val nextRunAt = (if (runAt.isBefore(now)) now else runAt)
-              .plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
-            val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
-            scheduleRepository
-              .write(newUid, nextRunAt, InvitationExpired)
-              .map(_ => {
-                context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
-                Logger(getClass).info(s"started 'findAndUpdateExpiredInvitations' job, next job is scheduled at $nextRunAt")
-                invitationsService.findAndUpdateExpiredInvitations()
-                Logger(getClass).info("finished 'findAndUpdateExpiredInvitations' job")
-              })
-          } else {
-            val localDateTime = if (runAt.isBefore(now)) now else runAt
-            val intervalSeconds = localDateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
-            val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
-            context.system.scheduler.scheduleOnce(delay, self, recordUid)
-            toFuture(())
+  def receive = { case uid: String =>
+    scheduleRepository.read(InvitationExpired).flatMap { case ScheduleRecord(recordUid, runAt, _) =>
+      val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
+      if (uid == recordUid) {
+        val newUid = UUID.randomUUID().toString
+        val nextRunAt = (if (runAt.isBefore(now)) now else runAt)
+          .plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
+        val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
+        scheduleRepository
+          .write(newUid, nextRunAt, InvitationExpired)
+          .map { _ =>
+            context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
+            Logger(getClass).info(s"started 'findAndUpdateExpiredInvitations' job, next job is scheduled at $nextRunAt")
+            invitationsService.findAndUpdateExpiredInvitations()
+            Logger(getClass).info("finished 'findAndUpdateExpiredInvitations' job")
           }
+      } else {
+        val localDateTime = if (runAt.isBefore(now)) now else runAt
+        val intervalSeconds = localDateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
+        val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
+        context.system.scheduler.scheduleOnce(delay, self, recordUid)
+        toFuture(())
       }
-      ()
+    }
+    ()
   }
 }

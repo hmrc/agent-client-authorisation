@@ -16,22 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import java.net.URL
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.http.Status
 import play.api.libs.json.{Format, JsObject, Json}
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Identifier, Service}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReads.is2xx
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
+import java.net.URL
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ES19Request(friendlyName: String)
@@ -52,24 +50,24 @@ trait EnrolmentStoreProxyConnector {
   def getPrincipalGroupIdFor(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
   // ES19 - Update an enrolment's friendly name
-  def updateEnrolmentFriendlyName(groupId: String, enrolmentKey: String, friendlyName: String)(
-    implicit
+  def updateEnrolmentFriendlyName(groupId: String, enrolmentKey: String, friendlyName: String)(implicit
     hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit]
+    ec: ExecutionContext
+  ): Future[Unit]
 
-  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Seq[Identifier]]]
+  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Option[Seq[Identifier]]]
 
 }
 
 @Singleton
-class EnrolmentStoreProxyConnectorImpl @Inject()(
+class EnrolmentStoreProxyConnectorImpl @Inject() (
   http: HttpClient,
-  metrics: Metrics
-)(implicit appConfig: AppConfig)
+  val metrics: Metrics
+)(implicit appConfig: AppConfig, val ec: ExecutionContext)
     extends EnrolmentStoreProxyConnector with HttpAPIMonitor with Logging {
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   val espBaseUrl = new URL(appConfig.enrolmentStoreProxyUrl)
 
@@ -105,10 +103,10 @@ class EnrolmentStoreProxyConnectorImpl @Inject()(
   }
 
   // ES19 - Update an enrolment's friendly name
-  def updateEnrolmentFriendlyName(groupId: String, enrolmentKey: String, friendlyName: String)(
-    implicit
+  def updateEnrolmentFriendlyName(groupId: String, enrolmentKey: String, friendlyName: String)(implicit
     hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] = {
+    ec: ExecutionContext
+  ): Future[Unit] = {
     val url = new URL(
       espBaseUrl,
       s"/enrolment-store-proxy/enrolment-store/groups/$groupId/enrolments/$enrolmentKey/friendly_name"
@@ -127,9 +125,10 @@ class EnrolmentStoreProxyConnectorImpl @Inject()(
   }
 
   // ES20 - query known facts by verifiers or identifiers
-  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Option[Seq[Identifier]]] = {
+  def queryKnownFacts(service: Service, knownFacts: Seq[Identifier])(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Option[Seq[Identifier]]] = {
     val url = new URL(espBaseUrl, s"/enrolment-store-proxy/enrolment-store/enrolments")
     val request = ES20Request(service.id, knownFacts)
     monitor("ConsumedAPI-ES-queryKnownFactsByIdentifiersOrVerifiers-POST") {

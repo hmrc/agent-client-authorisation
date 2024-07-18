@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
 import com.github.blemale.scaffeine.Scaffeine
-import com.kenshoo.play.metrics.Metrics
 import play.api.libs.json.JsValue
 import play.api.{Configuration, Environment, Logger, Logging}
 import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
@@ -26,6 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.MtdItId
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
@@ -69,18 +69,18 @@ class LocalCaffeineCache[T](name: String, size: Int, expires: Duration)(implicit
         record("Count-" + name + "-from-cache")
         Future.successful(v)
       case None =>
-        body.andThen {
-          case Success(v) =>
-            logger.debug(s"Missing $name cache hit, storing new value.")
-            record("Count-" + name + "-from-source")
-            underlying.put(key, v)
+        body.andThen { case Success(v) =>
+          logger.debug(s"Missing $name cache hit, storing new value.")
+          record("Count-" + name + "-from-source")
+          underlying.put(key, v)
         }
     }
 }
 
 @Singleton
-class AgentCacheProvider @Inject()(val environment: Environment, configuration: Configuration, servicesConfig: ServicesConfig)(
-  implicit metrics: Metrics) {
+class AgentCacheProvider @Inject() (val environment: Environment, configuration: Configuration, servicesConfig: ServicesConfig)(implicit
+  metrics: Metrics
+) {
 
   val runModeConfiguration: Configuration = configuration
   def mode = environment.mode

@@ -16,22 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.http.Status
 import play.api.libs.json.{JsPath, Reads}
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -49,7 +47,7 @@ object CitizenDateOfBirth {
 }
 case class Citizen(firstName: Option[String], lastName: Option[String], nino: Option[String] = None, sautr: Option[String] = None) {
   lazy val name: Option[String] = {
-    val n = Seq(firstName, lastName).collect({ case Some(x) => x }).mkString(" ")
+    val n = Seq(firstName, lastName).collect { case Some(x) => x }.mkString(" ")
     if (n.isEmpty) None else Some(n)
   }
 }
@@ -85,12 +83,10 @@ trait CitizenDetailsConnector {
 }
 
 @Singleton
-class CitizenDetailsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
+class CitizenDetailsConnectorImpl @Inject() (appConfig: AppConfig, http: HttpClient, val metrics: Metrics)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with CitizenDetailsConnector with Logging {
 
   private val baseUrl = appConfig.citizenDetailsBaseUrl
-
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getCitizenDateOfBirth(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[CitizenDateOfBirth]] =
     monitor(s"ConsumedAPI-CitizenDetails-GET") {

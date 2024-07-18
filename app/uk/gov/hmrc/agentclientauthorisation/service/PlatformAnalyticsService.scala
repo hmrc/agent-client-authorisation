@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import java.util.UUID
 
-import akka.Done
+import org.apache.pekko.Done
 import com.google.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -30,7 +30,7 @@ import scala.util.hashing.{MurmurHash3 => MH3}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PlatformAnalyticsService @Inject()(connector: PlatformAnalyticsConnector, appConfig: AppConfig) {
+class PlatformAnalyticsService @Inject() (connector: PlatformAnalyticsConnector, appConfig: AppConfig) {
 
   private val trackingId = appConfig.gaTrackingId
   private val clientTypeIndex = appConfig.gaClientTypeIndex
@@ -42,14 +42,15 @@ class PlatformAnalyticsService @Inject()(connector: PlatformAnalyticsConnector, 
 
   def reportSingleEventAnalyticsRequest(i: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done] = {
     logger.info(s"sending GA event for invitation: ${i.invitationId.value} with status: ${i.status} and origin: ${i.origin
-      .getOrElse("origin_not_set")}")
+        .getOrElse("origin_not_set")}")
     val maybeGAClientId: Option[String] = if (hc.sessionId.isDefined) None else Some(makeGAClientId)
     sendAnalyticsRequest(List(i), maybeGAClientId)
   }
 
-  private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Done] =
+  private def sendAnalyticsRequest(invitations: List[Invitation], clientId: Option[String])(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Done] =
     connector.sendEvent(AnalyticsRequest(gaClientId = clientId, gaTrackingId = Some(trackingId), events = invitations.map(i => createEventFor(i))))
 
   private def createEventFor(i: Invitation): Event =

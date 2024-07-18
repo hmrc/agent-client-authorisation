@@ -27,7 +27,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector) extends Logging {
+class FriendlyNameService @Inject() (enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector) extends Logging {
   /*
     APB-6204: Write the friendly name when a client accepts an invitation
     This does not apply to Personal Income Record.
@@ -41,8 +41,8 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
     }
 
   private def doUpdateFriendlyName(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
-    val maybeEnrolmentKey
-      : Option[String] = Try(EnrolmentKey.enrolmentKey(invitation.service.id, invitation.clientId.value)).toOption // don't fail on errors
+    val maybeEnrolmentKey: Option[String] =
+      Try(EnrolmentKey.enrolmentKey(invitation.service.id, invitation.clientId.value)).toOption // don't fail on errors
     val maybeClientName: Option[String] = invitation.detailsForEmail
       .map(name => URLEncoder.encode(name.clientName, "UTF-8"))
       .filter(_.nonEmpty)
@@ -51,20 +51,22 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
       if (invitation.clientId.typeId == CbcIdType.id && invitation.service == Service.Cbc) {
         enrolmentStoreProxyConnector
           .queryKnownFacts(Service.Cbc, Seq(Identifier(CbcIdType.id, invitation.clientId.value)))
-          .recover {
-            case _ =>
-              None
+          .recover { case _ =>
+            None
           }
           .map(
             _.flatMap(
               _.filter(identifier => identifier.key.toLowerCase == UtrType.id && UtrType.isValid(identifier.value)).headOption
                 .flatMap(identifier =>
                   maybeEnrolmentKey
-                    .map(enrolmentKey => enrolmentKey + "~" + identifier.toString()))))
+                    .map(enrolmentKey => enrolmentKey + "~" + identifier.toString())
+                )
+            )
+          )
       } else Future.successful(maybeEnrolmentKey)
 
     (for {
-      maybeGroupId              <- enrolmentStoreProxyConnector.getPrincipalGroupIdFor(invitation.arn).recover { case _ => None /* don't fail on errors */ }
+      maybeGroupId <- enrolmentStoreProxyConnector.getPrincipalGroupIdFor(invitation.arn).recover { case _ => None /* don't fail on errors */ }
       maybeEnrichedEnrolmentKey <- enrichedEnrolmentKeyF
     } yield {
       val maybeResultFuture = for {
@@ -88,8 +90,8 @@ class FriendlyNameService @Inject()(enrolmentStoreProxyConnector: EnrolmentStore
             (maybeClientName, s"Client name not available"),
             (maybeGroupId, s"Error retrieving agent's group id"),
             (maybeEnrichedEnrolmentKey, s"Error enriching enrolment key with ${UtrType.id.toUpperCase()} for ${Service.HMRCCBCORG} service")
-          ).collect {
-            case (None, msg) => msg
+          ).collect { case (None, msg) =>
+            msg
           }
           val maybeErrorMessage: Option[String] =
             if (errors.isEmpty) None

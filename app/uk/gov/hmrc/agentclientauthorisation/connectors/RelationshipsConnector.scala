@@ -16,30 +16,25 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject._
 import play.api.Logging
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.LocalDateTime
+import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, metrics: Metrics)
+class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, val metrics: Metrics)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with HttpErrorFunctions with Logging {
-
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val baseUrl: String = appConfig.relationshipsBaseUrl
   private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
@@ -141,28 +136,23 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
   private def trustRelationshipUrl(invitation: Invitation): String =
     invitation.service.enrolmentKey match {
       case Service.HMRCTERSORG =>
-        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(
-          invitation.clientId.value)}"
+        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERS-ORG/client/SAUTR/${encodePathSegment(invitation.clientId.value)}"
       case Service.HMRCTERSNTORG =>
-        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERSNT-ORG/client/URN/${encodePathSegment(
-          invitation.clientId.value)}"
+        s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERSNT-ORG/client/URN/${encodePathSegment(invitation.clientId.value)}"
     }
   private def mtdItRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(
-      invitation.clientId.value)}"
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}"
 
   private def mtdVatRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(
-      invitation.clientId.value)}"
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(invitation.clientId.value)}"
 
   private def cgtRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(
-      invitation.clientId.value)}"
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-CGT-PD/client/CGTPDRef/${encodePathSegment(invitation.clientId.value)}"
 
   private def pptRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PPT-ORG/client/EtmpRegistrationNumber/${encodePathSegment(
-      invitation.clientId.value
-    )}"
+        invitation.clientId.value
+      )}"
 
   private def cbcRelationshipUrl(invitation: Invitation): String = {
     val serviceKey = invitation.service match {
@@ -170,14 +160,14 @@ class RelationshipsConnector @Inject()(appConfig: AppConfig, http: HttpClient, m
       case _                              => throw new IllegalArgumentException
     }
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/$serviceKey/client/cbcId/${encodePathSegment(
-      invitation.clientId.value
-    )}"
+        invitation.clientId.value
+      )}"
   }
 
   private def pillar2RelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-PILLAR2-ORG/client/PLRID/${encodePathSegment(
-      invitation.clientId.value
-    )}"
+        invitation.clientId.value
+      )}"
 
   private def afiRelationshipUrl(invitation: Invitation): String = {
     val arn = encodePathSegment(invitation.arn.value)

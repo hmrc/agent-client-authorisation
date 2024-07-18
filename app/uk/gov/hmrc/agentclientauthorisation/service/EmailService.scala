@@ -31,21 +31,23 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailService @Inject()(
+class EmailService @Inject() (
   desConnector: DesConnector,
   clientNameService: ClientNameService,
   emailConnector: EmailConnector,
-  messagesApi: MessagesApi)(implicit langs: Langs)
+  messagesApi: MessagesApi
+)(implicit langs: Langs)
     extends Logging {
 
-  def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[DetailsForEmail] = {
+  def createDetailsForEmail(arn: Arn, clientId: ClientId, service: Service)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[DetailsForEmail] = {
     val detailsForEmail = for {
       agencyRecordDetails <- fromOptionF(desConnector.getAgencyDetails(Right(arn)), AgencyEmailNotFound(arn))
       agencyName          <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyName), AgencyNameNotFound(arn))
       agencyEmail         <- fromOption[Future](agencyRecordDetails.agencyDetails.flatMap(_.agencyEmail), AgencyEmailNotFound(arn))
-      clientName          <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
+      clientName <- fromOptionF[Future, Exception, String](clientNameService.getClientNameByService(clientId.value, service), ClientNameNotFound())
     } yield DetailsForEmail(agencyEmail, agencyName, clientName)
     detailsForEmail.leftMap { ex =>
       getLogger.error(s"createDetailsForEmail error: ${ex.getMessage}", ex); throw ex
@@ -70,9 +72,9 @@ class EmailService @Inject()(
   def sendWarningToExpire(invitations: List[Invitation])(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders = Seq("Warning-aboutToExpire-email-size" -> s"${invitations.size}"))
     invitations match {
-      case Nil => logger info ("empty list - no warning to expire emails to send"); Future successful (())
-      case hd :: _ => {
-        logger info (s"sending email for ${invitations.size} invitations warning to expire")
+      case Nil => logger info "empty list - no warning to expire emails to send"; Future successful (())
+      case hd :: _ =>
+        logger info s"sending email for ${invitations.size} invitations warning to expire"
         val detailsForEmail = hd.detailsForEmail.getOrElse(throw new Exception("details for email were unavailable"))
         val numberOfInvitations = invitations.size
         val agencyName = detailsForEmail.agencyName
@@ -90,8 +92,8 @@ class EmailService @Inject()(
               "createdDate"         -> DateUtils.displayDate(createdDate.toLocalDate),
               "expiryDate"          -> DateUtils.displayDate(expiryDate)
             )
-          ))
-      }
+          )
+        )
     }
   }
 
@@ -100,10 +102,9 @@ class EmailService @Inject()(
       case Some(dfe) =>
         val emailInfo: EmailInformation = emailInformation(templateId, dfe.agencyEmail, dfe.agencyName, dfe.clientName, invitation)
         emailConnector.sendEmail(emailInfo)
-      case _ => {
+      case _ =>
         logger.warn(s"email not sent as there were no details for email found in invitation")
         Future.successful((): Unit)
-      }
     }
 
   private def emailInformation(templateId: String, agencyEmail: String, agencyName: String, clientName: String, invitation: Invitation) =

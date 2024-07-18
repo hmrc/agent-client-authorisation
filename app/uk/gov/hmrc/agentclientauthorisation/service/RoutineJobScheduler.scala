@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import akka.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
 import play.api.Logging
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.{RemovePersonalInfo, ScheduleRecord, ScheduleRepository}
@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 @Singleton
-class RoutineJobScheduler @Inject()(
+class RoutineJobScheduler @Inject() (
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
   actorSystem: ActorSystem,
@@ -57,45 +57,44 @@ class RoutineScheduledJobActor(
   scheduleRepository: ScheduleRepository,
   invitationsService: InvitationsService,
   repeatInterval: Int,
-  altItsaExpiryEnable: Boolean)(implicit ec: ExecutionContext)
+  altItsaExpiryEnable: Boolean
+)(implicit ec: ExecutionContext)
     extends Actor with Logging {
 
-  def receive = {
-    case uid: String =>
-      logger.info("RoutineJobSchedulerActor Received message: " + uid)
-      logger.info(s"RoutineJobSchedulerActor: alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
-      try {
-        scheduleRepository.read(RemovePersonalInfo).flatMap {
-          case ScheduleRecord(recordUid, runAt, _) =>
-            val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
-            if (uid == recordUid) {
-              val newUid = UUID.randomUUID().toString
-              val nextRunAt = (if (runAt.isBefore(now)) now else runAt).plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
-              val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
-              scheduleRepository
-                .write(newUid, nextRunAt, RemovePersonalInfo)
-                .map { _ =>
-                  context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
-                  logger.info(s"Starting routine scheduled job, next job is scheduled at $nextRunAt")
-                  logger.info(s"alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
-                  logger.info(s"Out-of-date alt-ITSA invitations (if found) ${if (altItsaExpiryEnable) "WILL" else "will NOT"} be set to expired.")
-                  for {
-                    _ <- invitationsService.prepareAndSendWarningEmail()
-                    _ <- invitationsService.removePersonalDetails()
-                    _ <- if (altItsaExpiryEnable) invitationsService.cancelOldAltItsaInvitations() else Future.successful(())
-                  } yield (logger info ("routine scheduled job completed"))
-                }
-            } else { //There are several instances of this service running
-              val dateTime = if (runAt.isBefore(now)) now else runAt
-              val intervalSeconds = dateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
-              val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
-              context.system.scheduler.scheduleOnce(delay, self, recordUid)
-              toFuture(())
+  def receive = { case uid: String =>
+    logger.info("RoutineJobSchedulerActor Received message: " + uid)
+    logger.info(s"RoutineJobSchedulerActor: alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
+    try
+      scheduleRepository.read(RemovePersonalInfo).flatMap { case ScheduleRecord(recordUid, runAt, _) =>
+        val now = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
+        if (uid == recordUid) {
+          val newUid = UUID.randomUUID().toString
+          val nextRunAt = (if (runAt.isBefore(now)) now else runAt).plusSeconds(repeatInterval + Random.nextInt(Math.min(60, repeatInterval)))
+          val delay = nextRunAt.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
+          scheduleRepository
+            .write(newUid, nextRunAt, RemovePersonalInfo)
+            .map { _ =>
+              context.system.scheduler.scheduleOnce(delay.seconds, self, newUid)
+              logger.info(s"Starting routine scheduled job, next job is scheduled at $nextRunAt")
+              logger.info(s"alt-itsa-expiry-enable is set to $altItsaExpiryEnable")
+              logger.info(s"Out-of-date alt-ITSA invitations (if found) ${if (altItsaExpiryEnable) "WILL" else "will NOT"} be set to expired.")
+              for {
+                _ <- invitationsService.prepareAndSendWarningEmail()
+                _ <- invitationsService.removePersonalDetails()
+                _ <- if (altItsaExpiryEnable) invitationsService.cancelOldAltItsaInvitations() else Future.successful(())
+              } yield (logger info "routine scheduled job completed")
             }
+        } else { // There are several instances of this service running
+          val dateTime = if (runAt.isBefore(now)) now else runAt
+          val intervalSeconds = dateTime.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC)
+          val delay = (intervalSeconds + Random.nextInt(Math.min(60, repeatInterval))).seconds
+          context.system.scheduler.scheduleOnce(delay, self, recordUid)
+          toFuture(())
         }
-      } catch {
-        case ex: Exception => logger.error(s"Exception in RoutineJobSchedulerActor: ${ex.getMessage}", ex)
       }
-      ()
+    catch {
+      case ex: Exception => logger.error(s"Exception in RoutineJobSchedulerActor: ${ex.getMessage}", ex)
+    }
+    ()
   }
 }

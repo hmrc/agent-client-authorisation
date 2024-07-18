@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class BusinessNamesService @Inject()(desConnector: DesConnector)(implicit val appConfig: AppConfig) extends Logging {
+class BusinessNamesService @Inject() (desConnector: DesConnector)(implicit val appConfig: AppConfig) extends Logging {
 
   private val defaultBusinessName = ""
 
@@ -38,10 +38,8 @@ class BusinessNamesService @Inject()(desConnector: DesConnector)(implicit val ap
 
   private lazy val singleThreadedExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
 
-  /**
-    * Uses a single-threaded execution context.
-    * Concurrent requests to fetch business names get stream-lined.
-    * Although the rate limiting requirement will be met, the "serial" nature of the concurrent requests can affect the time taken to execute individual requests.
+  /** Uses a single-threaded execution context. Concurrent requests to fetch business names get stream-lined. Although the rate limiting requirement
+    * will be met, the "serial" nature of the concurrent requests can affect the time taken to execute individual requests.
     */
   def get(utrs: Set[String])(implicit headerCarrier: HeaderCarrier): Future[Set[BusinessNameByUtr]] = {
     implicit val ec: ExecutionContext = singleThreadedExecutionContext
@@ -50,9 +48,7 @@ class BusinessNamesService @Inject()(desConnector: DesConnector)(implicit val ap
       (for {
         _            <- Future.sequence(Set(Future.successful(fetchBusinessNamesRateLimiter.acquire())))
         businessName <- get(Utr(utr))
-      } yield {
-        businessName
-      }) transformWith {
+      } yield businessName) transformWith {
         case Success(businessName) =>
           Future.successful(BusinessNameByUtr(utr, businessName))
         case Failure(ex) =>

@@ -17,9 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
 import org.mongodb.scala.MongoWriteException
 import play.api.Logger
@@ -28,10 +25,12 @@ import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceRepository, desConnector: DesConnector, metrics: Metrics)
+class AgentLinkService @Inject() (agentReferenceRecordRepository: AgentReferenceRepository, desConnector: DesConnector, metrics: Metrics)
     extends Monitor {
 
   private val logger = Logger(getClass)
@@ -58,22 +57,23 @@ class AgentLinkService @Inject()(agentReferenceRecordRepository: AgentReferenceR
       .map(
         _.flatMap(_.agencyDetails.flatMap(_.agencyName))
           .map(normaliseAgentName)
-          .getOrElse(throw AgencyNameNotFound(arn)))
+          .getOrElse(throw AgencyNameNotFound(arn))
+      )
 
   def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(implicit ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {
       recordOpt <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
-                                       case Some(record) =>
-                                         if (record.normalisedAgentNames.contains(normalisedAgentName))
-                                           Future.successful(record)
-                                         else
-                                           agentReferenceRecordRepository
-                                             .updateAgentName(record.uid, normalisedAgentName)
-                                             .map(_ => record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(normalisedAgentName)))
-                                       case None =>
-                                         create(arn, normalisedAgentName)
-                                     }
+                                        case Some(record) =>
+                                          if (record.normalisedAgentNames.contains(normalisedAgentName))
+                                            Future.successful(record)
+                                          else
+                                            agentReferenceRecordRepository
+                                              .updateAgentName(record.uid, normalisedAgentName)
+                                              .map(_ => record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(normalisedAgentName)))
+                                        case None =>
+                                          create(arn, normalisedAgentName)
+                                      }
     } yield record
 
   private def create(arn: Arn, normalisedAgentName: String, counter: Int = 1)(implicit ec: ExecutionContext): Future[AgentReferenceRecord] = {

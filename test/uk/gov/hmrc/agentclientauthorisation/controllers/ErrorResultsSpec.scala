@@ -51,7 +51,8 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
         NoPermissionOnAgency,
         Status.FORBIDDEN,
         "NO_PERMISSION_ON_AGENCY",
-        "The logged in user is not permitted to access invitations for the specified agency.")
+        "The logged in user is not permitted to access invitations for the specified agency."
+      )
       checkConstant(
         NoPermissionOnClient,
         Status.FORBIDDEN,
@@ -62,7 +63,8 @@ class ErrorResultsSpec extends UnitSpec with AkkaMaterializerSpec {
         PostcodeDoesNotMatch,
         Status.FORBIDDEN,
         "POSTCODE_DOES_NOT_MATCH",
-        "The submitted postcode did not match the client's postcode as held by HMRC.")
+        "The submitted postcode did not match the client's postcode as held by HMRC."
+      )
       checkConstant(InvitationNotFound, Status.NOT_FOUND, "INVITATION_NOT_FOUND", "The specified invitation was not found.")
       checkConstant(invalidInvitationStatus("My error message"), Status.FORBIDDEN, "INVALID_INVITATION_STATUS", "My error message")
       checkConstant(postcodeFormatInvalid("My error message"), Status.BAD_REQUEST, "POSTCODE_FORMAT_INVALID", "My error message")

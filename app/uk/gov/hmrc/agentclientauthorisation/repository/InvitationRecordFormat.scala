@@ -44,7 +44,8 @@ object InvitationRecordFormat {
     relationshipEndedBy: Option[String] = None,
     clientActionUrl: Option[String],
     origin: Option[String] = None,
-    events: List[StatusChangeEvent]): Invitation = {
+    events: List[StatusChangeEvent]
+  ): Invitation = {
 
     val expiryDate = expiryDateOp.getOrElse(events.head.time.plusDays(21).toLocalDate)
 
@@ -80,7 +81,7 @@ object InvitationRecordFormat {
   val detailsForEmailKey = "detailsForEmail"
   val serviceKey = "service"
 
-  implicit val oidFormat = MongoFormats.Implicits.objectIdFormat
+  implicit val oidFormat: Format[ObjectId] = MongoFormats.Implicits.objectIdFormat
 
   val reads: Reads[Invitation] = ((JsPath \ "_id").read[ObjectId] and
     (JsPath \ "invitationId").read[InvitationId] and
@@ -125,12 +126,14 @@ object InvitationRecordFormat {
             invitation.arn.value,
             invitation.clientId.enrolmentId,
             invitation.clientId.value,
-            invitation.mostRecentEvent().status.toString),
+            invitation.mostRecentEvent().status.toString
+          ),
           toArnClientStateKey(
             invitation.arn.value,
             invitation.suppliedClientId.enrolmentId,
             invitation.suppliedClientId.value,
-            invitation.mostRecentEvent().status.toString)
+            invitation.mostRecentEvent().status.toString
+          )
         ),
         arnClientServiceStateKey -> createArnClientServiceStateKeys(invitation)
       )

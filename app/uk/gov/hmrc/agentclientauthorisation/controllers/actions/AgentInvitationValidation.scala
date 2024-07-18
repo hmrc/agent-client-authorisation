@@ -31,18 +31,16 @@ trait AgentInvitationValidation extends Results {
     Future successful {
       val valid = invitation.getService.supportedSuppliedClientIdType.isValid(invitation.clientId)
       if (valid) None else Some(InvalidClientId)
-  }
+    }
 
-  private val supportedService: Validation = invite => {
+  private val supportedService: Validation = invite =>
     if (Service.findById(invite.service).isDefined) Future successful None
     else Future successful Some(unsupportedService(s"""Unsupported service "${invite.service}""""))
-  }
 
-  private val supportedClientIdType: Validation = invite => {
+  private val supportedClientIdType: Validation = invite =>
     if (invite.getService.supportedSuppliedClientIdType.id == invite.clientIdType) Future successful None
     else
       Future successful Some(unsupportedClientIdType(s"""Unsupported clientIdType "${invite.clientIdType}", for service type "${invite.service}""""))
-  }
 
   def checkForErrors(agentInvitation: AgentInvitation)(implicit ec: ExecutionContext): Future[Option[Result]] =
     Seq(supportedService, supportedClientIdType, hasValidClientId)
@@ -50,5 +48,6 @@ trait AgentInvitationValidation extends Results {
         acc.flatMap {
           case None => validation(agentInvitation)
           case r    => Future.successful(r)
-      })
+        }
+      )
 }

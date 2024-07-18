@@ -32,22 +32,28 @@ object ErrorResults {
   val GenericUnauthorized: Result = Unauthorized(toJson(ErrorBody("UNAUTHORIZED", "Bearer token is missing or not authorized.")))
   val AgentNotSubscribed: Result = Forbidden(toJson(ErrorBody("AGENT_NOT_SUBSCRIBED", "The Agent is not subscribed to Agent Services.")))
   val ClientRegistrationNotFound: Result = Forbidden(
-    toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration or SAUTR (if alt-itsa is enabled) was not found.")))
+    toJson(ErrorBody("CLIENT_REGISTRATION_NOT_FOUND", "The Client's MTDfB registration or SAUTR (if alt-itsa is enabled) was not found."))
+  )
   val NotAClient: Result = Forbidden(toJson(ErrorBody("NOT_A_CLIENT", "The logged in user must be a client to proceed.")))
   val NoPermissionOnAgency: Result = Forbidden(
-    toJson(ErrorBody("NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency.")))
+    toJson(ErrorBody("NO_PERMISSION_ON_AGENCY", "The logged in user is not permitted to access invitations for the specified agency."))
+  )
   val NoPermissionOnClient: Result = Forbidden(
-    toJson(ErrorBody("NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client.")))
+    toJson(ErrorBody("NO_PERMISSION_ON_CLIENT", "The logged in client is not permitted to access invitations for the specified client."))
+  )
   val PostcodeDoesNotMatch: Result = Forbidden(
-    toJson(ErrorBody("POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC.")))
+    toJson(ErrorBody("POSTCODE_DOES_NOT_MATCH", "The submitted postcode did not match the client's postcode as held by HMRC."))
+  )
   val DateOfBirthDoesNotMatch: Result = Forbidden(
-    toJson(ErrorBody("DATE_OF_BIRTH_DOES_NOT_MATCH", "The submitted date of birth did not match the client's date of birth as held by HMRC.")))
+    toJson(ErrorBody("DATE_OF_BIRTH_DOES_NOT_MATCH", "The submitted date of birth did not match the client's date of birth as held by HMRC."))
+  )
   val PptRegistrationDateDoesNotMatch: Result = Forbidden(
     toJson(
       ErrorBody(
         "PPT_REGISTRATION_DATE_DOES_NOT_MATCH",
         "The submitted date of application does not match the date of application on the PPT Subscription Display record."
-      ))
+      )
+    )
   )
   val PptCustomerDeregistered: Result = Forbidden(
     toJson(ErrorBody("PPT_CUSTOMER_IS_DEREGISTERED", "The PPT Subscription Display record is deregistered."))
@@ -56,17 +62,24 @@ object ErrorResults {
     toJson(
       ErrorBody(
         "VAT_REGISTRATION_DATE_DOES_NOT_MATCH",
-        "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC.")))
+        "The submitted VAT registration date did not match the client's VAT registration date as held by HMRC."
+      )
+    )
+  )
   val VatClientInsolvent: Result = Forbidden(
-    toJson(ErrorBody("VAT_RECORD_CLIENT_INSOLVENT_TRUE", "The vat record shows that the client matching the vrn submitted is insolvent")))
+    toJson(ErrorBody("VAT_RECORD_CLIENT_INSOLVENT_TRUE", "The vat record shows that the client matching the vrn submitted is insolvent"))
+  )
   val Pillar2RegistrationDateDoesNotMatch: Result = Forbidden(
     toJson(
       ErrorBody(
         "PILLA2_REGISTRATION_DATE_DOES_NOT_MATCH",
         "The submitted PILLAR2 registration date did not match the client's PILLAR2 registration date as held by HMRC."
-      )))
+      )
+    )
+  )
   val Pillar2ClientInactive: Result = Forbidden(
-    toJson(ErrorBody("PILLAR2_RECORD_CLIENT_INACTIVE_TRUE", "The pillar2 record shows that the client matching the plrId submitted is inactive")))
+    toJson(ErrorBody("PILLAR2_RECORD_CLIENT_INACTIVE_TRUE", "The pillar2 record shows that the client matching the plrId submitted is inactive"))
+  )
   val InvitationNotFound: Result = NotFound(toJson(ErrorBody("INVITATION_NOT_FOUND", "The specified invitation was not found.")))
   val PptSubscriptionNotFound: Result = NotFound(toJson(ErrorBody("PPT_SUBSCRIPTION_NOT_FOUND", "the EtmpRegistrationNumber was not found")))
   val InvalidClientId: Result = BadRequest(toJson(ErrorBody("INVALID_CLIENT_ID", "The CLIENT_ID specified is not in a valid format")))
@@ -75,14 +88,18 @@ object ErrorResults {
       ErrorBody(
         "DUPLICATE_AUTHORISATION_REQUEST",
         "An authorisation request for this service has already been created and is awaiting the client’s response."
-      ))
+      )
+    )
   )
   def nonUkAddress(countryCode: String): Result =
     NotImplemented(
       toJson(
         ErrorBody(
           "NON_UK_ADDRESS",
-          s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'.")))
+          s"This API does not currently support non-UK addresses. The client's country code should be 'GB' but it was '$countryCode'."
+        )
+      )
+    )
   def invalidInvitationStatus(message: String): Result =
     Forbidden(toJson(ErrorBody("INVALID_INVITATION_STATUS", message)))
   def unsupportedService(message: String): Result = NotImplemented(toJson(ErrorBody("UNSUPPORTED_SERVICE", message)))

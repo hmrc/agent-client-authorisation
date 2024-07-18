@@ -24,7 +24,8 @@ case class BusinessAddress(
   addressLine3: Option[String] = None,
   addressLine4: Option[String] = None,
   postalCode: Option[String],
-  countryCode: String)
+  countryCode: String
+)
 
 object BusinessAddress {
   implicit val format: OFormat[BusinessAddress] = Json.format

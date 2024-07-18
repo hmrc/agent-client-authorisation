@@ -17,14 +17,13 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import cats.data.OptionT
-import com.kenshoo.play.metrics.Metrics
 import org.mongodb.scala.MongoException
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
@@ -37,6 +36,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.LocalDate
 import javax.inject._
@@ -45,7 +45,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class AgencyInvitationsController @Inject()(
+class AgencyInvitationsController @Inject() (
   appConfig: AppConfig,
   postcodeService: PostcodeService,
   invitationsService: InvitationsService,
@@ -56,12 +56,8 @@ class AgencyInvitationsController @Inject()(
   eisConnector: EisConnector,
   authConnector: AuthConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
-  agentCacheProvider: AgentCacheProvider)(
-  implicit
-  metrics: Metrics,
-  cc: ControllerComponents,
-  futures: Futures,
-  val ec: ExecutionContext)
+  agentCacheProvider: AgentCacheProvider
+)(implicit metrics: Metrics, cc: ControllerComponents, futures: Futures, ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
   private val trustCache = agentCacheProvider.trustResponseCache
@@ -86,14 +82,15 @@ class AgencyInvitationsController @Inject()(
 
   def replaceUrnInvitationWithUtr(givenUrn: Urn, utr: Utr): Action[AnyContent] = Action.async { implicit request =>
     invitationsService.findLatestInvitationByClientId(clientId = givenUrn.value) flatMap {
-      case Some(existingInvite) if existingInvite.status == Pending => {
-        for {
-          _ <- invitationsService.create(existingInvite.arn, existingInvite.clientType, Trust, utr, utr, existingInvite.origin)
-          _ <- invitationsService.cancelInvitation(existingInvite)
-        } yield Created
-      }.recoverWith {
-        case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
-      }
+      case Some(existingInvite) if existingInvite.status == Pending =>
+        {
+          for {
+            _ <- invitationsService.create(existingInvite.arn, existingInvite.clientType, Trust, utr, utr, existingInvite.origin)
+            _ <- invitationsService.cancelInvitation(existingInvite)
+          } yield Created
+        }.recoverWith { case StatusUpdateFailure(_, msg) =>
+          Future successful invalidInvitationStatus(msg)
+        }
       case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
         for {
           _          <- invitationsService.setRelationshipEnded(i, "HMRC")
@@ -109,8 +106,8 @@ class AgencyInvitationsController @Inject()(
     forThisAgency(givenArn) {
       for {
         result <- agentLinkService
-                   .getInvitationUrl(arn, clientType)
-                   .map(link => Created.withHeaders(HeaderNames.LOCATION -> link))
+                    .getInvitationUrl(arn, clientType)
+                    .map(link => Created.withHeaders(HeaderNames.LOCATION -> link))
       } yield result
     }
   }
@@ -148,7 +145,7 @@ class AgencyInvitationsController @Inject()(
     Try(request.validate[AgentInvitation]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs))         => Future successful BadRequest(s"Invalid payload: $errs")
-      //Marianne 8/2/2019: Is this Failure case even possible?
+      // Marianne 8/2/2019: Is this Failure case even possible?
       case Failure(e) => Future successful BadRequest(s"could not parse body due to ${e.getMessage}")
     }
 
@@ -190,21 +187,22 @@ class AgencyInvitationsController @Inject()(
     clientIdType: Option[String],
     clientId: Option[String],
     status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate]): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    createdOnOrAfter: Option[LocalDate]
+  ): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       val csvServices = toListOfServices(service)
       val invitationsWithOptLinks: Future[List[Invitation]] = for {
         invitations <- invitationsService
-                        .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
+                         .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
         invitationsWithLink <- Future sequence invitations.map { invite =>
-                                (invite.clientType, invite.status) match {
-                                  case (Some(ct), Pending) =>
-                                    agentLinkService.getInvitationUrl(invite.arn, ct).map { link =>
-                                      invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
-                                    }
-                                  case _ => Future successful invite
-                                }
-                              }
+                                 (invite.clientType, invite.status) match {
+                                   case (Some(ct), Pending) =>
+                                     agentLinkService.getInvitationUrl(invite.arn, ct).map { link =>
+                                       invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
+                                     }
+                                   case _ => Future successful invite
+                                 }
+                               }
       } yield invitationsWithLink
 
       invitationsWithOptLinks.map { invitations =>
@@ -218,16 +216,16 @@ class AgencyInvitationsController @Inject()(
       val invitationsWithOptLinks: Future[Option[Invitation]] = for {
         invitation <- invitationsService.findInvitation(invitationId)
         invitationWithLink <- invitation match {
-                               case Some(invite) =>
-                                 (invite.clientType, invite.status) match {
-                                   case (Some(clientType), Pending) =>
-                                     agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
-                                       Some(invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
-                                     }
-                                   case _ => Future.successful(Some(invite))
-                                 }
-                               case _ => Future successful None
-                             }
+                                case Some(invite) =>
+                                  (invite.clientType, invite.status) match {
+                                    case (Some(clientType), Pending) =>
+                                      agentLinkService.getInvitationUrl(invite.arn, clientType).map { link =>
+                                        Some(invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link")))
+                                      }
+                                    case _ => Future.successful(Some(invite))
+                                  }
+                                case _ => Future successful None
+                              }
       } yield invitationWithLink
 
       invitationsWithOptLinks.map {
@@ -253,10 +251,9 @@ class AgencyInvitationsController @Inject()(
           if (appConfig.altItsaEnabled) checkPostcodeAgainstCitizenDetails(nino, postcode)
           else r.toFuture
       }
-      .recover {
-        case uer: UpstreamErrorResponse =>
-          logger.warn(uer.getMessage(), uer)
-          PostcodeDoesNotMatch
+      .recover { case uer: UpstreamErrorResponse =>
+        logger.warn(uer.getMessage(), uer)
+        PostcodeDoesNotMatch
       }
   }
 
@@ -265,11 +262,10 @@ class AgencyInvitationsController @Inject()(
       citizen <- OptionT(citizenDetailsConnector.getCitizenDetails(nino))
       _       <- OptionT(citizen.sautr.toFuture)
       details <- OptionT(citizenDetailsConnector.getDesignatoryDetails(nino))
-    } yield
-      details.postCode.fold[Result](PostcodeDoesNotMatch) { pc =>
-        if (pc.toLowerCase.replaceAll("\\s", "") == postcode.toLowerCase.replaceAll("\\s", "")) NoContent
-        else PostcodeDoesNotMatch
-      }
+    } yield details.postCode.fold[Result](PostcodeDoesNotMatch) { pc =>
+      if (pc.toLowerCase.replaceAll("\\s", "") == postcode.toLowerCase.replaceAll("\\s", "")) NoContent
+      else PostcodeDoesNotMatch
+    }
   }.value.map(_.getOrElse(ClientRegistrationNotFound))
 
   def checkKnownFactVat(vrn: Vrn, vatRegistrationDate: LocalDate): Action[AnyContent] = onlyForAgents { implicit request => _ =>
@@ -377,13 +373,13 @@ class AgencyInvitationsController @Inject()(
           if (record.dateOfApplication != dateOfApplication) PptRegistrationDateDoesNotMatch
           else
             record.deregistrationDate.fold(NoContent)(deregistrationDate =>
-              if (deregistrationDate.isAfter(LocalDate.now)) NoContent else PptCustomerDeregistered)
+              if (deregistrationDate.isAfter(LocalDate.now)) NoContent else PptCustomerDeregistered
+            )
         case None => PptSubscriptionNotFound
       }
-      .recover {
-        case e: UpstreamErrorResponse =>
-          logger.warn(s"unexpected error on checkKnownFactPpt $e")
-          InternalServerError
+      .recover { case e: UpstreamErrorResponse =>
+        logger.warn(s"unexpected error on checkKnownFactPpt $e")
+        InternalServerError
       }
   }
 
@@ -393,7 +389,8 @@ class AgencyInvitationsController @Inject()(
         eisConnector.getCbcSubscription(cbcId).map {
           case Some(subscription) =>
             val knownFactOk = subscription.emails.exists(_.trim.equalsIgnoreCase(email.trim))
-            if (knownFactOk) { NoContent } else {
+            if (knownFactOk) { NoContent }
+            else {
               logger.warn(s"checkKnownFactCbc: email does not match CBC subscription for $cbcId")
               Forbidden
             }
@@ -434,18 +431,18 @@ class AgencyInvitationsController @Inject()(
         (for {
           invitationsDeleted <- invitationsService.removeAllInvitationsForAgent(arn)
           referencesDeleted  <- agentLinkService.removeAgentReferencesForGiven(arn)
-        } yield {
-          Ok(
-            Json.toJson[TerminationResponse](
-              TerminationResponse(
-                Seq(
-                  DeletionCount(appConfig.appName, "invitations", invitationsDeleted),
-                  DeletionCount(appConfig.appName, "agent-reference", referencesDeleted)
-                ))))
-        }).recover {
-          case e =>
-            logger.warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
-            genericInternalServerError(e.getMessage)
+        } yield Ok(
+          Json.toJson[TerminationResponse](
+            TerminationResponse(
+              Seq(
+                DeletionCount(appConfig.appName, "invitations", invitationsDeleted),
+                DeletionCount(appConfig.appName, "agent-reference", referencesDeleted)
+              )
+            )
+          )
+        )).recover { case e =>
+          logger.warn(s"Something has gone for ${arn.value} due to: ${e.getMessage}")
+          genericInternalServerError(e.getMessage)
         }
       } else Future successful genericBadRequest(s"Invalid Arn given by Stride user: ${arn.value}")
     }
@@ -457,10 +454,9 @@ class AgencyInvitationsController @Inject()(
       .map { result =>
         if (result.nonEmpty) Created else NoContent
       }
-      .recover {
-        case e =>
-          logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
-          genericInternalServerError(e.getMessage)
+      .recover { case e =>
+        logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
+        genericInternalServerError(e.getMessage)
       }
   }
 
@@ -468,10 +464,9 @@ class AgencyInvitationsController @Inject()(
     invitationsService
       .updateAltItsaFor(arn)
       .map(_ => NoContent)
-      .recover {
-        case e =>
-          logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
-          genericInternalServerError(e.getMessage)
+      .recover { case e =>
+        logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
+        genericInternalServerError(e.getMessage)
       }
   }
 }

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.kenshoo.play.metrics.Metrics
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
@@ -35,6 +34,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, InsufficientEnrolments, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -60,13 +60,15 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
     when(
       mockPlayAuthConnector
-        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any[HeaderCarrier], any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[~[Option[AffinityGroup], Enrolments]]]())(any[HeaderCarrier], any[ExecutionContext])
+    )
       .thenReturn(returnValue)
 
   private def clientAuthStub(returnValue: Future[Enrolments]) =
     when(
       mockPlayAuthConnector
-        .authorise(any[Predicate], any[Retrieval[Enrolments]]())(any[HeaderCarrier], any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[Enrolments]]())(any[HeaderCarrier], any[ExecutionContext])
+    )
       .thenReturn(returnValue)
 
   override def beforeEach(): Unit = reset(mockPlayAuthConnector)

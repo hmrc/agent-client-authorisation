@@ -31,14 +31,17 @@ trait AgencyInvitationsHal {
     service: Option[String],
     clientIdType: Option[String],
     clientId: Option[String],
-    status: Option[InvitationStatus]): HalResource = {
+    status: Option[InvitationStatus]
+  ): HalResource = {
     val invitationResources = invitations.map(toHalResource).toVector
     val selfLink = Vector(
       HalLink(
         "self",
         routes.AgencyInvitationsController
           .getSentInvitations(arn, clientType, service, clientIdType, clientId, status, None)
-          .url))
+          .url
+      )
+    )
     Hal.hal(Json.obj(), selfLink ++ invitationLinks(invitations), Vector("invitations" -> invitationResources))
   }
 

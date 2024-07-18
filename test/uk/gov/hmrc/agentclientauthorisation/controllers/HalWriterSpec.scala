@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.hal.{HalLink, HalLinks, HalResource}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, Json, OFormat}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class HalWriterSpec extends UnitSpec {
@@ -26,7 +26,7 @@ class HalWriterSpec extends UnitSpec {
   val ball = Toy("Ball", 3)
   val duplo = Toy("Lego Duplo", 1)
 
-  implicit val toyFormat = Json.format[Toy]
+  implicit val toyFormat: OFormat[Toy] = Json.format[Toy]
 
   "HalWriter" should {
     "write embedded resources to an array" in {

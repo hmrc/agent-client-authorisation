@@ -22,34 +22,36 @@ import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 class SimpleCbcSubscriptionSpec extends UnitSpec {
 
-  val displaySubscriptionForCbCResponse: JsObject = Json.parse("""{
-                                                                 |	"displaySubscriptionForCBCResponse": {
-                                                                 |		"responseCommon": {
-                                                                 |			"status": "OK",
-                                                                 |			"processingDate": "2020-08-09T11:23:45Z"
-                                                                 |		},
-                                                                 |		"responseDetail": {
-                                                                 |			"subscriptionID": "XYCBC2764649410",
-                                                                 |			"tradingName": "Tools for Traders",
-                                                                 |			"isGBUser": true,
-                                                                 |			"primaryContact": [{
-                                                                 |					"email": "Tim@toolsfortraders.com",
-                                                                 |					"phone": "078803423883",
-                                                                 |					"mobile": "078803423883",
-                                                                 |					"individual": {
-                                                                 |						"lastName": "Taylor",
-                                                                 |						"firstName": "Tim"
-                                                                 |					}
-                                                                 |			}],
-                                                                 |			"secondaryContact": [{
-                                                                 |				"email": "contact@toolsfortraders.com",
-                                                                 |				"organisation": {
-                                                                 |					"organisationName": "Tools for Traders Limited"
-                                                                 |				}
-                                                                 |			}]
-                                                                 |		}
-                                                                 |	}
-                                                                 |}""".stripMargin).as[JsObject]
+  val displaySubscriptionForCbCResponse: JsObject = Json
+    .parse("""{
+             |	"displaySubscriptionForCBCResponse": {
+             |		"responseCommon": {
+             |			"status": "OK",
+             |			"processingDate": "2020-08-09T11:23:45Z"
+             |		},
+             |		"responseDetail": {
+             |			"subscriptionID": "XYCBC2764649410",
+             |			"tradingName": "Tools for Traders",
+             |			"isGBUser": true,
+             |			"primaryContact": [{
+             |					"email": "Tim@toolsfortraders.com",
+             |					"phone": "078803423883",
+             |					"mobile": "078803423883",
+             |					"individual": {
+             |						"lastName": "Taylor",
+             |						"firstName": "Tim"
+             |					}
+             |			}],
+             |			"secondaryContact": [{
+             |				"email": "contact@toolsfortraders.com",
+             |				"organisation": {
+             |					"organisationName": "Tools for Traders Limited"
+             |				}
+             |			}]
+             |		}
+             |	}
+             |}""".stripMargin)
+    .as[JsObject]
 
   "SimpleCbcSubscriptionSpec" should {
     "parse from JSON correctly" in {
