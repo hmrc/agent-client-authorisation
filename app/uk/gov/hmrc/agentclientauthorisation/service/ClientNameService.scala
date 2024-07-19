@@ -29,12 +29,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class ClientNameNotFound() extends Exception
 
-class ClientNameService @Inject()(
+class ClientNameService @Inject() (
   citizenDetailsConnector: CitizenDetailsConnector,
   desConnector: DesConnector,
   ifConnector: IfConnector,
   eisConnector: EisConnector,
-  agentCacheProvider: AgentCacheProvider) {
+  agentCacheProvider: AgentCacheProvider
+) {
 
   private val trustCache = agentCacheProvider.trustResponseCache
   private val cgtCache = agentCacheProvider.cgtSubscriptionCache
@@ -67,11 +68,9 @@ class ClientNameService @Inject()(
             case _                     => getCitizenName(nino)
           }
       }
-      .recover {
-        case e => {
-          logger.error(s"Unable to translate MtdItId: ${e.getMessage}")
-          None
-        }
+      .recover { case e =>
+        logger.error(s"Unable to translate MtdItId: ${e.getMessage}")
+        None
       }
 
   def getCitizenName(nino: Nino)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
@@ -86,8 +85,8 @@ class ClientNameService @Inject()(
           .orElse(customerDetails.organisationName)
           .orElse(customerDetails.individual.map(_.name))
       }
-      .recover {
-        case _: NotFoundException => None
+      .recover { case _: NotFoundException =>
+        None
       }
 
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =

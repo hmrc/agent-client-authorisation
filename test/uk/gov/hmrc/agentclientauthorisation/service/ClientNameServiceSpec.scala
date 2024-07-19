@@ -112,8 +112,9 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockDesConnector
         .getVatCustomerDetails(_: Vrn)(_: HeaderCarrier, _: ExecutionContext))
         .expects(vrn, *, *)
-        .returns(Future(
-          Some(VatCustomerDetails(Some("Organisy name"), Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None))))
+        .returns(
+          Future(Some(VatCustomerDetails(Some("Organisy name"), Some(VatIndividual(Some("Miss"), Some("Marilyn"), Some("M"), Some("Monroe"))), None)))
+        )
       val result = await(clientNameService.getClientNameByService(vrn.value, Service.Vat))
       result shouldBe Some("Organisy name")
     }
@@ -180,8 +181,13 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
       (mockIfConnector
         .getPillar2Subscription(_: PlrId)(_: HeaderCarrier, _: ExecutionContext))
         .expects(plrId, *, *)
-        .returns(Future(Pillar2SubscriptionResponse(
-          response = Right(Pillar2Subscription(organisationName = "Organisation name", registrationDate = LocalDate.parse("2001-02-03"))))))
+        .returns(
+          Future(
+            Pillar2SubscriptionResponse(
+              response = Right(Pillar2Subscription(organisationName = "Organisation name", registrationDate = LocalDate.parse("2001-02-03")))
+            )
+          )
+        )
       val result = await(clientNameService.getClientNameByService(plrId.value, Service.Pillar2))
       result shouldBe Some("Organisation name")
     }

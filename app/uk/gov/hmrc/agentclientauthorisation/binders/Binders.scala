@@ -39,12 +39,12 @@ object Binders {
   implicit object CbcIdBinder extends SimpleObjectBinder[CbcId](CbcId.apply, _.value)
   implicit object PlrIdBinder extends SimpleObjectBinder[PlrId](PlrId.apply, _.value)
 
-  /**
-    * Binds either of two possible binders. The 'right' binder if preferred if both are valid.
+  /** Binds either of two possible binders. The 'right' binder if preferred if both are valid.
     */
-  def eitherBinder[L, R](isValidL: L => Boolean, isValidR: R => Boolean)(
-    implicit bindL: PathBindable[L],
-    bindR: PathBindable[R]): PathBindable[Either[L, R]] =
+  def eitherBinder[L, R](isValidL: L => Boolean, isValidR: R => Boolean)(implicit
+    bindL: PathBindable[L],
+    bindR: PathBindable[R]
+  ): PathBindable[Either[L, R]] =
     new PathBindable[Either[L, R]] {
       def bind(key: String, value: String): Either[String, Either[L, R]] = {
         val resR = bindR.bind(key, value)
@@ -60,7 +60,7 @@ object Binders {
         case Right(r) => bindR.unbind(key, r)
       }
     }
-  implicit val agentIdBinder = eitherBinder[Utr, Arn](utr => Utr.isValid(utr.value), arn => Arn.isValid(arn.value))
+  implicit val agentIdBinder: PathBindable[Either[Utr, Arn]] = eitherBinder[Utr, Arn](utr => Utr.isValid(utr.value), arn => Arn.isValid(arn.value))
 
   private def toError(err: String) =
     s"Cannot parse parameter status as InvitationStatus: status of [$err] is not a valid InvitationStatus"

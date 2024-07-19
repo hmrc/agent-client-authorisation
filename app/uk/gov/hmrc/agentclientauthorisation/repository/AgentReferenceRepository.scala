@@ -52,7 +52,7 @@ trait AgentReferenceRepository {
 }
 
 @Singleton
-class MongoAgentReferenceRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+class MongoAgentReferenceRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[AgentReferenceRecord](
       mongoComponent = mongo,
       collectionName = "agent-reference",

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
 import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -31,10 +30,10 @@ import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, BusinessAddress}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.TransitionInvitation
+import uk.gov.hmrc.agentclientauthorisation.support.{TransitionInvitation, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails, Utr}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +43,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
   val auditService: AuditService = mock[AuditService]
   val metrics: Metrics = new Metrics {
     override def defaultRegistry: MetricRegistry = new MetricRegistry()
-    override def toJson: String = ""
+//    override def toJson: String = ""
   }
   val mockDesConnector: DesConnector = mock[DesConnector]
 
@@ -53,7 +52,7 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
   val ninoAsString: String = nino1.value
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val request: Request[Any] = FakeRequest()
 
   override protected def beforeEach(): Unit = {
@@ -71,11 +70,17 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.findByArn(any[Arn]))
         .thenReturn(Future successful Some(agentReferenceRecord))
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some(AgentDetailsDesResponse(
-          Some(utr),
-          Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
-          Some(SuspensionDetails(suspensionStatus = false, None))
-        ))))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AgentDetailsDesResponse(
+                Some(utr),
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+                Some(SuspensionDetails(suspensionStatus = false, None))
+              )
+            )
+          )
+        )
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
         .thenReturn(Future.successful(()))
 
@@ -89,11 +94,17 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
       when(mockAgentReferenceRepository.create(any[AgentReferenceRecord]))
         .thenReturn(Future successful Some("id"))
       when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some(AgentDetailsDesResponse(
-          Some(utr),
-          Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
-          Some(SuspensionDetails(suspensionStatus = false, None))
-        ))))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AgentDetailsDesResponse(
+                Some(utr),
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+                Some(SuspensionDetails(suspensionStatus = false, None))
+              )
+            )
+          )
+        )
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 

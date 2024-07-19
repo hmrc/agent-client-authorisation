@@ -24,7 +24,8 @@ case class CgtAddressDetails(
   addressLine3: Option[String] = None,
   addressLine4: Option[String] = None,
   countryCode: String,
-  postalCode: Option[String] = None)
+  postalCode: Option[String] = None
+)
 
 case object CgtAddressDetails {
   implicit val format: Format[CgtAddressDetails] = Json.format[CgtAddressDetails]

@@ -25,7 +25,7 @@ trait HalWriter {
 
   val halMimeType = "application/hal+json"
 
-  implicit val halWrites = new Writes[HalResource] {
+  implicit val halWrites: Writes[HalResource] = new Writes[HalResource] {
 
     def writes(hal: HalResource): JsValue = {
       val embedded = toEmbeddedJson(hal)
@@ -40,9 +40,8 @@ trait HalWriter {
       hal.embedded match {
         case e if e.isEmpty => JsObject(Nil)
         case e =>
-          JsObject(e.map {
-            case (link, resources) =>
-              link -> Json.toJson(resources.map(r => Json.toJson(r)))
+          JsObject(e.map { case (link, resources) =>
+            link -> Json.toJson(resources.map(r => Json.toJson(r)))
           })
       }
   }

@@ -30,12 +30,11 @@ trait Monitor {
 
   private def timer[T](serviceName: String)(function: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val start = System.nanoTime()
-    function.andThen {
-      case _ =>
-        val duration = Duration(System.nanoTime() - start, NANOSECONDS)
-        kenshooRegistry.getTimers
-          .getOrDefault(timerName(serviceName), kenshooRegistry.timer(timerName(serviceName)))
-          .update(duration.length, duration.unit)
+    function.andThen { case _ =>
+      val duration = Duration(System.nanoTime() - start, NANOSECONDS)
+      kenshooRegistry.getTimers
+        .getOrDefault(timerName(serviceName), kenshooRegistry.timer(timerName(serviceName)))
+        .update(duration.length, duration.unit)
     }
   }
 

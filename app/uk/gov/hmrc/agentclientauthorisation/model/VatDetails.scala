@@ -22,15 +22,13 @@ import play.api.libs.json.{JsObject, Reads, __}
 case class VatDetails(effectiveRegistrationDate: Option[LocalDate], isInsolvent: Boolean)
 
 object VatDetails {
-  implicit val vatCustomerInfoReads: Reads[VatDetails] = {
+  implicit val vatCustomerInfoReads: Reads[VatDetails] =
     (__ \ "approvedInformation").readNullable[JsObject].map {
       case Some(approvedInformation) =>
-        val maybeDate = {
+        val maybeDate =
           (approvedInformation \ "customerDetails" \ "effectiveRegistrationDate").asOpt[String].map(LocalDate.parse)
-        }
         val isInsolvent = (approvedInformation \ "customerDetails" \ "isInsolvent").as[Boolean]
         VatDetails(maybeDate, isInsolvent)
       case _ => VatDetails(effectiveRegistrationDate = None, isInsolvent = false)
     }
-  }
 }

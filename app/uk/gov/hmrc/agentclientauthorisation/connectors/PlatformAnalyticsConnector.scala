@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import akka.Done
+import org.apache.pekko.Done
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
@@ -33,7 +33,7 @@ trait PlatformAnalyticsConnector {
   def sendEvent(request: AnalyticsRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Done]
 }
 @Singleton
-class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpClient)
+class PlatformAnalyticsConnectorImpl @Inject() (appConfig: AppConfig, http: HttpClient)
     extends PlatformAnalyticsConnector with HttpErrorFunctions with Logging {
 
   val serviceUrl: String = s"${appConfig.platformAnalyticsBaseUrl}/platform-analytics/event"
@@ -49,9 +49,8 @@ class PlatformAnalyticsConnectorImpl @Inject()(appConfig: AppConfig, http: HttpC
             Done
         }
       }
-      .recover {
-        case NonFatal(ex) =>
-          logger.warn(s"Couldn't send analytics event, error: $ex")
-          Done
+      .recover { case NonFatal(ex) =>
+        logger.warn(s"Couldn't send analytics event, error: $ex")
+        Done
       }
 }

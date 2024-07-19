@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
-import com.kenshoo.play.metrics.Metrics
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Reads._
 import play.api.libs.json.{Format, JsObject, Json, OFormat}
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -106,14 +105,14 @@ private case class RequestCommonForSubscription(
   conversationID: Option[String]
 )
 private object RequestCommonForSubscription {
-  //Format: ISO 8601 YYYY-MM-DDTHH:mm:ssZ e.g. 2020-09-23T16:12:11Zs
+  // Format: ISO 8601 YYYY-MM-DDTHH:mm:ssZ e.g. 2020-09-23T16:12:11Zs
   private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
   implicit val requestCommonForSubscriptionFormats: OFormat[RequestCommonForSubscription] =
     Json.format[RequestCommonForSubscription]
 
   def apply(): RequestCommonForSubscription = {
-    //Generate a 32 chars UUID without hyphens
+    // Generate a 32 chars UUID without hyphens
     val acknowledgementReference = UUID.randomUUID().toString.replace("-", "")
 
     RequestCommonForSubscription(
@@ -151,9 +150,8 @@ trait EisConnector {
 }
 
 @Singleton
-class EisConnectorImpl @Inject()(config: AppConfig, http: HttpClient, metrics: Metrics)
+class EisConnectorImpl @Inject() (config: AppConfig, http: HttpClient, val metrics: Metrics)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with EisConnector with HttpErrorFunctions with Logging {
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def getCbcSubscriptionJson(cbcId: CbcId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsObject]] = {
     val conversationId = hc.sessionId.map(_.value.drop(8)).getOrElse(UUID.randomUUID().toString)

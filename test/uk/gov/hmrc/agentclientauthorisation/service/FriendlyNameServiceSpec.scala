@@ -17,9 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.service
 
 import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
-import org.mockito.ArgumentMatchers.{eq => eqs}
-import org.mockito.ArgumentMatchers._
+import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
@@ -33,6 +31,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, CbcIdType, Identifier, Service}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +42,7 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
   val auditService: AuditService = mock[AuditService]
   val metrics: Metrics = new Metrics {
     override def defaultRegistry: MetricRegistry = new MetricRegistry()
-    override def toJson: String = ""
+//    override def toJson: String = ""
   }
   val mockDesConnector: DesConnector = mock[DesConnector]
 
@@ -52,7 +51,7 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
 
   val ninoAsString: String = nino1.value
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val request: Request[Any] = FakeRequest()
 
   override protected def beforeEach(): Unit = {
@@ -76,7 +75,8 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
           agencyEmail = "agency@test.com",
           agencyName = "Perfect Accounts Ltd",
           clientName = friendlyName
-        )),
+        )
+      ),
       startDate = LocalDateTime.now().minusDays(1),
       expiryDate = LocalDate.now().plusMonths(1),
       origin = None
@@ -120,7 +120,8 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         verify(esp, times(1))
           .queryKnownFacts(eqs(Service.Cbc), eqs(Seq(Identifier(CbcIdType.id, cbcInvitation.clientId.value))))(
             any[HeaderCarrier],
-            any[ExecutionContext])
+            any[ExecutionContext]
+          )
 
       }
       "not be done (but return successfully) if there are no client details available" in {
@@ -157,7 +158,8 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
         verify(esp, times(1))
           .queryKnownFacts(eqs(Service.Cbc), eqs(Seq(Identifier(CbcIdType.id, cbcInvitation.clientId.value))))(
             any[HeaderCarrier],
-            any[ExecutionContext])
+            any[ExecutionContext]
+          )
 
       }
       "not be done (but return successfully) if the available client name is empty" in {

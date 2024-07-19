@@ -16,23 +16,22 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
-import com.kenshoo.play.metrics.Metrics
 import play.api.Logging
 import play.api.http.Status.NOT_FOUND
-import play.api.libs.json.Reads._
 import play.api.libs.json.JsValue
+import play.api.libs.json.Reads._
 import play.utils.UriEncoding
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.net.URL
 import javax.inject.{Inject, Singleton}
@@ -44,16 +43,16 @@ trait IfConnector {
   // FF enabled, formerly DES
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse]
 
-  //IF API#1171
+  // IF API#1171
   def getBusinessDetails(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[BusinessDetails]]
 
-  //IF API#1171
+  // IF API#1171
   def getNinoFor(mtdId: MtdItId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Nino]]
 
-  //IF API#1171
+  // IF API#1171
   def getMtdIdFor(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[MtdItId]]
 
-  //IF API#1171
+  // IF API#1171
   def getTradingNameForNino(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]]
 
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]]
@@ -67,14 +66,14 @@ trait IfConnector {
 }
 
 @Singleton
-class IfConnectorImpl @Inject()(
+class IfConnectorImpl @Inject() (
   appConfig: AppConfig,
   agentCacheProvider: AgentCacheProvider,
   httpClient: HttpClient,
-  metrics: Metrics,
-  desIfHeaders: DesIfHeaders)
+  val metrics: Metrics,
+  desIfHeaders: DesIfHeaders
+)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with IfConnector with HttpErrorFunctions with Logging {
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val ifBaseUrl: String = appConfig.ifPlatformBaseUrl
 
@@ -93,7 +92,7 @@ class IfConnectorImpl @Inject()(
     }
   }
 
-  //IF API#1495 Agent Known Fact Check (Trusts)
+  // IF API#1495 Agent Known Fact Check (Trusts)
   def getTrustName(trustTaxIdentifier: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[TrustResponse] = {
 
     val url = getTrustNameUrl(trustTaxIdentifier, appConfig.desIFEnabled)
@@ -104,10 +103,13 @@ class IfConnectorImpl @Inject()(
           TrustResponse(Right(TrustName((response.json \ "trustDetails" \ "trustName").as[String])))
         case status if is4xx(status) =>
           val invalidTrust = Try(((response.json \ "code").as[String], (response.json \ "reason").as[String])).toEither
-            .fold(ex => {
-              logger.error(s"${response.body}, ${ex.getMessage}")
-              InvalidTrust(status.toString, ex.getMessage)
-            }, t => InvalidTrust(t._1, t._2))
+            .fold(
+              ex => {
+                logger.error(s"${response.body}, ${ex.getMessage}")
+                InvalidTrust(status.toString, ex.getMessage)
+              },
+              t => InvalidTrust(t._1, t._2)
+            )
           TrustResponse(Left(invalidTrust))
         case other =>
           throw UpstreamErrorResponse(s"unexpected status during retrieving TrustName, error=${response.body}", other, other)
@@ -168,7 +170,7 @@ class IfConnectorImpl @Inject()(
     }
   }
 
-  //IF API#1712 PPT Subscription Display
+  // IF API#1712 PPT Subscription Display
   def getPptSubscriptionRawJson(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[JsValue]] = {
     val url = new URL(s"$ifBaseUrl/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display")
     agentCacheProvider.pptSubscriptionCache(pptRef.value) {
@@ -186,11 +188,11 @@ class IfConnectorImpl @Inject()(
     }
   }
 
-  //IF API#1712 PPT Subscription Display
+  // IF API#1712 PPT Subscription Display
   def getPptSubscription(pptRef: PptRef)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[PptSubscription]] =
     getPptSubscriptionRawJson(pptRef).map(_.flatMap(_.asOpt[PptSubscription](PptSubscription.reads)))
 
-  //IF API#2143 Pillar 2 Subscription Display
+  // IF API#2143 Pillar 2 Subscription Display
   def getPillar2RecordSubscription(plrId: PlrId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[Pillar2Error, Pillar2Record]] = {
     val url = new URL(s"$ifBaseUrl/pillar2/subscription/${plrId.value}")
     agentCacheProvider.pillar2SubscriptionCache(plrId.value) {

@@ -30,18 +30,19 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-object AgentClientInvitationEvent extends Enumeration { //partialAuth expired
+object AgentClientInvitationEvent extends Enumeration { // partialAuth expired
   val AgentClientInvitationResponse, AgentClientRelationshipCreated, HmrcExpiredAgentServiceAuthorisation = Value
   type AgentClientInvitationEvent = Value
 }
 
 @Singleton
-class AuditService @Inject()(val auditConnector: AuditConnector) {
+class AuditService @Inject() (val auditConnector: AuditConnector) {
 
-  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service, isAltIsa: Boolean)(
-    implicit hc: HeaderCarrier,
+  def sendAgentClientRelationshipCreated(invitationId: String, arn: Arn, clientId: ClientId, service: Service, isAltIsa: Boolean)(implicit
+    hc: HeaderCarrier,
     request: Request[Any],
-    ec: ExecutionContext): Future[Unit] =
+    ec: ExecutionContext
+  ): Future[Unit] =
     auditEvent(
       AgentClientInvitationEvent.AgentClientRelationshipCreated,
       "agent-client-relationship-created",
@@ -69,9 +70,10 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
       )
     )
 
-  def sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation: Invitation, deleteStatus: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] = {
+  def sendHmrcExpiredAgentServiceAuthorisationAuditEvent(invitation: Invitation, deleteStatus: String)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] = {
     val details = Seq(
       "clientNINO"           -> invitation.suppliedClientId,
       "service"              -> invitation.service,
@@ -87,15 +89,17 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     send(dataEvent)
   }
 
-  private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(
-    implicit hc: HeaderCarrier,
+  private[audit] def auditEvent(event: AgentClientInvitationEvent, transactionName: String, details: Seq[(String, Any)] = Seq.empty)(implicit
+    hc: HeaderCarrier,
     request: Request[Any],
-    ec: ExecutionContext): Future[Unit] =
+    ec: ExecutionContext
+  ): Future[Unit] =
     send(createEvent(event, transactionName, details: _*))
 
-  private def createEvent(event: AgentClientInvitationEvent, transactionName: String, details: (String, Any)*)(
-    implicit hc: HeaderCarrier,
-    request: Request[Any]): DataEvent = {
+  private def createEvent(event: AgentClientInvitationEvent, transactionName: String, details: (String, Any)*)(implicit
+    hc: HeaderCarrier,
+    request: Request[Any]
+  ): DataEvent = {
 
     val detail = hc.toAuditDetails(details.map(pair => pair._1 -> pair._2.toString): _*)
     val tags = hc.toAuditTags(transactionName, request.path)

@@ -25,12 +25,13 @@ case class Pillar2Details(effectiveRegistrationDate: LocalDate, inactive: Boolea
 
 object Pillar2Details {
   implicit val format: Format[Pillar2Details] = Json.format[Pillar2Details]
-  val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") //2023-12-31
+  val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") // 2023-12-31
 
   def fromPillar2Record(pillar2Record: Pillar2Record): Pillar2Details =
     Pillar2Details(
       LocalDate.parse(pillar2Record.upeDetails.registrationDate, localDateFormatter),
-      pillar2Record.accountStatus.map(_.inactive).getOrElse(false))
+      pillar2Record.accountStatus.map(_.inactive).getOrElse(false)
+    )
 }
 
 case class Pillar2DetailsResponse(response: Either[Pillar2Error, Pillar2Details])

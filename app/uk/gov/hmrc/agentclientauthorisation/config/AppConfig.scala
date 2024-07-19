@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 import scala.util.matching.Regex
 
 @Singleton
-class AppConfig @Inject()(servicesConfig: ServicesConfig, config: Configuration) {
+class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
   val appName = "agent-client-authorisation"
 

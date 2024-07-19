@@ -15,7 +15,6 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
-import com.kenshoo.play.metrics.Metrics
 import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -29,23 +28,21 @@ import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 @Singleton
-class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsService: InvitationsService)(
-  implicit
+class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsService: InvitationsService)(implicit
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
   auditService: AuditService,
   friendlyNameService: FriendlyNameService,
-  ecp: Provider[ExecutionContextExecutor])
-    extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with ClientInvitationsHal {
-
-  implicit val ec: ExecutionContext = ecp.get
+  ec: ExecutionContext
+) extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with ClientInvitationsHal {
 
   private val strideRoles = Seq(appConfig.oldStrideEnrolment, appConfig.newStrideEnrolment, appConfig.altStrideEnrolment)
 
@@ -114,32 +111,32 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       }
     }
 
-  private def acceptInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    request: Request[Any],
-    authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+  private def acceptInvitation[T <: TaxIdentifier](
+    clientId: ClientIdentifier[T],
+    invitationId: InvitationId
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
         invitationId,
         invitation =>
-          invitationsService.acceptInvitation(invitation).andThen {
-            case Success(invitation) =>
-              val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
-              for {
-                _ <- auditService
-                      .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service, isAltItsa)
-                // APB-6204: Update the friendly name in EACD
-                _ <- friendlyNameService.updateFriendlyName(invitation)
-              } yield ()
-        }
+          invitationsService.acceptInvitation(invitation).andThen { case Success(invitation) =>
+            val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
+            for {
+              _ <- auditService
+                     .sendAgentClientRelationshipCreated(invitation.invitationId.value, invitation.arn, clientId, invitation.service, isAltItsa)
+              // APB-6204: Update the friendly name in EACD
+              _ <- friendlyNameService.updateFriendlyName(invitation)
+            } yield ()
+          }
       )
     }
 
-  private def rejectInvitation[T <: TaxIdentifier](
-    clientId: ClientIdentifier[T],
-    invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier, authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+  private def rejectInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(implicit
+    ec: ExecutionContext,
+    hc: HeaderCarrier,
+    authTaxId: Option[ClientIdentifier[T]]
+  ): Future[Result] =
     forThisClientOrStride(clientId) {
       actionInvitation(
         clientId,
@@ -148,9 +145,10 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
       )
     }
 
-  private def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(
-    implicit ec: ExecutionContext,
-    authTaxId: ClientIdentifier[T]): Future[Result] =
+  private def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(implicit
+    ec: ExecutionContext,
+    authTaxId: ClientIdentifier[T]
+  ): Future[Result] =
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {
         case Some(x) if matchClientIdentifiers(x.clientId, clientId) => Ok(toHalResource(x))
@@ -162,25 +160,28 @@ class ClientInvitationsController @Inject()(appConfig: AppConfig, invitationsSer
   private def actionInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
-    action: Invitation => Future[Invitation])(implicit ec: ExecutionContext): Future[Result] =
+    action: Invitation => Future[Invitation]
+  )(implicit ec: ExecutionContext): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
-        action(invitation).map(_ => NoContent).recoverWith {
-          case StatusUpdateFailure(_, msg) => Future successful invalidInvitationStatus(msg)
+        action(invitation).map(_ => NoContent).recoverWith { case StatusUpdateFailure(_, msg) =>
+          Future successful invalidInvitationStatus(msg)
         }
       case None => Future successful InvitationNotFound
       case _    => Future successful NoPermissionOnClient
     }
 
-  private def forThisClient[T <: TaxIdentifier](taxId: ClientIdentifier[T])(block: => Future[Result])(
-    implicit authTaxId: ClientIdentifier[T]): Future[Result] =
+  private def forThisClient[T <: TaxIdentifier](
+    taxId: ClientIdentifier[T]
+  )(block: => Future[Result])(implicit authTaxId: ClientIdentifier[T]): Future[Result] =
     if (authTaxId.value.replaceAll("\\s", "") != taxId.value.replaceAll("\\s", ""))
       Future successful NoPermissionOnClient
     else
       block
 
-  private def forThisClientOrStride[T <: TaxIdentifier](taxId: ClientIdentifier[T])(block: => Future[Result])(
-    implicit authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
+  private def forThisClientOrStride[T <: TaxIdentifier](
+    taxId: ClientIdentifier[T]
+  )(block: => Future[Result])(implicit authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     authTaxId match {
       case None => block
       case Some(authTaxIdentifier) if authTaxIdentifier.value.replaceAll("\\s", "") == taxId.value.replaceAll("\\s", "") =>

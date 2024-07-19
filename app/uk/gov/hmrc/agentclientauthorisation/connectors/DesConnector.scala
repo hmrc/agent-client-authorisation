@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
-import com.kenshoo.play.metrics.Metrics
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Reads._
 import play.api.libs.json.Writes
 import play.utils.UriEncoding
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.net.URL
 import javax.inject.{Inject, Singleton}
@@ -53,14 +52,14 @@ trait DesConnector {
 }
 
 @Singleton
-class DesConnectorImpl @Inject()(
+class DesConnectorImpl @Inject() (
   appConfig: AppConfig,
   agentCacheProvider: AgentCacheProvider,
   httpClient: HttpClient,
-  metrics: Metrics,
-  desIfHeaders: DesIfHeaders)
+  val metrics: Metrics,
+  desIfHeaders: DesIfHeaders
+)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with DesConnector with HttpErrorFunctions with Logging {
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   private val baseUrl: String = appConfig.desBaseUrl
 
@@ -98,7 +97,8 @@ class DesConnectorImpl @Inject()(
   }
 
   def getAgencyDetails(
-    agentIdentifier: Either[Utr, Arn])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] = {
+    agentIdentifier: Either[Utr, Arn]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentDetailsDesResponse]] = {
     val agentIdValue = agentIdentifier.fold(_.value, _.value)
     agentCacheProvider
       .agencyDetailsCache(agentIdValue) {

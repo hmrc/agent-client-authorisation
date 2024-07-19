@@ -33,10 +33,11 @@ object AgencyDetails {
 case class AgentDetailsDesResponse(
   uniqueTaxReference: Option[Utr],
   agencyDetails: Option[AgencyDetails],
-  suspensionDetails: Option[SuspensionDetails])
+  suspensionDetails: Option[SuspensionDetails]
+)
 
 object AgentDetailsDesResponse {
   implicit val agencyDetailsRead: Reads[AgencyDetails] = Json.reads
 
-  implicit val agentRecordDetailsFormat = Json.format[AgentDetailsDesResponse]
+  implicit val agentRecordDetailsFormat: OFormat[AgentDetailsDesResponse] = Json.format[AgentDetailsDesResponse]
 }

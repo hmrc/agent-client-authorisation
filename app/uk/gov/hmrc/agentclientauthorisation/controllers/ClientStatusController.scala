@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject._
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -28,43 +25,40 @@ import uk.gov.hmrc.agentclientauthorisation.model.{PartialAuth, Pending}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentCacheProvider, InvitationsService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import javax.inject._
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ClientStatusController @Inject()(
+class ClientStatusController @Inject() (
   invitationsService: InvitationsService,
   relationshipsConnector: RelationshipsConnector,
   agentCacheProvider: AgentCacheProvider,
-  appConfig: AppConfig)(
-  implicit
-  metrics: Metrics,
-  cc: ControllerComponents,
-  authConnector: AuthConnector,
-  ecp: Provider[ExecutionContextExecutor])
+  appConfig: AppConfig
+)(implicit metrics: Metrics, cc: ControllerComponents, authConnector: AuthConnector, ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
 
-  implicit val ec: ExecutionContext = ecp.get
   private val clientStatusCache = agentCacheProvider.clientStatusCache
 
   val getStatus: Action[AnyContent] = Action.async { implicit request =>
     withClientIdentifiedBy { identifiers: Seq[(Service, String)] =>
       for {
         status <- if (identifiers.isEmpty) ClientStatusController.defaultClientStatus
-                 else
-                   clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
-                     for {
-                       nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
-                       hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
-                       hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
-                       hasPartialAuthRelationships = nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
-                       hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
-                                                       .map(_.fold(false)(_.nonEmpty))
-                       hasExistingRelationships <- if (hasExistingAfiRelationships || hasPartialAuthRelationships) Future.successful(true)
-                                                  else
-                                                    relationshipsConnector.getActiveRelationships.map(_.fold(false)(_.nonEmpty))
-                     } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
-                   }
+                  else
+                    clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
+                      for {
+                        nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
+                        hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
+                        hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
+                        hasPartialAuthRelationships = nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
+                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
+                                                         .map(_.fold(false)(_.nonEmpty))
+                        hasExistingRelationships <- if (hasExistingAfiRelationships || hasPartialAuthRelationships) Future.successful(true)
+                                                    else
+                                                      relationshipsConnector.getActiveRelationships.map(_.fold(false)(_.nonEmpty))
+                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
+                    }
       } yield Ok(Json.toJson(status))
     } {
       Ok(Json.toJson(ClientStatus(hasPendingInvitations = false, hasInvitationsHistory = false, hasExistingRelationships = false)))

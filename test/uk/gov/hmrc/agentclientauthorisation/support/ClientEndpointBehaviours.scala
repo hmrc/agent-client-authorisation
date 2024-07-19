@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   this: UnitSpec with ResettingMockitoSugar =>
 
-  override implicit val patienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
 
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val authConnector: AuthActions = resettingMock[AuthActions]
@@ -56,7 +56,8 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   def whenFindingAnInvitation: OngoingStubbing[Future[Option[Invitation]]] =
     when(
       invitationsService
-        .findInvitation(eqs(invitationId)))
+        .findInvitation(eqs(invitationId))
+    )
 
   def noInvitation: Future[None.type] = Future successful None
 
@@ -107,11 +108,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
     val details = event.detail.toSeq
 
-    details should contain("invitationId"         -> invitationId.value)
+    details should contain("invitationId" -> invitationId.value)
     details should contain("agentReferenceNumber" -> arn.value)
-    details should contain("clientIdType"         -> "ni")
-    details should contain("clientId"             -> mtdItId1.value)
-    details should contain("service"              -> "HMRC-MTD-IT")
+    details should contain("clientIdType" -> "ni")
+    details should contain("clientId" -> mtdItId1.value)
+    details should contain("service" -> "HMRC-MTD-IT")
   }
 
   def assertCreateIRVRelationshipEvent(event: DataEvent) = {
@@ -120,11 +121,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
     val details = event.detail.toSeq
 
-    details should contain("invitationId"         -> invitationId.value)
+    details should contain("invitationId" -> invitationId.value)
     details should contain("agentReferenceNumber" -> arn.value)
-    details should contain("clientIdType"         -> "ni")
-    details should contain("clientId"             -> nino.value)
-    details should contain("service"              -> "PERSONAL-INCOME-RECORD")
+    details should contain("clientIdType" -> "ni")
+    details should contain("clientId" -> nino.value)
+    details should contain("service" -> "PERSONAL-INCOME-RECORD")
   }
 
   def assertCreateTrustRelationshipEvent(event: DataEvent) = {
@@ -133,11 +134,11 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
 
     val details = event.detail.toSeq
 
-    details should contain("invitationId"         -> invitationId.value)
+    details should contain("invitationId" -> invitationId.value)
     details should contain("agentReferenceNumber" -> arn.value)
-    details should contain("clientIdType"         -> "utr")
-    details should contain("clientId"             -> utr.value)
-    details should contain("service"              -> "HMRC-TERS-ORG")
+    details should contain("clientIdType" -> "utr")
+    details should contain("clientId" -> utr.value)
+    details should contain("service" -> "HMRC-TERS-ORG")
   }
 
   def verifyAgentClientRelationshipCreatedAuditEvent(service: String) =
@@ -150,7 +151,7 @@ trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
         case "PERSONAL-INCOME-RECORD" => assertCreateIRVRelationshipEvent(event)
         case "HMRC-TERS-ORG"          => assertCreateTrustRelationshipEvent(event)
       }
-      //Add more if need be
+      // Add more if need be
     }
 
   def verifyNoAuditEventSent() = {

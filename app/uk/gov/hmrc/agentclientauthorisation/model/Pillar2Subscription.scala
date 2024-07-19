@@ -79,7 +79,8 @@ case class Pillar2Record(
   secondaryContactDetails: Option[ContactDetails] = None,
   filingMemberDetails: Option[FilingMemberDetails] = None,
   accountStatus: Option[AccountStatus] = None,
-  id: Option[String] = None)
+  id: Option[String] = None
+)
 case object Pillar2Record {
   implicit val format: Format[Pillar2Record] = Json.format[Pillar2Record]
 }
@@ -88,7 +89,7 @@ case class Pillar2Subscription(organisationName: String, registrationDate: Local
 
 object Pillar2Subscription {
   implicit val format: Format[Pillar2Subscription] = Json.format[Pillar2Subscription]
-  val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") //2023-12-31
+  val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") // 2023-12-31
 
   def fromPillar2Record(pillar2Record: Pillar2Record): Pillar2Subscription =
     Pillar2Subscription(pillar2Record.upeDetails.organisationName, LocalDate.parse(pillar2Record.upeDetails.registrationDate, localDateFormatter))

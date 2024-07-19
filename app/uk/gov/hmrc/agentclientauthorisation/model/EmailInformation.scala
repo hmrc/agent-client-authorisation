@@ -15,16 +15,17 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.model
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 case class EmailInformation(
   to: Seq[String],
   templateId: String,
   parameters: Map[String, String],
-  force: Boolean = true, //previously bounced email will be sent. TODO - track bounces to know email is being received.
+  force: Boolean = true, // previously bounced email will be sent. TODO - track bounces to know email is being received.
   eventUrl: Option[String] = None,
-  onSendUrl: Option[String] = None)
+  onSendUrl: Option[String] = None
+)
 
 object EmailInformation {
-  implicit val formats = Json.format[EmailInformation]
+  implicit val formats: OFormat[EmailInformation] = Json.format[EmailInformation]
 }

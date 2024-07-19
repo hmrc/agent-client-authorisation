@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
 import com.typesafe.config.Config
 import org.scalamock.scalatest.MockFactory
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, IfConnector}
 import uk.gov.hmrc.agentclientauthorisation.service.AgentCacheProvider
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-trait MocksWithCache extends MockFactory {
+trait MocksWithCache extends UnitSpec with MockFactory {
   val mockConfig: Config = mock[Config]
   val mockConfiguration = new Configuration(mockConfig)
   val mockEnv: Environment = mock[Environment]

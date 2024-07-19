@@ -121,7 +121,8 @@ case class Invitation(
   relationshipEndedBy: Option[String] = None,
   clientActionUrl: Option[String],
   origin: Option[String] = None,
-  events: List[StatusChangeEvent]) {
+  events: List[StatusChangeEvent]
+) {
 
   def firstEvent(): StatusChangeEvent =
     events.head
@@ -148,7 +149,8 @@ object Invitation {
     detailsForEmail: Option[DetailsForEmail],
     startDate: LocalDateTime,
     expiryDate: LocalDate,
-    origin: Option[String]): Invitation =
+    origin: Option[String]
+  ): Invitation =
     Invitation(
       invitationId = InvitationId.create(arn.value, clientId.value, service.id)(service.invitationIdPrefix),
       arn = arn,
@@ -227,7 +229,8 @@ case class InvitationInfo(
   isRelationshipEnded: Boolean = false,
   relationshipEndedBy: Option[String] = None,
   events: List[StatusChangeEvent],
-  isAltItsa: Boolean = false)
+  isAltItsa: Boolean = false
+)
 
 object InvitationInfo {
   implicit val format: OFormat[InvitationInfo] = Json.format[InvitationInfo]

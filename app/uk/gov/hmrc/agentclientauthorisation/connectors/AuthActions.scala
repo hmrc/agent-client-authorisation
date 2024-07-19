@@ -16,14 +16,12 @@
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
-import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.Metrics
 import play.api.mvc._
 import play.api.{Logger, Logging}
-import uk.gov.hmrc.agent.kenshoo.monitoring.HttpAPIMonitor
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.model._
+import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model.{Enrolment => _, _}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
@@ -35,6 +33,7 @@ import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import java.net.URL
@@ -49,10 +48,9 @@ case class Authority(mtdItId: Option[MtdItId], enrolmentsUrl: URL)
 case class AgentRequest[A](arn: Arn, request: Request[A]) extends WrappedRequest[A](request)
 
 @Singleton
-class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConnector: AuthConnector, cc: ControllerComponents)
-    extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions with Logging {
-
-  override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
+class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val authConnector: AuthConnector, cc: ControllerComponents)(implicit
+  val ec: ExecutionContext
+) extends BackendController(cc) with HttpAPIMonitor with AuthorisedFunctions with Logging {
 
   private type AgentAuthAction = Request[AnyContent] => Arn => Future[Result]
 
@@ -78,9 +76,9 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
   val decodedAuth: Regex = "(.+):(.+)".r
 
   private def decodeFromBase64(encodedString: String): String =
-    try {
+    try
       new String(Base64.getDecoder.decode(encodedString), UTF_8)
-    } catch { case _: Throwable => "" }
+    catch { case _: Throwable => "" }
 
   def withBasicAuth(expectedAuth: BasicAuthentication)(body: => Future[Result])(implicit request: Request[_]): Future[Result] =
     request.headers.get(HeaderNames.authorisation) match {
@@ -102,18 +100,18 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
     }
 
   def withBasicAuth[A](body: => Future[Result])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
-    authorised() { body }
+    authorised()(body)
 
   private def isAgent(group: AffinityGroup): Boolean = group.toString.contains("Agent")
 
   def onlyForClients[T <: TaxIdentifier](service: Service, clientIdType: ClientIdType[T])(
-    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = Action.async {
-    implicit request =>
-      authorised(authProvider).retrieve(allEnrolments) { allEnrols =>
-        val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
-        if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
-        else Future successful NotAClient
-      } recover handleFailure
+    action: Request[AnyContent] => ClientIdentifier[T] => Future[Result]
+  )(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
+    authorised(authProvider).retrieve(allEnrolments) { allEnrols =>
+      val clientId = extractEnrolmentData(allEnrols.enrolments, service.enrolmentKey, clientIdType.enrolmentId)
+      if (clientId.isDefined) action(request)(ClientIdentifier(clientIdType.createUnderlying(clientId.get)))
+      else Future successful NotAClient
+    } recover handleFailure
   }
 
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
@@ -125,21 +123,22 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
 
   def hasRequiredEnrolmentMatchingIdentifier(enrolments: Enrolments, clientId: TaxIdentifier): Boolean = {
     val trimmedEnrolments: Set[Enrolment] = enrolments.enrolments
-      .map(
-        enrolment =>
-          Enrolment(
-            enrolment.key.trim,
-            enrolment.identifiers.map(identifier => EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
-            enrolment.state,
-            enrolment.delegatedAuthRule
-        ))
+      .map(enrolment =>
+        Enrolment(
+          enrolment.key.trim,
+          enrolment.identifiers.map(identifier => EnrolmentIdentifier(identifier.key, identifier.value.replace(" ", ""))),
+          enrolment.state,
+          enrolment.delegatedAuthRule
+        )
+      )
 
     // check that among the identifiers that the user has, there is one that matches the clientId provided
     clientId match {
       // need to handle Arn separately as it is not one of our managed services
       case Arn(arn) =>
         trimmedEnrolments.exists(enrolment =>
-          enrolment.key == "HMRC-AS-AGENT" && enrolment.identifiers.contains(EnrolmentIdentifier("AgentReferenceNumber", arn)))
+          enrolment.key == "HMRC-AS-AGENT" && enrolment.identifiers.contains(EnrolmentIdentifier("AgentReferenceNumber", arn))
+        )
       case taxId: TaxIdentifier =>
         val requiredTaxIdType = ClientIdentifier(taxId).enrolmentId
         trimmedEnrolments
@@ -153,8 +152,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
     clientIdType match {
       // "special" cases
       case "MTDITID" if appConfig.altItsaEnabled & NinoType.isValid(clientId) => Right((MtdIt, Nino(clientId)))
-      case "MTDITID"                                                          => if (MtdItIdType.isValid(clientId)) Right((MtdIt, MtdItId(clientId))) else Left(BadRequest(s"Invalid MTDITID"))
-      case "NI"                                                               => if (NinoType.isValid(clientId)) Right((PersonalIncomeRecord, Nino(clientId))) else Left(BadRequest(s"Invalid NINO"))
+      case "MTDITID" => if (MtdItIdType.isValid(clientId)) Right((MtdIt, MtdItId(clientId))) else Left(BadRequest(s"Invalid MTDITID"))
+      case "NI"      => if (NinoType.isValid(clientId)) Right((PersonalIncomeRecord, Nino(clientId))) else Left(BadRequest(s"Invalid NINO"))
       // "normal" cases
       case clientIdType =>
         Service.supportedServices.find(_.supportedClientIdType.id.equalsIgnoreCase(clientIdType)) match {
@@ -164,8 +163,9 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
         }
     }
 
-  def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(body: RequestAndCurrentUser)(
-    implicit ec: ExecutionContext): Action[AnyContent] =
+  def AuthorisedClientOrStrideUser[T](clientIdType: String, identifier: String, strideRoles: Seq[String])(
+    body: RequestAndCurrentUser
+  )(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       authorised().retrieve(allEnrolments and credentials) {
@@ -179,7 +179,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
                   body(request)(CurrentUser(enrolments, creds, clientService, clientId))
                 case e =>
                   logger.warn(
-                    s"ProviderType found: $e or hasRequiredEnrolmentMatchingIdentifier: ${hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId)}")
+                    s"ProviderType found: $e or hasRequiredEnrolmentMatchingIdentifier: ${hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId)}"
+                  )
                   Future successful GenericForbidden
               }
             case Left(error) => Future successful error
@@ -200,15 +201,15 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
             logger.warn(s"Unauthorized Discovered during Stride Authentication: ${e.enrolments.map(_.key)}")
             Future successful Unauthorized
         }
-        .recover {
-          case e =>
-            logger.warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
-            GenericForbidden
+        .recover { case e =>
+          logger.warn(s"Error Discovered during Stride Authentication: ${e.getMessage}")
+          GenericForbidden
         }
     }
 
-  def withClientIdentifiedBy(action: Seq[(Service, String)] => Future[Result])(
-    agentResponse: Result)(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
+  def withClientIdentifiedBy(
+    action: Seq[(Service, String)] => Future[Result]
+  )(agentResponse: Result)(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(allEnrolments) { allEnrols =>
         val identifiers: Seq[(Service, String)] = Service.supportedServices
@@ -218,12 +219,12 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
               .flatMap(_.identifiers.headOption)
               .map(i => (service, i.value))
           }
-          .collect {
-            case Some(x) => x
+          .collect { case Some(x) =>
+            x
           }
         action(identifiers)
       } recoverWith {
-      case _: UnsupportedAffinityGroup => Future.successful(agentResponse) //return default status for agents
+      case _: UnsupportedAffinityGroup => Future.successful(agentResponse) // return default status for agents
       case p                           => Future.successful(handleFailure(p))
     }
 
@@ -238,7 +239,8 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
     else None
 
   protected def withMultiEnrolledClient(
-    body: Seq[(String, String, String)] => Future[Result])(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
+    body: Seq[(String, String, String)] => Future[Result]
+  )(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =
     authorised(authProvider and (Individual or Organisation))
       .retrieve(affinityGroup and confidenceLevel and allEnrolments) {
         case Some(affinity) ~ confidence ~ enrols =>
@@ -249,13 +251,16 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
                 if (supportedEnrol.key == Service.HMRCCBCORG) {
                   ( // TODO - handle better, multi-identifier lookup? Uk cbc has UTR after cbcId
                     supportedServiceName(supportedEnrol.key).getOrElse(
-                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
+                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")
+                    ),
                     supportedEnrol.identifiers.head.key,
-                    supportedEnrol.identifiers.head.value.replaceAll(" ", ""))
+                    supportedEnrol.identifiers.head.value.replaceAll(" ", "")
+                  )
                 } else {
                   (
                     supportedServiceName(supportedEnrol.key).getOrElse(
-                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")),
+                      throw new RuntimeException(s"service name not found for supported enrolment $supportedEnrol")
+                    ),
                     supportedEnrol.identifiers.head.key,
                     supportedEnrol.identifiers.head.value.replaceAll(" ", "")
                   )
@@ -265,7 +270,7 @@ class AuthActions @Inject()(metrics: Metrics, appConfig: AppConfig, val authConn
 
           val clientIds = clientIdTypePlusIds ++ maybeNinoForMtdItId(enrols).toSeq
 
-          //APB-4856: Clients with only CGT enrol dont need to go through IV and they should be allowed same as if they have CL >= L200
+          // APB-4856: Clients with only CGT enrol dont need to go through IV and they should be allowed same as if they have CL >= L200
           val isCgtOnlyClient: Boolean = {
             val enrolKeys: Set[String] = enrols.enrolments.map(_.key)
             enrolKeys.intersect(Service.supportedServices.map(_.enrolmentKey).toSet) == Set(Service.HMRCCGTPD)

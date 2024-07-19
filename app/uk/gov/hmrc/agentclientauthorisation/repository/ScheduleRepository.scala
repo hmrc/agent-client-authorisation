@@ -50,14 +50,14 @@ object SchedulerType {
       case "InvitationExpired"  => InvitationExpired
       case "RemovePersonalInfo" => RemovePersonalInfo
     }
-  implicit val schedulerTypeFormat = Format(reads, writes)
+  implicit val schedulerTypeFormat: Format[SchedulerType] = Format(reads, writes)
 }
 
 case class ScheduleRecord(uid: String, runAt: LocalDateTime, schedulerType: SchedulerType)
 
 object ScheduleRecord {
 
-  implicit val localDateTimeFormat = MongoLocalDateTimeFormat.localDateTimeFormat
+  implicit val localDateTimeFormat: Format[LocalDateTime] = MongoLocalDateTimeFormat.localDateTimeFormat
 
   implicit val formats: Format[ScheduleRecord] = format[ScheduleRecord]
 }
@@ -69,7 +69,7 @@ trait ScheduleRepository {
 }
 
 @Singleton
-class MongoScheduleRepository @Inject()(mongoComponent: MongoComponent)(implicit ec: ExecutionContext)
+class MongoScheduleRepository @Inject() (mongoComponent: MongoComponent)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ScheduleRecord](
       mongoComponent = mongoComponent,
       collectionName = "agent-schedule",
@@ -99,10 +99,9 @@ class MongoScheduleRepository @Inject()(mongoComponent: MongoComponent)(implicit
             .insertOne(record)
             .toFuture()
             .map(_ => record)
-            .recoverWith {
-              case ex: MongoWriteException =>
-                logger.warn(s"Creating RecoveryRecord failed: ${ex.getMessage}")
-                Future.failed(ex)
+            .recoverWith { case ex: MongoWriteException =>
+              logger.warn(s"Creating RecoveryRecord failed: ${ex.getMessage}")
+              Future.failed(ex)
             }
       }
 
@@ -114,7 +113,7 @@ class MongoScheduleRepository @Inject()(mongoComponent: MongoComponent)(implicit
       )
       .toFuture()
       .map(_ => ())
-      .recover {
-        case ex: MongoWriteException => logger.error(s"Updating uid and runAt failed with error: ${ex.getMessage}")
+      .recover { case ex: MongoWriteException =>
+        logger.error(s"Updating uid and runAt failed with error: ${ex.getMessage}")
       }
 }

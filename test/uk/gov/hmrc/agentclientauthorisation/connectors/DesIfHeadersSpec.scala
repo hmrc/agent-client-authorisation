@@ -60,7 +60,7 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "desEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should not contain key(HeaderNames.authorisation)
           headers should not contain key(HeaderNames.xSessionId)
@@ -89,11 +89,11 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "desEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should contain(HeaderNames.authorisation -> "Bearer desAuthToken")
-          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
-          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headers should contain(HeaderNames.xSessionId -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId -> "requestId")
           headerCarrier == hc should be(true)
         }
       }
@@ -143,11 +143,11 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "ifEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1495")
-          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
-          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headers should contain(HeaderNames.xSessionId -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId -> "requestId")
           headerCarrier == hc should be(true)
         }
       }
@@ -169,11 +169,11 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "ifEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1712")
-          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
-          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headers should contain(HeaderNames.xSessionId -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId -> "requestId")
           headerCarrier == hc should be(true)
         }
       }
@@ -195,11 +195,11 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "ifEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI2143")
-          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
-          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headers should contain(HeaderNames.xSessionId -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId -> "requestId")
           headerCarrier == hc should be(true)
         }
       }
@@ -221,11 +221,11 @@ class DesIfHeadersSpec extends UnitSpec with MockitoSugar {
           val headerCarrier = headersConfig.hc
 
           headers should contain("Environment" -> "ifEnvironment")
-          headers should contain key ("CorrelationId")
+          headers should contain key "CorrelationId"
           UUID.fromString(headers("CorrelationId")) should not be null
           headers should contain(HeaderNames.authorisation -> "Bearer ifAuthTokenAPI1171")
-          headers should contain(HeaderNames.xSessionId    -> "session-xyz")
-          headers should contain(HeaderNames.xRequestId    -> "requestId")
+          headers should contain(HeaderNames.xSessionId -> "session-xyz")
+          headers should contain(HeaderNames.xRequestId -> "requestId")
           headerCarrier == hc should be(true)
         }
       }

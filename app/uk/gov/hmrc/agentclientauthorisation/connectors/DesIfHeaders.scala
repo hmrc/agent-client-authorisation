@@ -24,7 +24,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
+class DesIfHeaders @Inject() (appConfig: AppConfig) extends Logging {
 
   private val Environment = "Environment"
   private val CorrelationId = "CorrelationId"
@@ -45,10 +45,10 @@ class DesIfHeaders @Inject()(appConfig: AppConfig) extends Logging {
 
     val baseHeaders = Seq(
       Environment -> s"${if (viaIF) {
-        ifEnvironment
-      } else {
-        desEnvironment
-      }}",
+          ifEnvironment
+        } else {
+          desEnvironment
+        }}",
       CorrelationId -> UUID.randomUUID().toString
     )
 

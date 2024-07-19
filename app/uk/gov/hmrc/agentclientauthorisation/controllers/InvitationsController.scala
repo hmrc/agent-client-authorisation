@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import com.kenshoo.play.metrics.Metrics
-
-import javax.inject._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
@@ -27,20 +24,20 @@ import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationV
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentmtdidentifiers.model.InvitationId
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import javax.inject._
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class InvitationsController @Inject()(
+class InvitationsController @Inject() (
   invitationsService: InvitationsService,
   authConnector: AuthConnector,
   metrics: Metrics,
   cc: ControllerComponents,
-  ecp: Provider[ExecutionContextExecutor],
-  appConfig: AppConfig)
+  appConfig: AppConfig
+)(implicit ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
-
-  implicit val ec: ExecutionContext = ecp.get
 
   def getInvitationById(invitationId: InvitationId): Action[AnyContent] = Action.async { implicit request =>
     authorised() {
