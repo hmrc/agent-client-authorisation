@@ -194,19 +194,22 @@ class AgencyInvitationsController @Inject() (
       val invitationsWithOptLinks: Future[List[Invitation]] = for {
         invitations <- invitationsService
                          .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
-        invitationsWithLink <- Future sequence invitations.map { invite =>
-                                 (invite.clientType, invite.status) match {
-                                   case (Some(ct), Pending) =>
-                                     agentLinkService.getInvitationUrl(invite.arn, ct).map { link =>
-                                       invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
-                                     }
-                                   case _ => Future successful invite
-                                 }
-                               }
+
+        agentInvitationUrlDetails <- agentLinkService.getAgentInvitationUrlDetails(givenArn)
+
+        invitationsWithLink = invitations.filter(_.arn == givenArn).map { invite =>
+                                (invite.clientType, invite.status) match {
+                                  case (Some(ct), Pending) =>
+                                    val link = agentLinkService.makeInvitationUrl(ct, agentInvitationUrlDetails._1, agentInvitationUrlDetails._2)
+                                    invite.copy(clientActionUrl = Some(s"${appConfig.agentInvitationsFrontendExternalUrl}$link"))
+                                  case _ => invite
+                                }
+                              }
+
       } yield invitationsWithLink
 
       invitationsWithOptLinks.map { invitations =>
-        Ok(toHalResource(invitations.filter(_.arn == givenArn), arn, clientType, service, clientIdType, clientId, status))
+        Ok(toHalResource(invitations, arn, clientType, service, clientIdType, clientId, status))
       }
     }
   }

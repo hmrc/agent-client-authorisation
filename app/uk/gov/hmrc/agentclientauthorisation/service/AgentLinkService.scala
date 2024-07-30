@@ -43,7 +43,16 @@ class AgentLinkService @Inject() (agentReferenceRecordRepository: AgentReference
     for {
       normalisedAgentName <- agencyName(arn)
       record              <- fetchOrCreateRecord(arn, normalisedAgentName)
-    } yield s"/invitations/$clientType-taxes/manage-who-can-deal-with-HMRC-for-you/${record.uid}/$normalisedAgentName"
+    } yield makeInvitationUrl(clientType, record.uid, normalisedAgentName)
+
+  def makeInvitationUrl(clientType: String, uid: String, normalisedAgentName: String) =
+    s"/invitations/$clientType-taxes/manage-who-can-deal-with-HMRC-for-you/$uid/$normalisedAgentName"
+
+  def getAgentInvitationUrlDetails(arn: Arn)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[(String, String)] =
+    for {
+      normalisedAgentName <- agencyName(arn)
+      record              <- fetchOrCreateRecord(arn, normalisedAgentName)
+    } yield (record.uid, normalisedAgentName)
 
   def getRecord(arn: Arn)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AgentReferenceRecord] =
     for {

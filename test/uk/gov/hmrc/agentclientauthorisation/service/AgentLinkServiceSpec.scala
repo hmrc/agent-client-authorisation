@@ -110,5 +110,35 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
 
       response should fullyMatch regex "/invitations/personal-taxes/manage-who-can-deal-with-HMRC-for-you/[A-Z0-9]{8}/stan-lee"
     }
+
+    "return uid and normalisedAgentName" in {
+      val agentReferenceRecord = AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("obi-wan"))
+
+      when(mockAgentReferenceRepository.findByArn(any[Arn]))
+        .thenReturn(Future successful Some(agentReferenceRecord))
+      when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AgentDetailsDesResponse(
+                Some(utr),
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+                Some(SuspensionDetails(suspensionStatus = false, None))
+              )
+            )
+          )
+        )
+      when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
+        .thenReturn(Future.successful(()))
+
+      val response = await(service.getAgentInvitationUrlDetails(Arn(arn)))
+
+      response shouldBe ("ABCDEFGH", "stan-lee")
+    }
+
+    "make invitation link" in {
+      val response = service.makeInvitationUrl("clientType", "uid", "normalisedAgentName")
+      response shouldBe "/invitations/clientType-taxes/manage-who-can-deal-with-HMRC-for-you/uid/normalisedAgentName"
+    }
   }
 }
