@@ -52,7 +52,7 @@ class PostcodeService @Inject() (ifConnector: IfConnector) {
       details.businessData.head.businessAddressDetails.map(_.countryCode.toUpperCase).contains("GB")
 
     ifConnector.getBusinessDetails(Nino(clientIdentifier)).flatMap {
-      case Some(details) if details.businessData.length != 1                           => failure(PostcodeDoesNotMatch)
+      case Some(details) if details.businessData.isEmpty                               => failure(PostcodeDoesNotMatch)
       case Some(details) if postcodeMatches(details, postcode) && isUkAddress(details) => ().toFuture
       case Some(details) if postcodeMatches(details, postcode) =>
         details.businessData.head.businessAddressDetails.map(_.countryCode).map(nonUkAddress).fold(().toFuture)(failure)
