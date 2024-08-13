@@ -11,7 +11,7 @@ object AppDependencies {
     "uk.gov.hmrc"        %% "bootstrap-backend-play-30" % bootstrapVer,
     "uk.gov.hmrc.mongo"  %% "hmrc-mongo-play-30"        % mongoVer,
     "uk.gov.hmrc"        %% "play-hal-play-30"          % "4.0.0",
-    "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "2.0.0",
+    "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "2.1.0",
     "com.github.blemale" %% "scaffeine"                 % "5.2.1",
     "com.google.guava"   %  "guava"                     % "33.2.1-jre",
     "org.typelevel"      %% "cats-core"                 % "2.12.0"
