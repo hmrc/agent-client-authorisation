@@ -46,6 +46,7 @@ class ClientNameService @Inject() (
     service match {
       case MtdIt if Nino.isValid(clientId) => getCitizenName(Nino(clientId))
       case MtdIt                           => getItsaTradingName(MtdItId(clientId))
+      case MtdItSupp                       => getItsaTradingName(MtdItId(clientId))
       case PersonalIncomeRecord            => getCitizenName(Nino(clientId))
       case Vat                             => getVatName(Vrn(clientId))
       case Trust                           => getTrustName(clientId)
