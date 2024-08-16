@@ -101,10 +101,13 @@ class InvitationsService @Inject() (
           existingInvitations <- if (isAltItsa)
                                    fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
                                      .map(_.filter(_.status == PartialAuth))
-                                 else
-                                   invitationsRepository
-                                     .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
-                                     .fallbackTo(successful(Nil))
+                                 else {
+                                   if (invitation.service == Service.MtdItSupp) successful(Nil)
+                                   else
+                                     invitationsRepository
+                                       .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
+                                       .fallbackTo(successful(Nil))
+                                 }
 
           _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
@@ -136,6 +139,7 @@ class InvitationsService @Inject() (
   private def createRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
       case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
+      case Service.MtdItSupp            => relationshipsConnector.createMtdItSuppRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
       case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)

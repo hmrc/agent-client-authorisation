@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.{Cbc, CbcNonUk, MtdIt, PersonalIncomeRecord, Pillar2, Ppt, Trust, TrustNT, Vat}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{Cbc, CbcNonUk, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, TrustNT, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
 
@@ -36,6 +36,7 @@ trait TestDataSupport {
   val business: Option[String] = Some("business")
 
   val serviceITSA = "HMRC-MTD-IT"
+  val serviceITSASupp = "HMRC-MTD-IT-SUPP"
   val servicePIR = "PERSONAL-INCOME-RECORD"
   val serviceVAT = "HMRC-MTD-VAT"
   val serviceCGT = "HMRC-CGT-PD"
@@ -56,6 +57,7 @@ trait TestDataSupport {
   val mtdItId4: MtdItId = MtdItId("TUWXYZ123456789")
   val mtdItId5: MtdItId = MtdItId("TIWXYZ123456789")
   val mtdItId6: MtdItId = MtdItId("TOWXYZ123456789")
+  val mtdItId7: MtdItId = MtdItId("TPWXYZ123456789")
 
   val vrn: Vrn = Vrn("101747696")
   val vrn2: Vrn = Vrn("121747696")
@@ -115,6 +117,7 @@ trait TestDataSupport {
   }
 
   val itsaClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears", MtdIt, MtdItIdType, "MTDITID", mtdItId, nino, mtdItId2)
+  val itsaSuppClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears Supp", MtdItSupp, MtdItIdType, "MTDITID", mtdItId, nino2, mtdItId7)
   val irvClient: TestClient[Nino] = TestClient(personal, "John Smith", PersonalIncomeRecord, NinoType, "NI", nino, nino, nino2)
   val vatClient: TestClient[Vrn] = TestClient(personal, "GDT", Vat, VrnType, "VRN", vrn, vrn, vrn2)
   val trustClient: TestClient[Utr] = TestClient(business, "Nelson James Trust", Trust, UtrType, "UTR", utr, utr, utr2)
@@ -131,10 +134,10 @@ trait TestDataSupport {
     TestClient(business, "Overseas Corp Ltd", CbcNonUk, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647"))
   val pillar2Client: TestClient[PlrId] = TestClient(business, "Corp Ltd", Pillar2, PlrIdType, "PLRID", plrId, plrId, PlrId("XAPLR2222222222"))
 
-  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
-  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
+  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
+  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
 
-  val apiClients = List(itsaClient, vatClient)
+  val apiClients = List(itsaClient, vatClient, itsaSuppClient)
 
   /*
     Note this is just example of Mongo Failures. Not Actual ones for the error messages given

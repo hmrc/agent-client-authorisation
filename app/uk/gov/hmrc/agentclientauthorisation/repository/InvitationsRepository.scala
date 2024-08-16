@@ -94,6 +94,18 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
           ascending(InvitationRecordFormat.arnKey, InvitationRecordFormat.serviceKey, InvitationRecordFormat.suppliedClientIdKey),
           IndexOptions().partialFilterExpression(BsonDocument(InvitationRecordFormat.statusKey -> "Pending")).unique(true)
         )
+        // TODO Index does not work, we decided that we do not need that index at the moment
+        /*        ,IndexModel(
+          ascending(InvitationRecordFormat.arnKey, InvitationRecordFormat.suppliedClientIdKey),
+          IndexOptions()
+            .partialFilterExpression(
+              BsonDocument(
+                InvitationRecordFormat.statusKey  -> "Pending",
+                InvitationRecordFormat.serviceKey -> BsonDocument("$in" -> BsonArray("HMRC-MTD-IT", "HMRC-MTD-IT-SUPP"))
+              )
+            )
+            .unique(true)
+        )*/
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(InvitationId.idFormats),

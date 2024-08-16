@@ -56,6 +56,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     val serviceText = service match {
       case MtdIt                => "manage their Making Tax Digital for Income Tax."
+      case MtdItSupp            => "manage their Making Tax Digital for Income Tax."
       case PersonalIncomeRecord => "view their PAYE income record."
       case Vat                  => "manage their Making Tax Digital for VAT."
       case Trust                => "maintain a trust or an estate."
@@ -292,7 +293,8 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val oldInvitationResult: Future[Result] = controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(DeAuthorised))(getResult)
       val oldInvitationOpt: Option[TestHalResponseInvitation] =
         (contentAsJson(oldInvitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
-      oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+      if (client.service == Service.MtdItSupp) oldInvitationOpt shouldBe None
+      else oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
 
       // Invitation on different service should stay "accepted", can't run this for capital gains, as other services do not have the same permissions
       if (client.service != Service.CapitalGains) {

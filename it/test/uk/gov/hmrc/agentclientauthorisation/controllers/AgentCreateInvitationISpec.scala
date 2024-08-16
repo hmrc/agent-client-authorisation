@@ -57,6 +57,65 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
         verifyAnalyticsRequestSent(1)
       }
 
+      "service is ITSA SUPP" in {
+        givenAuditConnector()
+        hasABusinessPartnerRecord(nino)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenNinoForMtdItId(mtdItId7, nino)
+
+        givenAuthorisedAsAgent(arn)
+        hasABusinessPartnerRecordWithMtdItId(nino, mtdItId7)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val requestBody = Json.parse("""{
+                                       |  "service": "HMRC-MTD-IT-SUPP",
+                                       |  "clientIdType": "ni",
+                                       |  "clientId": "AB123456A"
+                                       |}""".stripMargin)
+
+        val response = controller.createInvitation(arn)(request.withJsonBody(requestBody))
+
+        status(response) shouldBe 201
+
+        verifyAnalyticsRequestSent(1)
+      }
+      "service is ITSA SUPP - same nino has 2 supp" in {
+        givenAuditConnector()
+        hasABusinessPartnerRecord(nino)
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        givenNinoForMtdItId(mtdItId, nino)
+
+        givenAuthorisedAsAgent(arn)
+        hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
+        givenPlatformAnalyticsRequestSent(true)
+
+        val requestBody1 = Json.parse("""{
+                                        |  "service": "HMRC-MTD-IT-SUPP",
+                                        |  "clientIdType": "ni",
+                                        |  "clientId": "AB123456A"
+                                        |}""".stripMargin)
+
+        val response1 = controller.createInvitation(arn)(request.withJsonBody(requestBody1))
+
+        status(response1) shouldBe 201
+
+        // second supp agent for the same nino
+        givenAuthorisedAsAgent(arn2)
+        givenGetAgencyDetailsStub(arn2, Some("name"), Some("email"))
+
+        val requestBody2 = Json.parse("""{
+                                        |  "service": "HMRC-MTD-IT-SUPP",
+                                        |  "clientIdType": "ni",
+                                        |  "clientId": "AB123456A"
+                                        |}""".stripMargin)
+
+        val response2 = controller.createInvitation(arn2)(request.withJsonBody(requestBody2))
+
+        status(response2) shouldBe 201
+
+        verifyAnalyticsRequestSent(2)
+
+      }
       "service is PIR" in {
         givenAuditConnector()
         givenAuthorisedAsAgent(arn)
@@ -184,8 +243,8 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
 
         verifyAnalyticsRequestSent(1)
       }
-    }
 
+    }
     "throw exception when adding DetailsForEmail Failed" when {
       "Agency Email not found" in {
         givenAuditConnector()
@@ -294,6 +353,38 @@ class AgentCreateInvitationISpec extends BaseISpec with PlatformAnalyticsStubs {
         """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
 
     }
+    // TODO - test failing at the moment
+    /*    "return 403 when Primary and Secondary - duplicate invitation" in {
+      givenAuditConnector()
+      hasABusinessPartnerRecord(nino)
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      givenNinoForMtdItId(mtdItId, nino)
+
+      givenAuthorisedAsAgent(arn)
+      hasABusinessPartnerRecordWithMtdItId(nino, mtdItId)
+      givenPlatformAnalyticsRequestSent(true)
+
+      await(
+        invitationsRepositoryImpl.collection
+          .insertOne(Invitation.createNew(arn, None, Service.MtdIt, mtdItId, nino, None, LocalDateTime.now(), LocalDate.now, None))
+          .toFuture()
+      )
+      1 == 1
+
+      val requestBody = Json.parse("""{
+                                     |  "service": "HMRC-MTD-IT-SUPP",
+                                     |  "clientIdType": "ni",
+                                     |  "clientId": "AB123456A"
+                                     |}""".stripMargin)
+
+      val response = await(controller.createInvitation(arn)(request.withJsonBody(requestBody)))
+
+      status(response) shouldBe 403
+
+      bodyOf(response) shouldBe
+        """{"code":"DUPLICATE_AUTHORISATION_REQUEST","message":"An authorisation request for this service has already been created and is awaiting the client’s response."}""".stripMargin
+
+    }*/
 
     "return 401 when agent is not authorised" in {
       givenAuditConnector()

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
@@ -144,6 +144,22 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
 
       assertThrows[UpstreamErrorResponse] {
         await(connector.createMtdItRelationship(invitation(Some("personal"), MtdIt, mtdItId, mtdItId)))
+      }
+    }
+  }
+
+  "createMtdItSuppRelationship" should {
+    "return () if the response is 2xx" in {
+      givenCreateRelationship(arn, serviceITSASupp, "MTDITID", mtdItId)
+      val result = await(connector.createMtdItSuppRelationship(invitation(Some("personal"), MtdItSupp, mtdItId, mtdItId)))
+      result shouldBe (())
+    }
+
+    "Throw an exception if the response is 5xx" in {
+      givenCreateRelationshipFails(arn, serviceITSASupp, "MTDITID", mtdItId)
+
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.createMtdItSuppRelationship(invitation(Some("personal"), MtdItSupp, mtdItId, mtdItId)))
       }
     }
   }
