@@ -101,10 +101,13 @@ class InvitationsService @Inject() (
           existingInvitations <- if (isAltItsa)
                                    fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
                                      .map(_.filter(_.status == PartialAuth))
-                                 else
-                                   invitationsRepository
-                                     .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
-                                     .fallbackTo(successful(Nil))
+                                 else {
+                                   if (invitation.service == Service.MtdItSupp) successful(Nil)
+                                   else
+                                     invitationsRepository
+                                       .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
+                                       .fallbackTo(successful(Nil))
+                                 }
 
           _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
