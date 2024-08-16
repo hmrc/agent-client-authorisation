@@ -136,6 +136,7 @@ class InvitationsService @Inject() (
   private def createRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
       case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
+      case Service.MtdItSupp            => relationshipsConnector.createMtdItSuppRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
       case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)

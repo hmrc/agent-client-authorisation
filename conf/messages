@@ -1,4 +1,5 @@
 service.HMRC-MTD-IT=manage their Making Tax Digital for Income Tax.
+service.HMRC-MTD-IT-SUPP=manage their Making Tax Digital for Income Tax.
 service.PERSONAL-INCOME-RECORD=view their PAYE income record.
 service.HMRC-MTD-VAT=manage their Making Tax Digital for VAT.
 service.HMRC-TERS-ORG=maintain a trust or an estate.

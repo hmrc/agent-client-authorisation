@@ -103,8 +103,9 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
             val possibleServices = currentUser.service match {
               /* TODO [CBC Onboarding] Forced ugly hack. We really need to change the endpoints to include the explicit
                  service rather than rely on just the client id type (which can be ambiguous as in the case of CBC) */
-              case Service.Cbc | Service.CbcNonUk => Seq(Service.Cbc, Service.CbcNonUk)
-              case svc                            => Seq(svc)
+              case Service.Cbc | Service.CbcNonUk    => Seq(Service.Cbc, Service.CbcNonUk)
+              case Service.MtdIt | Service.MtdItSupp => Seq(Service.MtdIt, Service.MtdItSupp)
+              case svc                               => Seq(svc)
             }
             invitationsService.clientsReceived(possibleServices, taxId, status) map (results => Ok(toHalResource(results, taxId, status)))
           }

@@ -56,6 +56,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
     val serviceText = service match {
       case MtdIt                => "manage their Making Tax Digital for Income Tax."
+      case MtdItSupp            => "manage their Making Tax Digital for Income Tax."
       case PersonalIncomeRecord => "view their PAYE income record."
       case Vat                  => "manage their Making Tax Digital for VAT."
       case Trust                => "maintain a trust or an estate."

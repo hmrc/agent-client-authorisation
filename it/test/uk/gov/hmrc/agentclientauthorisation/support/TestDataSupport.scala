@@ -36,6 +36,7 @@ trait TestDataSupport {
   val business: Option[String] = Some("business")
 
   val serviceITSA = "HMRC-MTD-IT"
+  val serviceITSASupp = "HMRC-MTD-IT-SUPP"
   val servicePIR = "PERSONAL-INCOME-RECORD"
   val serviceVAT = "HMRC-MTD-VAT"
   val serviceCGT = "HMRC-CGT-PD"
@@ -133,10 +134,10 @@ trait TestDataSupport {
     TestClient(business, "Overseas Corp Ltd", CbcNonUk, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647"))
   val pillar2Client: TestClient[PlrId] = TestClient(business, "Corp Ltd", Pillar2, PlrIdType, "PLRID", plrId, plrId, PlrId("XAPLR2222222222"))
 
-  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
-  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient)
+  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
+  val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
 
-  val apiClients = List(itsaClient, vatClient)
+  val apiClients = List(itsaClient, vatClient, itsaSuppClient)
 
   /*
     Note this is just example of Mongo Failures. Not Actual ones for the error messages given

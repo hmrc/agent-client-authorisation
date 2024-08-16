@@ -55,6 +55,13 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         .handleNon2xx(s"createMtdItRelationship")
     }
 
+  def createMtdItSuppRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-SUPP-PUT") {
+      http
+        .PUT[String, HttpResponse](mtdItSuppRelationshipUrl(invitation), "")
+        .handleNon2xx(s"createMtdItSuppRelationship")
+    }
+
   def createMtdVatRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-VAT-PUT") {
       http
@@ -142,6 +149,9 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     }
   private def mtdItRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}"
+
+  private def mtdItSuppRelationshipUrl(invitation: Invitation): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT-SUPP/client/MTDITID/${encodePathSegment(invitation.clientId.value)}"
 
   private def mtdVatRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(invitation.clientId.value)}"
