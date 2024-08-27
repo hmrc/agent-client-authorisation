@@ -102,11 +102,19 @@ class InvitationsService @Inject() (
                                    fetchAltItsaInvitationsFor(Nino(invitation.suppliedClientId.value))
                                      .map(_.filter(_.status == PartialAuth))
                                  else {
-                                   if (invitation.service == Service.MtdItSupp) successful(Nil)
-                                   else
+                                   if (invitation.service == Service.MtdItSupp)
+                                     // Find only Main ITSA invitations for the same arn and client
+                                     invitationsRepository.findInvitationsBy(
+                                       arn = Some(invitation.arn),
+                                       services = Seq(Service.MtdIt, Service.MtdItSupp),
+                                       clientId = Some(invitation.clientId.value)
+                                     )
+                                   else {
+                                     // Find all invitations for this service for this client for any arn
                                      invitationsRepository
                                        .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
                                        .fallbackTo(successful(Nil))
+                                   }
                                  }
 
           _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))

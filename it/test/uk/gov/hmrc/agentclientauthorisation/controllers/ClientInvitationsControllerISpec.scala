@@ -260,15 +260,22 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     s"accepting via $journey to accept an ${client.service.id} ${if (client.isAltItsaClient) "(ALT-ITSA)"
       else ""} invitation should mark existing invitations as de-authed for the client: ${client.clientId.value} if logged in as ${if (forStride) "stride"
       else "client"}" in new LoggedInUser(false, forBusiness) {
+
+      // 1. Create old invitation for service for arn and accept invitation in repo
       val oldInvitation: Invitation = await(createInvitation(arn, client))
       val acceptedStatus: InvitationStatus = if (client.isAltItsaClient) PartialAuth else Accepted
       await(repository.update(oldInvitation, acceptedStatus, LocalDateTime.now()))
 
+      // 2.Create old invitation for otherService for arn and accept invitation in repo
       val clientOnDifferentService: TestClient[_ >: MtdItId with Vrn <: TaxIdentifier] = if (client.service == Service.Vat) itsaClient else vatClient
-
       val oldInvitationFromDifferentService: Invitation = await(createInvitation(arn, clientOnDifferentService))
       await(repository.update(oldInvitationFromDifferentService, Accepted, LocalDateTime.now()))
 
+      // 2.b ITSA Supporting old invitation for different arn and same client NINO
+      val oldInvitationItsaSupporting: Invitation = await(createInvitation(arn2, itsaSuppClient))
+      await(repository.update(oldInvitationItsaSupporting, Accepted, LocalDateTime.now()))
+
+      // 3. Create new invitation
       val invitation: Invitation = await(createInvitation(arn, client))
       if (!client.isAltItsaClient)
         givenCreateRelationship(arn, client.service.id, if (client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
@@ -293,8 +300,7 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       val oldInvitationResult: Future[Result] = controller.getInvitations(client.urlIdentifier, client.clientId.value, Some(DeAuthorised))(getResult)
       val oldInvitationOpt: Option[TestHalResponseInvitation] =
         (contentAsJson(oldInvitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
-      if (client.service == Service.MtdItSupp) oldInvitationOpt shouldBe None
-      else oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+      oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
 
       // Invitation on different service should stay "accepted", can't run this for capital gains, as other services do not have the same permissions
       if (client.service != Service.CapitalGains) {
@@ -303,7 +309,16 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
         val oldInvitationOnDifferentServiceOpt: Option[TestHalResponseInvitation] =
           (contentAsJson(oldInvitationOnDifferentServiceResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
         oldInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(Accepted.toString)
+
+        // Old ITSA Supporting for different arn should stay
+        val oldItsaSupportingInvitationServiceResult: Future[Result] =
+          controller.getInvitations(itsaSuppClient.urlIdentifier, itsaSuppClient.clientId.value, Some(Accepted))(getResult)
+        val oldItsaSupportingInvitationOnDifferentServiceOpt: Option[TestHalResponseInvitation] =
+          (contentAsJson(oldItsaSupportingInvitationServiceResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+        oldItsaSupportingInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(Accepted.toString)
+
       }
+
     }
   }
 

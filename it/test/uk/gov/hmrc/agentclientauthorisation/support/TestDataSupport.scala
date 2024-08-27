@@ -114,10 +114,12 @@ trait TestDataSupport {
     wrongIdentifier: TaxIdentifier
   ) {
     val isAltItsaClient: Boolean = service == MtdIt && clientId == suppliedClientId
+    val itsaSupporting: Boolean = service == MtdItSupp
   }
 
   val itsaClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears", MtdIt, MtdItIdType, "MTDITID", mtdItId, nino, mtdItId2)
-  val itsaSuppClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears Supp", MtdItSupp, MtdItIdType, "MTDITID", mtdItId, nino2, mtdItId7)
+  val itsaSuppClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears Supp", MtdItSupp, MtdItIdType, "MTDITID", mtdItId, nino, mtdItId2)
+  val itsaSuppDiffClient: TestClient[MtdItId] = TestClient(personal, "Trade Pears Supp", MtdItSupp, MtdItIdType, "MTDITID", mtdItId, nino2, mtdItId7)
   val irvClient: TestClient[Nino] = TestClient(personal, "John Smith", PersonalIncomeRecord, NinoType, "NI", nino, nino, nino2)
   val vatClient: TestClient[Vrn] = TestClient(personal, "GDT", Vat, VrnType, "VRN", vrn, vrn, vrn2)
   val trustClient: TestClient[Utr] = TestClient(business, "Nelson James Trust", Trust, UtrType, "UTR", utr, utr, utr2)
