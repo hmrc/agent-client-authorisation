@@ -322,6 +322,127 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
     }
   }
 
+  "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept for ITSA" should {
+    runAcceptITSAInvitationsScenario(itsaClient, itsaClient, "API", false)
+    runAcceptITSAInvitationsScenario(itsaClient, itsaSuppClient, "API", false)
+    runAcceptITSAInvitationsScenario(itsaSuppClient, itsaSuppClient, "API", false)
+    runAcceptITSAInvitationsScenario(itsaSuppClient, itsaClient, "API", false)
+    runAcceptITSAInvitationsScenario(altItsaClient, altItsaClient, "API", false)
+    runAcceptITSAInvitationsScenario(altItsaClient, altItsaSuppClient, "API", false)
+    runAcceptITSAInvitationsScenario(altItsaSuppClient, altItsaClient, "API", false)
+    runAcceptITSAInvitationsScenario(altItsaSuppClient, altItsaSuppClient, "API", false)
+  }
+
+  def runAcceptITSAInvitationsScenario[T <: TaxIdentifier](
+    newItsaClient: TestClient[T],
+    oldItsaClient: TestClient[T],
+    journey: String,
+    forStride: Boolean,
+    forBusiness: Boolean = false
+  ): Unit = {
+
+    val request = FakeRequest("PUT", "/clients/:clientIdType/:clientId/invitations/received/:invitationId/accept").withHeaders(
+      "Authorization" -> "Bearer testtoken"
+    )
+    val getResult =
+      FakeRequest("GET", "/clients/:clientIdType/:clientId/invitations/:invitationId").withHeaders("Authorization" -> "Bearer testtoken")
+
+    s"accepting via $journey to accept an ${newItsaClient.service.id} ${if (newItsaClient.isAltItsaClient) "(ALT-ITSA)"
+      else ""} invitation should mark existing invitations for ${oldItsaClient.service.id} as de-authed for the client: ${oldItsaClient.clientId.value} if logged in as ${if (forStride) "stride"
+      else "client"}" in new LoggedInUser(false, forBusiness) {
+
+      // 1. Create old invitation for service for arn and accept invitation in repo
+      val oldInvitation: Invitation = await(createInvitation(arn, oldItsaClient))
+      val acceptedStatus: InvitationStatus = if (oldItsaClient.isAltItsaClient) PartialAuth else Accepted
+      await(repository.update(oldInvitation, acceptedStatus, LocalDateTime.now()))
+
+      // 2.Create old invitation for VAT for arn and accept invitation in repo
+      val oldInvitationFromDifferentService: Invitation = await(createInvitation(arn, vatClient))
+      await(repository.update(oldInvitationFromDifferentService, Accepted, LocalDateTime.now()))
+
+      // 2.b ITSA Supporting old invitation for different arn and same client NINO
+      val oldItsaClientDifferentArn =
+        if (!newItsaClient.isAltItsaClient)
+          if (oldItsaClient.itsaSupporting) itsaClient else itsaSuppClient
+        else if (oldItsaClient.itsaSupporting) altItsaClient
+        else altItsaSuppClient
+      val acceptedStatus2: InvitationStatus = if (oldItsaClientDifferentArn.isAltItsaClient) PartialAuth else Accepted
+      val oldInvitationItsaSupporting: Invitation = await(createInvitation(arn2, oldItsaClientDifferentArn))
+      await(repository.update(oldInvitationItsaSupporting, acceptedStatus2, LocalDateTime.now()))
+
+      // 3. Create new invitation
+      val invitation: Invitation = await(createInvitation(arn, newItsaClient))
+      if (!newItsaClient.isAltItsaClient)
+        givenCreateRelationship(
+          arn,
+          newItsaClient.service.id,
+          if (newItsaClient.urlIdentifier == "UTR") "SAUTR" else newItsaClient.urlIdentifier,
+          newItsaClient.clientId
+        )
+      givenEmailSent(
+        createEmailInfo(
+          dfe(newItsaClient.clientName),
+          DateUtils.displayDate(invitation.expiryDate),
+          "client_accepted_authorisation_request",
+          newItsaClient.service
+        )
+      )
+      if (!newItsaClient.isAltItsaClient) givenClientRelationships(arn, newItsaClient.service.id)
+
+      anAfiRelationshipIsCreatedWith(arn, newItsaClient.clientId)
+      givenPlatformAnalyticsRequestSent(true)
+
+      // New invitation should be "accepted"
+      val result: Result =
+        await(controller.acceptInvitation(newItsaClient.urlIdentifier, newItsaClient.clientId.value, invitation.invitationId)(request))
+      status(result) shouldBe 204
+      val updatedInvitation: Future[Result] =
+        controller.getInvitations(newItsaClient.urlIdentifier, newItsaClient.clientId.value, Some(acceptedStatus))(getResult)
+      val testInvitationOpt: Option[TestHalResponseInvitation] =
+        (contentAsJson(updatedInvitation) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+      testInvitationOpt.map(_.status) shouldBe Some(acceptedStatus.toString)
+      verifyAnalyticsRequestSent(1)
+
+      // Old invitation should be "deauthorised"
+      val oldInvitationResult: Future[Result] =
+        controller.getInvitations(oldItsaClient.urlIdentifier, oldItsaClient.clientId.value, Some(DeAuthorised))(getResult)
+      val oldInvitationOpt: Option[TestHalResponseInvitation] =
+        (contentAsJson(oldInvitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+      oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+
+      // Invitation on different service should stay "accepted", can't run this for capital gains, as other services do not have the same permissions
+      if (newItsaClient.service != Service.CapitalGains) {
+        val oldInvitationOnDifferentServiceResult: Future[Result] =
+          controller.getInvitations(vatClient.urlIdentifier, vatClient.clientId.value, Some(Accepted))(getResult)
+        val oldInvitationOnDifferentServiceOpt: Option[TestHalResponseInvitation] =
+          (contentAsJson(oldInvitationOnDifferentServiceResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+        oldInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(Accepted.toString)
+
+        // Old ITSA  for different arn should stay when new supporting and deauth when main
+        if (oldItsaClientDifferentArn.itsaSupporting) {
+          val oldItsaSupportingInvitationServiceResult: Future[Result] =
+            controller.getInvitations(oldItsaClientDifferentArn.urlIdentifier, oldItsaClientDifferentArn.clientId.value, Some(acceptedStatus2))(
+              getResult
+            )
+          val oldItsaSupportingInvitationOnDifferentServiceOpt: Option[TestHalResponseInvitation] =
+            (contentAsJson(oldItsaSupportingInvitationServiceResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+          oldItsaSupportingInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(acceptedStatus2.toString)
+        } else {
+          val oldItsaSupportingInvitationServiceResult: Future[Result] =
+            controller.getInvitations(oldItsaClientDifferentArn.urlIdentifier, oldItsaClientDifferentArn.clientId.value, Some(DeAuthorised))(
+              getResult
+            )
+          val oldItsaSupportingInvitationOnDifferentServiceOpt: Option[TestHalResponseInvitation] =
+            (contentAsJson(oldItsaSupportingInvitationServiceResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
+          oldItsaSupportingInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+
+        }
+
+      }
+
+    }
+  }
+
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/reject" should {
 
     uiClients.foreach { client =>
@@ -420,7 +541,6 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       }
     }
   }
-
   "GET /clients/:service/:taxIdentifier/invitations/received" should {
     uiClients.foreach { client =>
       runGetAllInvitationsScenario(client, forStride = true)

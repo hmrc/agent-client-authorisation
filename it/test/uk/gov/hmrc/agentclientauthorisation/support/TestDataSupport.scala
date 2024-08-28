@@ -113,7 +113,7 @@ trait TestDataSupport {
     suppliedClientId: TaxIdentifier,
     wrongIdentifier: TaxIdentifier
   ) {
-    val isAltItsaClient: Boolean = service == MtdIt && clientId == suppliedClientId
+    val isAltItsaClient: Boolean = Seq(MtdIt, MtdItSupp).contains(service) && clientId == suppliedClientId
     val itsaSupporting: Boolean = service == MtdItSupp
   }
 
@@ -129,6 +129,7 @@ trait TestDataSupport {
   val cgtClientBus: TestClient[CgtRef] =
     TestClient(business, "Trustee", Service.CapitalGains, CgtRefType, "CGTPDRef", cgtRefBus, cgtRefBus, cgtRefBus2)
   val altItsaClient: TestClient[Nino] = TestClient(personal, "John Smith", MtdIt, NinoType, "MTDITID", nino, nino, nino2)
+  val altItsaSuppClient: TestClient[Nino] = TestClient(personal, "John Smith", MtdItSupp, NinoType, "MTDITID", nino, nino, nino2)
   val pptClient: TestClient[PptRef] =
     TestClient(business, "Plastics Packaging Ltd", Ppt, PptRefType, "EtmpRegistrationNumber", pptRef, pptRef, PptRef("XAPPT0000000001"))
   val cbcClient: TestClient[CbcId] = TestClient(business, "Domestic Corp Ltd", Cbc, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647"))
