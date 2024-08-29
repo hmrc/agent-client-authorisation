@@ -143,7 +143,7 @@ class InvitationsService @Inject() (
         for {
           sameArnItsa <- invitationsRepository.findInvitationsBy(
                            arn = Some(invitation.arn),
-                           services = Seq(Service.MtdIt, Service.MtdItSupp),
+                           services = Seq(Service.MtdItSupp),
                            clientId = Some(invitation.clientId.value)
                          )
           otherMainItsa <- invitationsRepository.findInvitationsBy(
