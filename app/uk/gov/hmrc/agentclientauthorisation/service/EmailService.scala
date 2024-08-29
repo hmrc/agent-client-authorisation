@@ -125,5 +125,7 @@ class EmailService @Inject() (
     )
 
   private def isAltItsa(invitation: Invitation): Boolean =
-    invitation.service.id == HMRCMTDIT && invitation.clientId == invitation.suppliedClientId || invitation.status == PartialAuth
+    invitation.service.id == Seq(HMRCMTDIT, HMRCMTDITSUPP).contains(
+      invitation.clientId
+    ) == invitation.suppliedClientId || invitation.status == PartialAuth
 }

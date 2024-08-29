@@ -44,17 +44,18 @@ class ClientNameService @Inject() (
 
   def getClientNameByService(clientId: String, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     service match {
-      case MtdIt if Nino.isValid(clientId) => getCitizenName(Nino(clientId))
-      case MtdIt                           => getItsaTradingName(MtdItId(clientId))
-      case MtdItSupp                       => getItsaTradingName(MtdItId(clientId))
-      case PersonalIncomeRecord            => getCitizenName(Nino(clientId))
-      case Vat                             => getVatName(Vrn(clientId))
-      case Trust                           => getTrustName(clientId)
-      case TrustNT                         => getTrustName(clientId)
-      case CapitalGains                    => getCgtName(CgtRef(clientId))
-      case Ppt                             => getPptCustomerName(PptRef(clientId))
-      case Cbc | CbcNonUk                  => getCbcCustomerName(CbcId(clientId))
-      case Pillar2                         => getPillar2CustomerName(PlrId(clientId))
+      case MtdIt if Nino.isValid(clientId)     => getCitizenName(Nino(clientId))
+      case MtdIt                               => getItsaTradingName(MtdItId(clientId))
+      case MtdItSupp if Nino.isValid(clientId) => getCitizenName(Nino(clientId))
+      case MtdItSupp                           => getItsaTradingName(MtdItId(clientId))
+      case PersonalIncomeRecord                => getCitizenName(Nino(clientId))
+      case Vat                                 => getVatName(Vrn(clientId))
+      case Trust                               => getTrustName(clientId)
+      case TrustNT                             => getTrustName(clientId)
+      case CapitalGains                        => getCgtName(CgtRef(clientId))
+      case Ppt                                 => getPptCustomerName(PptRef(clientId))
+      case Cbc | CbcNonUk                      => getCbcCustomerName(CbcId(clientId))
+      case Pillar2                             => getPillar2CustomerName(PlrId(clientId))
     }
 
   def getItsaTradingName(mtdItId: MtdItId)(implicit c: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
