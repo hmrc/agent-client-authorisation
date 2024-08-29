@@ -69,6 +69,26 @@ class ClientNameServiceSpec extends UnitSpec with MocksWithCache {
 
       result shouldBe Some("Mr Tradington")
     }
+    "get the trading name if the service is AltITSA" in {
+      (mockCitizenDetailsConnector
+        .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(nino, *, *)
+        .returns(Future(Some(Citizen(Some("Henry"), Some("Hoover")))))
+
+      val result = await(clientNameService.getClientNameByService(nino.value, Service.MtdItSupp))
+
+      result shouldBe Some("Henry Hoover")
+    }
+    "get the trading name if the service is ITSA Supporting" in {
+      (mockCitizenDetailsConnector
+        .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
+        .expects(nino, *, *)
+        .returns(Future(Some(Citizen(Some("Henry"), Some("Hoover")))))
+
+      val result = await(clientNameService.getClientNameByService(nino.value, Service.MtdItSupp))
+
+      result shouldBe Some("Henry Hoover")
+    }
     "get the citizen name if the service is AFI" in {
       (mockCitizenDetailsConnector
         .getCitizenDetails(_: Nino)(_: HeaderCarrier, _: ExecutionContext))
