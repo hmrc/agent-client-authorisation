@@ -98,7 +98,7 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
       val taxId = ClientIdentifier(currentUser.taxIdentifier)
       forThisClientOrStride(taxId) {
         invitationsService
-          .updateAltItsaForNino(taxId) // TODO!! Why do we have a side-effect in a GET call?!?
+          .updateAltItsaForNino(taxId, MtdIt) // TODO!! Why do we have a side-effect in a GET call?!?
           .flatMap { _ =>
             val possibleServices = currentUser.service match {
               /* TODO [CBC Onboarding] Forced ugly hack. We really need to change the endpoints to include the explicit
