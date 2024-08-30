@@ -455,7 +455,7 @@ class AgencyInvitationsController @Inject() (
     invitationsService
       .updateAltItsaFor(nino, Service.apply(service))
       .map { result =>
-        if (result.nonEmpty) Created else NoContent
+        if (result.nonEmpty) Created else NotFound
       }
       .recover { case e =>
         logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
