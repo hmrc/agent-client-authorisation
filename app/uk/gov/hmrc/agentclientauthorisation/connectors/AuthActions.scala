@@ -117,6 +117,7 @@ class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val aut
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
 
   case class CurrentUser(enrolments: Enrolments, credentials: Credentials, service: Service, taxIdentifier: TaxIdentifier)
+  case class GenericCurrentUser(credentials: Credentials, affinityGroup: Option[AffinityGroup])
 
   def hasRequiredStrideRole(enrolments: Enrolments, strideRoles: Seq[String]): Boolean =
     strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
@@ -237,6 +238,23 @@ class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val aut
         .find(_.key == "HMRC-NI")
         .map(ninoEnrol => ("HMRC-MTD-IT", ninoEnrol.identifiers.head.key, ninoEnrol.identifiers.head.value.replaceAll(" ", "")))
     else None
+
+  def authorisedClientOrStrideUserOrAgent(clientId: TaxIdentifier, strideRoles: Seq[String])(
+    body: => Future[Result]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Result] =
+    authorised().retrieve(allEnrolments and affinityGroup and credentials) { case enrolments ~ Some(affinity) ~ optCreds =>
+      optCreds
+        .collect {
+          case creds @ Credentials(_, "GovernmentGateway") if isAgent(affinity) | hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
+            creds
+          case creds @ Credentials(_, "PrivilegedApplication") if hasRequiredStrideRole(enrolments, strideRoles) =>
+            creds
+        }
+        .map { _ =>
+          body
+        }
+        .getOrElse(Future successful GenericUnauthorized)
+    }
 
   protected def withMultiEnrolledClient(
     body: Seq[(String, String, String)] => Future[Result]

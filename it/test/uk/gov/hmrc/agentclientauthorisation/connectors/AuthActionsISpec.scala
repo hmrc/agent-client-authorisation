@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Service.{HMRCCGTPD, HMRCMTDIT, HMRC
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdType, Service}
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment => AuthEnrolment, EnrolmentIdentifier}
 import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +36,7 @@ class AuthActionsISpec extends BaseISpec {
 
   object TestController extends AuthActions(metrics, appConfig, authConnector, cc) {
 
-//    implicit val hc = HeaderCarrier()
+    implicit val hc = HeaderCarrier()
 
     def testWithAuthorisedAsClientOrStride(service: String, identifier: String, strideRoles: Seq[String]): Action[AnyContent] =
       super.AuthorisedClientOrStrideUser(service, identifier, strideRoles) { _ => _ =>
@@ -49,6 +50,11 @@ class AuthActionsISpec extends BaseISpec {
 
     val testWithOnlyForAgents: Action[AnyContent] =
       super.onlyForAgents { _ => _ =>
+        Future.successful(Ok)
+      }
+
+    def testWithClientOrStrideUserOrAgent(clientId: TaxIdentifier, strideRoles: Seq[String]): Future[Result] =
+      super.authorisedClientOrStrideUserOrAgent(clientId, strideRoles) {
         Future.successful(Ok)
       }
 
@@ -265,6 +271,26 @@ class AuthActionsISpec extends BaseISpec {
       status(result) shouldBe 200
       bodyOf(result.futureValue).contains("HMRC-MTD-IT") shouldBe true
     }
+  }
+
+  "authorisedClientOrStrideUserOrAgent" should {
+    "return 200 if logged in as Agent" in {
+      givenAuthorisedAsAgent(arn)
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/path-of-request").withHeaders("Authorization" -> "Bearer XYZ")
+
+      val result: Future[Result] = TestController.testWithClientOrStrideUserOrAgent(arn,Seq[""])
+      status(result) shouldBe 200
+    }
+//    s"return 403 if user is not logged in via GovernmentGateway" in {
+//    }
+//    "return 200 for successful stride login" in {
+//    }
+//    "return 401 for incorrect stride login" in {
+//    }
+//    "return 200 if logged in client" in {
+//    }
+//    s"return 403 if not logged in through GG or PA via Client" in {
+//    }
   }
 
 }
