@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
   .settings(
     name := appName,
     organization := "uk.gov.hmrc",
-    PlayKeys.playDefaultPort := 9432,
+      PlayKeys.playDefaultPort := 9432,
     resolvers ++= Seq(Resolver.typesafeRepo("releases")),
     libraryDependencies ++=  AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.Binders._", "java.time.LocalDate"),

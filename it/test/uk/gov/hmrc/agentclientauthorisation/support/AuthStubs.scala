@@ -704,6 +704,18 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
             .withBody(responseBody)
         )
     )
+
+//  def givenAuthorisedStub =
+//    stubFor(
+//      post(urlEqualTo("/auth/authorise"))
+//        .withRequestBody(eq)
+//        .willReturn(
+//          aResponse()
+//            .withStatus(200)
+//            .withHeader("Content-Type", "application/json")
+//        )
+//    )
+
 }
 
 trait StrideAuthStubs extends BasicUserAuthStubs {

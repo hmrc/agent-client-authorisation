@@ -239,22 +239,8 @@ class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val aut
         .map(ninoEnrol => ("HMRC-MTD-IT", ninoEnrol.identifiers.head.key, ninoEnrol.identifiers.head.value.replaceAll(" ", "")))
     else None
 
-  def authorisedClientOrStrideUserOrAgent(clientId: TaxIdentifier, strideRoles: Seq[String])(
-    body: => Future[Result]
-  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Result] =
-    authorised().retrieve(allEnrolments and affinityGroup and credentials) { case enrolments ~ Some(affinity) ~ optCreds =>
-      optCreds
-        .collect {
-          case creds @ Credentials(_, "GovernmentGateway") if isAgent(affinity) | hasRequiredEnrolmentMatchingIdentifier(enrolments, clientId) =>
-            creds
-          case creds @ Credentials(_, "PrivilegedApplication") if hasRequiredStrideRole(enrolments, strideRoles) =>
-            creds
-        }
-        .map { _ =>
-          body
-        }
-        .getOrElse(Future successful GenericUnauthorized)
-    }
+  def authorised(body: => Future[Result])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Result] =
+    authorised.apply(body)
 
   protected def withMultiEnrolledClient(
     body: Seq[(String, String, String)] => Future[Result]

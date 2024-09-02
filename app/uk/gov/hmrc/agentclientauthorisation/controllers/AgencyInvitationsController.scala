@@ -452,15 +452,17 @@ class AgencyInvitationsController @Inject() (
   }
 
   def altItsaUpdateEMA(nino: Nino, service: String): Action[AnyContent] = Action.async { implicit request =>
-    invitationsService
-      .updateAltItsaFor(nino, Service.apply(service))
-      .map { result =>
-        if (result.nonEmpty) Created else NotFound
-      }
-      .recover { case e =>
-        logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
-        genericInternalServerError(e.getMessage)
-      }
+    authorised {
+      invitationsService
+        .updateAltItsaFor(nino, Service.apply(service))
+        .map { result =>
+          if (result.nonEmpty) Created else NotFound
+        }
+        .recover { case e =>
+          logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
+          genericInternalServerError(e.getMessage)
+        }
+    }
   }
 
   // TODO: Decommission
