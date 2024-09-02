@@ -705,7 +705,7 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
         )
     )
 
-  def givenAuthorisedStub =
+  def givenAuthorisedEmptyPredicate =
     stubFor(
       post(urlEqualTo("/auth/authorise"))
         .willReturn(
