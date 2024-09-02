@@ -283,15 +283,7 @@ class AuthActionsISpec extends BaseISpec {
 
     "return 200 if authorised" in {
       implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer 123")))
-      givenAuthorisedFor(
-        s"""
-           |{
-           |  "authorise":[],
-           |  "retrieve":[]
-           |}
-           """.stripMargin,
-        ""
-      )
+      givenAuthorisedStub
 
       val result: Result = await(TestController.testWithAuthorised(hc))
       status(result) shouldBe OK

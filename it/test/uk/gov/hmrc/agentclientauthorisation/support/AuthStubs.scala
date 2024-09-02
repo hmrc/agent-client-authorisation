@@ -705,16 +705,15 @@ trait AgentAuthStubs extends BasicUserAuthStubs {
         )
     )
 
-//  def givenAuthorisedStub =
-//    stubFor(
-//      post(urlEqualTo("/auth/authorise"))
-//        .withRequestBody(eq)
-//        .willReturn(
-//          aResponse()
-//            .withStatus(200)
-//            .withHeader("Content-Type", "application/json")
-//        )
-//    )
+  def givenAuthorisedStub =
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody("""{}""")
+        )
+    )
 
 }
 
