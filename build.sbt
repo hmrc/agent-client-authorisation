@@ -15,9 +15,8 @@ val scalaCOptions = Seq(
   "-unchecked",
   "-language:implicitConversions",
   "-Wconf:src=target/.*:s", // silence warnings from compiled files
-  "-Wconf:src=Routes/.*:s"  // silence warnings from routes files
+  "-Wconf:src=Routes/.*:s" // silence warnings from routes files
 )
-
 
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
@@ -35,9 +34,9 @@ lazy val root = (project in file("."))
   .settings(
     name := appName,
     organization := "uk.gov.hmrc",
-      PlayKeys.playDefaultPort := 9432,
+    PlayKeys.playDefaultPort := 9432,
     resolvers ++= Seq(Resolver.typesafeRepo("releases")),
-    libraryDependencies ++=  AppDependencies.compile ++ AppDependencies.test,
+    libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq("uk.gov.hmrc.agentclientauthorisation.binders.Binders._", "java.time.LocalDate"),
     Compile / scalafmtOnCompile := true,
     Test / scalafmtOnCompile := true,
