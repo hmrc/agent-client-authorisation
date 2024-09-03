@@ -127,7 +127,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
     }
 
-    "return 201 (Created) when there is PartialAuth invitation and ETMP create relationship call succeeds" in new TestSetup {
+    "return 201 (Created) when there is PartialAuth invitation " in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo
@@ -146,7 +146,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       modified.get.status shouldBe Accepted
     }
 
-    "return 500 when there is PartialAuth invitation but ETMP create relationship call fails (Nino will be replaced)" in new TestSetup {
+    "return 500 when there is PartialAuth invitation but create relationship call fails (Nino will be replaced)" in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo
@@ -165,7 +165,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       modified.get.status shouldBe PartialAuth
     }
 
-    "return 201 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in new TestSetup {
+    "return 201 when there is PartialAuth but clientId is MTDITID (as if create relationship call previously failed)" in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo.create(
@@ -210,9 +210,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       )
       await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
-      givenMtdItIdIsKnownFor(nino, mtdItId)
-      givenCreateRelationship(arn, "HMRC-MTD-IT-SUPP", "MTDITID", mtdItId)
-
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT")(request))
       status(result) shouldBe 404
     }
@@ -220,7 +217,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
   "PUT /alt-itsa/HMRC-MTD-IT-SUPP/update/:nino" should {
 
-    val request = FakeRequest("PUT", "/alt-itsa/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
+    val request = FakeRequest("PUT", "/alt-itsa/HMRC-MTD-IT-SUPP/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
 
     "return 404 when there are no alternative itsa invitations found for the client" in new TestSetup {
 
@@ -290,48 +287,9 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 404 when client has MtdItIdSupp, updating the invitation store to replace Nino" in new TestSetup {
+    "return 201 (Created) when there is a PartialAuth invitation" in new TestSetup {
 
-      val altItsaPending1 = await(
-        invitationsRepo
-          .create(
-            arn,
-            Some("personal"),
-            Service.MtdItSupp,
-            nino,
-            nino,
-            None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
-            None
-          )
-      )
-
-      val altItsaPending2 = await(
-        invitationsRepo.create(
-          arn2,
-          Some("personal"),
-          Service.MtdItSupp,
-          nino,
-          nino,
-          None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
-          None
-        )
-      )
-
-      givenMtdItIdIsKnownFor(nino, mtdItId)
-
-      val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT-SUPP")(request))
-      status(result) shouldBe 404
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
-    }
-
-    "return 201 (Created) when there is PartialAuth invitation and ETMP create relationship call succeeds" in new TestSetup {
-
-      val altItsaPending = await(
+      val altItsaPending: Invitation = await(
         invitationsRepo
           .create(
             arn,
@@ -358,7 +316,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       modified.get.status shouldBe Accepted
     }
 
-    "return 500 when there is PartialAuth invitation but ETMP create relationship call fails (Nino will be replaced)" in new TestSetup {
+    "return 500 when there is PartialAuth invitation but create relationship call fails (Nino will be replaced)" in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo
@@ -387,7 +345,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       modified.get.status shouldBe PartialAuth
     }
 
-    "return 201 when there is PartialAuth but clientId is MTDITID (as if ETMP create relationship call failed previously)" in new TestSetup {
+    "return 201 when there is PartialAuth but clientId is MTDITID (as if create relationship call failed previously)" in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo.create(
