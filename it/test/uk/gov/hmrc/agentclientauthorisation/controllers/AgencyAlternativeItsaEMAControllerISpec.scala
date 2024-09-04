@@ -43,14 +43,14 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
   }
 
   trait TestSetup {
-    givenAuthorisedAsAgent(arn)
+    givenAuthorisedEmptyPredicate
   }
 
   "PUT /alt-itsa/HMRC-MTD-IT/update/:nino" should {
 
     val request = FakeRequest("PUT", "/alt-itsa/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
 
-    "return 404 when there are no alternative itsa invitations found for the client" in new TestSetup {
+    "return 404 when there are no alt-itsa invitations found for the client" in new TestSetup {
 
       await(
         invitationsRepo.create(
@@ -98,7 +98,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 404 when client has MtdItId, updating the invitation store to replace Nino" in new TestSetup {
+    "return 204 when client has MtdItId, updating the invitation store to replace Nino" in new TestSetup {
 
       val altItsaPending1 = await(
         invitationsRepo
@@ -122,7 +122,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT")(request))
-      status(result) shouldBe 404
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
     }
@@ -290,7 +290,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
     }
 
-    "return 404 when client has MtdItIdSupp, updating the invitation store to replace Nino" in new TestSetup {
+    "return 204 when client has MtdItIdSupp, updating the invitation store to replace Nino" in new TestSetup {
 
       val altItsaPending1 = await(
         invitationsRepo
@@ -324,7 +324,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
       givenMtdItIdIsKnownFor(nino, mtdItId)
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT-SUPP")(request))
-      status(result) shouldBe 404
+      status(result) shouldBe 204
       await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
       await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
     }

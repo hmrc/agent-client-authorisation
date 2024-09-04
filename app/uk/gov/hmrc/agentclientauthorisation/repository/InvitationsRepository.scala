@@ -21,6 +21,7 @@ import com.google.inject.ImplementedBy
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
+import org.mongodb.scala.model.ReturnDocument.AFTER
 import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
@@ -74,7 +75,7 @@ trait InvitationsRepository {
   ): Future[List[InvitationInfo]]
   def removePersonalDetails(startDate: LocalDateTime): Future[Unit]
   def removeAllInvitationsForAgent(arn: Arn): Future[Int]
-  def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation]
+  def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]]
 }
 
 @Singleton
@@ -162,7 +163,7 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
       } yield updated
     }
 
-  override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation] =
+  override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]] =
     monitor(s"InvitationsRepository-replaceNinoWithMtdItIdFor") {
       collection
         .find(equal(ID, invitation._id))
@@ -176,7 +177,7 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
               .map(replaceResult =>
                 if (!replaceResult.wasAcknowledged())
                   throw new Exception(s"Invitation ${invitation.invitationId.value} replace Nino with MTDITID has failed.")
-                else updated
+                else Option(updated)
               )
           case None => throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
         }

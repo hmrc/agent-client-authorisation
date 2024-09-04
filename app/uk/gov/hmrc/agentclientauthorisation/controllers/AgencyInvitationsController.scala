@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted => IAccepted, _}
@@ -455,8 +456,10 @@ class AgencyInvitationsController @Inject() (
     authorised {
       invitationsService
         .updateAltItsaFor(nino, Service.apply(service))
-        .map { result =>
-          if (result.nonEmpty) Created else NotFound
+        .map {
+          case NoAltItsaFound | NoMtdIdFound => NotFound
+          case NoPartialAuthFound            => NoContent
+          case RelationshipCreated           => Created
         }
         .recover { case e =>
           logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
@@ -469,8 +472,9 @@ class AgencyInvitationsController @Inject() (
   def altItsaUpdate(nino: Nino): Action[AnyContent] = Action.async { implicit request =>
     invitationsService
       .updateAltItsaFor(nino, service = MtdIt)
-      .map { result =>
-        if (result.nonEmpty) Created else NoContent
+      .map {
+        case RelationshipCreated => Created
+        case _                   => NoContent
       }
       .recover { case e =>
         logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")

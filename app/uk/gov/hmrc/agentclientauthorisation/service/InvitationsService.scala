@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{AltItsaUpdateResult, NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
@@ -401,10 +402,27 @@ class InvitationsService @Inject() (
   def updateAltItsaFor(taxIdentifier: TaxIdentifier, service: Service)(implicit
     hc: HeaderCarrier,
     ec: ExecutionContext
-  ): Future[List[Invitation]] =
+  ): Future[AltItsaUpdateResult] =
     fetchAltItsaInvitationsFor(taxIdentifier, service)
-      .flatMap(updateInvitationStoreIfMtdItIdExists(_))
-      .flatMap(maybeUpdated => Future sequence maybeUpdated.flatten.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
+      .flatMap {
+        case Nil => Future successful NoAltItsaFound
+        case altItsaInvitations =>
+          Future
+            .sequence(
+              altItsaInvitations.map(updateInvitationIfMtdItIdExists)
+            )
+            .flatMap(_.flatten match {
+              case Nil => Future successful NoMtdIdFound
+              case updated =>
+                Future
+                  .sequence(
+                    updated
+                      .filter(_.status == PartialAuth)
+                      .map(createRelationshipAndUpdateStatus)
+                  )
+                  .map(updateResult => if (updateResult.nonEmpty) RelationshipCreated else NoPartialAuthFound)
+            })
+      }
 
   def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit ec: ExecutionContext) = {
     implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isAfter _)
@@ -424,15 +442,13 @@ class InvitationsService @Inject() (
     }
   }
 
-  private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
-    Future sequence invitations.map { inv =>
-      ifConnector
-        .getMtdIdFor(Nino(inv.suppliedClientId.value))
-        .flatMap {
-          case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId).map(Some(_))
-          case None        => Future successful None
-        }
-    }
+  private def updateInvitationIfMtdItIdExists(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Invitation]] =
+    ifConnector
+      .getMtdIdFor(Nino(invitation.suppliedClientId.value))
+      .flatMap {
+        case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(invitation, mtdId)
+        case None        => Future successful None
+      }
 
   private def createRelationshipAndUpdateStatus(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val timeNow = currentTime()

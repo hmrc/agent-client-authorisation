@@ -202,7 +202,7 @@ trait TestDataSupport {
     override def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to retrieve latest invitation for a client")
 
-    override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Invitation] =
+    override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to replace Nino for a client")
   }
 
