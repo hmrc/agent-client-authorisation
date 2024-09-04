@@ -535,6 +535,19 @@ POST /invitations/:urn/replace/utr/:utr
 |204|Latest relationship isn't Pending or Active, so didn't create any new relationship|
 |404|No relationships found|
 
+### Update Alternative ITSA
+
+Update Alternative ITSA based on status of an Invitation, for a main (`"HMRC-MTD-IT"`) or supporting (`HMRC-MTD-IT-SUPP`) agent
+```
+PUT /alt-itsa/:service/update/:nino
+```
+
+| Response | Description                                         |
+|----------|-----------------------------------------------------|
+| 201      | PartialAuth found and relationship has been created |
+| 204      | Alt-ITSA found, but no PartialAuth found            |
+| 404      | No Alt-ITSA found                                   |
+
 ### Running the tests <a name="runningTests"></a>
 
     sbt test it:test
