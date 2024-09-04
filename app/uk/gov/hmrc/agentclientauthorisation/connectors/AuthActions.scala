@@ -238,6 +238,9 @@ class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val aut
         .map(ninoEnrol => ("HMRC-MTD-IT", ninoEnrol.identifiers.head.key, ninoEnrol.identifiers.head.value.replaceAll(" ", "")))
     else None
 
+  def authorised(body: => Future[Result])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Result] =
+    authorised.apply(body)
+
   protected def withMultiEnrolledClient(
     body: Seq[(String, String, String)] => Future[Result]
   )(implicit request: Request[AnyContent], ec: ExecutionContext): Future[Result] =

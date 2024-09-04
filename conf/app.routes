@@ -65,6 +65,7 @@ GET         /client/ppt-customer-name/pptref/:pptRef                            
 GET         /client/cbc-customer-name/:cbcId                                                  @uk.gov.hmrc.agentclientauthorisation.controllers.AgentServicesController.getCbcCustomerName(cbcId: uk.gov.hmrc.agentmtdidentifiers.model.CbcId)
 
 # Alternative-Itsa routes
+PUT         /alt-itsa/:service/update/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdateEMA(nino: uk.gov.hmrc.domain.Nino, service: String)
 PUT         /alt-itsa/update/:nino                                                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdate(nino: uk.gov.hmrc.domain.Nino)
 PUT         /agent/alt-itsa/update/:arn                                                       @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdateAgent(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
 

@@ -15,14 +15,17 @@
  */
 
 package uk.gov.hmrc.agentclientauthorisation.connectors
+import play.api.http.Status.OK
 import play.api.mvc._
 import play.api.test.FakeRequest
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{HMRCCGTPD, HMRCMTDIT, HMRCMTDVAT}
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdType, Service}
-import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment => AuthEnrolment, EnrolmentIdentifier}
+import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment => AuthEnrolment, EnrolmentIdentifier, MissingBearerToken}
 import uk.gov.hmrc.domain.TaxIdentifier
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,8 +37,6 @@ class AuthActionsISpec extends BaseISpec {
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
 
   object TestController extends AuthActions(metrics, appConfig, authConnector, cc) {
-
-//    implicit val hc = HeaderCarrier()
 
     def testWithAuthorisedAsClientOrStride(service: String, identifier: String, strideRoles: Seq[String]): Action[AnyContent] =
       super.AuthorisedClientOrStrideUser(service, identifier, strideRoles) { _ => _ =>
@@ -49,6 +50,11 @@ class AuthActionsISpec extends BaseISpec {
 
     val testWithOnlyForAgents: Action[AnyContent] =
       super.onlyForAgents { _ => _ =>
+        Future.successful(Ok)
+      }
+
+    def testWithAuthorised(implicit hc: HeaderCarrier): Future[Result] =
+      super.authorised {
         Future.successful(Ok)
       }
 
@@ -267,4 +273,20 @@ class AuthActionsISpec extends BaseISpec {
     }
   }
 
+  "authorised" should {
+    "return 401 if no bearer token supplied" in {
+      implicit val hc = HeaderCarrier()
+      an[MissingBearerToken] shouldBe thrownBy {
+        await(TestController.testWithAuthorised(hc))
+      }
+    }
+
+    "return 200 if authorised" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer 123")))
+      givenAuthorisedEmptyPredicate
+
+      val result: Result = await(TestController.testWithAuthorised(hc))
+      status(result) shouldBe OK
+    }
+  }
 }

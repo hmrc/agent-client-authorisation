@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{AltItsaUpdateResult, NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
@@ -199,7 +200,7 @@ class InvitationsService @Inject() (
   ): Future[List[InvitationInfo]] =
     clientIds.find(_._2 == NinoType.enrolmentId) match {
       case Some(ninoClientId) if appConfig.altItsaEnabled & clientIds.map(_._2).contains(MtdItIdType.id) =>
-        updateAltItsaFor(Nino(ninoClientId._3)) // if there is an alt-itsa invitation then we want to update it with MTDITID
+        updateAltItsaFor(Nino(ninoClientId._3), service = MtdIt) // if there is an alt-itsa invitation then we want to update it with MTDITID
           .flatMap(_ => findInvitationsInfoBy(arn, clientIds, status))
           .recoverWith { case e: UpstreamErrorResponse =>
             logger.warn(s"failure when updating alt-Itsa invitations, falling back to existing client data ${e.message}")
@@ -245,9 +246,9 @@ class InvitationsService @Inject() (
   def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
     invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
 
-  def updateAltItsaForNino(clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+  def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
-      updateAltItsaFor(Nino(clientId.value)).map(_ => ())
+      updateAltItsaFor(Nino(clientId.value), service).map(_ => ())
     else Future successful (())
 
   def findInvitationsBy(
@@ -398,10 +399,30 @@ class InvitationsService @Inject() (
     } yield logger.info("finished 'cancelOldAltItsaInvitations' job")
   }
 
-  def updateAltItsaFor(taxIdentifier: TaxIdentifier)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Invitation]] =
-    fetchAltItsaInvitationsFor(taxIdentifier)
-      .flatMap(updateInvitationStoreIfMtdItIdExists(_))
-      .flatMap(maybeUpdated => Future sequence maybeUpdated.flatten.filter(i => i.status == PartialAuth).map(createRelationshipAndUpdateStatus(_)))
+  def updateAltItsaFor(taxIdentifier: TaxIdentifier, service: Service)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[AltItsaUpdateResult] =
+    fetchAltItsaInvitationsFor(taxIdentifier, service)
+      .flatMap {
+        case Nil => Future successful NoAltItsaFound
+        case altItsaInvitations =>
+          Future
+            .sequence(
+              altItsaInvitations.map(updateInvitationIfMtdItIdExists)
+            )
+            .flatMap(_.flatten match {
+              case Nil => Future successful NoMtdIdFound
+              case updated =>
+                Future
+                  .sequence(
+                    updated
+                      .filter(_.status == PartialAuth)
+                      .map(createRelationshipAndUpdateStatus)
+                  )
+                  .map(updateResult => if (updateResult.nonEmpty) RelationshipCreated else NoPartialAuthFound)
+            })
+      }
 
   def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit ec: ExecutionContext) = {
     implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isAfter _)
@@ -421,15 +442,13 @@ class InvitationsService @Inject() (
     }
   }
 
-  private def updateInvitationStoreIfMtdItIdExists(invitations: List[Invitation])(implicit hc: HeaderCarrier, ec: ExecutionContext) =
-    Future sequence invitations.map { inv =>
-      ifConnector
-        .getMtdIdFor(Nino(inv.suppliedClientId.value))
-        .flatMap {
-          case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(inv, mtdId).map(Some(_))
-          case None        => Future successful None
-        }
-    }
+  private def updateInvitationIfMtdItIdExists(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Invitation]] =
+    ifConnector
+      .getMtdIdFor(Nino(invitation.suppliedClientId.value))
+      .flatMap {
+        case Some(mtdId) => invitationsRepository.replaceNinoWithMtdItIdFor(invitation, mtdId)
+        case None        => Future successful None
+      }
 
   private def createRelationshipAndUpdateStatus(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val timeNow = currentTime()
@@ -437,14 +456,16 @@ class InvitationsService @Inject() (
       .flatMap(_ => invitationsRepository.update(invitation, Accepted, timeNow))
   }
 
-  private def fetchAltItsaInvitationsFor(taxIdentifier: TaxIdentifier)(implicit ec: ExecutionContext): Future[List[Invitation]] = {
+  private def fetchAltItsaInvitationsFor(taxIdentifier: TaxIdentifier, service: Service)(implicit
+    ec: ExecutionContext
+  ): Future[List[Invitation]] = {
     val (nino, arn) = taxIdentifier match {
       case n: Nino => (Some(n), None)
       case a: Arn  => (None, Some(a))
       case e       => throw new Exception(s"unexpected TaxIdentifier $e for fetch alt-itsa")
     }
     invitationsRepository
-      .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(MtdIt, MtdItSupp))
+      .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(service))
       .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
   }
 
