@@ -117,7 +117,6 @@ class AuthActions @Inject() (val metrics: Metrics, appConfig: AppConfig, val aut
   protected type RequestAndCurrentUser = Request[AnyContent] => CurrentUser => Future[Result]
 
   case class CurrentUser(enrolments: Enrolments, credentials: Credentials, service: Service, taxIdentifier: TaxIdentifier)
-  case class GenericCurrentUser(credentials: Credentials, affinityGroup: Option[AffinityGroup])
 
   def hasRequiredStrideRole(enrolments: Enrolments, strideRoles: Seq[String]): Boolean =
     strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))

@@ -21,7 +21,6 @@ import com.google.inject.ImplementedBy
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
-import org.mongodb.scala.model.ReturnDocument.AFTER
 import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
