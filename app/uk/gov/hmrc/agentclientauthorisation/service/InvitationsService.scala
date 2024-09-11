@@ -95,12 +95,12 @@ class InvitationsService @Inject() (
       case Pending =>
         for {
           // accept the invite
-          _          <- if (isAltItsa) Future.successful(()) else createRelationship(invitation, acceptedDate)
+          _          <- createRelationship(invitation, acceptedDate)
+          _          <- deauthExistingRelationshipForItsa(invitation)
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
-          existingInvitations <- if (isAltItsa) getExistingInvitationsForAltItsa(invitation)
-                                 else getExistingInvitationsForItsa(invitation)
+          existingInvitations <- getExistingInvitations(invitation)
 
           _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
@@ -115,31 +115,27 @@ class InvitationsService @Inject() (
     }
   }
 
-  private def getExistingInvitationsForAltItsa(invitation: Invitation): Future[List[Invitation]] =
+  private def getExistingInvitations(invitation: Invitation): Future[List[Invitation]] =
     invitation.service match {
-      case Service.MtdItSupp =>
+      case Service.MtdItSupp if invitation.clientId == invitation.suppliedClientId =>
         fetchAltItsaInvitationsForArn(Nino(invitation.suppliedClientId.value), invitation.arn)
           .map(_.filter(_.status == PartialAuth))
-      case Service.MtdIt =>
-        for {
-          sameArnAltItsa <-
-            fetchAltItsaInvitationsForArn(Nino(invitation.suppliedClientId.value), invitation.arn)
-              .map(_.filter(_.status == PartialAuth))
-          otherAltMainItsa <- fetchAltItsaMainInvitationsFor(Nino(invitation.suppliedClientId.value))
-                                .map(_.filter(_.status == PartialAuth))
-        } yield (sameArnAltItsa ++ otherAltMainItsa)
 
-      case _ => successful(Nil)
-    }
-
-  private def getExistingInvitationsForItsa(invitation: Invitation): Future[List[Invitation]] =
-    invitation.service match {
       case Service.MtdItSupp =>
         invitationsRepository.findInvitationsBy(
           arn = Some(invitation.arn),
           services = Seq(Service.MtdIt, Service.MtdItSupp),
           clientId = Some(invitation.clientId.value)
         )
+
+      case Service.MtdIt if invitation.clientId == invitation.suppliedClientId =>
+        for {
+          sameArnAltItsa <- fetchAltItsaInvitationsForArn(Nino(invitation.suppliedClientId.value), invitation.arn)
+                              .map(_.filter(_.status == PartialAuth))
+          otherAltMainItsa <- fetchAltItsaMainInvitationsFor(Nino(invitation.suppliedClientId.value))
+                                .map(_.filter(_.status == PartialAuth))
+        } yield (sameArnAltItsa ++ otherAltMainItsa)
+
       case Service.MtdIt =>
         for {
           sameArnItsa <- invitationsRepository.findInvitationsBy(
@@ -168,6 +164,28 @@ class InvitationsService @Inject() (
         }
       )
 
+  private def deauthExistingRelationshipForItsa(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
+    val otherItsaService = if (invitation.service == Service.MtdIt) Service.MtdItSupp else Service.MtdIt
+    invitation.service match {
+      case Service.MtdIt | Service.MtdItSupp =>
+        relationshipsConnector
+          .checkItsaRelationship(invitation.copy(service = otherItsaService))
+          .flatMap(hasRelationship =>
+            if (hasRelationship)
+              relationshipsConnector
+                .deleteItsaRelationship(invitation.copy(service = otherItsaService))
+                .map { hasDeleted =>
+                  if (hasDeleted) ()
+                  else
+                    logger
+                      .warn(s"Error. Delete $otherItsaService service relationship failed. Client has accepted ${invitation.service.id}  invitation.")
+                }
+            else Future.successful(())
+          )
+      case _ => Future.successful(())
+    }
+  }
+
   def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
     changeInvitationStatus(invitation, model.Accepted, acceptedDate)
@@ -175,8 +193,10 @@ class InvitationsService @Inject() (
 
   private def createRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
-      case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
-      case Service.MtdItSupp            => relationshipsConnector.createMtdItSuppRelationship(invitation)
+      case Service.MtdIt if invitation.clientId == invitation.suppliedClientId     => Future.successful(())
+      case Service.MtdItSupp if invitation.clientId == invitation.suppliedClientId => Future.successful(())
+      case Service.MtdIt                                                           => relationshipsConnector.createMtdItRelationship(invitation)
+      case Service.MtdItSupp                                                       => relationshipsConnector.createMtdItSuppRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
       case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)

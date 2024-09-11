@@ -23,6 +23,30 @@ import uk.gov.hmrc.domain.TaxIdentifier
 
 trait RelationshipStubs {
 
+  def deleteMtdItRelationshipIsCreatedWith(arn: Arn, mtdItId: ClientId, itsaServiceName: String) = {
+    stubFor(
+      delete(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${mtdItId.value}"))
+        .willReturn(aResponse().withStatus(201))
+    )
+    this
+  }
+
+  def getMtdItRelationshipIsCreatedWith(arn: Arn, mtdItId: ClientId, itsaServiceName: String) = {
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${mtdItId.value}"))
+        .willReturn(aResponse().withStatus(201))
+    )
+    this
+  }
+
+  def getMtdItRelationshipDoNotExists(arn: Arn, mtdItId: ClientId, itsaServiceName: String) = {
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${mtdItId.value}"))
+        .willReturn(aResponse().withStatus(404))
+    )
+    this
+  }
+
   def anMtdItRelationshipIsCreatedWith(arn: Arn, mtdItId: MtdItId) = {
     stubFor(
       put(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-IT/client/MTDITID/${mtdItId.value}"))
@@ -54,6 +78,30 @@ trait RelationshipStubs {
     )
     this
   }
+
+  def verifyCallToGetMtdItRelationship(arn: Arn, clientId: TaxIdentifier, itsaServiceName: String) =
+    verify(
+      1,
+      getRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${clientId.value}"))
+    )
+
+  def verifyNoCallsToGetMtdItRelationship(arn: Arn, clientId: TaxIdentifier, itsaServiceName: String) =
+    verify(
+      0,
+      deleteRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${clientId.value}"))
+    )
+
+  def verifyCallToDeleteMtdItRelationship(arn: Arn, clientId: TaxIdentifier, itsaServiceName: String) =
+    verify(
+      1,
+      deleteRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${clientId.value}"))
+    )
+
+  def verifyNoCallsToDeletetMtdItRelationship(arn: Arn, clientId: TaxIdentifier, itsaServiceName: String) =
+    verify(
+      0,
+      getRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$itsaServiceName/client/MTDITID/${clientId.value}"))
+    )
 
   def verifyCallToCreateMtdVatRelationship(arn: Arn, clientId: TaxIdentifier) =
     verify(1, putRequestedFor(urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/HMRC-MTD-VAT/client/VRN/${clientId.value}")))
