@@ -94,13 +94,14 @@ class InvitationsService @Inject() (
     invitation.status match {
       case Pending =>
         for {
-          // accept the invite
-          _          <- if (isAltItsa) Future.successful(()) else createRelationship(invitation, acceptedDate)
+          // create new relationship
+          _ <- createRelationship(invitation, acceptedDate)
+          _ <- deauthExistingRelationshipForItsaForTheSameAgent(invitation)
+
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
-          existingInvitations <- if (isAltItsa) getExistingInvitationsForAltItsa(invitation)
-                                 else getExistingInvitationsForItsa(invitation)
+          existingInvitations <- getExistingInvitations(invitation)
 
           _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
@@ -115,49 +116,48 @@ class InvitationsService @Inject() (
     }
   }
 
-  private def getExistingInvitationsForAltItsa(invitation: Invitation): Future[List[Invitation]] =
+  private def getExistingInvitations(invitation: Invitation): Future[List[Invitation]] = {
+    val itsaInvitationStatus = if (invitation.clientId == invitation.suppliedClientId) PartialAuth else Accepted
     invitation.service match {
       case Service.MtdItSupp =>
-        fetchAltItsaInvitationsForArn(Nino(invitation.suppliedClientId.value), invitation.arn)
-          .map(_.filter(_.status == PartialAuth))
+        // get MtdItSupp or MtdIt main invitations for the same agent only
+        invitationsRepository
+          .findInvitationsBy(
+            arn = Some(invitation.arn),
+            services = Seq(Service.MtdIt, Service.MtdItSupp),
+            clientId = Some(invitation.clientId.value),
+            status = Some(itsaInvitationStatus)
+          )
+          .fallbackTo(successful(Nil))
+
       case Service.MtdIt =>
         for {
-          sameArnAltItsa <-
-            fetchAltItsaInvitationsForArn(Nino(invitation.suppliedClientId.value), invitation.arn)
-              .map(_.filter(_.status == PartialAuth))
-          otherAltMainItsa <- fetchAltItsaMainInvitationsFor(Nino(invitation.suppliedClientId.value))
-                                .map(_.filter(_.status == PartialAuth))
-        } yield (sameArnAltItsa ++ otherAltMainItsa)
-
-      case _ => successful(Nil)
-    }
-
-  private def getExistingInvitationsForItsa(invitation: Invitation): Future[List[Invitation]] =
-    invitation.service match {
-      case Service.MtdItSupp =>
-        invitationsRepository.findInvitationsBy(
-          arn = Some(invitation.arn),
-          services = Seq(Service.MtdIt, Service.MtdItSupp),
-          clientId = Some(invitation.clientId.value)
-        )
-      case Service.MtdIt =>
-        for {
-          sameArnItsa <- invitationsRepository.findInvitationsBy(
-                           arn = Some(invitation.arn),
-                           services = Seq(Service.MtdItSupp),
-                           clientId = Some(invitation.clientId.value)
-                         )
-          otherMainItsa <- invitationsRepository.findInvitationsBy(
-                             services = Seq(Service.MtdIt),
-                             clientId = Some(invitation.clientId.value)
-                           )
-        } yield (sameArnItsa ++ otherMainItsa)
+          // get MtdItSupp invitations for the same agent
+          mtdItSuppInvitationForSameAgent <- invitationsRepository.findInvitationsBy(
+                                               arn = Some(invitation.arn),
+                                               services = Seq(Service.MtdItSupp),
+                                               clientId = Some(invitation.clientId.value),
+                                               status = Some(itsaInvitationStatus)
+                                             )
+          // get all MtdIt main invitations for all agents
+          mtdItMainInvitationsForAllAgents <- invitationsRepository.findInvitationsBy(
+                                                services = Seq(Service.MtdIt),
+                                                clientId = Some(invitation.clientId.value),
+                                                status = Some(itsaInvitationStatus)
+                                              )
+        } yield (Nil ++ mtdItSuppInvitationForSameAgent ++ mtdItMainInvitationsForAllAgents)
 
       case _ =>
+        // get all invitations for service for all agents
         invitationsRepository
-          .findInvitationsBy(services = Seq(invitation.service), clientId = Some(invitation.clientId.value))
+          .findInvitationsBy(
+            services = Seq(invitation.service),
+            clientId = Some(invitation.clientId.value),
+            status = Some(Accepted)
+          )
           .fallbackTo(successful(Nil))
     }
+  }
 
   private def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit ec: ExecutionContext) =
     Future
@@ -168,6 +168,34 @@ class InvitationsService @Inject() (
         }
       )
 
+  private def deauthExistingRelationshipForItsaForTheSameAgent(
+    invitation: Invitation
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    if (appConfig.itsaSupportingAgentEnabled) {
+      val otherItsaService = if (invitation.service == Service.MtdIt) Service.MtdItSupp else Service.MtdIt
+      invitation.service match {
+        case Service.MtdIt | Service.MtdItSupp =>
+          relationshipsConnector
+            .checkItsaRelationship(invitation.arn, otherItsaService, invitation.clientId)
+            .flatMap(hasRelationship =>
+              if (hasRelationship) {
+                // request to delete
+                relationshipsConnector
+                  .deleteItsaRelationship(invitation.arn, otherItsaService, invitation.clientId)
+                  .map { hasDeleted =>
+                    if (hasDeleted) ()
+                    else
+                      logger
+                        .warn(
+                          s"Error. Delete $otherItsaService service relationship failed. Client has accepted ${invitation.service.id}  invitation."
+                        )
+                  }
+              } else Future.unit
+            )
+        case _ => Future.unit
+      }
+    } else Future.unit
+
   def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
     changeInvitationStatus(invitation, model.Accepted, acceptedDate)
@@ -175,8 +203,10 @@ class InvitationsService @Inject() (
 
   private def createRelationship(invitation: Invitation, acceptedDate: LocalDateTime)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
     val createRelationship: Future[Unit] = invitation.service match {
-      case Service.MtdIt                => relationshipsConnector.createMtdItRelationship(invitation)
-      case Service.MtdItSupp            => relationshipsConnector.createMtdItSuppRelationship(invitation)
+      case Service.MtdIt if invitation.clientId == invitation.suppliedClientId     => Future.successful(())
+      case Service.MtdItSupp if invitation.clientId == invitation.suppliedClientId => Future.successful(())
+      case Service.MtdIt                                                           => relationshipsConnector.createMtdItRelationship(invitation)
+      case Service.MtdItSupp                                                       => relationshipsConnector.createMtdItSuppRelationship(invitation)
       case Service.PersonalIncomeRecord => relationshipsConnector.createAfiRelationship(invitation, acceptedDate)
       case Service.Vat                  => relationshipsConnector.createMtdVatRelationship(invitation)
       case Service.Trust                => relationshipsConnector.createTrustRelationship(invitation)
@@ -469,13 +499,4 @@ class InvitationsService @Inject() (
       .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
   }
 
-  private def fetchAltItsaMainInvitationsFor(nino: Nino)(implicit ec: ExecutionContext): Future[List[Invitation]] =
-    invitationsRepository
-      .findInvitationsBy(arn = None, clientId = Some(nino.nino), services = List(MtdIt))
-      .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
-
-  private def fetchAltItsaInvitationsForArn(nino: Nino, arn: Arn)(implicit ec: ExecutionContext): Future[List[Invitation]] =
-    invitationsRepository
-      .findInvitationsBy(arn = Some(arn), clientId = Some(nino.nino), services = List(MtdIt, MtdItSupp))
-      .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
 }

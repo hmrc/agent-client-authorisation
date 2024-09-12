@@ -389,7 +389,14 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       )
       if (!newItsaClient.isAltItsaClient) givenClientRelationships(arn, newItsaClient.service.id)
 
-      anAfiRelationshipIsCreatedWith(arn, newItsaClient.clientId)
+      if (newItsaClient.service == Service.MtdIt) {
+        getMtdItRelationshipIsCreatedWith(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
+        deleteMtdItRelationshipIsCreatedWith(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
+      } else {
+        getMtdItRelationshipIsCreatedWith(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+        deleteMtdItRelationshipIsCreatedWith(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+      }
+
       givenPlatformAnalyticsRequestSent(true)
 
       // New invitation should be "accepted"
@@ -437,7 +444,19 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
           oldItsaSupportingInvitationOnDifferentServiceOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
 
         }
+      }
 
+      // Verify calls for relationship
+      if (newItsaClient.service == Service.MtdIt) {
+        verifyCallToGetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
+        verifyCallToDeleteMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
+        verifyNoCallsToGetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+        verifyNoCallsToDeletetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+      } else {
+        verifyCallToGetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+        verifyCallToDeleteMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDIT)
+        verifyNoCallsToGetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
+        verifyNoCallsToDeletetMtdItRelationship(arn, oldItsaClient.clientId, Service.HMRCMTDITSUPP)
       }
 
     }

@@ -81,7 +81,8 @@ trait AppAndStubs extends StartAndStopWireMock with GuiceOneServerPerSuite with 
       "google-analytics.token"                                               -> "token",
       "des-if.enabled"                                                       -> false,
       "alt-itsa.enabled"                                                     -> true,
-      "remove-personal-info-scheduler.enabled"                               -> false
+      "remove-personal-info-scheduler.enabled"                               -> false,
+      "itsa-supporting-agent.enabled"                                        -> true
     )
 
   override def commonStubs(): Unit = {

@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
+import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpClient, _}
@@ -51,14 +52,14 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
   def createMtdItRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-PUT") {
       http
-        .PUT[String, HttpResponse](mtdItRelationshipUrl(invitation), "")
+        .PUT[String, HttpResponse](mtdItRelationshipUrl(invitation.arn, invitation.service, invitation.clientId), "")
         .handleNon2xx(s"createMtdItRelationship")
     }
 
   def createMtdItSuppRelationship(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     monitor(s"ConsumedAPI-AgentClientRelationships-relationships-MTD-IT-SUPP-PUT") {
       http
-        .PUT[String, HttpResponse](mtdItSuppRelationshipUrl(invitation), "")
+        .PUT[String, HttpResponse](mtdItRelationshipUrl(invitation.arn, invitation.service, invitation.clientId), "")
         .handleNon2xx(s"createMtdItSuppRelationship")
     }
 
@@ -126,6 +127,34 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
       }
     }
 
+  def checkItsaRelationship(arn: Arn, service: Service, clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-${service.id}-GET") {
+      val url = mtdItRelationshipUrl(arn, service, clientId)
+      http.GET[HttpResponse](url).map { response =>
+        response.status match {
+          case status if is2xx(status) => true
+          case status if is4xx(status) => false
+          case other =>
+            throw UpstreamErrorResponse.apply(s"GET of '$url' returned $other. Response body: '${response.body}'", response.status)
+
+        }
+      }
+    }
+
+  def deleteItsaRelationship(arn: Arn, service: Service, clientId: ClientId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-${service.id}-DELETE") {
+      val url = mtdItRelationshipUrl(arn, service, clientId)
+      http.DELETE[HttpResponse](url).map { response =>
+        response.status match {
+          case status if is2xx(status) => true
+          case status if is4xx(status) => false
+          case other =>
+            throw UpstreamErrorResponse.apply(s"DELETE of '$url' returned $other. Response body: '${response.body}'", response.status)
+
+        }
+      }
+    }
+
   def getActiveAfiRelationships(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Seq[JsObject]]] =
     monitor(s"ConsumedAPI-AgentFiRelationship-GetActive-GET") {
       val url = s"$afiBaseUrl/agent-fi-relationship/relationships/active"
@@ -147,11 +176,8 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
       case Service.HMRCTERSNTORG =>
         s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERSNT-ORG/client/URN/${encodePathSegment(invitation.clientId.value)}"
     }
-  private def mtdItRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT/client/MTDITID/${encodePathSegment(invitation.clientId.value)}"
-
-  private def mtdItSuppRelationshipUrl(invitation: Invitation): String =
-    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-IT-SUPP/client/MTDITID/${encodePathSegment(invitation.clientId.value)}"
+  private def mtdItRelationshipUrl(arn: Arn, service: Service, clientId: ClientId): String =
+    s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(arn.value)}/service/${service.id}/client/MTDITID/${encodePathSegment(clientId.value)}"
 
   private def mtdVatRelationshipUrl(invitation: Invitation): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-MTD-VAT/client/VRN/${encodePathSegment(invitation.clientId.value)}"

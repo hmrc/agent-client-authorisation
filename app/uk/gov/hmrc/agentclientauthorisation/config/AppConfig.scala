@@ -107,4 +107,6 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
 
+  val itsaSupportingAgentEnabled: Boolean = servicesConfig.getBoolean("itsa-supporting-agent.enabled")
+
 }
