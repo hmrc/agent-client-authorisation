@@ -95,8 +95,8 @@ class InvitationsService @Inject() (
       case Pending =>
         for {
           // create new relationship
-          _ <- createRelationship(invitation, acceptedDate)
           _ <- deauthExistingRelationshipForItsaForTheSameAgent(invitation)
+          _ <- createRelationship(invitation, acceptedDate)
 
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
