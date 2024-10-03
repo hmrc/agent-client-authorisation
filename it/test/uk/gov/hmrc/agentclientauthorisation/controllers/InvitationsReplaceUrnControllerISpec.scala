@@ -20,8 +20,9 @@ import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.model.{AgencyEmailNotFound, AgencyNameNotFound, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.service.ClientNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
 
@@ -47,7 +48,7 @@ class InvitationsReplaceUrnControllerISpec extends BaseISpec with PlatformAnalyt
 
     "return 404 when there is no invitation to replace urn" in {
 
-      val request = FakeRequest("PUT", "/invitations/:urn/replace/utr/:utr")
+      val request = FakeRequest("POST", "/invitations/:urn/replace/utr/:utr")
       givenAuditConnector()
 
       val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(request))
@@ -57,7 +58,7 @@ class InvitationsReplaceUrnControllerISpec extends BaseISpec with PlatformAnalyt
 
     "return 201" in {
 
-      val request = FakeRequest("PUT", "/invitations/:urn/replace/utr/:utr")
+      val request = FakeRequest("POST", "/invitations/:urn/replace/utr/:utr")
       givenAuditConnector()
       givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
       getTrustName(utr.value, 200, """{"trustDetails": {"trustName": "Nelson James Trust"}}""")
@@ -82,6 +83,76 @@ class InvitationsReplaceUrnControllerISpec extends BaseISpec with PlatformAnalyt
 
       utrInvitation.size shouldBe 1
     }
+
+    "throw exception when adding DetailsForEmail failed" when {
+
+      "Agency Email not found" in {
+        val request = FakeRequest("POST", "/invitations/:urn/replace/utr/:utr")
+        givenAuditConnector()
+        givenGetAgencyDetailsStub(arn, Some("name"), None)
+        getTrustName(utr.value, 200, """{"trustDetails": {"trustName": "Nelson James Trust"}}""")
+
+        val invitation = Invitation.createNew(
+          arn,
+          Some("personal"),
+          Service.TrustNT,
+          ClientIdentifier(urn),
+          ClientIdentifier(urn),
+          None,
+          LocalDateTime.now,
+          LocalDate.now,
+          None
+        )
+        await(invitationsRepo.collection.insertOne(invitation).toFuture())
+
+        intercept[AgencyEmailNotFound](await(controller.replaceUrnInvitationWithUtr(urn, utr)(request)))
+      }
+
+      "Agency Name not found" in {
+        val request = FakeRequest("POST", "/invitations/:urn/replace/utr/:utr")
+        givenAuditConnector()
+        givenGetAgencyDetailsStub(arn, None, Some("email"))
+        getTrustName(utr.value, 200, """{"trustDetails": {"trustName": "Nelson James Trust"}}""")
+
+        val invitation = Invitation.createNew(
+          arn,
+          Some("personal"),
+          Service.TrustNT,
+          ClientIdentifier(urn),
+          ClientIdentifier(urn),
+          None,
+          LocalDateTime.now,
+          LocalDate.now,
+          None
+        )
+        await(invitationsRepo.collection.insertOne(invitation).toFuture())
+
+        intercept[AgencyNameNotFound](await(controller.replaceUrnInvitationWithUtr(urn, utr)(request)))
+      }
+
+      "Client Name not found" in {
+        val request = FakeRequest("POST", "/invitations/:urn/replace/utr/:utr")
+        givenAuditConnector()
+        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+        getTrustName(utr.value, 404, "")
+
+        val invitation = Invitation.createNew(
+          arn,
+          Some("personal"),
+          Service.TrustNT,
+          ClientIdentifier(urn),
+          ClientIdentifier(urn),
+          None,
+          LocalDateTime.now,
+          LocalDate.now,
+          None
+        )
+        await(invitationsRepo.collection.insertOne(invitation).toFuture())
+
+        intercept[ClientNameNotFound](await(controller.replaceUrnInvitationWithUtr(urn, utr)(request)))
+      }
+    }
+
   }
 
 }
