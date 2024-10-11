@@ -14,7 +14,8 @@ object AppDependencies {
     "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "2.1.0",
     "com.github.blemale" %% "scaffeine"                 % "5.2.1",
     "com.google.guava"   %  "guava"                     % "33.2.1-jre",
-    "org.typelevel"      %% "cats-core"                 % "2.12.0"
+    "org.typelevel"      %% "cats-core"                 % "2.12.0",
+    "uk.gov.hmrc"        %% "crypto-json-play-30"       % "8.1.0"
   )
 
   val test = Seq(

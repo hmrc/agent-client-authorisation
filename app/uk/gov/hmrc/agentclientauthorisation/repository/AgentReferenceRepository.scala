@@ -35,7 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 case class AgentReferenceRecord(
   uid: String,
   arn: Arn,
-  normalisedAgentNames: Seq[String]
+  normalisedAgentNames: Seq[String],
+  isEncrypted: Option[Boolean]
 )
 
 object AgentReferenceRecord {

@@ -46,7 +46,8 @@ trait InvitationsRepository {
     detailsForEmail: Option[DetailsForEmail],
     startDate: LocalDateTime,
     expiryDate: LocalDate,
-    origin: Option[String]
+    origin: Option[String],
+    isEncrypted: Option[Boolean]
   ): Future[Invitation]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime): Future[Invitation]
