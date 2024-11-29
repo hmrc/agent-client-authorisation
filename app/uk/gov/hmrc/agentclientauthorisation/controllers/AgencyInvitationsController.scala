@@ -457,9 +457,14 @@ class AgencyInvitationsController @Inject() (
       invitationsService
         .updateAltItsaFor(nino, Service.apply(service))
         .map {
-          case NoAltItsaFound | NoMtdIdFound => NotFound
-          case NoPartialAuthFound            => NoContent
-          case RelationshipCreated           => Created
+          case NoAltItsaFound =>
+            logger.error(s"No $service alt-itsa invitations found")
+            NotFound
+          case NoMtdIdFound =>
+            logger.error(s"No $service mtd invitations found")
+            NotFound
+          case NoPartialAuthFound  => NoContent
+          case RelationshipCreated => Created
         }
         .recover { case e =>
           logger.warn(s"alt-itsa update error for ${nino.value} due to: ${e.getMessage}")
