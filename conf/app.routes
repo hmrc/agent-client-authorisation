@@ -68,7 +68,7 @@ GET         /client/cbc-customer-name/:cbcId                                    
 PUT         /alt-itsa/:service/update/:nino                                                   @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdateEMA(nino: uk.gov.hmrc.domain.Nino, service: String)
 PUT         /alt-itsa/update/:nino                                                            @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdate(nino: uk.gov.hmrc.domain.Nino)
 PUT         /agent/alt-itsa/update/:arn                                                       @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.altItsaUpdateAgent(arn: uk.gov.hmrc.agentmtdidentifiers.model.Arn)
-
+PUT         /agent/alt-itsa/:service/update-status/accepted/:nino                             @uk.gov.hmrc.agentclientauthorisation.controllers.AgencyInvitationsController.updateStatus(service: String, nino: uk.gov.hmrc.domain.Nino)
 # Stride Routes
 # --------------------------------
 
