@@ -549,7 +549,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
         givenAuthorisedAsAgent(arn)
 
-        val response = controller.updateStatus("HMRC-MTD-IT", nino)(request)
+        val response = controller.updateStatusToAcceptedForPartialAuth("HMRC-MTD-IT", nino)(request)
 
         await(response) shouldBe NoContent
       }
@@ -558,7 +558,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
         givenAuthorisedAsAgent(arn)
 
-        val response = controller.updateStatus("HMRC-MTD-IT", nino)(request)
+        val response = controller.updateStatusToAcceptedForPartialAuth("HMRC-MTD-IT", nino)(request)
 
         await(response) shouldBe NotFound
       }

@@ -495,7 +495,7 @@ class AgencyInvitationsController @Inject() (
   }
 
   // temporary endpoint in use until ACA decommissioned
-  def updateStatus(service: String, nino: Nino): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+  def updateStatusToAcceptedForPartialAuth(service: String, nino: Nino): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     invitationsService
       .findInvitationsBy(arn = Some(arn), status = Some(PartialAuth), clientId = Some(nino.value), services = Seq(Service.apply(service)))
       .map(_.headOption)
