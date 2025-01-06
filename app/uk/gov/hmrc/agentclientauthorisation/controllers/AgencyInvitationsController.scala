@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
+import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
@@ -490,6 +491,18 @@ class AgencyInvitationsController @Inject() (
       .recover { case e =>
         logger.warn(s"alt-itsa error during update for agent ${arn.value} due to: ${e.getMessage}")
         genericInternalServerError(e.getMessage)
+      }
+  }
+
+  // temporary endpoint in use until ACA decommissioned
+  def updateStatusToAcceptedForPartialAuth(service: String, nino: Nino): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
+    invitationsService
+      .findInvitationsBy(arn = Some(arn), status = Some(PartialAuth), clientId = Some(nino.value), services = Seq(Service.apply(service)))
+      .map(_.headOption)
+      .flatMap {
+        case Some(invitation) => invitationsService.acceptInvitationStatus(invitation).map(_ => NoContent)
+        case None             => Future.successful(NotFound)
+
       }
   }
 }

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.apache.pekko.stream.Materializer
+import play.api.mvc.Results.{NoContent, NotFound}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
@@ -537,6 +538,29 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
         val response = controller.cancelInvitation(arn, InvitationId("A7GJRTMY4DS3T"))(request)
 
         await(response) shouldBe InvitationNotFound
+      }
+    }
+
+    "PUT /agent/alt-itsa/:service/update-status/accepted/:nino" should {
+      "return 204" in {
+
+        val pending: Invitation = await(createInvitation(arn, altItsaClient))
+        await(invitationsRepo.update(pending, PartialAuth, LocalDateTime.now()))
+
+        givenAuthorisedAsAgent(arn)
+
+        val response = controller.updateStatusToAcceptedForPartialAuth("HMRC-MTD-IT", nino)(request)
+
+        await(response) shouldBe NoContent
+      }
+
+      "return 404" in {
+
+        givenAuthorisedAsAgent(arn)
+
+        val response = controller.updateStatusToAcceptedForPartialAuth("HMRC-MTD-IT", nino)(request)
+
+        await(response) shouldBe NotFound
       }
     }
   }
