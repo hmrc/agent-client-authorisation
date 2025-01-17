@@ -108,6 +108,9 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
 
   val itsaSupportingAgentEnabled: Boolean = servicesConfig.getBoolean("itsa-supporting-agent.enabled")
+
+  // transitional values
   val acrMongoActivated: Boolean = servicesConfig.getBoolean("acr-mongo-activated")
+  val acrAgentReferenceMigrate: Boolean = servicesConfig.getBoolean("acr-agent-reference-migrate")
 
 }

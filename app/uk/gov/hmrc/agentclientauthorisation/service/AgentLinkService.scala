@@ -20,7 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.RandomStringUtils
 import org.mongodb.scala.MongoWriteException
 import play.api.Logger
-import uk.gov.hmrc.agentclientauthorisation.connectors.DesConnector
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -30,8 +30,12 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class AgentLinkService @Inject() (agentReferenceRecordRepository: AgentReferenceRepository, desConnector: DesConnector, metrics: Metrics)
-    extends Monitor {
+class AgentLinkService @Inject() (
+  agentReferenceRecordRepository: AgentReferenceRepository,
+  desConnector: DesConnector,
+  metrics: Metrics,
+  acrConnector: RelationshipsConnector
+) extends Monitor {
 
   private val logger = Logger(getClass)
 
@@ -117,5 +121,8 @@ class AgentLinkService @Inject() (agentReferenceRecordRepository: AgentReference
 
   def removeAgentReferencesForGiven(arn: Arn): Future[Int] =
     agentReferenceRecordRepository.removeAgentReferencesForGiven(arn)
+
+  def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    acrConnector.migrateAgentReferenceRecord(record)
 
 }

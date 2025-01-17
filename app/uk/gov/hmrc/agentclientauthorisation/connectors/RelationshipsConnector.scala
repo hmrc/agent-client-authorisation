@@ -22,6 +22,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
@@ -211,4 +212,12 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     val clientId = encodePathSegment(invitation.clientId.value)
     s"$afiBaseUrl/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId"
   }
+
+  def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    monitor("ConsumedAPI-AgentClientRelationships-migrateAgentReferenceRecord-POST") {
+      http
+        .POST[AgentReferenceRecord, HttpResponse](s"$baseUrl/agent-client-relationships/migrate/agent-reference-record", record)
+        .handleNon2xx("migrationFailed")
+        .map(_ => Some("OK"))
+    }
 }

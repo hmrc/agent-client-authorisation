@@ -24,7 +24,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EnrolmentStoreProxyConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, EnrolmentStoreProxyConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{DetailsForEmail, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.MongoAgentReferenceRepository
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -45,9 +45,9 @@ class FriendlyNameServiceSpec extends UnitSpec with MockitoSugar with BeforeAndA
 //    override def toJson: String = ""
   }
   val mockDesConnector: DesConnector = mock[DesConnector]
-
+  val mockAcrConnector: RelationshipsConnector = mock[RelationshipsConnector]
   val service =
-    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics, mockAcrConnector)
 
   val ninoAsString: String = nino1.value
 
