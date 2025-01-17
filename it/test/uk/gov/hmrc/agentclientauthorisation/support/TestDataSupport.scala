@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{Cbc, CbcNonUk, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, TrustNT, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
@@ -224,5 +225,14 @@ trait TestDataSupport {
 
     override def removeAgentReferencesForGiven(arn: Arn): Future[Int] =
       Future failed new Exception(s"Unable to Remove References for given Agent")
+
+    override def countRemaining(): Future[Long] =
+      Future failed new Exception("Unable to count remaining agent references")
+
+    override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit =
+      Future failed new Exception("Unable to migrate to ACR")
+
+    override def testOnlyDropAgentReferenceCollection(): Future[Unit] =
+      Future failed new Exception("unable to use testOnly drop method")
   }
 }

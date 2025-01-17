@@ -19,23 +19,26 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 import org.apache.pekko.stream.Materializer
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, LockClient, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 
 import java.time.{LocalDate, LocalDateTime}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AgentReferenceControllerISpec extends BaseISpec {
-
-  val agentReferenceRepo: MongoAgentReferenceRepository = new MongoAgentReferenceRepository(mongoComponent)
-  val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
-
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   override implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer XYZ")))
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+  val acrConnector: RelationshipsConnector = app.injector.instanceOf(classOf[RelationshipsConnector])
+  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
+  val agentReferenceRepo: MongoAgentReferenceRepository =
+    new MongoAgentReferenceRepository(mongoComponent, acrConnector, lockClient)(ec, mat, appConfig)
+  val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
   lazy val controller: AgentReferenceController = app.injector.instanceOf[AgentReferenceController]
 

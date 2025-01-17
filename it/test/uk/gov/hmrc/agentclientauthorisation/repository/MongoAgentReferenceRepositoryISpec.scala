@@ -16,17 +16,27 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.MongoWriteException
+import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
+import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
-class MongoAgentReferenceRepositoryISpec extends UnitSpec with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
-
-  val repository = new MongoAgentReferenceRepository(mongoComponent)
+class MongoAgentReferenceRepositoryISpec extends BaseISpec with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  val httpClient: HttpClient = app.injector.instanceOf[HttpClient]
+  implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+  val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
+  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
+  val repository = new MongoAgentReferenceRepository(mongoComponent, acrConnector, lockClient)(ec, mat, appConfig)
 
   "AgentReferenceRepository" when {
     def agentReferenceRecord(uid: String, arn: String) = AgentReferenceRecord(uid, Arn(arn), Seq("stan-lee"))
@@ -83,5 +93,39 @@ class MongoAgentReferenceRepositoryISpec extends UnitSpec with DefaultPlayMongoR
         )
       }
     }
+
+    "countRemaining" should {
+      "return the number of records left in the collection" in {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004")))
+        await(repository.create(agentReferenceRecord("SCX39TPT", "LARN7404005")))
+        await(repository.create(agentReferenceRecord("SCX39TPG", "LARN7404006")))
+
+        repository.countRemaining().futureValue shouldBe 3
+      }
+    }
+    "migrateToAcr" should {
+      "iterate through all remaining items in the database and migrate them to ACR" in {
+        await(repository.create(agentReferenceRecord("SCX39TGT", "LARN7404004")))
+        await(repository.create(agentReferenceRecord("SCX39TPT", "LARN7404005")))
+        await(repository.create(agentReferenceRecord("SCX39TPG", "LARN7404006")))
+        await(repository.create(agentReferenceRecord("SCX39TGC", "LARN7404007")))
+        await(repository.create(agentReferenceRecord("SCX39TPX", "LARN7404008")))
+        await(repository.create(agentReferenceRecord("SCX39TPS", "LARN7404009")))
+
+        givenMigrateAgentReferenceRecord
+        givenMigrateAgentReferenceRecord
+        givenMigrateAgentReferenceRecord
+        givenMigrateAgentReferenceRecord
+        givenMigrateAgentReferenceRecord
+        givenMigrateAgentReferenceRecord
+
+        repository.countRemaining().futureValue shouldBe 6
+        val time = System.currentTimeMillis()
+        repository.migrateToAcr(rate = 2)
+        eventually(timeout(Span(4, Seconds)), interval(Span(100, Millis)))(repository.countRemaining().futureValue shouldBe 0)
+        (System.currentTimeMillis() - time) > 2500 shouldBe true
+      }
+    }
+
   }
 }
