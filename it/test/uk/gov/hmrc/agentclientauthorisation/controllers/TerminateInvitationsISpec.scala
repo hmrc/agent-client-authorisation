@@ -63,6 +63,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   val agentCacheProvider = app.injector.instanceOf(classOf[AgentCacheProvider])
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
   val citizenDetailsConnector = app.injector.instanceOf[CitizenDetailsConnector]
+  val relationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
 
   implicit val futures: Futures = app.injector.instanceOf(classOf[Futures])
   implicit val cc: ControllerComponents = app.injector.instanceOf(classOf[ControllerComponents])
@@ -95,7 +96,8 @@ class TerminateInvitationsISpec extends BaseISpec {
       eisConnector,
       authConnector,
       citizenDetailsConnector,
-      agentCacheProvider
+      agentCacheProvider,
+      relationshipsConnector
     )
 
   val jsonDeletedRecords = Json.toJson[TerminationResponse](

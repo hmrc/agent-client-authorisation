@@ -18,12 +18,12 @@ package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.Json.toJson
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.external._
-import uk.gov.hmrc.agentclientauthorisation.support.{TestConstants, UnitSpec}
+import uk.gov.hmrc.agentclientauthorisation.support.{TestConstants, TestData, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
 
 import java.time.LocalDateTime
 
-class InvitationSpec extends UnitSpec {
+class InvitationSpec extends UnitSpec with TestData {
   "Dates in the serialised JSON" should {
     "be in ISO8601 format" in {
       val created = "2010-01-01T01:00:23.456"
@@ -44,6 +44,31 @@ class InvitationSpec extends UnitSpec {
 
       (json \ "created").as[LocalDateTime] shouldBe createdDateTime
       (json \ "lastUpdated").as[LocalDateTime] shouldBe lastUpdatedDateTime
+    }
+  }
+
+  ".withinValidPeriod" when {
+
+    "the thirty day limit is imposed" should {
+
+      "return true when the invitation is less than 30 days old" in {
+        invitationActive.withinValidPeriod(thirtyDayLimit = true) shouldBe true
+      }
+
+      "return false when the invitation is more than 30 days old" in {
+        oldInvitationActive.withinValidPeriod(thirtyDayLimit = true) shouldBe false
+      }
+    }
+
+    "the thirty day limit is not imposed" should {
+
+      "return true when the invitation is less than 30 days old" in {
+        invitationActive.withinValidPeriod(thirtyDayLimit = false) shouldBe true
+      }
+
+      "return true when the invitation is more than 30 days old" in {
+        oldInvitationActive.withinValidPeriod(thirtyDayLimit = false) shouldBe true
+      }
     }
   }
 }
