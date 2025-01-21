@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import com.google.inject.ImplementedBy
-import play.api.{Logger, Logging}
+import org.apache.pekko.Done
+import play.api.Logging
 import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
 
 import javax.inject.{Inject, Singleton}
@@ -26,14 +26,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class LockClient @Inject() (mongoLockRepository: MongoLockRepository)(implicit ec: ExecutionContext) extends Logging {
-  private val lockService = LockService(mongoLockRepository, lockId = "migration-lock", ttl = 1.hour)
-  def migrateWithLock(body: => Future[Unit]): Future[Unit] = {
+  private val lockService = LockService(mongoLockRepository, lockId = "migration-lock", ttl = 6.hour)
+  def migrateWithLock(body: => Future[Done]): Future[Unit] = {
     logger.warn("Attempting to take lock for migration...")
     lockService
       .withLock(body)
       .map {
-        case Some(res) => logger.debug(s"Finished with $res. Lock has been released.")
-        case None      => logger.debug("Failed to take lock")
+        case Some(res) => logger.warn(s"Finished with $res. Lock has been released.")
+        case None      => logger.warn("Failed to take lock")
       }
   }
 }

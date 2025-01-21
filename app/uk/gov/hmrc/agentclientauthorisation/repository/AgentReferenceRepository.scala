@@ -65,7 +65,7 @@ trait AgentReferenceRepository {
 
   def countRemaining(): Future[Long]
 
-  def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit
+  def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done]
 
   def testOnlyDropAgentReferenceCollection(): Future[Unit]
 }
@@ -119,7 +119,7 @@ class MongoAgentReferenceRepository @Inject() (
   override def countRemaining(): Future[Long] =
     collection.countDocuments().toFuture()
 
-  override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit = {
+  override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] = {
     val observable = collection.find()
     countRemaining().map { count =>
       logger.info(s"[AgentReferenceRepository] migrating started, $count records to migrate")
@@ -131,20 +131,20 @@ class MongoAgentReferenceRepository @Inject() (
         for {
           migrateResult <- acrConnector.migrateAgentReferenceRecord(record)
         } yield migrateResult match {
-          case Some("OK") | Some("Duplicate already migrated") => removeAgentReferencesForGiven(record.arn).map(_ => ())
+          case Some("OK") => removeAgentReferencesForGiven(record.arn).map(_ => ())
           case _ =>
             logger.warn(s"[AgentReferenceRepository] failed to migrate record with uid ${record.uid}")
-            ()
         }
       }
       .recover { case _: Throwable =>
         logger.warn("[AgentReferenceRepository] failed to read record before migrating, aborting process")
         Done
       }
-      .onComplete { _ =>
+      .map { _ =>
         countRemaining().map { count =>
           logger.warn(s"[AgentReferenceRepository] migration completed, $count records left to migrate")
         }
+        Done
       }
   }
 
@@ -153,7 +153,7 @@ class MongoAgentReferenceRepository @Inject() (
   if (appConfig.acrAgentReferenceMigrate) {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     logger.warn("[AgentReferenceRepository] migration is starting...")
-    lockClient.migrateWithLock(body = Future(migrateToAcr()))
+    lockClient.migrateWithLock(body = migrateToAcr())
   } else {
     logger.warn(s"[AgentReferenceRepository] migration is disabled")
   }
