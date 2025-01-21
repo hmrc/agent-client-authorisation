@@ -17,19 +17,28 @@
 package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.google.inject.ImplementedBy
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Updates.addToSet
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import play.api.Logging
 import play.api.libs.json._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord.formats
+import uk.gov.hmrc.agentclientauthorisation.service.AgentLinkService
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.agentclientauthorisation.repository.LockClient
 
 import javax.inject._
 import scala.collection.Seq
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 case class AgentReferenceRecord(
@@ -45,14 +54,28 @@ object AgentReferenceRecord {
 @ImplementedBy(classOf[MongoAgentReferenceRepository])
 trait AgentReferenceRepository {
   def create(agentReferenceRecord: AgentReferenceRecord): Future[Option[String]]
+
   def findBy(uid: String): Future[Option[AgentReferenceRecord]]
+
   def findByArn(arn: Arn): Future[Option[AgentReferenceRecord]]
+
   def updateAgentName(uid: String, newAgentName: String): Future[Unit]
+
   def removeAgentReferencesForGiven(arn: Arn): Future[Int]
+
+  def countRemaining(): Future[Long]
+
+  def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit
+
+  def testOnlyDropAgentReferenceCollection(): Future[Unit]
 }
 
 @Singleton
-class MongoAgentReferenceRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
+class MongoAgentReferenceRepository @Inject() (
+  mongo: MongoComponent,
+  acrConnector: RelationshipsConnector,
+  lockClient: LockClient
+)(implicit ec: ExecutionContext, mat: Materializer, appConfig: AppConfig)
     extends PlayMongoRepository[AgentReferenceRecord](
       mongoComponent = mongo,
       collectionName = "agent-reference",
@@ -92,5 +115,47 @@ class MongoAgentReferenceRepository @Inject() (mongo: MongoComponent)(implicit e
       .deleteOne(equal("arn", arn.value))
       .toFuture()
       .map(r => r.getDeletedCount.toInt)
+
+  override def countRemaining(): Future[Long] =
+    collection.countDocuments().toFuture()
+
+  override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit = {
+    val observable = collection.find()
+    countRemaining().map { count =>
+      logger.info(s"[AgentReferenceRepository] migrating started, $count records to migrate")
+    }
+    Source
+      .fromPublisher(observable)
+      .throttle(rate, 1.second)
+      .runForeach { record =>
+        for {
+          migrateResult <- acrConnector.migrateAgentReferenceRecord(record)
+        } yield migrateResult match {
+          case Some("OK") | Some("Duplicate already migrated") => removeAgentReferencesForGiven(record.arn).map(_ => ())
+          case _ =>
+            logger.warn(s"[AgentReferenceRepository] failed to migrate record with uid ${record.uid}")
+            ()
+        }
+      }
+      .recover { case _: Throwable =>
+        logger.warn("[AgentReferenceRepository] failed to read record before migrating, aborting process")
+        Done
+      }
+      .onComplete { _ =>
+        countRemaining().map { count =>
+          logger.warn(s"[AgentReferenceRepository] migration completed, $count records left to migrate")
+        }
+      }
+  }
+
+  def testOnlyDropAgentReferenceCollection(): Future[Unit] = collection.drop().toFuture().map(_ => ())
+
+  if (appConfig.acrAgentReferenceMigrate) {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    logger.warn("[AgentReferenceRepository] migration is starting...")
+    lockClient.migrateWithLock(body = Future(migrateToAcr()))
+  } else {
+    logger.warn(s"[AgentReferenceRepository] migration is disabled")
+  }
 
 }

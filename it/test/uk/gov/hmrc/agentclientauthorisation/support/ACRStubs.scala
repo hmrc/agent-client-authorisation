@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
@@ -74,5 +75,14 @@ trait ACRStubs {
         )
       )
     }
+
+  def givenMigrateAgentReferenceRecord: StubMapping =
+    stubFor(
+      post(urlEqualTo("/agent-client-relationships/migrate/agent-reference-record"))
+        .willReturn(
+          aResponse()
+            .withStatus(204)
+        )
+    )
 
 }

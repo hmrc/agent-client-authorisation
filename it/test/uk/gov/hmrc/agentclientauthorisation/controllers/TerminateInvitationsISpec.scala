@@ -68,7 +68,7 @@ class TerminateInvitationsISpec extends BaseISpec {
   implicit val cc: ControllerComponents = app.injector.instanceOf(classOf[ControllerComponents])
 
   def agentLinkService(agentReferenceRepository: AgentReferenceRepository) =
-    new AgentLinkService(agentReferenceRepository, desConnector, metrics)
+    new AgentLinkService(agentReferenceRepository, desConnector, metrics, relationshipConnector)
 
   def testInvitationsService(invitationsRepository: InvitationsRepository, agentReferenceRepository: AgentReferenceRepository) =
     new InvitationsService(

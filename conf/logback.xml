@@ -31,7 +31,7 @@
 
     <logger name="uk.gov.hmrc.agentclientauthorisation" level="INFO"/>
 
-    <logger name="uk.gov.hmrc.agentclientauthorisation.repository" level="ERROR"/>
+    <logger name="uk.gov.hmrc.agentclientauthorisation.repository" level="INFO"/>
 
     <logger name="uk.gov.hmrc.clusterworkthrottling" level="INFO"/>
 

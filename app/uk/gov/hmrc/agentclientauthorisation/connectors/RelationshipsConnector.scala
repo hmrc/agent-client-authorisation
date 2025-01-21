@@ -22,6 +22,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
@@ -176,6 +177,7 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
       case Service.HMRCTERSNTORG =>
         s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(invitation.arn.value)}/service/HMRC-TERSNT-ORG/client/URN/${encodePathSegment(invitation.clientId.value)}"
     }
+
   private def mtdItRelationshipUrl(arn: Arn, service: Service, clientId: ClientId): String =
     s"$baseUrl/agent-client-relationships/agent/${encodePathSegment(arn.value)}/service/${service.id}/client/MTDITID/${encodePathSegment(clientId.value)}"
 
@@ -211,4 +213,18 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     val clientId = encodePathSegment(invitation.clientId.value)
     s"$afiBaseUrl/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId"
   }
+
+  def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
+    monitor("ConsumedAPI-AgentClientRelationships-migrateAgentReferenceRecord-POST") {
+      http
+        .POST[AgentReferenceRecord, HttpResponse](s"$baseUrl/agent-client-relationships/migrate/agent-reference-record", record)
+        .map { response: HttpResponse =>
+          response.status match {
+            case Status.NO_CONTENT => Some("OK")
+            case other =>
+              logger.error(s"unexpected error during 'migrateAgentReferenceRecord', statusCode=$other")
+              None
+          }
+        }
+    }
 }
