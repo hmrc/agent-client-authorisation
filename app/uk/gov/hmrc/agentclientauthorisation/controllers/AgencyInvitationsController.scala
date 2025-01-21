@@ -26,7 +26,6 @@ import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
 import uk.gov.hmrc.agentclientauthorisation.controllers.actions.AgentInvitationValidation
-import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
 import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
 import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
@@ -58,7 +57,8 @@ class AgencyInvitationsController @Inject() (
   eisConnector: EisConnector,
   authConnector: AuthConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
-  agentCacheProvider: AgentCacheProvider
+  agentCacheProvider: AgentCacheProvider,
+  relationshipsConnector: RelationshipsConnector
 )(implicit metrics: Metrics, cc: ControllerComponents, futures: Futures, ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
@@ -83,26 +83,37 @@ class AgencyInvitationsController @Inject() (
   }
 
   def replaceUrnInvitationWithUtr(givenUrn: Urn, utr: Utr): Action[AnyContent] = Action.async { implicit request =>
-    invitationsService.findLatestInvitationByClientId(clientId = givenUrn.value) flatMap {
-      case Some(existingInvite) if existingInvite.status == Pending =>
+    if (appConfig.acrMongoActivated) {
+      relationshipsConnector.replaceUrnWithUtr(givenUrn.value, utr.value).flatMap {
+        case true  => Future.successful(NoContent)
+        case false => replaceUrnWithUtrLegacy(givenUrn, utr)
+      }
+    } else {
+      replaceUrnWithUtrLegacy(givenUrn, utr)
+    }
+  }
+
+  private def replaceUrnWithUtrLegacy(urn: Urn, utr: Utr)(implicit hc: HeaderCarrier): Future[Result] =
+    invitationsService.findLatestInvitationByClientId(clientId = urn.value) flatMap {
+      case Some(invite) if invite.status == Pending && invite.withinValidPeriod(appConfig.acrMongoActivated) =>
         {
           for {
-            _ <- invitationsService.create(existingInvite.arn, existingInvite.clientType, Trust, utr, utr, existingInvite.origin)
-            _ <- invitationsService.cancelInvitation(existingInvite)
+            _ <- invitationsService.create(invite.arn, invite.clientType, Trust, utr, utr, invite.origin)
+            _ <- invitationsService.cancelInvitation(invite)
           } yield Created
         }.recoverWith { case StatusUpdateFailure(_, msg) =>
           Future successful invalidInvitationStatus(msg)
         }
-      case Some(i) if i.status == IAccepted && !i.isRelationshipEnded =>
+      case Some(invite) if invite.status == IAccepted && !invite.isRelationshipEnded && invite.withinValidPeriod(appConfig.acrMongoActivated) =>
         for {
-          _          <- invitationsService.setRelationshipEnded(i, "HMRC")
-          invitation <- invitationsService.create(i.arn, i.clientType, Trust, utr, utr, i.origin)
+          _          <- invitationsService.setRelationshipEnded(invite, "HMRC")
+          invitation <- invitationsService.create(invite.arn, invite.clientType, Trust, utr, utr, invite.origin)
           _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitationStatus(invitation))
         } yield Created
-      case Some(_) => Future successful NoContent
-      case _       => Future successful NotFound
+      case Some(invite) if invite.withinValidPeriod(appConfig.acrMongoActivated) =>
+        Future successful NoContent
+      case _ => Future successful NotFound
     }
-  }
 
   def getInvitationUrl(givenArn: Arn, clientType: String): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {

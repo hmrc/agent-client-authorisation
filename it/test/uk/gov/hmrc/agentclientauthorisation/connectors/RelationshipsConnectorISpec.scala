@@ -17,14 +17,13 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
-import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
+import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation
-import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, RelationshipStubs, TestDataSupport}
+import uk.gov.hmrc.agentclientauthorisation.support._
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
-import play.api.test.Helpers._
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -256,6 +255,28 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
 
       assertThrows[UpstreamErrorResponse] {
         await(connector.createPillar2Relationship(invitation(Some("personal"), Pillar2, plrId, plrId)))
+      }
+    }
+  }
+
+  "replaceUrnWithUtr" should {
+
+    "return true if the downstream response is 204" in {
+      stubUrnToUtrCall("XXTRUST12345678", NO_CONTENT)
+      val result = await(connector.replaceUrnWithUtr("XXTRUST12345678", "0123456789"))
+      result shouldBe true
+    }
+
+    "return false if the downstream response is 404" in {
+      stubUrnToUtrCall("XXTRUST12345678", NOT_FOUND)
+      val result = await(connector.replaceUrnWithUtr("XXTRUST12345678", "0123456789"))
+      result shouldBe false
+    }
+
+    "throw an exception if the downstream response is not expected" in {
+      stubUrnToUtrCall("XXTRUST12345678", INTERNAL_SERVER_ERROR)
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.replaceUrnWithUtr("XXTRUST12345678", "0123456789"))
       }
     }
   }
