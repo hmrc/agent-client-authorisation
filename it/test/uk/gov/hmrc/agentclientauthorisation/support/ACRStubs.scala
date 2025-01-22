@@ -19,6 +19,8 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentclientauthorisation.model.ChangeInvitationStatusRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
@@ -84,5 +86,74 @@ trait ACRStubs {
             .withStatus(204)
         )
     )
+
+  def givenACRChangeStatusSuccess(
+    arn: Arn,
+    service: String,
+    clientId: String,
+    changeInvitationStatusRequest: ChangeInvitationStatusRequest
+  ): StubMapping = {
+    val changeRequestJson = Json.toJson(changeInvitationStatusRequest).toString()
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/transitional/change-invitation-status/arn/${arn.value}/service/$service/client/$clientId"))
+        .withRequestBody(similarToJson(changeRequestJson))
+        .willReturn(
+          aResponse()
+            .withStatus(204)
+        )
+    )
+  }
+
+  def givenACRChangeStatusNotFound(
+    arn: Arn,
+    service: String,
+    clientId: String,
+    changeInvitationStatusRequest: ChangeInvitationStatusRequest
+  ): StubMapping = {
+    val changeRequestJson = Json.toJson(changeInvitationStatusRequest).toString()
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/transitional/change-invitation-status/arn/${arn.value}/service/$service/client/$clientId"))
+        .withRequestBody(similarToJson(changeRequestJson))
+        .willReturn(
+          aResponse()
+            .withStatus(404)
+        )
+    )
+  }
+
+  def givenACRChangeStatusBadRequest(
+    arn: Arn,
+    service: String,
+    clientId: String
+  ): StubMapping =
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/transitional/change-invitation-status/arn/${arn.value}/service/$service/client/$clientId"))
+        .willReturn(
+          aResponse()
+            .withStatus(400)
+        )
+    )
+
+  def verifyACRChangeStatusSent(arn: Arn, service: String, clientId: String): Unit =
+    eventually {
+      verify(
+        1,
+        putRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/transitional/change-invitation-status/arn/${arn.value}/service/$service/client/$clientId")
+        )
+      )
+    }
+
+  def verifyACRChangeStatusWasNOTSent(arn: Arn, service: String, clientId: String): Unit =
+    eventually {
+      verify(
+        0,
+        putRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/transitional/change-invitation-status/arn/${arn.value}/service/$service/client/$clientId")
+        )
+      )
+    }
+
+  private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
 
 }

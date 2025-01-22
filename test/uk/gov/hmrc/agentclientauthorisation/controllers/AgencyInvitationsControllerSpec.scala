@@ -71,6 +71,7 @@ class AgencyInvitationsControllerSpec
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
   override val mockCitizenDetailsConnector = resettingMock[CitizenDetailsConnector]
+  val relationshipsConnector: RelationshipsConnector = resettingMock[RelationshipsConnector]
   val futures: Futures = new DefaultFutures(ActorSystem("TestSystem"))
 
   val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
@@ -87,7 +88,8 @@ class AgencyInvitationsControllerSpec
       mockEisConnector,
       mockPlayAuthConnector,
       mockCitizenDetailsConnector,
-      agentCacheProvider
+      agentCacheProvider,
+      relationshipsConnector
     )(metrics, cc, futures, global) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =

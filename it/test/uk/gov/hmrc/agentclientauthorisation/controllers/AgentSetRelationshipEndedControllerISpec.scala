@@ -82,6 +82,8 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       result.get.status shouldBe DeAuthorised
       result.get.isRelationshipEnded shouldBe true
       result.get.relationshipEndedBy shouldBe Some("HMRC")
+
+      verifyACRChangeStatusWasNOTSent(arn, testClient.service.id, testClient.clientId.value)
     }
   }
 
