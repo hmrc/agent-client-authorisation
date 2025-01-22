@@ -144,12 +144,14 @@ class AgencyInvitationsController @Inject() (
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
         case Some(JsSuccess(payload, _)) =>
           if (appConfig.acrMongoActivated) {
-            relationshipsConnector.changeACRInvitationStatus(
+            relationshipsConnector
+              .changeACRInvitationStatus(
                 arn = payload.arn,
                 service = payload.service,
                 clientId = payload.clientId,
                 changeInvitationStatusRequest = ChangeInvitationStatusRequest(invitationStatus = DeAuthorised, endedBy = payload.endedBy)
-              ).flatMap { response =>
+              )
+              .flatMap { response =>
                 response.status match {
                   case NO_CONTENT => Future.successful(NoContent)
                   case NOT_FOUND  => changeACAInvitationStatus(payload.arn, payload.clientId, payload.service, payload.endedBy)
