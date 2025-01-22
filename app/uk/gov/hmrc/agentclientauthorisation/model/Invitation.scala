@@ -135,10 +135,6 @@ case class Invitation(
   def isPendingOn(date: LocalDate): Boolean = status == Pending && date.isBefore(expiryDate)
 
   val altItsa: Option[Boolean] = if (service == MtdIt) Some(clientId == suppliedClientId) else None
-
-  def withinValidPeriod(thirtyDayLimit: Boolean): Boolean =
-    if (thirtyDayLimit) firstEvent().time.isAfter(LocalDateTime.now().minusDays(30L))
-    else true
 }
 
 object Invitation {

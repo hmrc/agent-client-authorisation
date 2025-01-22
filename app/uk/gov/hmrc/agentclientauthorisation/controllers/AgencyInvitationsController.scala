@@ -94,8 +94,8 @@ class AgencyInvitationsController @Inject() (
   }
 
   private def replaceUrnWithUtrLegacy(urn: Urn, utr: Utr)(implicit hc: HeaderCarrier): Future[Result] =
-    invitationsService.findLatestInvitationByClientId(clientId = urn.value) flatMap {
-      case Some(invite) if invite.status == Pending && invite.withinValidPeriod(appConfig.acrMongoActivated) =>
+    invitationsService.findLatestInvitationByClientId(clientId = urn.value, appConfig.acrMongoActivated) flatMap {
+      case Some(invite) if invite.status == Pending =>
         {
           for {
             _ <- invitationsService.create(invite.arn, invite.clientType, Trust, utr, utr, invite.origin)
@@ -104,13 +104,13 @@ class AgencyInvitationsController @Inject() (
         }.recoverWith { case StatusUpdateFailure(_, msg) =>
           Future successful invalidInvitationStatus(msg)
         }
-      case Some(invite) if invite.status == IAccepted && !invite.isRelationshipEnded && invite.withinValidPeriod(appConfig.acrMongoActivated) =>
+      case Some(invite) if invite.status == IAccepted && !invite.isRelationshipEnded =>
         for {
           _          <- invitationsService.setRelationshipEnded(invite, "HMRC")
           invitation <- invitationsService.create(invite.arn, invite.clientType, Trust, utr, utr, invite.origin)
           _          <- futures.delayed(500.millisecond)(invitationsService.acceptInvitationStatus(invitation))
         } yield Created
-      case Some(invite) if invite.withinValidPeriod(appConfig.acrMongoActivated) =>
+      case Some(_) =>
         Future successful NoContent
       case _ => Future successful NotFound
     }

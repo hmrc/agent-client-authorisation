@@ -144,8 +144,6 @@ trait TestData {
     events = List(StatusChangeEvent(now(), Accepted))
   )
 
-  val oldInvitationActive = invitationActive.copy(events = List(StatusChangeEvent(now().minusDays(31), Accepted)))
-
   val invitationPending = Invitation(
     otherRegimePendingInvitationDbId,
     otherRegimePendingInvitationId,
@@ -161,8 +159,6 @@ trait TestData {
     None,
     events = List(StatusChangeEvent(now(), Pending))
   )
-
-  val oldInvitationPending = invitationPending.copy(events = List(StatusChangeEvent(now().minusDays(31), Pending)))
 
   val agentEnrolment = Set(
     Enrolment("HMRC-AS-AGENT", Seq(EnrolmentIdentifier("AgentReferenceNumber", arn.value)), state = "", delegatedAuthRule = None)

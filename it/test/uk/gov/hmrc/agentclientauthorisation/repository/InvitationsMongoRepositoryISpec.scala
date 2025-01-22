@@ -22,10 +22,12 @@ import org.scalatest.Inside
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
 import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, UnitSpec}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
@@ -39,7 +41,8 @@ import scala.concurrent.Future
 class InvitationsMongoRepositoryISpec
     extends UnitSpec with Eventually with Inside with AppAndStubs with DefaultPlayMongoRepositorySupport[Invitation] {
 
-  val metrics = app.injector.instanceOf[Metrics]
+  val metrics: Metrics = app.injector.instanceOf[Metrics]
+  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   override val repository = new InvitationsRepositoryImpl(mongoComponent, metrics)
 
   val date = LocalDate.now()
@@ -729,6 +732,59 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
+  ".findByLatestInvitationByClientId" when {
+
+    "the thirty day limit is imposed" should {
+
+      "return a matching invitation that is less than 30 days old" in {
+        val invitation =
+          Invitation.createNew(Arn("XARN1234567"), None, MtdIt, mtdItId1, mtdItId1, None, now, now.toLocalDate, None)
+        await(repository.collection.insertOne(invitation).toFuture())
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = true))
+        result shouldBe Some(invitation)
+      }
+
+      "not return a matching invitation that is more than 30 days old" in {
+        val oldStartDate = now.minusDays(31)
+        val invitation =
+          Invitation.createNew(Arn("XARN1234567"), None, MtdIt, mtdItId1, mtdItId1, None, oldStartDate, now.toLocalDate, None)
+        await(repository.collection.insertOne(invitation).toFuture())
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = true))
+        result shouldBe None
+      }
+
+      "return None when there is no matching invitation" in {
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = true))
+        result shouldBe None
+      }
+    }
+
+    "the thirty day limit is not imposed" should {
+
+      "return a matching invitation that is less than 30 days old" in {
+        val invitation =
+          Invitation.createNew(Arn("XARN1234567"), None, MtdIt, mtdItId1, mtdItId1, None, now, now.toLocalDate, None)
+        await(repository.collection.insertOne(invitation).toFuture())
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = false))
+        result shouldBe Some(invitation)
+      }
+
+      "return a matching invitation that is more than 30 days old" in {
+        val oldStartDate = now.minusDays(31)
+        val invitation =
+          Invitation.createNew(Arn("XARN1234567"), None, MtdIt, mtdItId1, mtdItId1, None, oldStartDate, now.toLocalDate, None)
+        await(repository.collection.insertOne(invitation).toFuture())
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = false))
+        result shouldBe Some(invitation)
+      }
+
+      "return None when there is no matching invitation" in {
+        val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = false))
+        result shouldBe None
+      }
+    }
+  }
+
   private def addInvitation(startDate: LocalDateTime, invitations: Invitation) = addInvitations(startDate, invitations).head
 
   private def addInvitations(startDate: LocalDateTime, invitations: Invitation*) =
@@ -766,5 +822,5 @@ class InvitationsMongoRepositoryISpec
     await(repository.setRelationshipEnded(invitation, "Agent"))
 
   private def getLatestByClientId(clientId: Urn) =
-    await(repository.findLatestInvitationByClientId(clientId.value))
+    await(repository.findLatestInvitationByClientId(clientId.value, appConfig.acrMongoActivated))
 }

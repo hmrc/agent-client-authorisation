@@ -46,29 +46,4 @@ class InvitationSpec extends UnitSpec with TestData {
       (json \ "lastUpdated").as[LocalDateTime] shouldBe lastUpdatedDateTime
     }
   }
-
-  ".withinValidPeriod" when {
-
-    "the thirty day limit is imposed" should {
-
-      "return true when the invitation is less than 30 days old" in {
-        invitationActive.withinValidPeriod(thirtyDayLimit = true) shouldBe true
-      }
-
-      "return false when the invitation is more than 30 days old" in {
-        oldInvitationActive.withinValidPeriod(thirtyDayLimit = true) shouldBe false
-      }
-    }
-
-    "the thirty day limit is not imposed" should {
-
-      "return true when the invitation is less than 30 days old" in {
-        invitationActive.withinValidPeriod(thirtyDayLimit = false) shouldBe true
-      }
-
-      "return true when the invitation is more than 30 days old" in {
-        oldInvitationActive.withinValidPeriod(thirtyDayLimit = false) shouldBe true
-      }
-    }
-  }
 }

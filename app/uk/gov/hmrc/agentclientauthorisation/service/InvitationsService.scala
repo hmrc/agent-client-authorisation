@@ -270,8 +270,8 @@ class InvitationsService @Inject() (
   def findInvitation(invitationId: InvitationId): Future[Option[Invitation]] =
     invitationsRepository.findByInvitationId(invitationId)
 
-  def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
-    invitationsRepository.findLatestInvitationByClientId(clientId)
+  def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
+    invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)
 
   def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
     invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
