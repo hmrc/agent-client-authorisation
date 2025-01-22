@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.agentclientauthorisation.model
 
+import play.api.libs.json.Format
 import play.api.libs.json.Json.toJson
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.external._
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationRecordFormat
 import uk.gov.hmrc.agentclientauthorisation.support.{TestConstants, TestData, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
 
@@ -40,10 +42,10 @@ class InvitationSpec extends UnitSpec with TestData {
       )
       val json = toJson(invitation)
 
-      implicit val format = MongoLocalDateTimeFormat.localDateTimeFormat
+      implicit val format: Format[LocalDateTime] = MongoLocalDateTimeFormat.localDateTimeFormat
 
-      (json \ "created").as[LocalDateTime] shouldBe createdDateTime
-      (json \ "lastUpdated").as[LocalDateTime] shouldBe lastUpdatedDateTime
+      (json \ "created").as[LocalDateTime](format) shouldBe createdDateTime
+      (json \ "lastUpdated").as[LocalDateTime](format) shouldBe lastUpdatedDateTime
     }
   }
 }

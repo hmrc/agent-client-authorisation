@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentclientauthorisation.model.ChangeInvitationStatusRequest
+import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
@@ -208,6 +208,39 @@ trait ACRStubs {
         .willReturn(
           aResponse()
             .withStatus(responseStatus)
+        )
+    )
+
+  def givenAcrInvitationFound(arn: Arn, invitationId: String, expectedInvitation: Invitation, withClientName: String): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(s"""{
+                         |  "invitationId": "$invitationId",
+                         |  "arn": "${arn.value}",
+                         |  "service": "${expectedInvitation.service}",
+                         |  "clientId": "${expectedInvitation.clientId.value}",
+                         |  "clientIdType": "${expectedInvitation.clientId.typeId}",
+                         |  "suppliedClientId": "${expectedInvitation.suppliedClientId.value}",
+                         |  "suppliedClientIdType": "${expectedInvitation.suppliedClientId.typeId}",
+                         |  "clientName": "$withClientName",
+                         |  "status": "Pending",
+                         |  "clientType": "${expectedInvitation.clientType.getOrElse("personal")}",
+                         |  "expiryDate": "2025-03-31",
+                         |  "created": "2025-03-10T00:00:00Z",
+                         |  "lastUpdated": "2025-03-10T00:00:00Z"
+                         |}""".stripMargin)
+        )
+    )
+
+  def givenAcrInvitationNotFound(invitationId: String): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId"))
+        .willReturn(
+          aResponse()
+            .withStatus(404)
         )
     )
 }

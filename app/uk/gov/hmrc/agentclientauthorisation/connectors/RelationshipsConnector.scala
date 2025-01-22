@@ -256,6 +256,23 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
   private def changeACRInvitationStatusByIdUrl(invitationId: String, invitationStatusAction: InvitationStatusAction): String =
     s"$baseUrl/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/${unapply(invitationStatusAction)}"
 
+  def lookupInvitation(invitationId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[Invitation]] =
+    monitor("ConsumedAPI-AgentClientRelationships-lookupInvitation-GET") {
+      http
+        .GET[HttpResponse](s"$baseUrl/agent-client-relationships/lookup-invitation/$invitationId")
+        .map { response =>
+          response.status match {
+            case Status.OK => Some(response.json.as[Invitation](Invitation.acrReads))
+            case Status.NOT_FOUND =>
+              logger.warn(s"Invitation not found for id: $invitationId")
+              None
+            case other =>
+              logger.error(s"unexpected error during 'lookupInvitation', statusCode=$other")
+              None
+          }
+        }
+    }
+
   def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-AgentClientRelationships-migrateAgentReferenceRecord-POST") {
       http
