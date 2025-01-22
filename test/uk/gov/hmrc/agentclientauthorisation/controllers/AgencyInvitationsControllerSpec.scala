@@ -30,8 +30,8 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
-import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult.{Pillar2DetailsNotFound, Pillar2KnownFactCheckOk, Pillar2KnownFactNotMatched, Pillar2RecordClientInactive}
-import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult.{VatDetailsNotFound, VatKnownFactCheckOk, VatKnownFactNotMatched, VatRecordClientInsolvent}
+import uk.gov.hmrc.agentclientauthorisation.model.Pillar2KnownFactCheckResult._
+import uk.gov.hmrc.agentclientauthorisation.model.VatKnownFactCheckResult._
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, _}
 import uk.gov.hmrc.agentclientauthorisation.service._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
@@ -71,7 +71,7 @@ class AgencyInvitationsControllerSpec
   val auditService: AuditService = new AuditService(auditConnector)
   override val agentCacheProvider = resettingMock[AgentCacheProvider]
   override val mockCitizenDetailsConnector = resettingMock[CitizenDetailsConnector]
-  val relationshipsConnector: RelationshipsConnector = resettingMock[RelationshipsConnector]
+  val mockRelationshipsConnector: RelationshipsConnector = resettingMock[RelationshipsConnector]
   val futures: Futures = new DefaultFutures(ActorSystem("TestSystem"))
 
   val jsonBody = Json.parse(s"""{"service": "HMRC-MTD-IT", "clientIdType": "ni", "clientId": "$nino1", "clientPostcode": "BN124PJ"}""")
@@ -89,7 +89,7 @@ class AgencyInvitationsControllerSpec
       mockPlayAuthConnector,
       mockCitizenDetailsConnector,
       agentCacheProvider,
-      relationshipsConnector
+      mockRelationshipsConnector
     )(metrics, cc, futures, global) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =
@@ -125,66 +125,185 @@ class AgencyInvitationsControllerSpec
     ()
   }
 
-  "replace URN invitation with UTR" should {
-    "return 404 when no invitation found" in {
+  "replace URN invitation with UTR" when {
 
-      when(invitationsService.findLatestInvitationByClientId(any[String]))
-        .thenReturn(Future.successful(None))
+    "the acr-mongo-activated feature switch is enabled" should {
 
-      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+      "return 204 when an invitation is found and updated in ACR" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(true))
 
-      status(response) shouldBe 404
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 204
+      }
+
+      "return 204 when an invitation is not found in ACR, and ACA has an invitation that isn't Pending or Accepted" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationExpired)))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 204
+      }
+
+      "return 201 when an invitation is not found in ACR, and ACA has an Accepted invitation less than 30 days old" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationActive)))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+          .thenReturn(Future.successful(invitationActive))
+        when(
+          invitationsService.create(
+            any[Arn](),
+            any[Option[String]],
+            eqs(Trust),
+            any[ClientIdentifier.ClientId],
+            any[ClientIdentifier.ClientId],
+            any[Option[String]]
+          )(any[HeaderCarrier], any[ExecutionContext])
+        ).thenReturn(Future successful invitationActive)
+        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
+          .thenReturn(Future successful invitationActive)
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 201
+      }
+
+      "return 201 when an invitation is not found in ACR, and ACA has a Pending invitation less than 30 days old" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationPending)))
+        when(
+          invitationsService.create(
+            any[Arn](),
+            any[Option[String]],
+            eqs(Trust),
+            any[ClientIdentifier.ClientId],
+            any[ClientIdentifier.ClientId],
+            any[Option[String]]
+          )(any[HeaderCarrier], any[ExecutionContext])
+        ).thenReturn(Future successful invitationActive)
+        when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(invitationActive))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 201
+      }
+
+      "return 404 when an invitation is not found in ACR, and ACA has an Accepted invitation older than 30 days" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(oldInvitationActive)))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 404
+      }
+
+      "return 404 when an invitation is not found in ACR, and ACA has a Pending invitation older than 30 days" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(oldInvitationPending)))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 404
+      }
+
+      "return 404 when an invitation is not found in ACR or ACA" in {
+        when(appConfig.acrMongoActivated).thenReturn(true)
+        when(mockRelationshipsConnector.replaceUrnWithUtr(any[String], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(false))
+        when(invitationsService.findLatestInvitationByClientId(any[String])).thenReturn(Future.successful(None))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 404
+      }
     }
 
-    "return 204 when there is an invitation which isn't pending or existing" in {
+    "the acr-mongo-activated feature switch is disabled" should {
 
-      when(invitationsService.findLatestInvitationByClientId(any[String]))
-        .thenReturn(Future.successful(Some(invitationExpired)))
+      "return 404 when no invitation found" in {
+        when(appConfig.acrMongoActivated).thenReturn(false)
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(None))
 
-      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
-      status(response) shouldBe 204
-    }
+        status(response) shouldBe 404
+      }
 
-    "return 201 and end existing relationship when an active invitation is found" in {
+      "return 204 when there is an invitation which isn't pending or existing" in {
+        when(appConfig.acrMongoActivated).thenReturn(false)
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationExpired)))
 
-      when(invitationsService.findLatestInvitationByClientId(any[String]))
-        .thenReturn(Future.successful(Some(invitationActive)))
-      when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
-        .thenReturn(Future.successful(invitationActive))
-      when(
-        invitationsService
-          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
-            any[HeaderCarrier],
-            any[ExecutionContext]
-          )
-      )
-        .thenReturn(Future successful invitationActive)
-      when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
-        .thenReturn(Future successful invitationActive)
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
-      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+        status(response) shouldBe 204
+      }
 
-      status(response) shouldBe 201
-    }
+      "return 201 and end existing relationship when an active invitation is found" in {
+        when(appConfig.acrMongoActivated).thenReturn(false)
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationActive)))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+          .thenReturn(Future.successful(invitationActive))
+        when(
+          invitationsService.create(
+            any[Arn](),
+            any[Option[String]],
+            eqs(Trust),
+            any[ClientIdentifier.ClientId],
+            any[ClientIdentifier.ClientId],
+            any[Option[String]]
+          )(any[HeaderCarrier], any[ExecutionContext])
+        ).thenReturn(Future successful invitationActive)
+        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
+          .thenReturn(Future successful invitationActive)
 
-    "return 201 when a pending invitation is found" in {
-      when(invitationsService.findLatestInvitationByClientId(any[String]))
-        .thenReturn(Future.successful(Some(invitationPending)))
-      when(
-        invitationsService
-          .create(any[Arn](), any[Option[String]], eqs(Trust), any[ClientIdentifier.ClientId], any[ClientIdentifier.ClientId], any[Option[String]])(
-            any[HeaderCarrier],
-            any[ExecutionContext]
-          )
-      )
-        .thenReturn(Future successful invitationActive)
-      when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(invitationActive))
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
 
-      val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+        status(response) shouldBe 201
+      }
 
-      status(response) shouldBe 201
+      "return 201 when a pending invitation is found" in {
+        when(appConfig.acrMongoActivated).thenReturn(false)
+        when(invitationsService.findLatestInvitationByClientId(any[String]))
+          .thenReturn(Future.successful(Some(invitationPending)))
+        when(
+          invitationsService.create(
+            any[Arn](),
+            any[Option[String]],
+            eqs(Trust),
+            any[ClientIdentifier.ClientId],
+            any[ClientIdentifier.ClientId],
+            any[Option[String]]
+          )(any[HeaderCarrier], any[ExecutionContext])
+        ).thenReturn(Future successful invitationActive)
+        when(invitationsService.cancelInvitation(any[Invitation])(any[HeaderCarrier], any[ExecutionContext]))
+          .thenReturn(Future.successful(invitationActive))
+
+        val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
+
+        status(response) shouldBe 201
+      }
     }
   }
 

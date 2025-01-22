@@ -52,7 +52,7 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val eisEnvironment: String = getConf("eis.environment")
   val eisAuthToken: String = getConf("eis.authorization-token")
 
-  val relationshipsBaseUrl: String = baseUrl("relationships")
+  val agentClientRelationshipsBaseUrl: String = baseUrl("agent-client-relationships")
 
   val afiRelationshipsBaseUrl: String = baseUrl("afi-relationships")
 

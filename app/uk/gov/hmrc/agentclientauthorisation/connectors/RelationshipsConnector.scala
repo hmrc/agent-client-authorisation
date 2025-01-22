@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import play.api.Logging
 import play.api.http.Status
-import play.api.libs.json.{JsObject, Json}
+import play.api.http.Status.{NOT_FOUND, NO_CONTENT}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation, InvitationStatus}
@@ -38,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, val metrics: Metrics)(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with HttpErrorFunctions with Logging {
 
-  private val baseUrl: String = appConfig.relationshipsBaseUrl
+  private val baseUrl: String = appConfig.agentClientRelationshipsBaseUrl
   private val afiBaseUrl: String = appConfig.afiRelationshipsBaseUrl
 
   private implicit class FutureResponseOps(f: Future[HttpResponse]) {
@@ -169,6 +170,21 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         }
       }
     }
+
+  def replaceUrnWithUtr(urn: String, utr: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    val url = s"$baseUrl/agent-client-relationships/invitations/trusts-enrolment-orchestrator/$urn/update"
+    val json = Json.toJson("utr" -> utr)
+    monitor("ConsumedAPI-AgentClientRelationships-ReplaceUrnWithUtr-POST") {
+      http.POST[JsValue, HttpResponse](url, json).map { response =>
+        response.status match {
+          case NO_CONTENT => true
+          case NOT_FOUND  => false
+          case status =>
+            throw UpstreamErrorResponse.apply(s"POST of '$url' returned $status. Response body: '${response.body}'", response.status)
+        }
+      }
+    }
+  }
 
   // Transitional
   def changeACRInvitationStatus(arn: Arn, service: String, clientId: String, changeInvitationStatusRequest: ChangeInvitationStatusRequest)(implicit

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.support
 
+import org.apache.pekko.Done
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -229,7 +230,7 @@ trait TestDataSupport {
     override def countRemaining(): Future[Long] =
       Future failed new Exception("Unable to count remaining agent references")
 
-    override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Unit =
+    override def migrateToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] =
       Future failed new Exception("Unable to migrate to ACR")
 
     override def testOnlyDropAgentReferenceCollection(): Future[Unit] =

@@ -156,4 +156,12 @@ trait ACRStubs {
 
   private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
 
+  def stubUrnToUtrCall(urn: String, responseStatus: Int): StubMapping =
+    stubFor(
+      post(urlEqualTo(s"/agent-client-relationships/invitations/trusts-enrolment-orchestrator/$urn/update"))
+        .willReturn(
+          aResponse()
+            .withStatus(responseStatus)
+        )
+    )
 }
