@@ -31,6 +31,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
+import java.time.temporal.ChronoUnit.DAYS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
@@ -52,7 +53,7 @@ trait InvitationsRepository {
   def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime): Future[Invitation]
   def setRelationshipEnded(invitation: Invitation, endedBy: String): Future[Invitation]
   def findByInvitationId(invitationId: InvitationId): Future[Option[Invitation]]
-  def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]]
+  def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]]
   def findInvitationsBy(
     arn: Option[Arn] = None,
     services: Seq[Service] = Seq.empty[Service],
@@ -216,11 +217,20 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
         .headOption()
     }
 
-  override def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
+  override def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
     monitor(s"InvitationsRepository-findLatestInvitationByClientId") {
       val searchKey = InvitationRecordFormat.toArnClientServiceStateKey(None, clientId = Some(clientId), None, None)
+      val query = if (within30Days) {
+        and(
+          equal(InvitationRecordFormat.arnClientServiceStateKey, searchKey),
+          gte(InvitationRecordFormat.createdKey, Instant.now().minus(30, DAYS).toEpochMilli)
+        )
+      } else {
+        equal(InvitationRecordFormat.arnClientServiceStateKey, searchKey)
+      }
+
       collection
-        .find(equal(InvitationRecordFormat.arnClientServiceStateKey, searchKey))
+        .find(query)
         .sort(descending("events.time"))
         .headOption()
     }

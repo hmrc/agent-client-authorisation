@@ -201,7 +201,7 @@ trait TestDataSupport {
     override def removeAllInvitationsForAgent(arn: Arn): Future[Int] =
       Future failed new Exception(s"Unable to remove Invitations for ${arn.value}")
 
-    override def findLatestInvitationByClientId(clientId: String): Future[Option[Invitation]] =
+    override def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to retrieve latest invitation for a client")
 
     override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]] =
