@@ -22,7 +22,7 @@ import play.api.http.Status.{NOT_FOUND, NO_CONTENT}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -186,6 +186,16 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     }
   }
 
+  // Transitional
+  def changeACRInvitationStatus(arn: Arn, service: String, clientId: String, changeInvitationStatusRequest: ChangeInvitationStatusRequest)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[HttpResponse] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-ChangeStatus-PUT") {
+      http
+        .PUT[ChangeInvitationStatusRequest, HttpResponse](changeACRInvitationStatusUrl(arn, service, clientId), changeInvitationStatusRequest)
+    }
+
   private def trustRelationshipUrl(invitation: Invitation): String =
     invitation.service.enrolmentKey match {
       case Service.HMRCTERSORG =>
@@ -229,6 +239,9 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     val clientId = encodePathSegment(invitation.clientId.value)
     s"$afiBaseUrl/agent-fi-relationship/relationships/agent/$arn/service/$service/client/$clientId"
   }
+
+  private def changeACRInvitationStatusUrl(arn: Arn, service: String, clientId: String): String =
+    s"$baseUrl/agent-client-relationships/transitional/change-invitation-status/arn/${encodePathSegment(arn.value)}/service/$service/client/${encodePathSegment(clientId)}"
 
   def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-AgentClientRelationships-migrateAgentReferenceRecord-POST") {

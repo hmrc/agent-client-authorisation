@@ -143,16 +143,38 @@ class AgencyInvitationsController @Inject() (
     Action.async { implicit request =>
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
         case Some(JsSuccess(payload, _)) =>
-          invitationsService
-            .findInvitationAndEndRelationship(payload.arn, payload.clientId, toListOfServices(Some(payload.service)), payload.endedBy)
-            .map {
-              case true  => NoContent
-              case false => InvitationNotFound
-            }
+          if (appConfig.acrMongoActivated) {
+            relationshipsConnector
+              .changeACRInvitationStatus(
+                arn = payload.arn,
+                service = payload.service,
+                clientId = payload.clientId,
+                changeInvitationStatusRequest = ChangeInvitationStatusRequest(invitationStatus = DeAuthorised, endedBy = payload.endedBy)
+              )
+              .flatMap { response =>
+                response.status match {
+                  case NO_CONTENT => Future.successful(NoContent)
+                  case NOT_FOUND  => changeACAInvitationStatus(payload.arn, payload.clientId, payload.service, payload.endedBy)
+                  case other =>
+                    logger.error(s"unexpected error during 'setRelationshipEnded.changeACRInvitationStatus', statusCode=$other")
+                    Future.successful(Status(other))
+                }
+              }
+
+          } else changeACAInvitationStatus(payload.arn, payload.clientId, payload.service, payload.endedBy)
+
         case Some(JsError(e)) => Future successful genericBadRequest(e.mkString)
         case None             => Future successful genericBadRequest("No JSON found in request body")
       }
     }
+
+  def changeACAInvitationStatus(arn: Arn, clientId: String, service: String, endedBy: Option[String])(implicit ec: ExecutionContext): Future[Result] =
+    invitationsService
+      .findInvitationAndEndRelationship(arn, clientId, toListOfServices(Some(service)), endedBy)
+      .map {
+        case true  => NoContent
+        case false => InvitationNotFound
+      }
 
   private def localWithJsonBody(f: AgentInvitation => Future[Result], request: JsValue): Future[Result] =
     Try(request.validate[AgentInvitation]) match {
