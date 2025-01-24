@@ -21,7 +21,7 @@ import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitations
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
@@ -30,6 +30,9 @@ import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentGetInvitationControllerISpec extends BaseISpec {
+
+  override protected def additionalConfiguration: Map[String, Any] =
+    super.additionalConfiguration + ("acr-mongo-activated" -> true)
 
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
@@ -74,6 +77,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
     givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+    stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
   }
 
   "GET /agencies/:arn/invitations/sent" should {
@@ -175,6 +179,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
 
       val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
 
@@ -267,6 +272,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyDetailsStub(arn, Some("my-agency"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("my-agency")))
 
       val invitation: Invitation = await(createInvitation(arn, testClient))
       val request =
@@ -294,6 +300,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
 
       val invitation: Invitation = await(createInvitation(arn, testClient.copy[T](clientType = None)))
       val request =

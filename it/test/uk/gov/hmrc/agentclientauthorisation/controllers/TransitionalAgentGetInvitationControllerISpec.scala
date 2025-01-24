@@ -21,7 +21,7 @@ import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
@@ -148,6 +148,7 @@ class TransitionalAgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyDetailsStub(arn, Some("my-agency"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("my-agency")))
       val invitation: Invitation = createExpectedInvitation(arn, testClient)
       givenAcrInvitationFound(arn, invitation.invitationId.value, invitation, testClient.clientName)
       val request =
@@ -174,6 +175,7 @@ class TransitionalAgentGetInvitationControllerISpec extends BaseISpec {
       givenAuditConnector()
       givenAuthorisedAsAgent(arn)
       givenGetAgencyDetailsStub(arn, Some("my-agency"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("my-agency")))
       val invitation: Invitation = await(createInvitationInACA(arn, testClient))
       givenAcrInvitationNotFound(invitation.invitationId.value)
 

@@ -16,33 +16,33 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
+import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, LockClient, MongoAgentReferenceRepository}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 
 import java.time.{LocalDate, LocalDateTime}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class AgentReferenceControllerISpec extends BaseISpec {
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-  override implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer XYZ")))
-  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
-  implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val acrConnector: RelationshipsConnector = app.injector.instanceOf(classOf[RelationshipsConnector])
-  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
-  val agentReferenceRepo: MongoAgentReferenceRepository =
-    new MongoAgentReferenceRepository(mongoComponent, acrConnector, lockClient)(ec, mat, appConfig)
-  val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+
+  override protected def additionalConfiguration: Map[String, Any] =
+    super.additionalConfiguration + ("acr-mongo-activated" -> true)
+
+  val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf[MongoAgentReferenceRepository]
+  val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf[InvitationsRepositoryImpl]
 
   lazy val controller: AgentReferenceController = app.injector.instanceOf[AgentReferenceController]
 
   val testClients = List(itsaClient, irvClient, vatClient, trustClient, cgtClient)
+
+  val testUid = "ABCDEFGH"
+
+  trait TestSetup {
+    testClients.foreach(client => await(createInvitation(arn, client)))
+  }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -64,24 +64,30 @@ class AgentReferenceControllerISpec extends BaseISpec {
       None
     )
 
-  trait TestSetup {
-    // givenAuditConnector()
-    testClients.foreach(client => await(createInvitation(arn, client)))
-
-  }
-
   "GET  /clients/invitations/uid/:uid" should {
 
     val request = FakeRequest("GET", "/clients/invitations/uid/:uid").withHeaders(("Authorization" -> "Bearer testtoken"))
 
-    "return invitation info for services that are supported by the client's enrolments - has MTD VAT & IT enrolment" in new TestSetup {
-
+    "return invitation info using agent record from ACR for services that are supported by the client's enrolments - has MTD VAT & IT enrolment" in new TestSetup {
       val agentReferenceRecord: AgentReferenceRecord =
-        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
+
+      stubFetchAgentReferenceById(testUid, Some(agentReferenceRecord))
+
+      val response = controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-MTD-VAT", "HMRC-MTD-IT"))
+
+      status(response) shouldBe 200
+
+      contentAsJson(response).as[List[InvitationInfo]].size shouldBe 4
+    }
+
+    "return invitation info for services that are supported by the client's enrolments - has MTD VAT & IT enrolment" in new TestSetup {
+      val agentReferenceRecord: AgentReferenceRecord =
+        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
-      val response = controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-MTD-VAT", "HMRC-MTD-IT"))
+      val response = controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-MTD-VAT", "HMRC-MTD-IT"))
 
       status(response) shouldBe 200
 
@@ -91,12 +97,12 @@ class AgentReferenceControllerISpec extends BaseISpec {
     "return invitation info for services that are supported by the client's enrolments - has VATDEC-ORG and IT enrolment" in new TestSetup {
 
       val agentReferenceRecord: AgentReferenceRecord =
-        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       val response =
-        controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
+        controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
 
       status(response) shouldBe 200
 
@@ -109,7 +115,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
 
       val agentReferenceRecord: AgentReferenceRecord =
-        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
@@ -119,7 +125,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
       val response =
-        controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
+        controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
 
       status(response) shouldBe 200
 
@@ -134,7 +140,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
 
       val agentReferenceRecord: AgentReferenceRecord =
-        AgentReferenceRecord("ABCDEFGH", arn, Seq("stan-lee"))
+        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
@@ -144,7 +150,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
       val response =
-        controller.getInvitationsInfo("ABCDEFGH", None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
+        controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
 
       status(response) shouldBe 200
 

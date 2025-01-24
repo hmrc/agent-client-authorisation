@@ -61,10 +61,10 @@ class AgentReferenceControllerSpec extends AkkaMaterializerSpec with ResettingMo
   val appConfig: AppConfig = resettingMock[AppConfig]
 
   val mockAgentLinkService: AgentLinkService =
-    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics, mockAcrConnector)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics, mockAcrConnector, appConfig)
 
   val agentReferenceController =
-    new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService, appConfig)(
+    new AgentReferenceController(mockAgentLinkService, mockAgentReferenceRepository, mockInvitationsService, mockAcrConnector, appConfig)(
       metrics,
       cc,
       mockPlayAuthConnector,

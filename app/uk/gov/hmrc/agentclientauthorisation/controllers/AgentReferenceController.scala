@@ -20,12 +20,13 @@ import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.AuthActions
+import uk.gov.hmrc.agentclientauthorisation.connectors.{AuthActions, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.service.{AgentLinkService, InvitationsService}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import javax.inject.Inject
@@ -45,13 +46,13 @@ class AgentReferenceController @Inject() (
   agentLinkService: AgentLinkService,
   agentReferenceRecordRepository: AgentReferenceRepository,
   invitationsService: InvitationsService,
+  acrConnector: RelationshipsConnector,
   appConfig: AppConfig
 )(implicit metrics: Metrics, cc: ControllerComponents, authConnector: AuthConnector, ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) {
 
-  def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { _ =>
-    agentReferenceRecordRepository
-      .findBy(uid)
+  def getAgentReferenceRecord(uid: String): Action[AnyContent] = Action.async { implicit request =>
+    fetchAgentReferenceRecordById(uid)
       .map {
         case Some(multiInvitationRecord) => Ok(Json.toJson(multiInvitationRecord))
         case None =>
@@ -71,7 +72,7 @@ class AgentReferenceController @Inject() (
   def getInvitationsInfo(uid: String, status: Option[InvitationStatus]): Action[AnyContent] = Action.async { implicit request =>
     withMultiEnrolledClient { implicit clientIds =>
       for {
-        recordOpt <- agentReferenceRecordRepository.findBy(uid)
+        recordOpt <- fetchAgentReferenceRecordById(uid)
         result <- recordOpt match {
                     case Some(record) =>
                       invitationsService
@@ -82,4 +83,12 @@ class AgentReferenceController @Inject() (
       } yield result
     }
   }
+
+  private def fetchAgentReferenceRecordById(uid: String)(implicit hc: HeaderCarrier) =
+    agentReferenceRecordRepository
+      .findBy(uid)
+      .flatMap {
+        case None if appConfig.acrMongoActivated => acrConnector.fetchAgentReferenceById(uid)
+        case record                              => Future.successful(record)
+      }
 }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import play.api.Logging
 import play.api.http.Status
-import play.api.http.Status.{NOT_FOUND, NO_CONTENT}
+import play.api.http.Status.{NOT_FOUND, NO_CONTENT, OK}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -286,4 +286,28 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
           }
         }
     }
+
+  def fetchAgentReferenceById(uid: String)(implicit hc: HeaderCarrier): Future[Option[AgentReferenceRecord]] =
+    http
+      .GET[HttpResponse](s"$baseUrl/agent-client-relationships/agent-reference/uid/$uid")
+      .map { response: HttpResponse =>
+        response.status match {
+          case OK        => Some(response.json.as[AgentReferenceRecord])
+          case NOT_FOUND => None
+          case other     => throw UpstreamErrorResponse(s"Agent reference record not found, status: $other", other)
+        }
+      }
+
+  def fetchOrCreateAgentReference(arn: Arn, normalisedAgentName: String)(implicit hc: HeaderCarrier): Future[AgentReferenceRecord] =
+    http
+      .PUT[JsObject, HttpResponse](
+        s"$baseUrl/agent-client-relationships/agent-reference/${arn.value}",
+        Json.obj("normalisedAgentName" -> normalisedAgentName)
+      )
+      .map { response: HttpResponse =>
+        response.status match {
+          case OK    => response.json.as[AgentReferenceRecord]
+          case other => throw UpstreamErrorResponse(s"Agent reference record could not be found/created, status: $other", other)
+        }
+      }
 }
