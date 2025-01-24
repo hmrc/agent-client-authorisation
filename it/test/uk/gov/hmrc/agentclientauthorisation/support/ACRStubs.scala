@@ -19,8 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.support
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
+import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
+import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
@@ -241,6 +243,30 @@ trait ACRStubs {
         .willReturn(
           aResponse()
             .withStatus(404)
+        )
+    )
+
+  def stubFetchAgentReferenceById(uid: String, response: Option[AgentReferenceRecord]): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/agent-reference/uid/$uid"))
+        .willReturn(
+          if (response.isDefined)
+            aResponse()
+              .withStatus(OK)
+              .withBody(Json.toJson(response.get).toString)
+          else
+            aResponse()
+              .withStatus(NOT_FOUND)
+        )
+    )
+
+  def stubFetchOrCreateAgentReference(arn: Arn, response: AgentReferenceRecord): StubMapping =
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/agent-reference/${arn.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(Json.toJson(response).toString())
         )
     )
 }

@@ -25,6 +25,7 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model.{AgentDetailsDesResponse, BusinessAddress}
@@ -47,8 +48,9 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
   }
   val mockDesConnector: DesConnector = mock[DesConnector]
   val mockAcrConnector: RelationshipsConnector = mock[RelationshipsConnector]
+  val mockAppConfig: AppConfig = mock[AppConfig]
   val service =
-    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics, mockAcrConnector)
+    new AgentLinkService(mockAgentReferenceRepository, mockDesConnector, metrics, mockAcrConnector, mockAppConfig)
 
   val ninoAsString: String = nino1.value
 
@@ -83,6 +85,28 @@ class AgentLinkServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfte
         )
       when(mockAgentReferenceRepository.updateAgentName(eqs("ABCDEFGH"), eqs("stan-lee")))
         .thenReturn(Future.successful(()))
+
+      val response = await(service.getInvitationUrl(Arn(arn), "personal"))
+
+      response shouldBe "/invitations/personal-taxes/manage-who-can-deal-with-HMRC-for-you/ABCDEFGH/stan-lee"
+    }
+    "return a link using ACR when agent reference record is not in ACA and ACR mongo FS is enabled" in {
+      when(mockDesConnector.getAgencyDetails(any[Either[Utr, Arn]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Some(
+              AgentDetailsDesResponse(
+                Some(utr),
+                Option(model.AgencyDetails(Some("stan-lee"), Some("email"), Some("phone"), Some(businessAddress))),
+                Some(SuspensionDetails(suspensionStatus = false, None))
+              )
+            )
+          )
+        )
+      when(mockAgentReferenceRepository.findByArn(any[Arn])).thenReturn(Future.successful(None))
+      when(mockAppConfig.acrMongoActivated).thenReturn(true)
+      when(mockAcrConnector.fetchOrCreateAgentReference(any[Arn], any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(AgentReferenceRecord("ABCDEFGH", Arn(arn), Seq("stan-lee"))))
 
       val response = await(service.getInvitationUrl(Arn(arn), "personal"))
 

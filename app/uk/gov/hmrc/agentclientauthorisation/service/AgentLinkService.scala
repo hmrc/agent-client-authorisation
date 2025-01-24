@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.RandomStringUtils
 import org.mongodb.scala.MongoWriteException
 import play.api.Logger
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AgencyNameNotFound
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, Monitor}
@@ -34,7 +35,8 @@ class AgentLinkService @Inject() (
   agentReferenceRecordRepository: AgentReferenceRepository,
   desConnector: DesConnector,
   metrics: Metrics,
-  acrConnector: RelationshipsConnector
+  acrConnector: RelationshipsConnector,
+  appConfig: AppConfig
 ) extends Monitor {
 
   private val logger = Logger(getClass)
@@ -73,7 +75,7 @@ class AgentLinkService @Inject() (
           .getOrElse(throw AgencyNameNotFound(arn))
       )
 
-  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(implicit ec: ExecutionContext): Future[AgentReferenceRecord] =
+  def fetchOrCreateRecord(arn: Arn, normalisedAgentName: String)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[AgentReferenceRecord] =
     for {
       recordOpt <- agentReferenceRecordRepository.findByArn(arn)
       record: AgentReferenceRecord <- recordOpt match {
@@ -84,6 +86,8 @@ class AgentLinkService @Inject() (
                                             agentReferenceRecordRepository
                                               .updateAgentName(record.uid, normalisedAgentName)
                                               .map(_ => record.copy(normalisedAgentNames = record.normalisedAgentNames ++ Seq(normalisedAgentName)))
+                                        case None if appConfig.acrMongoActivated =>
+                                          acrConnector.fetchOrCreateAgentReference(arn, normalisedAgentName)
                                         case None =>
                                           create(arn, normalisedAgentName)
                                       }
