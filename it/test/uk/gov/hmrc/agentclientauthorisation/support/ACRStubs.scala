@@ -153,6 +153,52 @@ trait ACRStubs {
         )
       )
     }
+  def givenACRChangeStatusByIdSuccess(invitationId: String, action: String): StubMapping =
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/$action"))
+        .willReturn(
+          aResponse()
+            .withStatus(204)
+        )
+    )
+
+  def givenACRChangeStatusByIdNotFound(invitationId: String, action: String): StubMapping =
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/$action"))
+        .willReturn(
+          aResponse()
+            .withStatus(404)
+        )
+    )
+
+  def givenACRChangeStatusByIdBadRequest(invitationId: String, action: String): StubMapping =
+    stubFor(
+      put(urlEqualTo(s"/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/$action"))
+        .willReturn(
+          aResponse()
+            .withStatus(400)
+        )
+    )
+
+  def verifyACRChangeStatusByIdSent(invitationId: String, action: String): Unit =
+    eventually {
+      verify(
+        1,
+        putRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/$action")
+        )
+      )
+    }
+
+  def verifyACRChangeStatusByIdWasNOTSent(invitationId: String, action: String): Unit =
+    eventually {
+      verify(
+        0,
+        putRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/$action")
+        )
+      )
+    }
 
   private def similarToJson(value: String) = equalToJson(value.stripMargin, true, true)
 

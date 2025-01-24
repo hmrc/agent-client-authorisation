@@ -23,6 +23,8 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -196,6 +198,14 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         .PUT[ChangeInvitationStatusRequest, HttpResponse](changeACRInvitationStatusUrl(arn, service, clientId), changeInvitationStatusRequest)
     }
 
+  def changeACRInvitationStatusById(invitationId: String, invitationStatusAction: InvitationStatusAction)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[HttpResponse] =
+    monitor(s"ConsumedAPI-AgentClientRelationships-ChangeStatusById-PUT") {
+      http.PUT[String, HttpResponse](changeACRInvitationStatusByIdUrl(invitationId, invitationStatusAction), "")
+    }
+
   private def trustRelationshipUrl(invitation: Invitation): String =
     invitation.service.enrolmentKey match {
       case Service.HMRCTERSORG =>
@@ -242,6 +252,9 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
 
   private def changeACRInvitationStatusUrl(arn: Arn, service: String, clientId: String): String =
     s"$baseUrl/agent-client-relationships/transitional/change-invitation-status/arn/${encodePathSegment(arn.value)}/service/$service/client/${encodePathSegment(clientId)}"
+
+  private def changeACRInvitationStatusByIdUrl(invitationId: String, invitationStatusAction: InvitationStatusAction): String =
+    s"$baseUrl/agent-client-relationships/authorisation-request/action-invitation/$invitationId/action/${unapply(invitationStatusAction)}"
 
   def migrateAgentReferenceRecord(record: AgentReferenceRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] =
     monitor("ConsumedAPI-AgentClientRelationships-migrateAgentReferenceRecord-POST") {
