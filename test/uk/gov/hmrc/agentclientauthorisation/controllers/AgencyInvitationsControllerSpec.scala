@@ -56,6 +56,7 @@ class AgencyInvitationsControllerSpec
 
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
+  val invitationsTransitionalService: InvitationsTransitionalService = resettingMock[InvitationsTransitionalService]
   val multiInvitationsService: AgentLinkService = resettingMock[AgentLinkService]
   val kfcService: KnownFactsCheckService = resettingMock[KnownFactsCheckService]
   val generator = new Generator()
@@ -89,7 +90,8 @@ class AgencyInvitationsControllerSpec
       mockPlayAuthConnector,
       mockCitizenDetailsConnector,
       agentCacheProvider,
-      mockRelationshipsConnector
+      mockRelationshipsConnector,
+      invitationsTransitionalService
     )(metrics, cc, futures, global) {}
 
   private def agentAuthStub(returnValue: Future[~[Option[AffinityGroup], Enrolments]]) =

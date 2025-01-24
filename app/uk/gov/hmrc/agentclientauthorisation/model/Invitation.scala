@@ -20,92 +20,12 @@ import org.bson.types.ObjectId
 import play.api.libs.json._
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
-
-sealed trait InvitationStatus {
-
-  def toEither: Either[String, InvitationStatus] = this match {
-    case Unknown(status) => Left(status)
-    case status          => Right(status)
-  }
-
-  def leftMap[X](f: String => X): Either[X, InvitationStatus] =
-    toEither.left.map(f)
-
-  override def toString: String = InvitationStatus.unapply(this).getOrElse("Unknown")
-}
-
-case object Pending extends InvitationStatus
-
-case object Expired extends InvitationStatus
-
-case object Rejected extends InvitationStatus
-
-case object Accepted extends InvitationStatus
-
-case object Cancelled extends InvitationStatus
-
-case object DeAuthorised extends InvitationStatus
-
-case object PartialAuth extends InvitationStatus
-
-case class Unknown(attempted: String) extends InvitationStatus
-
-object InvitationStatus {
-  def unapply(status: InvitationStatus): Option[String] = status match {
-    case Pending      => Some("Pending")
-    case Rejected     => Some("Rejected")
-    case Accepted     => Some("Accepted")
-    case Cancelled    => Some("Cancelled")
-    case Expired      => Some("Expired")
-    case DeAuthorised => Some("Deauthorised")
-    case PartialAuth  => Some("Partialauth")
-    case _            => None
-  }
-
-  def apply(status: String): InvitationStatus = status.toLowerCase match {
-    case "pending"      => Pending
-    case "rejected"     => Rejected
-    case "accepted"     => Accepted
-    case "cancelled"    => Cancelled
-    case "expired"      => Expired
-    case "deauthorised" => DeAuthorised
-    case "partialauth"  => PartialAuth
-    case _              => Unknown(status)
-  }
-
-  implicit val invitationStatusFormat: Format[InvitationStatus] = new Format[InvitationStatus] {
-    override def reads(json: JsValue): JsResult[InvitationStatus] = apply(json.as[String]) match {
-      case Unknown(value) => JsError(s"Status of [$value] is not a valid InvitationStatus")
-      case value          => JsSuccess(value)
-    }
-
-    override def writes(o: InvitationStatus): JsValue =
-      unapply(o).map(JsString).getOrElse(throw new IllegalArgumentException)
-  }
-}
-
-case class StatusChangeEvent(time: LocalDateTime, status: InvitationStatus)
-
-object StatusChangeEvent {
-  implicit val statusChangeEventFormat: Format[StatusChangeEvent] = new Format[StatusChangeEvent] {
-    override def reads(json: JsValue): JsResult[StatusChangeEvent] = {
-      val time = Instant.ofEpochMilli((json \ "time").as[Long]).atZone(ZoneOffset.UTC).toLocalDateTime
-      val status = InvitationStatus((json \ "status").as[String])
-      JsSuccess(StatusChangeEvent(time, status))
-    }
-
-    override def writes(o: StatusChangeEvent): JsValue =
-      Json.obj(
-        "time"   -> o.time.toInstant(ZoneOffset.UTC).toEpochMilli,
-        "status" -> o.status.toString
-      )
-  }
-}
+import play.api.libs.functional.syntax._
 
 case class Invitation(
   _id: ObjectId = ObjectId.get(),
@@ -121,7 +41,8 @@ case class Invitation(
   relationshipEndedBy: Option[String] = None,
   clientActionUrl: Option[String],
   origin: Option[String] = None,
-  events: List[StatusChangeEvent]
+  events: List[StatusChangeEvent],
+  fromAcr: Boolean = false
 ) {
 
   def firstEvent(): StatusChangeEvent =
@@ -138,6 +59,60 @@ case class Invitation(
 }
 
 object Invitation {
+  implicit val oidFormat: Format[ObjectId] = MongoFormats.Implicits.objectIdFormat
+  val acrReads: Reads[Invitation] =
+    (
+      (__ \ "invitationId").read[String] and
+        (__ \ "arn").read[String] and
+        (__ \ "service").read[String] and
+        (__ \ "clientId").read[String] and
+        (__ \ "clientIdType").read[String] and
+        (__ \ "suppliedClientId").read[String] and
+        (__ \ "suppliedClientIdType").read[String] and
+        (__ \ "clientName").read[String] and
+        (__ \ "status").read[InvitationStatus] and
+        (__ \ "relationshipEndedBy").readNullable[String] and
+        (__ \ "clientType").readNullable[String] and
+        (__ \ "expiryDate").read[LocalDate] and
+        (__ \ "created").read[Instant] and
+        (__ \ "lastUpdated").read[Instant]
+    ) {
+      (
+        invitationId,
+        arn,
+        service,
+        clientId,
+        clientIdType,
+        suppliedClientId,
+        suppliedClientIdType,
+        _,
+        status,
+        relationshipEndedBy,
+        clientType,
+        expiryDate,
+        created,
+        lastUpdated
+      ) =>
+        Invitation(
+          invitationId = InvitationId(invitationId),
+          arn = Arn(arn),
+          clientType = clientType,
+          service = Service.forId(service),
+          clientId = ClientIdentifier(clientId, clientIdType),
+          suppliedClientId = ClientIdentifier(suppliedClientId, suppliedClientIdType),
+          expiryDate = expiryDate,
+          detailsForEmail = None,
+          isRelationshipEnded = relationshipEndedBy.isDefined,
+          relationshipEndedBy = relationshipEndedBy,
+          events = List(
+            Some(StatusChangeEvent(created.atZone(ZoneOffset.UTC).toLocalDateTime, Pending)),
+            if (created != lastUpdated) Some(StatusChangeEvent(lastUpdated.atZone(ZoneOffset.UTC).toLocalDateTime, status)) else None
+          ).flatten,
+          clientActionUrl = None,
+          fromAcr = true,
+          origin = None
+        )
+    }
 
   def createNew(
     arn: Arn,
@@ -164,11 +139,9 @@ object Invitation {
       events = List(StatusChangeEvent(startDate, Pending))
     )
 
-  implicit val dateTimeFormats: Format[LocalDateTime] = MongoLocalDateTimeFormat.localDateTimeFormat
-  implicit val localDateFormats: Format[LocalDate] = MongoLocalDateTimeFormat.localDateFormat
-  implicit val oidFormat: Format[ObjectId] = MongoFormats.Implicits.objectIdFormat
-
   object external {
+    implicit val dateTimeFormats: Format[LocalDateTime] = MongoLocalDateTimeFormat.localDateTimeFormat
+    implicit val localDateFormats: Format[LocalDate] = MongoLocalDateTimeFormat.localDateFormat
     implicit val writes: Writes[Invitation] = new Writes[Invitation] {
       def writes(invitation: Invitation) =
         Json.obj(
@@ -205,32 +178,4 @@ object Invitation {
       i.events,
       (i.service == Service.MtdIt && i.suppliedClientId == i.clientId) || i.status == PartialAuth
     )
-}
-
-/** Information provided by the agent to offer representation to HMRC */
-case class AgentInvitation(service: String, clientType: Option[String], clientIdType: String, clientId: String) {
-
-  lazy val getService: Service = Service.forId(service)
-}
-
-object AgentInvitation {
-  implicit val format: OFormat[AgentInvitation] = Json.format[AgentInvitation]
-
-  def normalizeClientId(clientId: String): String = clientId.replaceAll("\\s", "")
-}
-
-case class InvitationInfo(
-  invitationId: InvitationId,
-  expiryDate: LocalDate,
-  status: InvitationStatus,
-  arn: Arn,
-  service: Service,
-  isRelationshipEnded: Boolean = false,
-  relationshipEndedBy: Option[String] = None,
-  events: List[StatusChangeEvent],
-  isAltItsa: Boolean = false
-)
-
-object InvitationInfo {
-  implicit val format: OFormat[InvitationInfo] = Json.format[InvitationInfo]
 }
