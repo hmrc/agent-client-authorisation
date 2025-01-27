@@ -175,7 +175,8 @@ trait TestDataSupport {
       services: Seq[Service],
       clientId: Option[String],
       status: Option[InvitationStatus],
-      createdOnOrAfter: Option[LocalDate]
+      createdOnOrAfter: Option[LocalDate],
+      within30Days: Boolean
     ): Future[List[Invitation]] =
       Future failed new Exception("Unable to Find Invitations")
 
@@ -184,7 +185,8 @@ trait TestDataSupport {
       service: Option[Service],
       clientId: Option[String],
       status: Option[InvitationStatus],
-      createdOnOrAfter: Option[LocalDate]
+      createdOnOrAfter: Option[LocalDate],
+      within30Days: Boolean
     ): Future[List[InvitationInfo]] =
       Future failed new Exception("Unable to Find Invitation Information")
 

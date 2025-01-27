@@ -22,11 +22,10 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
 
 import java.time.temporal.ChronoUnit.MILLIS
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
-import scala.concurrent.Future
+import java.time.{LocalDate, LocalDateTime}
 
 class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 

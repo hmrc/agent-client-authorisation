@@ -206,7 +206,7 @@ class InvitationsMongoRepositoryISpec
 
       update(requests.last, Accepted, now)
 
-      val list = listByArn(Arn(arn)).sortBy(_.clientId.value)
+      val list = listByArn(Arn(arn), Seq.empty[Service], None, None, None).sortBy(_.clientId.value)
 
       inside(list.head) {
         case Invitation(
@@ -243,7 +243,7 @@ class InvitationsMongoRepositoryISpec
 
       addInvitations(now, invitationITSA, invitationITSA2)
 
-      inside(listByArn(Arn(arn)).loneElement) {
+      inside(listByArn(Arn(arn), Seq.empty[Service], None, None, None).loneElement) {
         case Invitation(
               _,
               _,
@@ -365,6 +365,32 @@ class InvitationsMongoRepositoryISpec
 
       val list01 = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(now.toLocalDate))
       list01.size shouldBe 0
+    }
+
+    "only return items within 30 days when the within30Days flag is set to true" in {
+      val oldStartDate = now.minusDays(31L)
+
+      addInvitations(now, invitationITSA)
+      addInvitations(oldStartDate, invitationIRV)
+
+      val list = listByArn(Arn(arn), Seq.empty[Service], None, None, None, within30Days = true)
+
+      list.size shouldBe 1
+      list.head.firstEvent().time.isAfter(LocalDateTime.now().minusDays(30L))
+    }
+
+    "override the custom date range when the within30Days flag is set to true" in {
+      val targetStartDate = now.minusDays(20L)
+      val oldStartDate = now.minusDays(31L)
+      val customDateRange = now.minusDays(15L).toLocalDate
+
+      addInvitations(targetStartDate, invitationITSA)
+      addInvitations(oldStartDate, invitationIRV)
+
+      val list = listByArn(Arn(arn), Seq.empty[Service], None, None, Some(customDateRange), within30Days = true)
+
+      list.size shouldBe 1
+      list.head.firstEvent().time.isAfter(LocalDateTime.now().minusDays(30L))
     }
   }
 
@@ -796,28 +822,31 @@ class InvitationsMongoRepositoryISpec
         repository.create(arnValue, clientType, service, clientId, suppliedClientId, None, startDate, startDate.plusDays(20).toLocalDate, None)
     })
 
-  private def listByArn(arn: Arn) = await(repository.findInvitationsBy(Some(arn), Seq.empty[Service], None, None, None))
-
   private def listByArn(
     arn: Arn,
     service: Seq[Service],
     clientId: Option[String],
     status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate]
+    createdOnOrAfter: Option[LocalDate],
+    within30Days: Boolean = false
   ): Seq[Invitation] =
-    await(repository.findInvitationsBy(Some(arn), service, clientId, status, createdOnOrAfter))
+    await(repository.findInvitationsBy(Some(arn), service, clientId, status, createdOnOrAfter, within30Days))
 
   private def listIdAndExpiryByArn(
     arn: Arn,
     service: Option[Service],
     clientId: Option[String],
     status: Option[InvitationStatus],
-    createdOnOrAfter: Option[LocalDate]
+    createdOnOrAfter: Option[LocalDate],
+    within30Days: Boolean = false
   ): Seq[InvitationInfo] =
-    await(repository.findInvitationInfoBy(Some(arn), service, clientId, status, createdOnOrAfter))
+    await(repository.findInvitationInfoBy(Some(arn), service, clientId, status, createdOnOrAfter, within30Days))
 
-  private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None) =
-    await(repository.findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status))
+  private def listByClientId(service: Service, clientId: MtdItId, status: Option[InvitationStatus] = None, within30Days: Boolean = false) =
+    await(
+      repository
+        .findInvitationsBy(services = Seq(service), clientId = Some(clientId.value), status = status, within30Days = within30Days)
+    )
 
   private def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime) =
     await(repository.update(invitation, status, updateDate))
@@ -825,6 +854,6 @@ class InvitationsMongoRepositoryISpec
   private def setRelationshipEnded(invitation: Invitation): Invitation =
     await(repository.setRelationshipEnded(invitation, "Agent"))
 
-  private def getLatestByClientId(clientId: Urn) =
-    await(repository.findLatestInvitationByClientId(clientId.value, appConfig.acrMongoActivated))
+  private def getLatestByClientId(clientId: Urn, within30Days: Boolean = false) =
+    await(repository.findLatestInvitationByClientId(clientId.value, within30Days = within30Days))
 }

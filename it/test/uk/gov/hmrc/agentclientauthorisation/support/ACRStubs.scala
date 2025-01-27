@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import play.api.http.Status.{NOT_FOUND, OK}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -267,6 +267,16 @@ trait ACRStubs {
           aResponse()
             .withStatus(OK)
             .withBody(Json.toJson(response).toString())
+        )
+    )
+
+  def stubLookupInvitations(expectedQueryParams: String, responseStatus: Int, responseBody: JsValue = Json.obj()): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/lookup-invitations$expectedQueryParams"))
+        .willReturn(
+          aResponse()
+            .withStatus(responseStatus)
+            .withBody(responseBody.toString())
         )
     )
 }

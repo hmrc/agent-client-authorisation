@@ -175,6 +175,7 @@ class AgencyInvitationsController @Inject() (
     }
 
   private def changeACAInvitationStatus(arn: Arn, clientId: String, service: String, endedBy: Option[String])(implicit
+    hc: HeaderCarrier,
     ec: ExecutionContext
   ): Future[Result] =
     invitationsService

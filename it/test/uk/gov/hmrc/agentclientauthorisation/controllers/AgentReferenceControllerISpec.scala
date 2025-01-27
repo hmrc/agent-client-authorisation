@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -33,6 +33,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
   val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf[MongoAgentReferenceRepository]
   val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf[InvitationsRepositoryImpl]
+  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   lazy val controller: AgentReferenceController = app.injector.instanceOf[AgentReferenceController]
 
@@ -119,7 +120,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
-      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
+      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).head.isAltItsa shouldBe true
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
@@ -144,7 +145,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
-      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn))).head.isAltItsa shouldBe true
+      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).head.isAltItsa shouldBe true
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
       givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)

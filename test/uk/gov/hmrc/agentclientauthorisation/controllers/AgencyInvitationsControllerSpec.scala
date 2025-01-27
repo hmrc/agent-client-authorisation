@@ -106,23 +106,27 @@ class AgencyInvitationsControllerSpec
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(None), eqs(None))(any[HeaderCarrier])
     )
       .thenReturn(Future successful allInvitations)
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), eqs(None), eqs(None), eqs(None))(any[HeaderCarrier])
     )
       .thenReturn(Future successful allInvitations.filter(_.service.id == "HMRC-MTD-IT"))
 
     when(
       invitationsService
-        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))
+        .findInvitationsBy(eqs(Some(arn)), eqs(Seq.empty[Service]), eqs(None), eqs(Some(Accepted)), eqs(None))(any[HeaderCarrier])
     )
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
 
-    when(invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None)))
+    when(
+      invitationsService.findInvitationsBy(eqs(Some(arn)), eqs(Seq(Service.MtdIt)), any[Option[String]], eqs(Some(Accepted)), eqs(None))(
+        any[HeaderCarrier]
+      )
+    )
       .thenReturn(Future successful allInvitations.filter(_.status == Accepted))
     ()
   }
@@ -730,6 +734,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
+          any[HeaderCarrier],
           any[ExecutionContext]
         )
       ).thenReturn(Future successful true)
@@ -751,6 +756,7 @@ class AgencyInvitationsControllerSpec
 
       when(
         invitationsService.findInvitationAndEndRelationship(eqs(arn), eqs(nino.value), eqs(Seq(Service.MtdIt)), eqs(Some("Agent")))(
+          any[HeaderCarrier],
           any[ExecutionContext]
         )
       ).thenReturn(Future successful false)

@@ -126,7 +126,8 @@ class InvitationsService @Inject() (
             arn = Some(invitation.arn),
             services = Seq(Service.MtdIt, Service.MtdItSupp),
             clientId = Some(invitation.clientId.value),
-            status = Some(itsaInvitationStatus)
+            status = Some(itsaInvitationStatus),
+            within30Days = appConfig.acrMongoActivated
           )
           .fallbackTo(successful(Nil))
 
@@ -137,13 +138,15 @@ class InvitationsService @Inject() (
                                                arn = Some(invitation.arn),
                                                services = Seq(Service.MtdItSupp),
                                                clientId = Some(invitation.clientId.value),
-                                               status = Some(itsaInvitationStatus)
+                                               status = Some(itsaInvitationStatus),
+                                               within30Days = appConfig.acrMongoActivated
                                              )
           // get all MtdIt main invitations for all agents
           mtdItMainInvitationsForAllAgents <- invitationsRepository.findInvitationsBy(
                                                 services = Seq(Service.MtdIt),
                                                 clientId = Some(invitation.clientId.value),
-                                                status = Some(itsaInvitationStatus)
+                                                status = Some(itsaInvitationStatus),
+                                                within30Days = appConfig.acrMongoActivated
                                               )
         } yield (Nil ++ mtdItSuppInvitationForSameAgent ++ mtdItMainInvitationsForAllAgents)
 
@@ -153,7 +156,8 @@ class InvitationsService @Inject() (
           .findInvitationsBy(
             services = Seq(invitation.service),
             clientId = Some(invitation.clientId.value),
-            status = Some(Accepted)
+            status = Some(Accepted),
+            within30Days = appConfig.acrMongoActivated
           )
           .fallbackTo(successful(Nil))
     }
@@ -274,7 +278,12 @@ class InvitationsService @Inject() (
     invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)
 
   def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
-    invitationsRepository.findInvitationsBy(services = services, clientId = Some(clientId.value), status = status)
+    invitationsRepository.findInvitationsBy(
+      services = services,
+      clientId = Some(clientId.value),
+      status = status,
+      within30Days = appConfig.acrMongoActivated
+    )
 
   def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
@@ -287,8 +296,22 @@ class InvitationsService @Inject() (
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None
-  ): Future[List[Invitation]] =
-    invitationsRepository.findInvitationsBy(arn, services, clientId, status, createdOnOrAfter)
+  )(implicit hc: HeaderCarrier): Future[List[Invitation]] = for {
+    acrInvitations <-
+      if (appConfig.acrMongoActivated)
+        relationshipsConnector.lookupInvitations(arn, services, clientId.fold[Seq[String]](Seq())(id => Seq(id)), status)
+      else
+        Future.successful(List())
+    acaInvitations <-
+      invitationsRepository.findInvitationsBy(
+        arn,
+        services,
+        clientId,
+        status,
+        createdOnOrAfter,
+        appConfig.acrMongoActivated
+      )
+  } yield acrInvitations ++ acaInvitations
 
   private def findInvitationsInfoBy(
     arn: Option[Arn] = None,
@@ -297,7 +320,7 @@ class InvitationsService @Inject() (
     status: Option[InvitationStatus] = None,
     createdOnOrAfter: Option[LocalDate] = None
   ): Future[List[InvitationInfo]] =
-    invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter)
+    invitationsRepository.findInvitationInfoBy(arn, service, clientId, status, createdOnOrAfter, appConfig.acrMongoActivated)
 
   def getNonSuspendedInvitations(
     identifiers: Seq[(Service, String)]
@@ -331,7 +354,7 @@ class InvitationsService @Inject() (
   // this is called via scheduled job
   def findAndUpdateExpiredInvitations()(implicit ec: ExecutionContext): Future[Unit] =
     invitationsRepository
-      .findInvitationsBy(status = Some(Pending))
+      .findInvitationsBy(status = Some(Pending), within30Days = appConfig.acrMongoActivated)
       .map(invs => invs.filter(_.expiryDate.isBefore(Instant.now().atZone(ZoneOffset.UTC).toLocalDate)))
       .flatMap { invitations =>
         val result = invitations.map(updateToExpiredAndSendEmail)
@@ -386,7 +409,7 @@ class InvitationsService @Inject() (
   def prepareAndSendWarningEmail()(implicit ec: ExecutionContext): Future[Unit] = {
     logger.info("started 'prepareAndSendWarningEmail' job")
     invitationsRepository
-      .findInvitationsBy(status = Some(Pending))
+      .findInvitationsBy(status = Some(Pending), within30Days = appConfig.acrMongoActivated)
       .map(
         _.filter(_.expiryDate.isEqual(LocalDate.now().plusDays(appConfig.sendEmailPriorToExpireDays)))
       )
@@ -404,7 +427,7 @@ class InvitationsService @Inject() (
     logger.info("started 'cancelOldAltItsaInvitations' job")
 
     for {
-      partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth))
+      partialAuth <- invitationsRepository.findInvitationsBy(status = Some(PartialAuth), within30Days = appConfig.acrMongoActivated)
       expired = partialAuth.filter(_.mostRecentEvent().time.plusDays(appConfig.altItsaExpiryDays).isBefore(currentTime()))
       _ = Future sequence expired.map { invitation =>
             setRelationshipEnded(invitation, "HMRC").transformWith {
@@ -454,7 +477,10 @@ class InvitationsService @Inject() (
             })
       }
 
-  def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit ec: ExecutionContext) = {
+  def findInvitationAndEndRelationship(arn: Arn, clientId: String, service: Seq[Service], endedBy: Option[String])(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Boolean] = {
     implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isAfter _)
     findInvitationsBy(
       arn = Some(arn),
@@ -495,7 +521,7 @@ class InvitationsService @Inject() (
       case e       => throw new Exception(s"unexpected TaxIdentifier $e for fetch alt-itsa")
     }
     invitationsRepository
-      .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(service))
+      .findInvitationsBy(arn = arn, clientId = nino.map(_.nino), services = List(service), within30Days = appConfig.acrMongoActivated)
       .map(_.filter(i => (i.clientId == i.suppliedClientId) || i.status == PartialAuth))
   }
 
