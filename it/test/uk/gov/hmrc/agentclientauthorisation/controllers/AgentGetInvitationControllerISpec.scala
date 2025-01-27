@@ -39,8 +39,6 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
   override def beforeEach(): Unit = {

@@ -23,8 +23,6 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 
 class AgentGetTrustNameISpec extends BaseISpec {
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
   "GET /known-facts/organisations/trust/:utr" should {

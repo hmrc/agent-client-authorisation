@@ -37,8 +37,6 @@ class AgentCancelInvitationWithACRControllerISpec extends BaseISpec with Platfor
   lazy val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   override protected def additionalConfiguration: Map[String, Any] =
     super.additionalConfiguration + ("acr-mongo-activated" -> true)
 

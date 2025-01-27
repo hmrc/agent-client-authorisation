@@ -89,6 +89,15 @@ trait ACRStubs {
         )
     )
 
+  def givenMigratePartialAuthRecord: StubMapping =
+    stubFor(
+      post(urlEqualTo("/agent-client-relationships/migrate/partial-auth-record"))
+        .willReturn(
+          aResponse()
+            .withStatus(204)
+        )
+    )
+
   def givenACRChangeStatusSuccess(
     arn: Arn,
     service: String,

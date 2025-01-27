@@ -206,6 +206,16 @@ trait TestDataSupport {
 
     override def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]] =
       Future failed new Exception(s"Unable to replace Nino for a client")
+
+    override def removeInvitationById(invitationId: InvitationId): Future[Int] =
+      Future failed new Exception(s"Unable to remove invitation by invitationId")
+
+    override def countRemainingPartialAuth(): Future[Long] =
+      Future failed new Exception(s"Unable to count remaining partialAuth")
+
+    override def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] =
+      Future failed new Exception(s"Unable to migrate partialAuth to ACR")
+
   }
 
   /*

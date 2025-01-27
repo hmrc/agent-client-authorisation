@@ -34,8 +34,6 @@ class AgentCancelInvitationControllerISpec extends BaseISpec with PlatformAnalyt
   lazy val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
   override def beforeEach(): Unit = {

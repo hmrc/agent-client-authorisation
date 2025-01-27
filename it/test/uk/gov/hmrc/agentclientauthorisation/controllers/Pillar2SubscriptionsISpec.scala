@@ -26,8 +26,6 @@ import java.time.LocalDate
 
 class Pillar2SubscriptionsISpec extends BaseISpec {
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
   val suppliedDate = LocalDate.parse("2001-02-03")

@@ -23,8 +23,6 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 
 class AgentGetTrustNameIFEnabledISpec extends BaseISpec {
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   override protected def additionalConfiguration: Map[String, Any] =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri) + ("des-if.enabled" -> true)
 

@@ -34,8 +34,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   override def beforeEach(): Unit = {
     super.beforeEach()
     await(invitationsRepo.ensureIndexes())

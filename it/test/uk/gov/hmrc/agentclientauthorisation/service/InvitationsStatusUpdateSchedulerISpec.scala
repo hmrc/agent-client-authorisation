@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.apache.pekko.actor.{ActorSystem, Props}
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.testkit.TestKit
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import play.api.Application
@@ -27,7 +28,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.{Expired, Invitation}
-import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationExpired, InvitationsRepositoryImpl, MongoScheduleRepository, ScheduleRecord}
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationExpired, InvitationsRepositoryImpl, LockClient, MongoScheduleRepository, ScheduleRecord}
 import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Service}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
@@ -45,7 +46,7 @@ class InvitationsStatusUpdateSchedulerISpec
   implicit lazy val app: Application = new GuiceApplicationBuilder()
     .configure("mongodb.uri" -> mongoUri, "metrics.jvm" -> false, "metrics.enabled" -> false, "auditing.enabled" -> false)
     .build()
-
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
   val desConnector = app.injector.instanceOf[DesConnector]
@@ -54,7 +55,9 @@ class InvitationsStatusUpdateSchedulerISpec
   val emailService = app.injector.instanceOf[EmailService]
   val metrics = app.injector.instanceOf[Metrics]
   val schedulerRepository = new MongoScheduleRepository(mongoComponent)
-  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics, appConfig)
+  val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
+  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
+  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, appConfig)
   val auditService = app.injector.instanceOf(classOf[AuditService])
 
   val invitationsService = new InvitationsService(

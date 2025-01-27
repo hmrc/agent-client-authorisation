@@ -43,8 +43,6 @@ import scala.concurrent.Future
 
 class TerminateInvitationsISpec extends BaseISpec {
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
 
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])

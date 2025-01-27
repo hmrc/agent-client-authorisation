@@ -18,6 +18,9 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 
 import com.codahale.metrics.MetricRegistry
 import com.google.inject.ImplementedBy
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.{ascending, descending}
@@ -25,9 +28,12 @@ import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus.unapply
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Service}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
@@ -35,8 +41,9 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
-import scala.concurrent.duration.{Duration, DurationInt}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 @ImplementedBy(classOf[InvitationsRepositoryImpl])
 trait InvitationsRepository {
@@ -51,9 +58,13 @@ trait InvitationsRepository {
   ): Future[Invitation]
 
   def update(invitation: Invitation, status: InvitationStatus, updateDate: LocalDateTime): Future[Invitation]
+
   def setRelationshipEnded(invitation: Invitation, endedBy: String): Future[Invitation]
+
   def findByInvitationId(invitationId: InvitationId): Future[Option[Invitation]]
+
   def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]]
+
   def findInvitationsBy(
     arn: Option[Arn] = None,
     services: Seq[Service] = Seq.empty[Service],
@@ -62,6 +73,7 @@ trait InvitationsRepository {
     createdOnOrAfter: Option[LocalDate] = None,
     within30Days: Boolean
   ): Future[List[Invitation]]
+
   def findInvitationInfoBy(
     arn: Option[Arn] = None,
     service: Option[Service] = None,
@@ -70,18 +82,33 @@ trait InvitationsRepository {
     createdOnOrAfter: Option[LocalDate] = None,
     within30Days: Boolean
   ): Future[List[InvitationInfo]]
+
   def findInvitationInfoBy(
     arn: Arn,
     clientIdTypeAndValues: Seq[(String, String, String)],
     status: Option[InvitationStatus]
   ): Future[List[InvitationInfo]]
+
   def removePersonalDetails(startDate: LocalDateTime): Future[Unit]
+
   def removeAllInvitationsForAgent(arn: Arn): Future[Int]
+
   def replaceNinoWithMtdItIdFor(invitation: Invitation, mtdItId: MtdItId): Future[Option[Invitation]]
+
+  def removeInvitationById(invitationId: InvitationId): Future[Int]
+
+  def countRemainingPartialAuth(): Future[Long]
+
+  def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done]
 }
 
 @Singleton
-class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metrics, appConfig: AppConfig)(implicit ec: ExecutionContext)
+class InvitationsRepositoryImpl @Inject() (
+  mongo: MongoComponent,
+  metrics: Metrics,
+  acrConnector: RelationshipsConnector,
+  lockClient: LockClient
+)(implicit mat: Materializer, appConfig: AppConfig)
     extends PlayMongoRepository[Invitation](
       mongoComponent = mongo,
       collectionName = "invitations",
@@ -97,18 +124,6 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
           ascending(InvitationRecordFormat.arnKey, InvitationRecordFormat.serviceKey, InvitationRecordFormat.suppliedClientIdKey),
           IndexOptions().partialFilterExpression(BsonDocument(InvitationRecordFormat.statusKey -> "Pending")).unique(true)
         )
-        // TODO Index does not work, we decided that we do not need that index at the moment
-        /*        ,IndexModel(
-          ascending(InvitationRecordFormat.arnKey, InvitationRecordFormat.suppliedClientIdKey),
-          IndexOptions()
-            .partialFilterExpression(
-              BsonDocument(
-                InvitationRecordFormat.statusKey  -> "Pending",
-                InvitationRecordFormat.serviceKey -> BsonDocument("$in" -> BsonArray("HMRC-MTD-IT", "HMRC-MTD-IT-SUPP"))
-              )
-            )
-            .unique(true)
-        )*/
       ),
       extraCodecs = Seq(
         Codecs.playFormatCodec(InvitationId.idFormats),
@@ -340,5 +355,60 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
           deleteManyResult.getDeletedCount.toInt
         }
     }
+
+  override def removeInvitationById(invitationId: InvitationId): Future[Int] =
+    monitor(s"InvitationsRepository-removeInvitationById") {
+      collection
+        .deleteOne(equal(InvitationRecordFormat.invitationIdKey, invitationId))
+        .toFuture()
+        .map { deleteOneResult =>
+          logger.info(s"Deleted ${deleteOneResult.getDeletedCount} partialAuth invitation for invitationId ${invitationId.value}")
+          deleteOneResult.getDeletedCount.toInt
+        }
+    }
+
+  override def countRemainingPartialAuth(): Future[Long] =
+    collection.countDocuments(equal(InvitationRecordFormat.statusKey, unapply(PartialAuth).getOrElse("Partialauth"))).toFuture()
+
+  override def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] = {
+    val observable = collection.find(equal(InvitationRecordFormat.statusKey, unapply(PartialAuth).getOrElse("Partialauth")))
+    countRemainingPartialAuth().map { count =>
+      logger.warn(s"[InvitationsRepository] migrating started, $count partialAuth records to migrate")
+    }
+    Source
+      .fromPublisher(observable)
+      .throttle(rate, 1.second)
+      .runForeach { record =>
+        for {
+          migrateResult <- acrConnector.migratePartialAuthRecordToAcr(record)
+        } yield migrateResult match {
+          case Some("OK") =>
+            logger.warn(s"[InvitationsRepository] successfully migrated record with invitationId ${record.invitationId.value}")
+            removeInvitationById(record.invitationId).map(_ => ())
+          case _ =>
+            logger.warn(s"[InvitationsRepository] failed to migrate record with invitationId ${record.invitationId.value}")
+        }
+      }
+      .recover { case _: Throwable =>
+        logger.warn("[InvitationsRepository] failed to read partialAuth record before migrating, aborting process")
+        Done
+      }
+      .map { _ =>
+        countRemainingPartialAuth().map { count =>
+          logger.warn(s"[InvitationsRepository] migration completed, $count partialAuth records left to migrate")
+        }
+        Done
+      }
+  }
+
+  if (appConfig.acrPartialAuthMigrate) {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    logger.warn("[InvitationsRepository] migration of partialAuth is starting...")
+    lockClient.migrateWithLock(body = migratePartialAuthToAcr())
+  } else {
+    countRemainingPartialAuth().map { count =>
+      logger.warn(s"[InvitationsRepository] migration  of partialAuth is disabled, $count partialAuth records left to migrate")
+    }
+  }
 
 }

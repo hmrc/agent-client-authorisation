@@ -366,4 +366,26 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         }
     }
 
+  def migratePartialAuthRecordToAcr(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[String]] = {
+    implicit val rds: HttpReads[HttpResponse] = new HttpReads[HttpResponse] {
+      override def read(method: String, url: String, response: HttpResponse): HttpResponse = response
+    }
+    monitor("ConsumedAPI-AgentClientRelationships-migratePartialAuthRecord-POST") {
+      http
+        .POST[Invitation, HttpResponse](s"$baseUrl/agent-client-relationships/migrate/partial-auth-record", invitation)(
+          Invitation.acrWrites,
+          rds,
+          hc,
+          ec
+        )
+        .map { response: HttpResponse =>
+          response.status match {
+            case Status.NO_CONTENT => Some("OK")
+            case other =>
+              logger.error(s"unexpected error during 'migratePartialAuthRecord', statusCode=$other")
+              None
+          }
+        }
+    }
+  }
 }
