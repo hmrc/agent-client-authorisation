@@ -119,7 +119,7 @@ class InvitationsStatusUpdateSchedulerISpec
       testKit.scheduler.scheduleOnce(5.millis, new Runnable { def run = actorRef ! "uid" })
 
       eventually {
-        await(invitationsRepository.findInvitationsBy(status = Some(Expired))).length shouldBe 5
+        await(invitationsRepository.findInvitationsBy(status = Some(Expired), within30Days = appConfig.acrMongoActivated)).length shouldBe 5
       }
       testKit.shutdownTestKit()
     }

@@ -19,12 +19,12 @@ package uk.gov.hmrc.agentclientauthorisation.connectors
 import play.api.Logging
 import play.api.http.Status
 import play.api.http.Status.{NOT_FOUND, NO_CONTENT, OK}
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation.acrReads
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
+import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation, InvitationStatus, InvitationStatusAction}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -183,6 +183,27 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
           case NOT_FOUND  => false
           case status =>
             throw UpstreamErrorResponse.apply(s"POST of '$url' returned $status. Response body: '${response.body}'", response.status)
+        }
+      }
+    }
+  }
+
+  def lookupInvitations(arn: Option[Arn], services: Seq[Service], clientIds: Seq[String], status: Option[InvitationStatus])(implicit
+    hc: HeaderCarrier
+  ): Future[List[Invitation]] = {
+    val url = s"$baseUrl/agent-client-relationships/lookup-invitations"
+    val queryParams: List[(String, String)] =
+      arn.fold[List[(String, String)]](List.empty)(a => List("arn" -> a.value)) ++
+        services.map(svc => "services" -> svc.id) ++
+        clientIds.map(id => "clientIds" -> id) ++
+        status.fold[List[(String, String)]](List.empty)(statusValue => List("status" -> statusValue.toString))
+    monitor("ConsumedAPI-AgentClientRelationships-LookupInvitations-GET") {
+      http.GET[HttpResponse](url, queryParams).map { response =>
+        response.status match {
+          case OK        => response.json.as[List[Invitation]](Reads.list(acrReads))
+          case NOT_FOUND => List.empty
+          case status =>
+            throw UpstreamErrorResponse.apply(s"GET of '$url' returned $status. Response body: '${response.body}'", response.status)
         }
       }
     }

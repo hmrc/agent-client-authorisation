@@ -17,11 +17,13 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlEqualTo}
+import org.bson.types.ObjectId
+import play.api.libs.json.{JsResultException, Json}
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.Invitation
+import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
@@ -277,6 +279,129 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       stubUrnToUtrCall("XXTRUST12345678", INTERNAL_SERVER_ERROR)
       assertThrows[UpstreamErrorResponse] {
         await(connector.replaceUrnWithUtr("XXTRUST12345678", "0123456789"))
+      }
+    }
+  }
+
+  "lookupInvitations" should {
+
+    val acrJson = Json.obj(
+      "invitationId"         -> "123",
+      "arn"                  -> "XARN1234567",
+      "service"              -> "HMRC-MTD-VAT",
+      "clientId"             -> "123456789",
+      "clientIdType"         -> "vrn",
+      "suppliedClientId"     -> "234567890",
+      "suppliedClientIdType" -> "vrn",
+      "clientName"           -> "Macrosoft",
+      "status"               -> "Accepted",
+      "relationshipEndedBy"  -> "Me",
+      "clientType"           -> "personal",
+      "expiryDate"           -> "2020-01-01",
+      "created"              -> "2020-02-02T00:00:00Z",
+      "lastUpdated"          -> "2020-03-03T00:00:00Z"
+    )
+
+    val vatInvitation = Invitation(
+      invitationId = InvitationId("123"),
+      arn = Arn("XARN1234567"),
+      clientType = Some("personal"),
+      service = Vat,
+      clientId = ClientIdentifier("123456789", "vrn"),
+      suppliedClientId = ClientIdentifier("234567890", "vrn"),
+      expiryDate = LocalDate.parse("2020-01-01"),
+      detailsForEmail = None,
+      isRelationshipEnded = true,
+      relationshipEndedBy = Some("Me"),
+      events = List(
+        StatusChangeEvent(LocalDateTime.parse("2020-02-02T00:00:00"), Pending),
+        StatusChangeEvent(LocalDateTime.parse("2020-03-03T00:00:00"), Accepted)
+      ),
+      clientActionUrl = None,
+      fromAcr = true
+    )
+
+    val staticObjectId = ObjectId.get()
+
+    "build the correct query params, parse the response and return invitations" when {
+
+      "using the 'arn' query param" in {
+        val expectedQueryParams = "?arn=XARN1234567"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(Some(Arn("XARN1234567")), Seq(), Seq(), None))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using one 'services' query param" in {
+        val expectedQueryParams = "?services=HMRC-MTD-VAT"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(None, Seq(Vat), Seq(), None))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using multiple 'services' query params" in {
+        val expectedQueryParams = "?services=HMRC-MTD-VAT&services=HMRC-MTD-IT"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(None, Seq(Vat, MtdIt), Seq(), None))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using one 'clientIds' query param" in {
+        val expectedQueryParams = "?clientIds=123456789"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(None, Seq(), Seq("123456789"), None))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using multiple 'clientIds' query params" in {
+        val expectedQueryParams = "?clientIds=123456789&clientIds=234567890"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(None, Seq(), Seq("123456789", "234567890"), None))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using the 'status' query param" in {
+        val expectedQueryParams = "?status=Accepted"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(None, Seq(), Seq(), Some(Accepted)))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+
+      "using all query params" in {
+        val expectedQueryParams = "?arn=XARN1234567&services=HMRC-MTD-VAT&clientIds=123456789&status=Accepted"
+        stubLookupInvitations(expectedQueryParams, OK, Json.arr(acrJson))
+        val result = await(connector.lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), Some(Accepted)))
+
+        result.head.copy(_id = staticObjectId) shouldBe vatInvitation.copy(_id = staticObjectId)
+      }
+    }
+
+    "return an empty sequence if the response is 404" in {
+      val expectedQueryParams = "?arn=XARN1234567&services=HMRC-MTD-VAT&clientIds=123456789&status=Accepted"
+      stubLookupInvitations(expectedQueryParams, NOT_FOUND)
+      val result = await(connector.lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), Some(Accepted)))
+      result shouldBe Seq()
+    }
+
+    "throw an exception if the JSON data is in an invalid format" in {
+      val expectedQueryParams = "?arn=XARN1234567&services=HMRC-MTD-VAT&clientIds=123456789&status=Accepted"
+      stubLookupInvitations(expectedQueryParams, OK, Json.obj("ff" -> "gg"))
+      assertThrows[JsResultException] {
+        await(connector.lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), Some(Accepted)))
+      }
+    }
+
+    "throw an exception if the downstream response is not expected" in {
+      val expectedQueryParams = "?arn=XARN1234567&services=HMRC-MTD-VAT&clientIds=123456789&status=Accepted"
+      stubLookupInvitations(expectedQueryParams, INTERNAL_SERVER_ERROR)
+      assertThrows[UpstreamErrorResponse] {
+        await(connector.lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), Some(Accepted)))
       }
     }
   }

@@ -20,6 +20,7 @@ import org.apache.pekko.stream.Materializer
 import play.api.mvc.Results.{NoContent, NotFound}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
@@ -32,7 +33,8 @@ import scala.concurrent.Future
 
 class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 
-  lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
+  lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
@@ -418,7 +420,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       verifyCreateRelationshipWasSent(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
-      val mongoResult = await(invitationsRepo.findInvitationsBy(arn = Some(arn)))
+      val mongoResult = await(invitationsRepo.findInvitationsBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated))
 
       mongoResult.count(_.status == PartialAuth) shouldBe 1
     }

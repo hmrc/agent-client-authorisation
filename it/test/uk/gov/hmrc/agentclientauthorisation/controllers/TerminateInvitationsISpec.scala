@@ -149,16 +149,16 @@ class TerminateInvitationsISpec extends BaseISpec {
 
     "return 200 for removing all invitations and references for a particular agent" in new TestSetup {
 
-      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe uiClients.length
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).size shouldBe uiClients.length
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 1
 
       val response = controller.removeAllInvitationsAndReferenceForArn(arn)(request)
 
       status(response) shouldBe 200
       contentAsJson(response).as[JsObject] shouldBe jsonDeletedRecords
-      await(invitationsRepo.findInvitationsBy(arn = Some(arn))).size shouldBe 0
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).size shouldBe 0
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn.value)).toFuture()).toList.size shouldBe 0
-      await(invitationsRepo.findInvitationsBy(arn = Some(arn2))).size shouldBe uiClients.length
+      await(invitationsRepo.findInvitationsBy(arn = Some(arn2), within30Days = appConfig.acrMongoActivated)).size shouldBe uiClients.length
       await(agentReferenceRepo.collection.find(Filters.equal("arn", arn2.value)).toFuture()).toList.size shouldBe 1
     }
 

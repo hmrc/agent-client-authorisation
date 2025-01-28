@@ -59,14 +59,16 @@ trait InvitationsRepository {
     services: Seq[Service] = Seq.empty[Service],
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None
+    createdOnOrAfter: Option[LocalDate] = None,
+    within30Days: Boolean
   ): Future[List[Invitation]]
   def findInvitationInfoBy(
     arn: Option[Arn] = None,
     service: Option[Service] = None,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None
+    createdOnOrAfter: Option[LocalDate] = None,
+    within30Days: Boolean
   ): Future[List[InvitationInfo]]
   def findInvitationInfoBy(
     arn: Arn,
@@ -240,7 +242,8 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
     services: Seq[Service] = Seq.empty,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None
+    createdOnOrAfter: Option[LocalDate] = None,
+    within30Days: Boolean
   ): Future[List[Invitation]] =
     monitor(
       s"InvitationsRepository-findInvitationsBy" +
@@ -256,8 +259,11 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
 
       val serviceQuery = createKeys.map(equal(InvitationRecordFormat.arnClientServiceStateKey, _))
 
-      val dateQuery =
+      val dateQuery = if (within30Days) {
+        Some(gte(InvitationRecordFormat.createdKey, Instant.now().minus(30, DAYS).toEpochMilli))
+      } else {
         createdOnOrAfter.map(date => gte(InvitationRecordFormat.createdKey, Instant.from(date.atStartOfDay().atZone(ZoneOffset.UTC)).toEpochMilli))
+      }
 
       val query = dateQuery.fold(or(serviceQuery: _*))(dateQ => and(or(serviceQuery: _*), dateQ))
 
@@ -273,14 +279,15 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
     service: Option[Service] = None,
     clientId: Option[String] = None,
     status: Option[InvitationStatus] = None,
-    createdOnOrAfter: Option[LocalDate] = None
+    createdOnOrAfter: Option[LocalDate] = None,
+    within30Days: Boolean
   ): Future[List[InvitationInfo]] =
     monitor(
       s"InvitationsRepository-findInvitationInfoBy${if (arn.nonEmpty) "-arn" else ""}" +
         s"${if (service.nonEmpty) "-service" else ""}${if (clientId.nonEmpty) "-clientId" else ""}" +
         s"${if (status.nonEmpty) "-status" else ""}${if (createdOnOrAfter.nonEmpty) "-createdOnOrAfter" else ""}"
     ) {
-      findInvitationsBy(arn, service.toSeq, clientId, status, createdOnOrAfter)
+      findInvitationsBy(arn, service.toSeq, clientId, status, createdOnOrAfter, within30Days)
         .map(_.map(Invitation.toInvitationInfo))
     }
 
