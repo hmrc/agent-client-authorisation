@@ -22,6 +22,7 @@ import org.scalatest.{BeforeAndAfterEach, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
@@ -102,7 +103,7 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBefo
 
   lazy implicit val metrics: Metrics = app.injector.instanceOf(classOf[Metrics])
   lazy val invitationsRepositoryImpl =
-    new InvitationsRepositoryImpl(mongoComponent, metrics)
+    new InvitationsRepositoryImpl(mongoComponent, metrics, app.injector.instanceOf(classOf[AppConfig]))
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

@@ -279,4 +279,14 @@ trait ACRStubs {
             .withBody(responseBody.toString())
         )
     )
+
+  def stubCreateInvitationCall(arn: String, responseStatus: Int, responseBody: String): StubMapping =
+    stubFor(
+      post(urlEqualTo(s"/agent-client-relationships/agent/$arn/authorisation-request"))
+        .willReturn(
+          aResponse()
+            .withStatus(responseStatus)
+            .withBody(responseBody)
+        )
+    )
 }

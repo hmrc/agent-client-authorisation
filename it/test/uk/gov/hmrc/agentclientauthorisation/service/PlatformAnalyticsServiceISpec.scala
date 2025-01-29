@@ -83,8 +83,6 @@ class PlatformAnalyticsServiceISpec
       testClient.clientId,
       testClient.suppliedClientId,
       None,
-      now.minusDays(21),
-      now.toLocalDate,
       Some("origin header")
     )
 

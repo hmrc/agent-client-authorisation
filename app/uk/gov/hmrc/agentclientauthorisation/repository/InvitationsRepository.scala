@@ -24,6 +24,7 @@ import org.mongodb.scala.model.Indexes.{ascending, descending}
 import org.mongodb.scala.model._
 import play.api.Logging
 import play.api.libs.json._
+import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Service}
@@ -34,6 +35,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 @ImplementedBy(classOf[InvitationsRepositoryImpl])
@@ -45,8 +47,6 @@ trait InvitationsRepository {
     clientId: ClientId,
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
-    startDate: LocalDateTime,
-    expiryDate: LocalDate,
     origin: Option[String]
   ): Future[Invitation]
 
@@ -81,7 +81,7 @@ trait InvitationsRepository {
 }
 
 @Singleton
-class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metrics)(implicit ec: ExecutionContext)
+class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metrics, appConfig: AppConfig)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[Invitation](
       mongoComponent = mongo,
       collectionName = "invitations",
@@ -132,11 +132,11 @@ class InvitationsRepositoryImpl @Inject() (mongo: MongoComponent, metrics: Metri
     clientId: ClientId,
     suppliedClientId: ClientId,
     detailsForEmail: Option[DetailsForEmail],
-    startDate: LocalDateTime,
-    expiryDate: LocalDate,
     origin: Option[String]
   ): Future[Invitation] =
     monitor(s"InvitationsRepository-create") {
+      val startDate = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
+      val expiryDate = startDate.plusSeconds(appConfig.invitationExpiringDuration.toSeconds).toLocalDate
       val invitation = Invitation.createNew(arn, clientType, service, clientId, suppliedClientId, detailsForEmail, startDate, expiryDate, origin)
       collection
         .insertOne(invitation)

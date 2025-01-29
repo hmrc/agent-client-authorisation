@@ -33,6 +33,9 @@ import scala.concurrent.Future
 
 class AgentGetInvitationControllerISpec extends BaseISpec {
 
+  override protected def additionalConfiguration: Map[String, Any] =
+    super.additionalConfiguration + ("acr-mongo-activated" -> true)
+
   lazy val agentReferenceRepo = app.injector.instanceOf(classOf[MongoAgentReferenceRepository])
   lazy val invitationsRepo = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
 
@@ -44,23 +47,21 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
     super.beforeEach()
     await(agentReferenceRepo.ensureIndexes())
     await(invitationsRepo.ensureIndexes())
+    ()
   }
 
-  val beyond30Days: LocalDateTime = LocalDateTime.now().minusDays(31L)
+  val clientIdentifierVat = ClientIdentifier("101747696", VrnType.id)
 
   val invitationLinkRegex: String => String =
     (clientType: String) =>
       s"(http:\\/\\/localhost:9448\\/invitations\\/$clientType-taxes\\/manage-who-can-deal-with-HMRC-for-you\\/[A-Z0-9]{8}\\/my-agency)"
 
   val testClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, itsaSuppClient)
-  val olderThan30DaysClient1 = itsaClient.copy(suppliedClientId = mtdItId2)
-  val olderThan30DaysClient2 = vatClient.copy(suppliedClientId = vrn2)
-  val olderThan30Days = List(olderThan30DaysClient1, olderThan30DaysClient2)
 
   // Prior to Client Type and Client ActionUrl
   val legacyList = List(itsaClient, irvClient, vatClient)
 
-  def createInvitation(arn: Arn, testClient: TestClient[_], startDate: LocalDateTime = LocalDateTime.now()): Future[Invitation] =
+  def createInvitation(arn: Arn, testClient: TestClient[_], hasEmail: Boolean = true): Future[Invitation] =
     invitationsRepo.create(
       arn,
       testClient.clientType,
@@ -68,287 +69,125 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       Some(dfe(testClient.clientName)),
-      startDate,
-      LocalDate.now().plusDays(21),
       None
     )
 
-  trait TestSetup extends BaseISpec {
+  trait TestSetup {
     testClients.foreach(client => await(createInvitation(arn, client)))
-    olderThan30Days.foreach(client => await(createInvitation(arn, client, beyond30Days)))
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
     givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
     stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
   }
 
-  "GET /agencies/:arn/invitations/sent" when {
+  "GET /agencies/:arn/invitations/sent" should {
     val request = FakeRequest("GET", "/agencies/:arn/invitations/sent").withHeaders("Authorization" -> "Bearer testtoken")
 
-    "the ACR mongo feature switch is enabled" should {
+    "return Invitations for Agent without Query Params" in new TestSetup {
 
-      lazy val appWithAcrMongoEnabled: GuiceApplicationBuilder =
-        new GuiceApplicationBuilder().configure(additionalConfiguration + ("acr-mongo-activated" -> true))
-      lazy val controllerWithACR = appWithAcrMongoEnabled.injector().instanceOf[AgencyInvitationsController]
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
 
-      def acrJson(service: String, idType: String, status: String) = Json.obj(
-        "invitationId"         -> "123",
-        "arn"                  -> arn.value,
-        "service"              -> service,
-        "clientId"             -> "123456789",
-        "clientIdType"         -> idType,
-        "suppliedClientId"     -> "234567890",
-        "suppliedClientIdType" -> idType,
-        "clientName"           -> "Macrosoft",
-        "status"               -> status,
-        "relationshipEndedBy"  -> "Me",
-        "clientType"           -> "personal",
-        "expiryDate"           -> "2020-01-01",
-        "created"              -> Instant.now(),
-        "lastUpdated"          -> Instant.now()
-      )
+      status(response) shouldBe 200
 
-      "return Invitations for Agent with ARN Query Params" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDVAT, VrnType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] = controllerWithACR.getSentInvitations(arn, None, None, None, None, None, None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 9
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations for Agent with ARN and Service Query Params" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}&services=${Service.HMRCMTDIT}&services=${Service.HMRCTERSORG}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCTERSORG, UtrType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val serviceOptions: Option[String] = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
-        val response: Future[Result] = controllerWithACR.getSentInvitations(arn, None, serviceOptions, None, None, None, None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 3
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations for Agent with ARN and ClientId Query Params" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}&clientIds=${mtdItId.value}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDIT, MtdItIdType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] = controllerWithACR.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 3
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations for Agent with ARN and Status Query Params" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}&status=${Pending.toString}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDIT, MtdItIdType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] = controllerWithACR.getSentInvitations(arn, None, None, None, None, Some(Pending), None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 9
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations for Agent with ARN, Status, ClientId and Service Query Params" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}&services=${Service.HMRCMTDIT}&clientIds=${mtdItId.value}&status=${Pending.toString}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDIT, MtdItIdType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] =
-          controllerWithACR.getSentInvitations(arn, None, Some(Service.HMRCMTDIT), None, Some(mtdItId.value), Some(Pending), None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 2
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations for Agent with ARN, Status, ClientId and Service Query Params for SUPP" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}&services=${Service.HMRCMTDITSUPP}&clientIds=${mtdItId.value}&status=${Pending.toString}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDITSUPP, MtdItIdType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] =
-          controllerWithACR.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDITSUPP}"), None, Some(mtdItId.value), Some(Pending), None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 2
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return Invitations while ignoring the custom date range query param" in new TestSetup {
-
-        val expectedQueryParams = s"?arn=${arn.value}"
-        val acrResponseBody: JsArray = Json.arr(acrJson(Service.HMRCMTDVAT, VrnType.id, Pending.toString))
-        stubLookupInvitations(expectedQueryParams, OK, acrResponseBody)
-
-        val response: Future[Result] =
-          controllerWithACR.getSentInvitations(arn, None, None, None, None, None, Some(LocalDate.now().plusDays(1L)))(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 9
-        json.invitations.forall(inv => LocalDateTime.parse(inv.created).isAfter(beyond30Days)) shouldBe true
-      }
-
-      "return no Invitations for Agent" in {
-        givenAuditConnector()
-        givenAuthorisedAsAgent(arn)
-        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
-        stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
-
-        val expectedQueryParams = s"?arn=${arn.value}"
-        stubLookupInvitations(expectedQueryParams, NOT_FOUND)
-
-        val response = controllerWithACR.getSentInvitations(arn, None, None, None, None, None, None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse = contentAsJson(response).as[JsObject]
-        val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 0
-      }
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 8
     }
 
-    "the ACR mongo feature switch is disabled" should {
+    "return Invitations for Agent with Service Query Params" in new TestSetup {
 
-      "return Invitations for Agent with ARN Query Params" in new TestSetup {
+      val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
+      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, None)(request)
 
-        val response: Future[Result] = controller.getSentInvitations(arn, None, None, None, None, None, None)(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 2
+    }
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 10
-      }
+    "return Invitations for Agent with ClientId Query Params" in new TestSetup {
 
-      "return Invitations for Agent with ARN and Service Query Params" in new TestSetup {
+      val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
 
-        val serviceOptions: Option[String] = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
-        val response: Future[Result] = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, None)(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 2
+    }
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 3
-      }
+    "return Invitations for Agent with Status Query Params" in new TestSetup {
 
-      "return Invitations for Agent with ARN and ClientId Query Params" in new TestSetup {
+      val response = controller.getSentInvitations(arn, None, None, None, None, Some(Pending), None)(request)
 
-        val response: Future[Result] = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 8
+    }
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 3
-      }
+    "return Invitations for Agent with CreatedBefore Query Params" in new TestSetup {
 
-      "return Invitations for Agent with ARN and Status Query Params" in new TestSetup {
+      val response = controller.getSentInvitations(arn, None, None, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
 
-        val response: Future[Result] = controller.getSentInvitations(arn, None, None, None, None, Some(Pending), None)(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 10
-      }
+      json.invitations.length shouldBe 8
+    }
 
-      "return Invitations for Agent with ARN and CreatedBefore Query Params" in new TestSetup {
+    "return Invitations for Agent with Services and CreatedBefore Query Params" in new TestSetup {
 
-        val response: Future[Result] = controller.getSentInvitations(arn, None, None, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
+      val serviceOptions = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
+      val response = controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
 
-        status(response) shouldBe 200
+      status(response) shouldBe 200
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 2
+    }
 
-        json.invitations.length shouldBe 8
-      }
+    "return Invitations for Agent with Status, ClientId and Service Query Params" in new TestSetup {
 
-      "return Invitations for Agent with ARN, Services and CreatedBefore Query Params" in new TestSetup {
+      val response = controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDIT}"), None, Some(mtdItId.value), Some(Pending), None)(request)
 
-        val serviceOptions: Option[String] = Some(s"${Service.HMRCMTDIT},${Service.HMRCTERSORG}")
-        val response: Future[Result] =
-          controller.getSentInvitations(arn, None, serviceOptions, None, None, None, Some(LocalDate.now().minusDays(30)))(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 1
+    }
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 2
-      }
+    "return Invitations for Agent with Status, ClientId and Service Query Params for SUPP" in new TestSetup {
 
-      "return Invitations for Agent with ARN, Status, ClientId and Service Query Params" in new TestSetup {
+      val response =
+        controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDITSUPP}"), None, Some(mtdItId.value), Some(Pending), None)(request)
 
-        val response: Future[Result] =
-          controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDIT}"), None, Some(mtdItId.value), Some(Pending), None)(request)
+      status(response) shouldBe 200
 
-        status(response) shouldBe 200
-      }
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 1
+    }
 
-      "return Invitations for Agent with ARN, Status, ClientId and Service Query Params for SUPP" in new TestSetup {
+    "return no Invitations for Agent" in {
+      givenAuditConnector()
+      givenAuthorisedAsAgent(arn)
+      givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
+      stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
 
-        val response: Future[Result] =
-          controller.getSentInvitations(arn, None, Some(s"${Service.HMRCMTDITSUPP}"), None, Some(mtdItId.value), Some(Pending), None)(request)
+      val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
 
-        status(response) shouldBe 200
+      status(response) shouldBe 200
 
-        val jsonResponse: JsObject = contentAsJson(response).as[JsObject]
-        val json: TestHalResponseInvitations = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 1
-      }
-
-      "return no Invitations for Agent" in {
-        givenAuditConnector()
-        givenAuthorisedAsAgent(arn)
-        givenGetAgencyDetailsStub(arn, Some("name"), Some("email"))
-        stubFetchOrCreateAgentReference(arn, AgentReferenceRecord("ABCDEFGH", arn, Seq("name")))
-
-        val response = controller.getSentInvitations(arn, None, None, None, Some(mtdItId.value), None, None)(request)
-
-        status(response) shouldBe 200
-
-        val jsonResponse = contentAsJson(response).as[JsObject]
-        val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
-        json.invitations.length shouldBe 0
-      }
+      val jsonResponse = contentAsJson(response).as[JsObject]
+      val json = (jsonResponse \ "_embedded").as[TestHalResponseInvitations]
+      json.invitations.length shouldBe 0
     }
 
     "return 403 when it is not of current agent" in {
@@ -388,7 +227,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val invitation = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, LocalDateTime.now(), LocalDate.now(), None)
+          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, None)
       )
 
       val request =
@@ -405,7 +244,7 @@ class AgentGetInvitationControllerISpec extends BaseISpec {
 
       val invitation = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, LocalDateTime.now(), LocalDate.now(), None)
+          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, None)
       )
 
       val request =

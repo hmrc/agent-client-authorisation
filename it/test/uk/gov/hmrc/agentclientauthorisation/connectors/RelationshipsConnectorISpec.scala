@@ -21,6 +21,7 @@ import org.bson.types.ObjectId
 import play.api.libs.json.{JsResultException, Json}
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
+import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
@@ -281,6 +282,135 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
         await(connector.replaceUrnWithUtr("XXTRUST12345678", "0123456789"))
       }
     }
+  }
+
+  "sendAuthorisationRequest" when {
+    val authorisationRequest = AuthorisationRequest("clientId", "clientIdType", "clientName", "service", Some("clientType"))
+
+    "given a valid request" should {
+      "return the invitationId" in {
+        stubCreateInvitationCall("ARN123", CREATED, """{"invitationId": "42"}""")
+
+        val result = await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        result shouldBe "42"
+      }
+    }
+
+    "receiving an error response for an unmatched error case" should {
+      "return the error reason" in {
+        stubCreateInvitationCall("ARN123", BAD_REQUEST, "")
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for invalid JSON" should {
+      "return the error reason" in {
+        stubCreateInvitationCall("ARN123", BAD_REQUEST, "Invalid payload: ERROR[INVALID JSON]")
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for unsupported service" should {
+      "return the error reason" in {
+        val jsonResponse = s"""{"code": "UNSUPPORTED_SERVICE", "message": "Unsupported service ${authorisationRequest.service}"}"""
+        stubCreateInvitationCall("ARN123", NOT_IMPLEMENTED, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for invalid client id" should {
+      "return the error reason" in {
+        val jsonResponse =
+          s"""{"code": "INVALID_CLIENT_ID", "message": "Invalid clientId ${authorisationRequest.clientId}, for service type ${authorisationRequest.service}"}"""
+        stubCreateInvitationCall("ARN123", BAD_REQUEST, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for unsupported client id type" should {
+      "return the error reason" in {
+        val jsonResponse =
+          s"""{"code": "UNSUPPORTED_CLIENT_ID_TYPE", "message": "Unsupported clientIdType ${authorisationRequest.suppliedClientIdType}, for service type ${authorisationRequest.service}"}"""
+        stubCreateInvitationCall("ARN123", BAD_REQUEST, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for unsupported client type" should {
+      "return the error reason" in {
+        val jsonResponse =
+          s"""{"code": "UNSUPPORTED_CLIENT_TYPE", "message": "Unsupported clientType ${authorisationRequest.clientType}"}"""
+        stubCreateInvitationCall("ARN123", BAD_REQUEST, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for not being able to find the user's MTDfB/alt-itsa registration" should {
+      "return the error reason" in {
+        val msg =
+          s"""The Client's MTDfB registration or SAUTR (if alt-itsa is enabled) was not found. for clientId ${authorisationRequest.clientId}, for clientIdType ${authorisationRequest.suppliedClientIdType}, for service type ${authorisationRequest.service}"""
+        val jsonResponse =
+          s"""{"code": "CLIENT_REGISTRATION_NOT_FOUND", "message": "$msg"}"""
+        stubCreateInvitationCall("ARN123", FORBIDDEN, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for a duplicate invitation" should {
+      "return the error reason" in {
+        val msg =
+          s"""An authorisation request for this service has already been created and is awaiting the client’s response. for clientId ${authorisationRequest.clientId}, for clientIdType ${authorisationRequest.suppliedClientIdType}, for service type ${authorisationRequest.service}"""
+        val jsonResponse =
+          s"""{"code": "DUPLICATE_AUTHORISATION_REQUEST", "message": "$msg"}"""
+        stubCreateInvitationCall("ARN123", FORBIDDEN, jsonResponse)
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for internal server error" should {
+      "return the error reason" in {
+        stubCreateInvitationCall("ARN123", INTERNAL_SERVER_ERROR, "")
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
+    "receiving an error response for bad gateway" should {
+      "return the error reason" in {
+        stubCreateInvitationCall("ARN123", BAD_GATEWAY, "")
+
+        assertThrows[UpstreamErrorResponse] {
+          await(connector.sendAuthorisationRequest("ARN123", authorisationRequest))
+        }
+      }
+    }
+
   }
 
   "lookupInvitations" should {

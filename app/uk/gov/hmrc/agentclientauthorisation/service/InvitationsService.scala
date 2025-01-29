@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
-import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult.{AltItsaUpdateResult, NoAltItsaFound, NoMtdIdFound, NoPartialAuthFound, RelationshipCreated}
+import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
@@ -56,8 +56,6 @@ class InvitationsService @Inject() (
 )(implicit val ec: ExecutionContext)
     extends HttpAPIMonitor with Logging {
 
-  private val invitationExpiryDuration = appConfig.invitationExpiringDuration
-
   def getClientIdForItsa(clientId: String, clientIdType: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[ClientId]] =
     clientIdType match {
       case MtdItIdType.id => Future successful Some(MtdItId(clientId))
@@ -73,19 +71,53 @@ class InvitationsService @Inject() (
     implicit
     hc: HeaderCarrier,
     ec: ExecutionContext
-  ): Future[Invitation] = {
-    val startDate = currentTime()
-    val expiryDate = startDate.plusSeconds(invitationExpiryDuration.toSeconds).toLocalDate
+  ): Future[Invitation] =
+    if (appConfig.acrMongoActivated) {
+      createAcrInvitation(arn, clientType, service, clientId, suppliedClientId)
+    } else {
+      createAcaInvitation(arn, clientType, service, clientId, suppliedClientId, originHeader)
+    }
+
+  // This is the 'old' way to create invitations in ACA instead of ACR
+  private def createAcaInvitation(
+    arn: Arn,
+    clientType: Option[String],
+    service: Service,
+    clientId: ClientId,
+    suppliedClientId: ClientId,
+    originHeader: Option[String]
+  )(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Invitation] =
     for {
       detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
       invitation <- invitationsRepository
-                      .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, originHeader)
+                      .create(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), originHeader)
       _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation)
     } yield {
-      logger.info(s"""Created invitation with id: "${invitation._id.toString}".""")
+      logger.info(s"""Created invitation with ACA id: "${invitation._id.toString}".""")
       invitation
     }
-  }
+
+  // This is the transitional way we're creating invitations in ACR instead of ACA
+  private def createAcrInvitation(arn: Arn, clientType: Option[String], service: Service, clientId: ClientId, suppliedClientId: ClientId)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Invitation] =
+    for {
+      detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
+      authorisationRequest = AuthorisationRequest(clientId.value, suppliedClientId.typeId, detailsForEmail.clientName, service.id, clientType)
+      acrInvitationId <- relationshipsConnector.sendAuthorisationRequest(arn.value, authorisationRequest)
+      startDate = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
+      expiryDate = startDate.plusSeconds(appConfig.invitationExpiringDuration.toSeconds).toLocalDate
+      acaInvitationModel = Invitation
+                             .createNew(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, None)
+                             .copy(invitationId = InvitationId(acrInvitationId))
+    } yield {
+      logger.info(s"""Created invitation with ACR id: "${acaInvitationModel.invitationId.value}".""")
+      acaInvitationModel
+    }
 
   def acceptInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val acceptedDate = currentTime()
@@ -255,7 +287,7 @@ class InvitationsService @Inject() (
     } yield invitation
   }
 
-  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit ec: ExecutionContext): Future[Invitation] =
+  def setRelationshipEnded(invitation: Invitation, endedBy: String): Future[Invitation] =
     for {
       updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
     } yield {

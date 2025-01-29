@@ -163,7 +163,7 @@ class AgencyInvitationsControllerSpec
           .thenReturn(Future.successful(false))
         when(invitationsService.findLatestInvitationByClientId(any[String], any[Boolean]))
           .thenReturn(Future.successful(Some(invitationActive)))
-        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String]))
           .thenReturn(Future.successful(invitationActive))
         when(
           invitationsService.create(
@@ -245,7 +245,7 @@ class AgencyInvitationsControllerSpec
         when(appConfig.acrMongoActivated).thenReturn(false)
         when(invitationsService.findLatestInvitationByClientId(any[String], any[Boolean]))
           .thenReturn(Future.successful(Some(invitationActive)))
-        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[ExecutionContext]))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String]))
           .thenReturn(Future.successful(invitationActive))
         when(
           invitationsService.create(
