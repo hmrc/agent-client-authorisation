@@ -37,7 +37,6 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
 
   val controller: ClientInvitationsController = app.injector.instanceOf[ClientInvitationsController]
   val repository: InvitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
   def createInvitation[T <: TaxIdentifier](arn: Arn, testClient: TestClient[T], hasEmail: Boolean = true): Future[Invitation] =
     repository.create(

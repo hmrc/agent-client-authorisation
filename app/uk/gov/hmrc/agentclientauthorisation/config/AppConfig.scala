@@ -112,5 +112,6 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   // transitional values
   val acrMongoActivated: Boolean = servicesConfig.getBoolean("acr-mongo-activated")
   val acrAgentReferenceMigrate: Boolean = servicesConfig.getBoolean("acr-agent-reference-migrate")
+  val acrPartialAuthMigrate: Boolean = servicesConfig.getBoolean("acr-partial-auth-migrate")
 
 }

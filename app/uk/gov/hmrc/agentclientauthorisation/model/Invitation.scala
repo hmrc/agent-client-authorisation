@@ -26,6 +26,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import play.api.libs.functional.syntax._
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationRecordFormat.{arnClientServiceStateKey, arnClientStateKey, createArnClientServiceStateKeys, createdKey, detailsForEmailKey, statusKey, toArnClientStateKey}
 
 case class Invitation(
   _id: ObjectId = ObjectId.get(),
@@ -60,6 +61,23 @@ case class Invitation(
 
 object Invitation {
   implicit val oidFormat: Format[ObjectId] = MongoFormats.Implicits.objectIdFormat
+  val acrWrites = new Writes[Invitation] {
+    def writes(invitation: Invitation) =
+      Json.obj(
+        "invitationId"         -> invitation.invitationId.value,
+        "arn"                  -> invitation.arn.value,
+        "clientType"           -> invitation.clientType,
+        "service"              -> invitation.service.id,
+        "clientId"             -> invitation.clientId.value,
+        "clientIdType"         -> invitation.clientId.typeId,
+        "suppliedClientId"     -> invitation.suppliedClientId.value,
+        "suppliedClientIdType" -> invitation.suppliedClientId.typeId,
+        "events"               -> invitation.events,
+        detailsForEmailKey     -> invitation.detailsForEmail,
+        "relationshipEndedBy"  -> invitation.relationshipEndedBy,
+        "expiryDate"           -> invitation.expiryDate
+      )
+  }
   val acrReads: Reads[Invitation] =
     (
       (__ \ "invitationId").read[String] and

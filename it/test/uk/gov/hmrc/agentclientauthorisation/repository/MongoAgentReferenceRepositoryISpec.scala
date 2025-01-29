@@ -30,12 +30,9 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import scala.concurrent.ExecutionContext
 
 class MongoAgentReferenceRepositoryISpec extends BaseISpec with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
   val httpClient: HttpClient = app.injector.instanceOf[HttpClient]
   implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
-  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
   val repository = new MongoAgentReferenceRepository(mongoComponent, acrConnector, lockClient)(ec, mat, appConfig)
 
   "AgentReferenceRepository" when {

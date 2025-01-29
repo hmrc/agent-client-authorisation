@@ -24,8 +24,6 @@ import uk.gov.hmrc.agentclientauthorisation.model._
 
 class CgtSubscriptionISPec extends BaseISpec {
 
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 
   val desError = DesError("INVALID_REGIME", "some message")

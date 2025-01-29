@@ -17,13 +17,15 @@
 package uk.gov.hmrc.agentclientauthorisation.support
 
 import com.google.inject.AbstractModule
+import org.apache.pekko.stream.Materializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Suite, TestSuite}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
+import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, LockClient}
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -102,8 +104,11 @@ trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBefo
   import scala.concurrent.ExecutionContext.Implicits.global
 
   lazy implicit val metrics: Metrics = app.injector.instanceOf(classOf[Metrics])
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
+  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
   lazy val invitationsRepositoryImpl =
-    new InvitationsRepositoryImpl(mongoComponent, metrics, app.injector.instanceOf(classOf[AppConfig]))
+    new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, app.injector.instanceOf[AppConfig])
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

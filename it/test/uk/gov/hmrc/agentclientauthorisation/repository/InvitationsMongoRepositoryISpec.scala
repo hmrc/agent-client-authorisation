@@ -16,17 +16,20 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
+import org.apache.pekko.stream.Materializer
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
 import org.scalatest.{Assertion, Inside}
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants._
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, UnitSpec}
+import uk.gov.hmrc.agentclientauthorisation.support.{ACRStubs, AppAndStubs, UnitSpec}
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.Nino
@@ -39,11 +42,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InvitationsMongoRepositoryISpec
-    extends UnitSpec with Eventually with Inside with AppAndStubs with DefaultPlayMongoRepositorySupport[Invitation] {
+    extends UnitSpec with Eventually with Inside with ACRStubs with AppAndStubs with DefaultPlayMongoRepositorySupport[Invitation] {
 
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   val metrics: Metrics = app.injector.instanceOf[Metrics]
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  override val repository = new InvitationsRepositoryImpl(mongoComponent, metrics, appConfig)
+  val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
+  val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
+  override val repository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, appConfig)
 
   val date = LocalDate.now()
   val invitationITSA = Invitation(
@@ -114,6 +120,36 @@ class InvitationsMongoRepositoryISpec
   )
   val ninoValue = nino1.value
   private val now = LocalDateTime.now().truncatedTo(MILLIS)
+
+  val outOfRangeCreatedDate: LocalDateTime = now.minusDays(30)
+  val outOfRangeExpiryDate: LocalDate = now.minusDays(9).toLocalDate
+  def createNewPartialAuth(nino: Nino): Invitation = Invitation.createNew(
+    Arn(arn),
+    Some("personal"),
+    Service.MtdIt,
+    nino,
+    nino,
+    None,
+    now,
+    now.plusDays(21).toLocalDate,
+    None
+  )
+  val activePartialAuth1: Invitation = createNewPartialAuth(nino1).copy(events = List(StatusChangeEvent(now, PartialAuth)))
+  val activePartialAuth2: Invitation = createNewPartialAuth(nino2).copy(events = List(StatusChangeEvent(now, PartialAuth)))
+  val activePartialAuth3: Invitation = createNewPartialAuth(nino3).copy(events = List(StatusChangeEvent(now, PartialAuth)))
+
+  val expiredPartialAuth1: Invitation = createNewPartialAuth(nino4).copy(
+    expiryDate = outOfRangeExpiryDate,
+    events = List(StatusChangeEvent(outOfRangeCreatedDate, PartialAuth))
+  )
+  val expiredPartialAuth2: Invitation = createNewPartialAuth(nino5).copy(
+    expiryDate = outOfRangeExpiryDate,
+    events = List(StatusChangeEvent(outOfRangeCreatedDate, PartialAuth))
+  )
+  val expiredPartialAuth3: Invitation = createNewPartialAuth(nino6).copy(
+    expiryDate = outOfRangeExpiryDate,
+    events = List(StatusChangeEvent(outOfRangeCreatedDate, PartialAuth))
+  )
 
   def compareInvitationsIgnoringTimestamps(result: Invitation, expected: Invitation): Assertion = {
     result.events.size shouldBe expected.events.size
@@ -779,6 +815,41 @@ class InvitationsMongoRepositoryISpec
         val result = await(repository.findLatestInvitationByClientId(mtdItId1.value, within30Days = false))
         result shouldBe None
       }
+    }
+  }
+
+  "countRemainingPartialAuth" should {
+
+    "return the number of partial auth records left in the collection" in {
+
+      await(repository.collection.insertOne(activePartialAuth1).toFuture())
+      await(repository.collection.insertOne(activePartialAuth2).toFuture())
+      await(repository.collection.insertOne(activePartialAuth3).toFuture())
+
+      repository.countRemainingPartialAuth().futureValue shouldBe 3
+    }
+  }
+  "migratePartialAuthToAcr" should {
+    "iterate through all remaining items in the database and migrate them to ACR" in {
+      await(repository.collection.insertOne(activePartialAuth1).toFuture())
+      await(repository.collection.insertOne(activePartialAuth2).toFuture())
+      await(repository.collection.insertOne(activePartialAuth3).toFuture())
+      await(repository.collection.insertOne(expiredPartialAuth1).toFuture())
+      await(repository.collection.insertOne(expiredPartialAuth2).toFuture())
+      await(repository.collection.insertOne(expiredPartialAuth3).toFuture())
+
+      givenMigratePartialAuthRecord
+      givenMigratePartialAuthRecord
+      givenMigratePartialAuthRecord
+      givenMigratePartialAuthRecord
+      givenMigratePartialAuthRecord
+      givenMigratePartialAuthRecord
+
+      repository.countRemainingPartialAuth().futureValue shouldBe 6
+      val time = System.currentTimeMillis()
+      repository.migratePartialAuthToAcr(rate = 2)
+      eventually(timeout(Span(4, Seconds)), interval(Span(100, Millis)))(repository.countRemainingPartialAuth().futureValue shouldBe 0)
+      (System.currentTimeMillis() - time) > 2500 shouldBe true
     }
   }
 

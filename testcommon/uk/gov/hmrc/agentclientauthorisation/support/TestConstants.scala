@@ -27,6 +27,10 @@ object TestConstants {
 
   val nino1: Nino = new Generator().nextNino
   val nino2: Nino = new Generator().nextNino
+  val nino3: Nino = new Generator().nextNino
+  val nino4: Nino = new Generator().nextNino
+  val nino5: Nino = new Generator().nextNino
+  val nino6: Nino = new Generator().nextNino
 
   val nino: Nino = Nino("AA000003D")
   val ninoSpace = Nino("AA 00 00 03 D")
