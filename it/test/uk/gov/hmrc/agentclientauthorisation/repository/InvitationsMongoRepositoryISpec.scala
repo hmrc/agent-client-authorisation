@@ -19,10 +19,10 @@ package uk.gov.hmrc.agentclientauthorisation.repository
 import org.apache.pekko.stream.Materializer
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
-import org.scalatest.{Assertion, Inside}
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.{Assertion, Inside}
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
@@ -38,18 +38,18 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{LocalDate, LocalDateTime}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InvitationsMongoRepositoryISpec
     extends UnitSpec with Eventually with Inside with ACRStubs with AppAndStubs with DefaultPlayMongoRepositorySupport[Invitation] {
 
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
   val metrics: Metrics = app.injector.instanceOf[Metrics]
   val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
   val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
-  override val repository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, appConfig)
+  override val repository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(ec, mat, appConfig)
 
   val date = LocalDate.now()
   val invitationITSA = Invitation(

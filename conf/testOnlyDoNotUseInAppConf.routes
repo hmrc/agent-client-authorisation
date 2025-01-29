@@ -13,3 +13,4 @@
 
 ->        /                                                                                         prod.Routes
 GET       /agent-client-authorisation/test-only/create-agent-reference-test-data/:numberOfRecords   @uk.gov.hmrc.agentclientauthorisation.controllers.testOnly.TestOnlyController.createAgentReferenceTestData(numberOfRecords: Int)
+GET       /agent-client-authorisation/test-only/create-partial-auth-test-data/:numberOfRecords      @uk.gov.hmrc.agentclientauthorisation.controllers.testOnly.TestOnlyController.createPartialAuthInvitations(numberOfRecords: Int)

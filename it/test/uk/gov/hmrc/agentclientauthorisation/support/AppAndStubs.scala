@@ -30,6 +30,7 @@ import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+import scala.concurrent.ExecutionContext
 
 trait AppAndStubs extends StartAndStopWireMock with GuiceOneServerPerSuite with DataStreamStubs with MetricsTestSupport with Matchers {
   me: Suite with TestSuite =>
@@ -101,14 +102,14 @@ trait AppAndStubs extends StartAndStopWireMock with GuiceOneServerPerSuite with 
 trait MongoAppAndStubs extends AppAndStubs with MongoSupport with ResetMongoBeforeTest with Matchers {
   me: Suite with TestSuite =>
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   lazy implicit val metrics: Metrics = app.injector.instanceOf(classOf[Metrics])
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
   val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
   lazy val invitationsRepositoryImpl =
-    new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, app.injector.instanceOf[AppConfig])
+    new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(ec, mat, appConfig)
 
   override protected def additionalConfiguration =
     super.additionalConfiguration + ("mongodb.uri" -> mongoUri)

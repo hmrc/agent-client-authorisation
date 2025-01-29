@@ -35,7 +35,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
@@ -46,6 +46,7 @@ class InvitationsStatusUpdateSchedulerISpec
   implicit lazy val app: Application = new GuiceApplicationBuilder()
     .configure("mongodb.uri" -> mongoUri, "metrics.jvm" -> false, "metrics.enabled" -> false, "auditing.enabled" -> false)
     .build()
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   val relationshipConnector = app.injector.instanceOf[RelationshipsConnector]
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
@@ -57,7 +58,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val schedulerRepository = new MongoScheduleRepository(mongoComponent)
   val acrConnector: RelationshipsConnector = app.injector.instanceOf[RelationshipsConnector]
   val lockClient: LockClient = app.injector.instanceOf(classOf[LockClient])
-  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(mat, appConfig)
+  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics, acrConnector, lockClient)(ec, mat, appConfig)
   val auditService = app.injector.instanceOf(classOf[AuditService])
 
   val invitationsService = new InvitationsService(

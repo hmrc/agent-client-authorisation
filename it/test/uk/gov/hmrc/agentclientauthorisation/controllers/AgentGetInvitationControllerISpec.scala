@@ -16,10 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsArray, JsObject, Json}
-import play.api.mvc.Result
+import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -28,7 +25,7 @@ import uk.gov.hmrc.agentclientauthorisation.support.TestHalResponseInvitations
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import java.time.{Instant, LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentGetInvitationControllerISpec extends BaseISpec {

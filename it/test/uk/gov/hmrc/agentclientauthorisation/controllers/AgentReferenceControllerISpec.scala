@@ -18,12 +18,11 @@ package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationInfo, PartialAuth}
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class AgentReferenceControllerISpec extends BaseISpec {
@@ -33,7 +32,6 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
   val agentReferenceRepo: MongoAgentReferenceRepository = app.injector.instanceOf[MongoAgentReferenceRepository]
   val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf[InvitationsRepositoryImpl]
-  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   lazy val controller: AgentReferenceController = app.injector.instanceOf[AgentReferenceController]
 

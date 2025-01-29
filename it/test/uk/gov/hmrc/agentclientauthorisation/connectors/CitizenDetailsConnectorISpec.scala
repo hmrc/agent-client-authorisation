@@ -17,9 +17,8 @@
 package uk.gov.hmrc.agentclientauthorisation.connectors
 
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CitizenDetailsStub}
+import uk.gov.hmrc.agentclientauthorisation.support.{AppAndStubs, CitizenDetailsStub, UnitSpec}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.agentclientauthorisation.support.UnitSpec
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

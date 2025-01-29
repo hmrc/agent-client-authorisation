@@ -17,16 +17,21 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers.testOnly
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository}
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentclientauthorisation.model.{DetailsForEmail, Invitation, PartialAuth}
+import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, AgentReferenceRepository, InvitationsRepository}
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, NinoType, Service}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.domain.{Generator, Nino}
 
+import java.time.{LocalDate, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
 class TestOnlyController @Inject() (
-  agentReferenceRecordRepository: AgentReferenceRepository
+  agentReferenceRecordRepository: AgentReferenceRepository,
+  invitationsRepository: InvitationsRepository
 )(implicit cc: ControllerComponents, ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -41,5 +46,23 @@ class TestOnlyController @Inject() (
       }
       Ok(s"Created $numberOfRecords agent reference records")
     }
+  }
+
+  def createPartialAuthInvitations(numberOfInvitations: Int): Action[AnyContent] = Action {
+    for (x <- 1 to numberOfInvitations) yield {
+      val clientId = ClientIdentifier(new Generator().nextNino.value, NinoType.id)
+      invitationsRepository
+        .create(
+          Arn("XARN" + ("0000000" + x).takeRight(7)),
+          clientType = Some("personal"),
+          service = MtdIt,
+          clientId = clientId,
+          suppliedClientId = clientId,
+          detailsForEmail = Some(DetailsForEmail(agencyName = "", agencyEmail = "", clientName = "clientName")),
+          origin = None
+        )
+        .map(invitation => invitationsRepository.update(invitation, status = PartialAuth, updateDate = LocalDateTime.now()))
+    }
+    Ok(s"Created $numberOfInvitations partialAuth invitations")
   }
 }

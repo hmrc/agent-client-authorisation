@@ -19,7 +19,6 @@ import play.api.http.Status.OK
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{HMRCCGTPD, HMRCMTDIT, HMRCMTDVAT}
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdType, Service}
@@ -27,14 +26,12 @@ import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment => AuthEnrolment, Enrolme
 import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class AuthActionsISpec extends BaseISpec {
 
   val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
   val cc: ControllerComponents = app.injector.instanceOf[ControllerComponents]
-  val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
 
   object TestController extends AuthActions(metrics, appConfig, authConnector, cc) {
 
