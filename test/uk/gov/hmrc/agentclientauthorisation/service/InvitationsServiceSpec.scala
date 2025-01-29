@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
-import org.mockito.ArgumentMatchers.{eq => eqTo}
-import org.mockito.Mockito.{reset, times, verify, when}
-import org.scalatest.BeforeAndAfterEach
-import org.scalatestplus.mockito.MockitoSugar.mock
+import org.mockito.Mockito.{times, verify, when}
+import org.apache.pekko.Done
+import org.scalatest.Assertion
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -35,22 +34,28 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.agentclientauthorisation.model.DetailsForEmail
+import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.support.{ResettingMockitoSugar, TestData}
 
-class InvitationsServiceSpec extends UnitSpec with BeforeAndAfterEach {
+import scala.concurrent.duration.DurationInt
 
-  val mockRepository: InvitationsRepository = mock[InvitationsRepository]
-  val mockRelationshipsConnector: RelationshipsConnector = mock[RelationshipsConnector]
+class InvitationsServiceSpec extends UnitSpec with ResettingMockitoSugar with TestData {
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  val mockInvitationsRepository: InvitationsRepository = mock[InvitationsRepository]
+  val mockRelationshipsConnector: RelationshipsConnector = resettingMock[RelationshipsConnector]
   val mockAnalyticsService: PlatformAnalyticsService = mock[PlatformAnalyticsService]
   val mockDesConnector: DesConnector = mock[DesConnector]
   val mockIfConnector: IfConnector = mock[IfConnector]
   val mockEmailService: EmailService = mock[EmailService]
   val mockAuditService: AuditService = mock[AuditService]
-  val mockAppConfig: AppConfig = mock[AppConfig]
+  val mockAppConfig: AppConfig = resettingMock[AppConfig]
   val mockMetrics: Metrics = mock[Metrics]
-  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val service = new InvitationsService(
-    mockRepository,
+    mockInvitationsRepository,
     mockRelationshipsConnector,
     mockAnalyticsService,
     mockDesConnector,
@@ -80,16 +85,20 @@ class InvitationsServiceSpec extends UnitSpec with BeforeAndAfterEach {
     fromAcr = true
   )
 
-  override def beforeEach(): Unit =
-    reset(mockRelationshipsConnector)
+  def compareInvitationsIgnoringTimestamps(result: Invitation, expected: Invitation): Assertion = {
+    result.events.size shouldBe expected.events.size
+    result.events.zip(expected.events).foreach { case (x, y) =>
+      x.status shouldBe y.status
+    }
+    result.copy(events = List.empty) shouldBe expected.copy(events = List.empty)
+  }
 
   ".findInvitationsBy" should {
-
     "make a call to ACR when the ACR mongo feature is enabled, and combine the ACR and ACA invitations" in {
       when(mockAppConfig.acrMongoActivated).thenReturn(true)
-      when(mockRelationshipsConnector.lookupInvitations(eqTo(Some(Arn("XARN1234567"))), eqTo(Seq()), eqTo(Seq()), eqTo(None))(eqTo(hc)))
+      when(mockRelationshipsConnector.lookupInvitations(Some(Arn("XARN1234567")), Seq(), Seq(), None)(hc))
         .thenReturn(Future.successful(List(vatInvitation)))
-      when(mockRepository.findInvitationsBy(eqTo(Some(Arn("XARN1234567"))), eqTo(Seq()), eqTo(None), eqTo(None), eqTo(None), eqTo(true)))
+      when(mockInvitationsRepository.findInvitationsBy(Some(Arn("XARN1234567")), Seq(), None, None, None, within30Days = true))
         .thenReturn(Future.successful(List(vatInvitation)))
       val result = await(service.findInvitationsBy(Some(Arn("XARN1234567")), Seq(), None, None, None))
 
@@ -99,12 +108,76 @@ class InvitationsServiceSpec extends UnitSpec with BeforeAndAfterEach {
 
     "not call ACR when the ACR mongo feature is disabled, and just return ACA invitations" in {
       when(mockAppConfig.acrMongoActivated).thenReturn(false)
-      when(mockRepository.findInvitationsBy(eqTo(Some(Arn("XARN1234567"))), eqTo(Seq()), eqTo(None), eqTo(None), eqTo(None), eqTo(false)))
+      when(mockInvitationsRepository.findInvitationsBy(Some(Arn("XARN1234567")), Seq(), None, None, None, within30Days = false))
         .thenReturn(Future.successful(List(vatInvitation)))
       val result = await(service.findInvitationsBy(Some(Arn("XARN1234567")), Seq(), None, None, None))
 
       result.length shouldBe 1
       verify(mockRelationshipsConnector, times(0)).lookupInvitations(Some(Arn("XARN1234567")), Seq(), Seq(), None)
+    }
+  }
+
+  ".create" when {
+    "given valid input and all external calls are successful" should {
+      "return a new ACA invitation if acrMongoActivated is switched off" in {
+        val invitation = invitationPending.copy(detailsForEmail = Some(DetailsForEmail("agency@email.com", "Prestige WorldWide", "Troy Barnes")))
+
+        val arn = invitation.arn
+        val nino = invitation.clientId
+        val regime = invitation.service
+        val detailsForEmail = invitation.detailsForEmail
+        val expected = invitation.copy(events = List(StatusChangeEvent(LocalDateTime.now, Pending)))
+
+        when(mockAppConfig.acrMongoActivated)
+          .thenReturn(false)
+        when(mockEmailService.createDetailsForEmail(arn, nino, regime))
+          .thenReturn(Future.successful(detailsForEmail.get))
+        when(mockInvitationsRepository.create(arn, invitation.clientType, regime, nino, nino, detailsForEmail, None))
+          .thenReturn(Future.successful(invitation))
+        when(mockAnalyticsService.reportSingleEventAnalyticsRequest(invitation))
+          .thenReturn(Future.successful(Done))
+
+        val result = await(service.create(arn, invitation.clientType, regime, nino, nino, None))
+
+        compareInvitationsIgnoringTimestamps(result, expected)
+      }
+
+      "return an ACR invitation if acrMongoActivated is switched on" in {
+        val invitation = invitationPending.copy(detailsForEmail = Some(DetailsForEmail("agency@email.com", "Prestige WorldWide", "Troy Barnes")))
+
+        val arn = invitation.arn
+        val mtdId = invitation.clientId
+        val regime = invitation.service
+        val detailsForEmail = invitation.detailsForEmail.get
+        val invitationId = "ABC123"
+        val expected = invitation.copy(
+          invitationId = InvitationId(invitationId),
+          events = List(StatusChangeEvent(LocalDateTime.now, Pending)),
+          expiryDate = LocalDate.now.plusDays(21)
+        )
+
+        val authorisationRequest = AuthorisationRequest(
+          invitation.clientId.value,
+          invitation.suppliedClientId.typeId,
+          detailsForEmail.clientName,
+          regime.id,
+          invitation.clientType
+        )
+
+        when(mockAppConfig.acrMongoActivated)
+          .thenReturn(true)
+        when(mockEmailService.createDetailsForEmail(arn, mtdId, regime))
+          .thenReturn(Future.successful(detailsForEmail))
+        when(mockAppConfig.invitationExpiringDuration)
+          .thenReturn(21.days)
+        when(mockRelationshipsConnector.sendAuthorisationRequest(arn.value, authorisationRequest))
+          .thenReturn(Future.successful(invitationId))
+
+        val result = await(service.create(arn, invitation.clientType, regime, mtdId, invitation.suppliedClientId, None))
+
+        // id is created inside service method, no way for us to know what it is beforehand
+        compareInvitationsIgnoringTimestamps(result, expected.copy(_id = result._id))
+      }
     }
   }
 }

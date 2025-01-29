@@ -84,8 +84,6 @@ class TransitionalAgentGetInvitationControllerISpec extends BaseISpec {
       testClient.clientId,
       testClient.suppliedClientId,
       if (hasEmail) Some(dfe(testClient.clientName)) else None,
-      LocalDateTime.now(),
-      LocalDate.now().plusDays(21),
       None
     )
 
@@ -104,7 +102,7 @@ class TransitionalAgentGetInvitationControllerISpec extends BaseISpec {
       givenAcrInvitationNotFound(nonExistentInvitationId)
       val invitation = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, LocalDateTime.now(), LocalDate.now(), None)
+          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, None)
       )
 
       val request =
@@ -120,7 +118,7 @@ class TransitionalAgentGetInvitationControllerISpec extends BaseISpec {
       givenClientMtdItId(mtdItId)
       val invitation = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, LocalDateTime.now(), LocalDate.now(), None)
+          .create(arn, Some("personal"), Service.MtdIt, clientIdentifier, clientIdentifier, None, None)
       )
 
       val request =

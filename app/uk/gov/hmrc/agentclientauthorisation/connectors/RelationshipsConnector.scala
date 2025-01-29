@@ -24,18 +24,20 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.acrReads
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
+import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, AuthorisationResponse}
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation, InvitationStatus, InvitationStatusAction}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Service}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, val metrics: Metrics)(implicit val ec: ExecutionContext)
@@ -331,4 +333,37 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
           case other => throw UpstreamErrorResponse(s"Agent reference record could not be found/created, status: $other", other)
         }
       }
+
+  def sendAuthorisationRequest(arn: String, authorisationRequest: AuthorisationRequest)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[String] =
+    monitor("ConsumedAPI-AgentClientRelationships-createInvitation-POST") {
+      http
+        .POST[AuthorisationRequest, HttpResponse](s"$baseUrl/agent-client-relationships/agent/$arn/authorisation-request", authorisationRequest)
+        .map { response: HttpResponse =>
+          response.status match {
+            case Status.CREATED => response.json.as[AuthorisationResponse].invitationId
+            case other =>
+              Try(Json.parse(response.body)) match {
+                case Success(json) =>
+                  (json \ "code").asOpt[String] match {
+                    case Some(code) =>
+                      throw UpstreamErrorResponse(
+                        s"Error when creating invitation on agent-client-relationships, httpStatus=$other, errorCode=$code",
+                        other
+                      )
+                    case None =>
+                      throw UpstreamErrorResponse(s"Error when creating invitation on agent-client-relationships, httpStatus=$other", other)
+                  }
+                case Failure(error) =>
+                  throw UpstreamErrorResponse(
+                    s"Error when creating invitation on agent-client-relationships, httpStatus=$other, error=${error.getMessage}",
+                    other
+                  )
+              }
+          }
+        }
+    }
+
 }

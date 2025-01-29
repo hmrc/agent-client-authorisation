@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.apache.pekko.stream.Materializer
+import org.scalatest.Assertion
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
@@ -45,6 +46,14 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
     givenAuthorisedEmptyPredicate
   }
 
+  def compareInvitationsIgnoringTimestamps(result: Invitation, expected: Invitation): Assertion = {
+    result.events.size shouldBe expected.events.size
+    result.events.zip(expected.events).foreach { case (x, y) =>
+      x.status shouldBe y.status
+    }
+    result.copy(events = List.empty) shouldBe expected.copy(events = List.empty)
+  }
+
   "PUT /alt-itsa/HMRC-MTD-IT/update/:nino" should {
 
     val request = FakeRequest("PUT", "/alt-itsa/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
@@ -59,8 +68,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -73,35 +80,35 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenDesReturnsServiceUnavailable()
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT")(request))
       status(result) shouldBe 500
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 404 when DES MtdItId call return 404 (client not signed up to MtdItId) leaving alt-itsa invitation untouched" in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenMtdItIdIsUnknownFor(nino)
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT")(request))
       status(result) shouldBe 404
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 204 when client has MtdItId, updating the invitation store to replace Nino" in new TestSetup {
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       val altItsaPending2 = await(
@@ -112,8 +119,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           nino,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -122,15 +127,21 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT")(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)).get,
+        altItsaPending1.copy(clientId = mtdItId)
+      )
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)).get,
+        altItsaPending2.copy(clientId = mtdItId)
+      )
     }
 
     "return 201 (Created) when there is PartialAuth invitation " in new TestSetup {
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
       await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
@@ -149,7 +160,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
       await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
@@ -174,8 +185,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -202,8 +211,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -228,8 +235,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -249,8 +254,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -259,7 +262,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT-SUPP")(request))
       status(result) shouldBe 500
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 404 when DES MtdItId call return 404 (client not signed up to MtdItId) leaving alt-itsa invitation untouched" in new TestSetup {
@@ -273,8 +276,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -283,7 +284,7 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT-SUPP")(request))
       status(result) shouldBe 404
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 204 when client has MtdItIdSupp, updating the invitation store to replace Nino" in new TestSetup {
@@ -297,8 +298,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -311,8 +310,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           nino,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -321,8 +318,14 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
 
       val result = await(controller.altItsaUpdateEMA(nino, "HMRC-MTD-IT-SUPP")(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)).get,
+        altItsaPending1.copy(clientId = mtdItId)
+      )
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)).get,
+        altItsaPending2.copy(clientId = mtdItId)
+      )
     }
 
     "return 201 (Created) when there is PartialAuth invitation and ETMP create relationship call succeeds" in new TestSetup {
@@ -336,8 +339,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -365,8 +366,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )
@@ -393,8 +392,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -421,8 +418,6 @@ class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAna
             nino,
             nino,
             None,
-            LocalDateTime.now().truncatedTo(MILLIS),
-            LocalDate.now().plusDays(21),
             None
           )
       )

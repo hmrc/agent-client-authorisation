@@ -155,8 +155,6 @@ trait TestDataSupport {
       clientId: ClientId,
       suppliedClientId: ClientId,
       detailsForEmail: Option[DetailsForEmail],
-      startDate: LocalDateTime,
-      expiryDate: LocalDate,
       origin: Option[String]
     ): Future[Invitation] =
       Future failed new Exception("Unable to Create Invitation")

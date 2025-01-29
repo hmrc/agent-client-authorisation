@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import org.apache.pekko.stream.Materializer
+import org.scalatest.Assertion
 import play.api.mvc.Results.{NoContent, NotFound}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -46,6 +47,14 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
     ()
   }
 
+  def compareInvitationsIgnoringTimestamps(result: Invitation, expected: Invitation): Assertion = {
+    result.events.size shouldBe expected.events.size
+    result.events.zip(expected.events).foreach { case (x, y) =>
+      x.status shouldBe y.status
+    }
+    result.copy(events = List.empty) shouldBe expected.copy(events = List.empty)
+  }
+
   "PUT /alt-itsa/update/:nino" should {
 
     val request = FakeRequest("PUT", "/alt-itsa/update/:nino").withHeaders("Authorization" -> "Bearer testtoken")
@@ -60,8 +69,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -74,35 +81,35 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenDesReturnsServiceUnavailable()
 
       val result = await(controller.altItsaUpdate(nino)(request))
       status(result) shouldBe 500
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 204 when DES MtdItId call return 404 (client not signed up to MtdItId) leaving alt-itsa invitation untouched" in {
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenMtdItIdIsUnknownFor(nino)
 
       val result = await(controller.altItsaUpdate(nino)(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 204 when client has MtdItId, updating the invitation store to replace Nino" in {
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       val altItsaPending2 = await(
@@ -113,8 +120,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -123,15 +128,21 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val result = await(controller.altItsaUpdate(nino)(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId))
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)).get,
+        altItsaPending1.copy(clientId = mtdItId)
+      )
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)).get,
+        altItsaPending2.copy(clientId = mtdItId)
+      )
     }
 
     "return 201 (Created) when there is PartialAuth invitation and ETMP create relationship call succeeds" in {
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
       await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
@@ -150,7 +161,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
       await(invitationsRepo.update(altItsaPending, PartialAuth, LocalDateTime.now()))
 
@@ -175,8 +186,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -208,8 +217,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -222,21 +229,21 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsaPending = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenDesReturnsServiceUnavailable()
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
       status(result) shouldBe 500
-      await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)) shouldBe Some(altItsaPending)
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending.invitationId)).get, altItsaPending)
     }
 
     "return 204 when a DES MtdItId call returns 404 (a client is not signed up to MtdItId)" in {
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       val altItsaPending2 = await(
@@ -247,8 +254,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -258,8 +263,11 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2)
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)).get,
+        altItsaPending1.copy(clientId = mtdItId)
+      )
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)).get, altItsaPending2)
     }
 
     "return 204 when MtdItId found and replace Nino on multiple records for the same client" in {
@@ -282,7 +290,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsa2 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       givenMtdItIdIsKnownFor(nino, mtdItId)
@@ -298,7 +306,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       val altItsaPending2 = await(
@@ -309,8 +317,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -323,8 +329,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -334,16 +338,22 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val result = await(controller.altItsaUpdateAgent(arn)(request))
       status(result) shouldBe 204
-      await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)) shouldBe Some(altItsaPending1.copy(clientId = mtdItId))
-      await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)) shouldBe Some(altItsaPending2.copy(clientId = mtdItId2))
-      await(invitationsRepo.findByInvitationId(anotherAgent.invitationId)) shouldBe Some(anotherAgent)
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending1.invitationId)).get,
+        altItsaPending1.copy(clientId = mtdItId)
+      )
+      compareInvitationsIgnoringTimestamps(
+        await(invitationsRepo.findByInvitationId(altItsaPending2.invitationId)).get,
+        altItsaPending2.copy(clientId = mtdItId2)
+      )
+      compareInvitationsIgnoringTimestamps(await(invitationsRepo.findByInvitationId(anotherAgent.invitationId)).get, anotherAgent)
     }
 
     "return 204 when MtdItId found and create relationship succeeds, updating status to Accepted" in {
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       val altItsaPending2 = await(
@@ -354,8 +364,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -368,8 +376,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           nino2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -406,7 +412,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
 
       val altItsaPending1 = await(
         invitationsRepo
-          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, LocalDateTime.now().truncatedTo(MILLIS), LocalDate.now().plusDays(21), None)
+          .create(arn, Some("personal"), Service.MtdIt, nino, nino, None, None)
       )
 
       await(invitationsRepo.update(altItsaPending1, PartialAuth, LocalDateTime.now()))
@@ -435,8 +441,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId,
           nino,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -449,8 +453,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId2,
           nino2,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -463,8 +465,6 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
           mtdItId3,
           nino3,
           None,
-          LocalDateTime.now().truncatedTo(MILLIS),
-          LocalDate.now().plusDays(21),
           None
         )
       )
@@ -575,8 +575,7 @@ class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyt
       testClient.clientId,
       testClient.suppliedClientId,
       if (hasEmail) Some(dfe(testClient.clientName)) else None,
-      Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime,
-      LocalDate.now().plusDays(21),
       None
     )
+
 }

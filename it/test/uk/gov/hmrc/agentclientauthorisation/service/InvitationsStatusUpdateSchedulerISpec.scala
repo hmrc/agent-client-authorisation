@@ -54,7 +54,7 @@ class InvitationsStatusUpdateSchedulerISpec
   val emailService = app.injector.instanceOf[EmailService]
   val metrics = app.injector.instanceOf[Metrics]
   val schedulerRepository = new MongoScheduleRepository(mongoComponent)
-  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics)
+  val invitationsRepository = new InvitationsRepositoryImpl(mongoComponent, metrics, appConfig)
   val auditService = app.injector.instanceOf(classOf[AuditService])
 
   val invitationsService = new InvitationsService(

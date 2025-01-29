@@ -47,8 +47,6 @@ class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs 
       testClient.clientId,
       testClient.suppliedClientId,
       if (hasEmail) Some(dfe(testClient.clientName)) else None,
-      LocalDateTime.now(),
-      LocalDate.now().plusDays(21),
       None
     )
 
