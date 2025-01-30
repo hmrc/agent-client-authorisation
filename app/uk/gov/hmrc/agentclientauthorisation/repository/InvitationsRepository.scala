@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus.unapply
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId, MtdItId, Service}
+import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
@@ -41,8 +41,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 
 @ImplementedBy(classOf[InvitationsRepositoryImpl])
@@ -98,6 +97,8 @@ trait InvitationsRepository {
   def removeInvitationById(invitationId: InvitationId): Future[Int]
 
   def countRemainingPartialAuth(): Future[Long]
+
+  def countBrokenPartialAuth(rate: Int = 10): Future[Int]
 
   def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done]
 }
@@ -370,6 +371,22 @@ class InvitationsRepositoryImpl @Inject() (
   override def countRemainingPartialAuth(): Future[Long] =
     collection.countDocuments(equal(InvitationRecordFormat.statusKey, unapply(PartialAuth).getOrElse("Partialauth"))).toFuture()
 
+  // temporary method to ensure the status of our partial auth records in production are fit for migration
+  override def countBrokenPartialAuth(rate: Int = 10): Future[Int] = {
+    val observable = collection.find(equal(InvitationRecordFormat.statusKey, unapply(PartialAuth).getOrElse("Partialauth")))
+    var count: Int = 0
+    Source
+      .fromPublisher(observable)
+      .throttle(rate, 1.second)
+      .runForeach { record =>
+        if (record.clientId.typeId != NinoType.id) {
+          count += 1
+          logger.warn(s"[InvitationsRepository] found broken partialAuth record number $count with invitationId ${record.invitationId.value}")
+        }
+      }
+      .map(_ => count)
+  }
+
   override def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] = {
     val observable = collection.find(equal(InvitationRecordFormat.statusKey, unapply(PartialAuth).getOrElse("Partialauth")))
     countRemainingPartialAuth().map { count =>
@@ -408,6 +425,9 @@ class InvitationsRepositoryImpl @Inject() (
   } else {
     countRemainingPartialAuth().map { count =>
       logger.warn(s"[InvitationsRepository] migration  of partialAuth is disabled, $count partialAuth records left to migrate")
+    }
+    countBrokenPartialAuth().map { count =>
+      logger.warn(s"[InvitationsRepository] found $count broken partialAuth records")
     }
   }
 
