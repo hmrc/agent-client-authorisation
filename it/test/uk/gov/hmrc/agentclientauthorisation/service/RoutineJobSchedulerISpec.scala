@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.service
 
+import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.apache.pekko.actor.{ActorSystem, Props}
 import org.apache.pekko.testkit.TestKit
-import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlPathEqualTo, verify}
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.{AgentClientInvitationEvent, AuditService}
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoScheduleRepository, RemovePersonalInfo, ScheduleRecord}
@@ -34,7 +33,6 @@ import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, MtdItId, Service}
 import uk.gov.hmrc.domain.Nino
 
 import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
@@ -46,7 +44,6 @@ class RoutineJobSchedulerISpec
   val analyticsService = app.injector.instanceOf[PlatformAnalyticsService]
   val desConnector = app.injector.instanceOf[DesConnector]
   val ifConnector = app.injector.instanceOf[IfConnector]
-  val appConfig = app.injector.instanceOf[AppConfig]
   val emailService = app.injector.instanceOf[EmailService]
   val schedulerRepository = app.injector.instanceOf[MongoScheduleRepository]
   val invitationsRepository = app.injector.instanceOf[InvitationsRepositoryImpl]

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import org.apache.commons.lang3.RandomStringUtils
 import org.mongodb.scala.model.Filters
 import play.api.libs.concurrent.Futures
@@ -25,8 +24,7 @@ import play.api.mvc.ControllerComponents
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.{CitizenDetailsConnector, DesConnector, EisConnector, IfConnector, RelationshipsConnector}
+import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{genericBadRequest, genericInternalServerError}
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository._
@@ -36,9 +34,7 @@ import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderNames
 
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.{LocalDate, LocalDateTime}
 import java.util.Base64
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class TerminateInvitationsISpec extends BaseISpec {
@@ -48,7 +44,6 @@ class TerminateInvitationsISpec extends BaseISpec {
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
   lazy val controller = app.injector.instanceOf(classOf[AgencyInvitationsController])
 
-  val appConfig = app.injector.instanceOf(classOf[AppConfig])
   val authConnector = app.injector.instanceOf(classOf[AuthConnector])
   val postcodeService = app.injector.instanceOf(classOf[PostcodeService])
   val desConnector = app.injector.instanceOf(classOf[DesConnector])

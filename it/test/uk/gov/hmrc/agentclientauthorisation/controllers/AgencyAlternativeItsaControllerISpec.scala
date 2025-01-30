@@ -16,26 +16,22 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import org.scalatest.Assertion
 import play.api.mvc.Results.{NoContent, NotFound}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
 
-import java.time.temporal.ChronoUnit.MILLIS
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgencyAlternativeItsaControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 
   lazy val invitationsRepo: InvitationsRepositoryImpl = app.injector.instanceOf(classOf[InvitationsRepositoryImpl])
-  lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   lazy val controller: AgencyInvitationsController = app.injector.instanceOf[AgencyInvitationsController]
 

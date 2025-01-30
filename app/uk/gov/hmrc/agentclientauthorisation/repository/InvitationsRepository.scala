@@ -41,7 +41,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import java.time.temporal.ChronoUnit.DAYS
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -108,7 +108,7 @@ class InvitationsRepositoryImpl @Inject() (
   metrics: Metrics,
   acrConnector: RelationshipsConnector,
   lockClient: LockClient
-)(implicit mat: Materializer, appConfig: AppConfig)
+)(implicit ec: ExecutionContext, mat: Materializer, appConfig: AppConfig)
     extends PlayMongoRepository[Invitation](
       mongoComponent = mongo,
       collectionName = "invitations",

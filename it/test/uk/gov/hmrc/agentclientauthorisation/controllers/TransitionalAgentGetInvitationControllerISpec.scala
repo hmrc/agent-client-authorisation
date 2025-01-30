@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{AgentReferenceRecord, InvitationsRepositoryImpl, MongoAgentReferenceRepository}
-import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
