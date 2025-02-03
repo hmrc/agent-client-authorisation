@@ -42,6 +42,7 @@ case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: S
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// scalastyle:off number.of.methods
 @Singleton
 class InvitationsService @Inject() (
   invitationsRepository: InvitationsRepository,
@@ -309,13 +310,25 @@ class InvitationsService @Inject() (
   def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
     invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)
 
-  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
-    invitationsRepository.findInvitationsBy(
-      services = services,
-      clientId = Some(clientId.value),
-      status = status,
-      within30Days = appConfig.acrMongoActivated
-    )
+  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus])(implicit
+    hc: HeaderCarrier
+  ): Future[Seq[Invitation]] =
+    for {
+      acrInvitations <-
+        if (appConfig.acrMongoActivated)
+          relationshipsConnector.lookupInvitations(None, services, Seq(clientId.value), status)
+        else
+          Future.successful(Nil)
+      acaInvitations <-
+        invitationsRepository.findInvitationsBy(
+          arn = None,
+          services = services,
+          clientId = Some(clientId.value),
+          status = status,
+          createdOnOrAfter = None,
+          within30Days = appConfig.acrMongoActivated
+        )
+    } yield acrInvitations ++ acaInvitations
 
   def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
@@ -331,7 +344,7 @@ class InvitationsService @Inject() (
   )(implicit hc: HeaderCarrier): Future[List[Invitation]] = for {
     acrInvitations <-
       if (appConfig.acrMongoActivated)
-        relationshipsConnector.lookupInvitations(arn, services, clientId.fold[Seq[String]](Seq())(id => Seq(id)), status)
+        relationshipsConnector.lookupInvitations(arn, services, clientId.toSeq, status)
       else
         Future.successful(List())
     acaInvitations <-
