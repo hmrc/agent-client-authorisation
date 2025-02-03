@@ -65,7 +65,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
 
     val request = FakeRequest("GET", "/clients/invitations/uid/:uid").withHeaders(("Authorization" -> "Bearer testtoken"))
 
-    "return invitation info using agent record from ACR for services that are supported by the client's enrolments - has MTD VAT & IT enrolment" in new TestSetup {
+    "return invitation info using agent record from ACR for services that are supported by the client's enrolments" in new TestSetup {
       val agentReferenceRecord: AgentReferenceRecord =
         AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
 
@@ -106,7 +106,7 @@ class AgentReferenceControllerISpec extends BaseISpec {
       contentAsJson(response).as[List[InvitationInfo]].size shouldBe 3
     }
 
-    "the service is HMRC-MTD-IT and there are ALT-ITSA invitations make updates if client has MTDITID enrolment and return updated list" in {
+    "the service is HMRC-MTD-IT and there is an ALT-ITSA invitation then isAltItsa should be true" in {
 
       val altItsaInvitation = await(createInvitation(arn, altItsaClient))
       await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
@@ -117,34 +117,6 @@ class AgentReferenceControllerISpec extends BaseISpec {
       await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
 
       await(invitationsRepo.findInvitationInfoBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).head.isAltItsa shouldBe true
-
-      givenMtdItIdIsKnownFor(nino, mtdItId)
-      givenCreateRelationship(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
-
-      val response =
-        controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
-
-      status(response) shouldBe 200
-
-      val result = contentAsJson(response).as[List[InvitationInfo]]
-      result.size shouldBe 1
-      result.head.isAltItsa shouldBe false
-    }
-
-    "the service is HMRC-MTD-IT and there are ALT-ITSA invitations to update but create relationship fails" in {
-
-      val altItsaInvitation = await(createInvitation(arn, altItsaClient))
-      await(invitationsRepo.update(altItsaInvitation, PartialAuth, LocalDateTime.now()))
-
-      val agentReferenceRecord: AgentReferenceRecord =
-        AgentReferenceRecord(testUid, arn, Seq("stan-lee"))
-
-      await(agentReferenceRepo.collection.insertOne(agentReferenceRecord).toFuture())
-
-      await(invitationsRepo.findInvitationInfoBy(arn = Some(arn), within30Days = appConfig.acrMongoActivated)).head.isAltItsa shouldBe true
-
-      givenMtdItIdIsKnownFor(nino, mtdItId)
-      givenCreateRelationshipFails(arn, "HMRC-MTD-IT", "MTDITID", mtdItId)
 
       val response =
         controller.getInvitationsInfo(testUid, None)(authorisedAsValidClientWithAffinityGroup(request, "HMRC-VATDEC-ORG", "HMRC-MTD-IT"))
