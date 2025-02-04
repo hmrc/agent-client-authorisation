@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult._
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation.toInvitationInfo
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
@@ -30,7 +31,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{MtdIt, MtdItSupp}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
@@ -261,23 +262,19 @@ class InvitationsService @Inject() (
     }
   }
 
-  def findInvitationsInfoForClient(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus])(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[List[InvitationInfo]] =
-    clientIds.find(_._2 == NinoType.enrolmentId) match {
-      case Some(ninoClientId) if appConfig.altItsaEnabled & clientIds.map(_._2).contains(MtdItIdType.id) =>
-        updateAltItsaFor(Nino(ninoClientId._3), service = MtdIt) // if there is an alt-itsa invitation then we want to update it with MTDITID
-          .flatMap(_ => findInvitationsInfoBy(arn, clientIds, status))
-          .recoverWith { case e: UpstreamErrorResponse =>
-            logger.warn(s"failure when updating alt-Itsa invitations, falling back to existing client data ${e.message}")
-            findInvitationsInfoBy(arn, clientIds, status)
-          }
-      case _ => findInvitationsInfoBy(arn, clientIds, status)
-    }
-
-  def findInvitationsInfoBy(arn: Arn, clientIds: Seq[(String, String, String)], status: Option[InvitationStatus]): Future[List[InvitationInfo]] =
-    invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
+  def findInvitationsInfoBy(
+    arn: Arn,
+    clientIds: Seq[(String, String, String)],
+    status: Option[InvitationStatus]
+  )(implicit hc: HeaderCarrier): Future[List[InvitationInfo]] =
+    for {
+      acrInvitations <- if (appConfig.acrMongoActivated) {
+                          val services = clientIds.map(_._1).distinct.map(Service.forId)
+                          val clientIdValues = clientIds.map(_._3)
+                          relationshipsConnector.lookupInvitations(Some(arn), services, clientIdValues, status).map(_.map(toInvitationInfo))
+                        } else Future.successful(List.empty[InvitationInfo])
+      acaInvitations <- invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
+    } yield acrInvitations ++ acaInvitations
 
   def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val nextStatus = if (invitation.status == PartialAuth) DeAuthorised else Cancelled

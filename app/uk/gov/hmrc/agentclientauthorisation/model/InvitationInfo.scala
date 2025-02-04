@@ -30,7 +30,8 @@ case class InvitationInfo(
   isRelationshipEnded: Boolean = false,
   relationshipEndedBy: Option[String] = None,
   events: List[StatusChangeEvent],
-  isAltItsa: Boolean = false
+  isAltItsa: Boolean = false,
+  fromAcr: Boolean = false
 )
 
 object InvitationInfo {

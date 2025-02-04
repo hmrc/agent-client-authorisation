@@ -36,6 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.agentclientauthorisation.model.DetailsForEmail
 import uk.gov.hmrc.agentclientauthorisation.model.AuthorisationRequest
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation.toInvitationInfo
 import uk.gov.hmrc.agentclientauthorisation.support.{ResettingMockitoSugar, TestData}
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 
@@ -141,6 +142,30 @@ class InvitationsServiceSpec extends UnitSpec with ResettingMockitoSugar with Te
 
       result.length shouldBe 1
       verify(mockRelationshipsConnector, times(0)).lookupInvitations(Some(Arn("XARN1234567")), Seq(), Seq(), None)
+    }
+  }
+
+  ".findInvitationsInfoBy" should {
+    "make a call to ACR when the ACR mongo feature is enabled, and combine the ACR and ACA invitation info" in {
+      when(mockAppConfig.acrMongoActivated).thenReturn(true)
+      when(mockRelationshipsConnector.lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), None)(hc))
+        .thenReturn(Future.successful(List(vatInvitation)))
+      when(mockInvitationsRepository.findInvitationInfoBy(Arn("XARN1234567"), Seq(("HMRC-MTD-VAT", "vrn", "123456789")), None))
+        .thenReturn(Future.successful(List(toInvitationInfo(vatInvitation.copy(fromAcr = false)))))
+      val result = await(service.findInvitationsInfoBy(Arn("XARN1234567"), Seq(("HMRC-MTD-VAT", "vrn", "123456789")), None))
+
+      result.length shouldBe 2
+      verify(mockRelationshipsConnector, times(1)).lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), None)
+    }
+
+    "not call ACR when the ACR mongo feature is disabled, and just return ACA invitation info" in {
+      when(mockAppConfig.acrMongoActivated).thenReturn(false)
+      when(mockInvitationsRepository.findInvitationInfoBy(Arn("XARN1234567"), Seq(("HMRC-MTD-VAT", "vrn", "123456789")), None))
+        .thenReturn(Future.successful(List(toInvitationInfo(vatInvitation.copy(fromAcr = false)))))
+      val result = await(service.findInvitationsInfoBy(Arn("XARN1234567"), Seq(("HMRC-MTD-VAT", "vrn", "123456789")), None))
+
+      result.length shouldBe 1
+      verify(mockRelationshipsConnector, times(0)).lookupInvitations(Some(Arn("XARN1234567")), Seq(Vat), Seq("123456789"), None)
     }
   }
 
