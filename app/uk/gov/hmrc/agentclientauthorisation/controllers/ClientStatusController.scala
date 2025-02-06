@@ -42,26 +42,36 @@ class ClientStatusController @Inject() (
   private val clientStatusCache = agentCacheProvider.clientStatusCache
 
   val getStatus: Action[AnyContent] = Action.async { implicit request =>
-    withClientIdentifiedBy { identifiers: Seq[(Service, String)] =>
-      for {
-        status <- if (identifiers.isEmpty) ClientStatusController.defaultClientStatus
-                  else
-                    clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
-                      for {
-                        nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
-                        hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
-                        hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
-                        hasPartialAuthRelationships = nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
-                        hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
-                                                         .map(_.fold(false)(_.nonEmpty))
-                        hasExistingRelationships <- if (hasExistingAfiRelationships || hasPartialAuthRelationships) Future.successful(true)
-                                                    else
-                                                      relationshipsConnector.getActiveRelationships.map(_.fold(false)(_.nonEmpty))
-                      } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
-                    }
-      } yield Ok(Json.toJson(status))
+    withClientIdentifiedBy {
+      case Nil => Future.successful(Ok(Json.toJson(ClientStatus())))
+      case identifiers if appConfig.acrMongoActivated =>
+        clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
+          for {
+            ClientStatus(acrPending, acrHistory, acrRelationships) <- relationshipsConnector.getCustomerStatus
+            nonSuspendedInvitationInfoList <-
+              if (!acrPending || !acrHistory || !acrRelationships) invitationsService.getNonSuspendedInvitations(identifiers)
+              else Future.successful(Nil)
+            hasPendingInvitations = acrPending || nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
+            hasInvitationsHistory = acrHistory || nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
+            hasExistingRelationships = acrRelationships || nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
+          } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
+        } map { status => Ok(Json.toJson(status)) }
+      case identifiers =>
+        clientStatusCache(ClientStatusController.toCacheKey(identifiers)) {
+          for {
+            nonSuspendedInvitationInfoList <- invitationsService.getNonSuspendedInvitations(identifiers)
+            hasPendingInvitations = nonSuspendedInvitationInfoList.exists(_.exists(_.status == Pending))
+            hasInvitationsHistory = nonSuspendedInvitationInfoList.exists(_.exists(_.status != Pending))
+            hasPartialAuthRelationships = nonSuspendedInvitationInfoList.exists(_.exists(_.status == PartialAuth))
+            hasExistingAfiRelationships <- relationshipsConnector.getActiveAfiRelationships
+                                             .map(_.fold(false)(_.nonEmpty))
+            hasExistingRelationships <- if (hasExistingAfiRelationships || hasPartialAuthRelationships) Future.successful(true)
+                                        else
+                                          relationshipsConnector.getActiveRelationships.map(_.fold(false)(_.nonEmpty))
+          } yield ClientStatus(hasPendingInvitations, hasInvitationsHistory, hasExistingRelationships)
+        } map { status => Ok(Json.toJson(status)) }
     } {
-      Ok(Json.toJson(ClientStatus(hasPendingInvitations = false, hasInvitationsHistory = false, hasExistingRelationships = false)))
+      Ok(Json.toJson(ClientStatus()))
     }
 
   }
@@ -69,7 +79,7 @@ class ClientStatusController @Inject() (
 
 object ClientStatusController {
 
-  case class ClientStatus(hasPendingInvitations: Boolean, hasInvitationsHistory: Boolean, hasExistingRelationships: Boolean)
+  case class ClientStatus(hasPendingInvitations: Boolean = false, hasInvitationsHistory: Boolean = false, hasExistingRelationships: Boolean = false)
 
   object ClientStatus {
     implicit val formats: OFormat[ClientStatus] = Json.format[ClientStatus]
@@ -80,8 +90,4 @@ object ClientStatusController {
       .sortBy(_._1.enrolmentKey)
       .map(i => s"${i._1}__${i._2}".toLowerCase.replace(" ", ""))
       .mkString(",")
-
-  val defaultClientStatus: Future[ClientStatus] =
-    Future.successful(ClientStatus(hasPendingInvitations = false, hasInvitationsHistory = false, hasExistingRelationships = false))
-
 }

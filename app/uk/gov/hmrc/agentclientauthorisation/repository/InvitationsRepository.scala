@@ -32,7 +32,9 @@ import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatus.unapply
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
+import uk.gov.hmrc.agentmtdidentifiers.model.Service.{MtdIt, MtdItSupp}
 import uk.gov.hmrc.agentmtdidentifiers.model._
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
@@ -275,7 +277,8 @@ class InvitationsRepositoryImpl @Inject() (
 
       val serviceQuery = createKeys.map(equal(InvitationRecordFormat.arnClientServiceStateKey, _))
 
-      val dateQuery = if (within30Days) {
+      val isAltItsaQuery = status.contains(PartialAuth) || (services.exists(Seq(MtdIt, MtdItSupp).contains) && clientId.exists(Nino.isValid))
+      val dateQuery = if (within30Days && !isAltItsaQuery) {
         Some(gte(InvitationRecordFormat.createdKey, Instant.now().minus(30, DAYS).toEpochMilli))
       } else {
         createdOnOrAfter.map(date => gte(InvitationRecordFormat.createdKey, Instant.from(date.atStartOfDay().atZone(ZoneOffset.UTC)).toEpochMilli))

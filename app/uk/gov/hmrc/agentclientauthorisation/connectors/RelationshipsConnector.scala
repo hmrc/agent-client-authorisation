@@ -22,10 +22,10 @@ import play.api.http.Status.{NOT_FOUND, NO_CONTENT, OK}
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
+import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.acrReads
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
-import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, AuthorisationResponse}
-import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation, InvitationStatus, InvitationStatusAction}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -388,4 +388,18 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         }
     }
   }
+
+  def getCustomerStatus(implicit hc: HeaderCarrier): Future[ClientStatus] =
+    monitor("ConsumedAPI-AgentClientRelationships-getCustomerStatus-GET") {
+      http
+        .GET[HttpResponse](s"$baseUrl/agent-client-relationships/customer-status")
+        .map { response: HttpResponse =>
+          response.status match {
+            case OK => response.json.as[ClientStatus]
+            case other =>
+              throw UpstreamErrorResponse(s"unexpected error during 'getCustomerStatus', statusCode=$other", other)
+          }
+        }
+    }
+
 }
