@@ -301,8 +301,15 @@ class InvitationsService @Inject() (
       _ <- analyticsService.reportSingleEventAnalyticsRequest(invitation).fallbackTo(successful(Done))
     } yield invitation
 
-  def findInvitation(invitationId: InvitationId): Future[Option[Invitation]] =
-    invitationsRepository.findByInvitationId(invitationId)
+  def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Option[Invitation]] =
+    if (appConfig.acrMongoActivated) {
+      relationshipsConnector.lookupInvitation(invitationId.value).flatMap {
+        case Some(invitation) => Future.successful(Some(invitation))
+        case None             => invitationsRepository.findByInvitationId(invitationId)
+      }
+    } else {
+      invitationsRepository.findByInvitationId(invitationId)
+    }
 
   def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
     invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)

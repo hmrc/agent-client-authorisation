@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentclientauthorisation.service.InvitationsService
 import uk.gov.hmrc.agentclientauthorisation.support.TestConstants.{mtdItId1, nino, nino1, utr}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service, Utr, Vrn}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 
@@ -39,8 +39,10 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ClientEndpointBehaviours extends TransitionInvitation with Eventually {
   this: UnitSpec with ResettingMockitoSugar =>
 
+  implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer testtoken")))
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(500, Millis)))
 
+  implicit val ec: ExecutionContext = resettingMock[ExecutionContext]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val authConnector: AuthActions = resettingMock[AuthActions]
   val auditConnector: AuditConnector = resettingMock[AuditConnector]

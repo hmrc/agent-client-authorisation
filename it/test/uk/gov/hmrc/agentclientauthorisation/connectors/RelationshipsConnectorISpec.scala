@@ -20,8 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor,
 import org.bson.types.ObjectId
 import play.api.libs.json.{JsResultException, Json}
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.model.{Accepted, Invitation, Pending, StatusChangeEvent}
-import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, Invitation}
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{CapitalGains, MtdIt, MtdItSupp, PersonalIncomeRecord, Pillar2, Ppt, Trust, Vat}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
