@@ -70,6 +70,7 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
     validateClientId(clientIdType, clientId) match {
       case Right((service, taxIdentifier)) =>
         onlyForClients(service, getType(clientIdType)) { _ => implicit authTaxId =>
+          implicit val hc: HeaderCarrier = HeaderCarrier()
           getInvitation(ClientIdentifier(taxIdentifier), invitationId)
         }
 
@@ -147,7 +148,7 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
     }
 
   private def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(implicit
-    ec: ExecutionContext,
+    hc: HeaderCarrier,
     authTaxId: ClientIdentifier[T]
   ): Future[Result] =
     forThisClient(clientId) {
@@ -162,7 +163,7 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
     clientId: ClientIdentifier[T],
     invitationId: InvitationId,
     action: Invitation => Future[Invitation]
-  )(implicit ec: ExecutionContext): Future[Result] =
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Result] =
     invitationsService.findInvitation(invitationId) flatMap {
       case Some(invitation) if matchClientIdentifiers(invitation.clientId, clientId) =>
         action(invitation).map(_ => NoContent).recoverWith { case StatusUpdateFailure(_, msg) =>

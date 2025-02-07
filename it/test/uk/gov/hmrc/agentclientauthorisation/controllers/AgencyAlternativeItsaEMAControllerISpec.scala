@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import org.scalatest.Assertion
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -25,8 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepositoryImpl
 import uk.gov.hmrc.agentclientauthorisation.support.PlatformAnalyticsStubs
 import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
 
-import java.time.temporal.ChronoUnit.MILLIS
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 
 class AgencyAlternativeItsaEMAControllerISpec extends BaseISpec with PlatformAnalyticsStubs {
 

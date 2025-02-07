@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -26,7 +25,6 @@ import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImp
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentSetRelationshipEndedWithACRControllerISpec extends BaseISpec {

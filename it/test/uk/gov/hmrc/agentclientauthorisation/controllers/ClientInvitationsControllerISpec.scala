@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -30,7 +29,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class ClientInvitationsControllerISpec extends BaseISpec with RelationshipStubs with EmailStub with PlatformAnalyticsStubs {

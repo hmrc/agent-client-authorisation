@@ -16,20 +16,17 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.{InvitationNotFound, NoPermissionOnAgency}
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepositoryImpl, MongoAgentReferenceRepository}
 import uk.gov.hmrc.agentclientauthorisation.support.{PlatformAnalyticsStubs, TestHalResponseInvitation}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, InvitationId}
 import uk.gov.hmrc.domain.TaxIdentifier
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
 
-import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 class AgentCancelInvitationWithACRControllerISpec extends BaseISpec with PlatformAnalyticsStubs {

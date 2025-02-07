@@ -16,18 +16,13 @@
 
 package uk.gov.hmrc.agentclientauthorisation.repository
 
-import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.MongoWriteException
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
-import uk.gov.hmrc.agentclientauthorisation.connectors.RelationshipsConnector
 import uk.gov.hmrc.agentclientauthorisation.controllers.BaseISpec
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-
-import scala.concurrent.ExecutionContext
 
 class MongoAgentReferenceRepositoryISpec extends BaseISpec with DefaultPlayMongoRepositorySupport[AgentReferenceRecord] {
   val httpClient: HttpClient = app.injector.instanceOf[HttpClient]
