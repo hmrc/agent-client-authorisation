@@ -332,6 +332,26 @@ trait ACRStubs {
         )
     )
 
+  def verifyAcrInvitationFound(invitationId: String, count: Int = 1): Unit =
+    eventually {
+      verify(
+        count,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId")
+        )
+      )
+    }
+
+  def verifyAcrInvitationNotFound(invitationId: String): Unit =
+    eventually {
+      verify(
+        0,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId")
+        )
+      )
+    }
+
   def stubFetchAgentReferenceById(uid: String, response: Option[AgentReferenceRecord]): StubMapping =
     stubFor(
       get(urlEqualTo(s"/agent-client-relationships/agent-reference/uid/$uid"))

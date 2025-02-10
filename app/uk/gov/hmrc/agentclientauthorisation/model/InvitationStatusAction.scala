@@ -36,6 +36,17 @@ object InvitationStatusAction extends Logging {
       throw new IllegalArgumentException
   }
 
+  def fromInvitationStatus(invitationStatus: InvitationStatus): InvitationStatusAction = invitationStatus match {
+    case Rejected    => Reject
+    case Accepted    => Accept
+    case PartialAuth => Accept
+    case Cancelled   => Cancel
+    case value =>
+      logger.warn(s"Action of [$value] is not a valid status change action")
+      throw new IllegalArgumentException
+
+  }
+
   def unapply(status: InvitationStatusAction): String = status match {
     case Accept => "accept"
     case Cancel => "cancel"

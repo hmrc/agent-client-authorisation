@@ -302,7 +302,7 @@ class InvitationsService @Inject() (
       if (appConfig.acrMongoActivated && invitation.fromAcr) {
         for {
           invitation <- relationshipsConnector
-                          .changeACRInvitationStatusById(invitation.invitationId.value, InvitationStatusAction.Accept)
+                          .changeACRInvitationStatusById(invitation.invitationId.value, InvitationStatusAction.fromInvitationStatus(status))
                           .flatMap { response =>
                             response.status match {
                               case NO_CONTENT =>
