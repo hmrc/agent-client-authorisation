@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors.{DesConnector, IfConnector, RelationshipsConnector}
 import uk.gov.hmrc.agentclientauthorisation.model.AltItsaUpdateResult._
+import uk.gov.hmrc.agentclientauthorisation.model.Invitation.toInvitationInfo
 import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.InvitationsRepository
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
@@ -128,13 +129,15 @@ class InvitationsService @Inject() (
       case Pending =>
         for {
           // create new relationship
-          _          <- deauthExistingRelationshipForItsaForTheSameAgent(invitation)
-          _          <- createRelationship(invitation, acceptedDate)
+          _ <- deauthExistingRelationshipForItsaForTheSameAgent(invitation)
+          _ <- createRelationship(invitation, acceptedDate)
+
           invitation <- changeInvitationStatus(invitation, nextStatus, acceptedDate)
 
           // mark any existing relationships as de-authed, this is not critical, so on failure, just move on
           existingInvitations <- getExistingInvitations(invitation)
-          _                   <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(()))
+
+          _ <- deauthExistingInvitations(existingInvitations, invitation).fallbackTo(successful(Nil))
 
           // audit, don't fail on these
           _ <- emailService.sendAcceptedEmail(invitation).fallbackTo(successful(()))
@@ -147,7 +150,62 @@ class InvitationsService @Inject() (
     }
   }
 
-  // TODO WG - always returns UNIT - does not matter if success or fail
+  private def getExistingInvitations(invitation: Invitation): Future[List[Invitation]] = {
+    val itsaInvitationStatus = if (invitation.clientId == invitation.suppliedClientId) PartialAuth else Accepted
+    invitation.service match {
+      case Service.MtdItSupp =>
+        // get MtdItSupp or MtdIt main invitations for the same agent only
+        invitationsRepository
+          .findInvitationsBy(
+            arn = Some(invitation.arn),
+            services = Seq(Service.MtdIt, Service.MtdItSupp),
+            clientId = Some(invitation.clientId.value),
+            status = Some(itsaInvitationStatus),
+            within30Days = appConfig.acrMongoActivated
+          )
+          .fallbackTo(successful(Nil))
+
+      case Service.MtdIt =>
+        for {
+          // get MtdItSupp invitations for the same agent
+          mtdItSuppInvitationForSameAgent <- invitationsRepository.findInvitationsBy(
+                                               arn = Some(invitation.arn),
+                                               services = Seq(Service.MtdItSupp),
+                                               clientId = Some(invitation.clientId.value),
+                                               status = Some(itsaInvitationStatus),
+                                               within30Days = appConfig.acrMongoActivated
+                                             )
+          // get all MtdIt main invitations for all agents
+          mtdItMainInvitationsForAllAgents <- invitationsRepository.findInvitationsBy(
+                                                services = Seq(Service.MtdIt),
+                                                clientId = Some(invitation.clientId.value),
+                                                status = Some(itsaInvitationStatus),
+                                                within30Days = appConfig.acrMongoActivated
+                                              )
+        } yield (Nil ++ mtdItSuppInvitationForSameAgent ++ mtdItMainInvitationsForAllAgents)
+
+      case _ =>
+        // get all invitations for service for all agents
+        invitationsRepository
+          .findInvitationsBy(
+            services = Seq(invitation.service),
+            clientId = Some(invitation.clientId.value),
+            status = Some(Accepted),
+            within30Days = appConfig.acrMongoActivated
+          )
+          .fallbackTo(successful(Nil))
+    }
+  }
+
+  private def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit ec: ExecutionContext) =
+    Future
+      .sequence(
+        existingInvitations.filterNot(i => i.firstEvent() == invitation.firstEvent()).collect {
+          case invite if invite.status == Accepted | invite.status == PartialAuth =>
+            invitationsRepository.setRelationshipEnded(invite, "Client")
+        }
+      )
+
   private def deauthExistingRelationshipForItsaForTheSameAgent(
     invitation: Invitation
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
@@ -346,13 +404,25 @@ class InvitationsService @Inject() (
   def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
     invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)
 
-  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus]): Future[Seq[Invitation]] =
-    invitationsRepository.findInvitationsBy(
-      services = services,
-      clientId = Some(clientId.value),
-      status = status,
-      within30Days = appConfig.acrMongoActivated
-    )
+  def clientsReceived(services: Seq[Service], clientId: ClientId, status: Option[InvitationStatus])(implicit
+    hc: HeaderCarrier
+  ): Future[Seq[Invitation]] =
+    for {
+      acrInvitations <-
+        if (appConfig.acrMongoActivated)
+          relationshipsConnector.lookupInvitations(None, services, Seq(clientId.value), status)
+        else
+          Future.successful(Nil)
+      acaInvitations <-
+        invitationsRepository.findInvitationsBy(
+          arn = None,
+          services = services,
+          clientId = Some(clientId.value),
+          status = status,
+          createdOnOrAfter = None,
+          within30Days = appConfig.acrMongoActivated
+        )
+    } yield acrInvitations ++ acaInvitations
 
   def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
@@ -368,7 +438,7 @@ class InvitationsService @Inject() (
   )(implicit hc: HeaderCarrier): Future[List[Invitation]] = for {
     acrInvitations <-
       if (appConfig.acrMongoActivated)
-        relationshipsConnector.lookupInvitations(arn, services, clientId.fold[Seq[String]](Seq())(id => Seq(id)), status)
+        relationshipsConnector.lookupInvitations(arn, services, clientId.toSeq, status)
       else
         Future.successful(List())
     acaInvitations <-
@@ -437,6 +507,16 @@ class InvitationsService @Inject() (
         logger.info(s"invitation expired id:${invitation.invitationId.value}")
         emailService.sendExpiredEmail(invitation)
       }
+
+  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: LocalDateTime = currentTime())(implicit
+    ec: ExecutionContext
+  ): Future[Invitation] =
+    if (invitation.status == Pending || invitation.status == PartialAuth) {
+      invitationsRepository.update(invitation, status, timestamp) map { invitation =>
+        logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
+        invitation
+      }
+    } else Future failed invalidTransition(invitation, status)
 
   private def invalidTransition(invitation: Invitation, toStatus: InvitationStatus) =
     StatusUpdateFailure(
@@ -550,8 +630,7 @@ class InvitationsService @Inject() (
         .sortBy(_.mostRecentEvent().time) // there could be more than 1 because of a previous failure...we want the most recent.
         .headOption
     ).flatMap {
-      case Some(i) =>
-        setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => true)
+      case Some(i) => setRelationshipEnded(i, endedBy.getOrElse("HMRC")).map(_ => true)
       case None =>
         logger.warn(s"setRelationshipEnded failed as no invitation was found")
         Future successful false

@@ -76,7 +76,7 @@ class AgentReferenceController @Inject() (
         result <- recordOpt match {
                     case Some(record) =>
                       invitationsService
-                        .findInvitationsInfoForClient(record.arn, clientIds, status)
+                        .findInvitationsInfoBy(record.arn, clientIds, status)
                         .map(list => Ok(Json.toJson(list)))
                     case _ => Future successful NotFound
                   }

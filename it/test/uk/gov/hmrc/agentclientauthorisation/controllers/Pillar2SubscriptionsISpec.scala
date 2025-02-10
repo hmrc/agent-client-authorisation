@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import org.apache.pekko.stream.Materializer
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._

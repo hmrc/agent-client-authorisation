@@ -35,10 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 @Singleton
-class ClientInvitationsController @Inject() (
-  appConfig: AppConfig,
-  invitationsService: InvitationsService
-)(implicit
+class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsService: InvitationsService)(implicit
   metrics: Metrics,
   cc: ControllerComponents,
   authConnector: AuthConnector,
@@ -115,18 +112,15 @@ class ClientInvitationsController @Inject() (
       }
     }
 
-  // TODO WG step3
   private def acceptInvitation[T <: TaxIdentifier](
     clientId: ClientIdentifier[T],
     invitationId: InvitationId
   )(implicit ec: ExecutionContext, hc: HeaderCarrier, request: Request[Any], authTaxId: Option[ClientIdentifier[T]]): Future[Result] =
     forThisClientOrStride(clientId) {
-      // TODO WG step4 - find invitation
       actionInvitation(
         clientId,
         invitationId,
         invitation =>
-          // TODO WG step5 - accept new  invitation
           invitationsService.acceptInvitation(invitation).andThen { case Success(invitation) =>
             val isAltItsa = invitation.service == MtdIt && invitation.clientId == invitation.suppliedClientId
             for {

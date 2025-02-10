@@ -227,6 +227,9 @@ trait TestDataSupport {
     override def migratePartialAuthToAcr(rate: Int = 10)(implicit hc: HeaderCarrier): Future[Done] =
       Future failed new Exception(s"Unable to migrate partialAuth to ACR")
 
+    override def countBrokenPartialAuth(rate: Int): Future[Int] =
+      Future failed new Exception(s"Unable to count broken partialAuth")
+
   }
 
   /*

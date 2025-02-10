@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.libs.json.{JsValue, Json}
+import uk.gov.hmrc.agentclientauthorisation.controllers.ClientStatusController.ClientStatus
 import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -392,6 +393,16 @@ trait ACRStubs {
           aResponse()
             .withStatus(responseStatus)
             .withBody(responseBody)
+        )
+    )
+
+  def stubGetCustomerStatus(response: ClientStatus): StubMapping =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/customer-status"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(Json.toJson(response).toString)
         )
     )
 }

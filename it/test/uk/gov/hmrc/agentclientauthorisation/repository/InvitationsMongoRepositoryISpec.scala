@@ -853,6 +853,16 @@ class InvitationsMongoRepositoryISpec
     }
   }
 
+  "countBrokenPartialAuth" should {
+    "count the number of partial auth invitation that don't have nino as clientId" in {
+      await(repository.collection.insertOne(activePartialAuth1.copy(clientId = mtdItId1)).toFuture())
+      await(repository.collection.insertOne(activePartialAuth2).toFuture())
+      await(repository.collection.insertOne(activePartialAuth3).toFuture())
+      repository.countRemainingPartialAuth().futureValue shouldBe 3
+      repository.countBrokenPartialAuth().futureValue shouldBe 1
+    }
+  }
+
   private def addInvitation(invitations: Invitation) = addInvitations(invitations).head
 
   private def addInvitations(invitations: Invitation*) =

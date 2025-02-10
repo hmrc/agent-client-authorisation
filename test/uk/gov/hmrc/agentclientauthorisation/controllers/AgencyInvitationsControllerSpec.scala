@@ -43,7 +43,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolments, PlayAuthConnector}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
@@ -54,6 +54,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AgencyInvitationsControllerSpec
     extends MocksWithCache with AkkaMaterializerSpec with ResettingMockitoSugar with BeforeAndAfterEach with TransitionInvitation with TestData {
 
+  implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("Bearer testtoken")))
   val postcodeService: PostcodeService = resettingMock[PostcodeService]
   val invitationsService: InvitationsService = resettingMock[InvitationsService]
   val multiInvitationsService: AgentLinkService = resettingMock[AgentLinkService]
@@ -357,8 +358,12 @@ class AgencyInvitationsControllerSpec
           .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier])
       )
         .thenReturn(Future successful Some(inviteCreated))
+
       when(invitationsService.cancelInvitation(eqs(inviteCreated))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future successful cancelledInvite)
+
+      when(mockRelationshipsConnector.lookupInvitation(eqs(mtdSaPendingInvitationId.value))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future successful None)
 
       val response = await(controller.cancelInvitation(arn, mtdSaPendingInvitationId)(FakeRequest()))
 
@@ -370,6 +375,9 @@ class AgencyInvitationsControllerSpec
 
       val inviteCreated = TestConstants.defaultInvitation
         .copy(_id = mtdSaPendingInvitationDbId, invitationId = mtdSaPendingInvitationId, arn = arn, clientId = mtdItId1)
+
+      when(mockRelationshipsConnector.lookupInvitation(eqs(mtdSaPendingInvitationId.value))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(None))
 
       when(
         invitationsService
@@ -387,6 +395,9 @@ class AgencyInvitationsControllerSpec
     "return 404 when trying to cancel a not found invitation" in {
       agentAuthStub(agentAffinityAndEnrolments)
 
+      when(mockRelationshipsConnector.lookupInvitation(eqs(mtdSaPendingInvitationId.value))(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(None))
+      
       when(
         invitationsService
           .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier])
