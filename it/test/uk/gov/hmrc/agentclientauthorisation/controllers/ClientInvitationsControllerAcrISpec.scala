@@ -253,7 +253,6 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
 
   }
 
-  // TODO WG - working fine
   "PUT /clients/:clientIdType/:clientId/invitations/received/:invitationId/accept" should {
     (altItsaClient :: uiClients).foreach { client =>
       runAcceptInvitationsScenario(client, "UI", false)
@@ -680,6 +679,14 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
             responseBody = Json.obj()
           )
 
+          // Used for controller.getInvitations to check status for ACA invitation
+          stubLookupInvitations(
+            expectedQueryParams =
+              s"?services=${Service.MtdIt.id}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=$DeAuthorised",
+            responseStatus = NOT_FOUND,
+            responseBody = Json.obj()
+          )
+
         case Service.MtdItSupp =>
           givenCheckRelationship(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
           givenDeleteRelationship(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
@@ -692,11 +699,26 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
             responseBody = Json.obj()
           )
 
+          // Used for controller.getInvitations to check status for ACA invitation
+          stubLookupInvitations(
+            expectedQueryParams =
+              s"?services=${Service.MtdIt.id}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=$DeAuthorised",
+            responseStatus = NOT_FOUND,
+            responseBody = Json.obj()
+          )
+
         case Service.Ppt =>
           givenPptSubscriptionWithName(pptRef, true, true, false)
           // Check is they are other invitations for service and client with status Accept
           stubLookupInvitations(
             expectedQueryParams = s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=$acceptedStatus",
+            responseStatus = NOT_FOUND,
+            responseBody = Json.obj()
+          )
+
+          // Used for controller.getInvitations to check status for ACA invitation
+          stubLookupInvitations(
+            expectedQueryParams = s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=$DeAuthorised",
             responseStatus = NOT_FOUND,
             responseBody = Json.obj()
           )
@@ -712,10 +734,25 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
             responseBody = Json.obj()
           )
 
+          // Used for controller.getInvitations to check status for ACA invitation
+          stubLookupInvitations(
+            expectedQueryParams =
+              s"?services=${Service.Cbc.id}&services=${Service.CbcNonUk.id}&clientIds=${client.clientId.value}&status=$DeAuthorised",
+            responseStatus = NOT_FOUND,
+            responseBody = Json.obj()
+          )
+
         case _ =>
           // Check is they are other invitations for service and client with status Accept
           stubLookupInvitations(
             expectedQueryParams = s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=$acceptedStatus",
+            responseStatus = NOT_FOUND,
+            responseBody = Json.obj()
+          )
+
+          // Used for controller.getInvitations to check status for ACA invitation
+          stubLookupInvitations(
+            expectedQueryParams = s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=$DeAuthorised",
             responseStatus = NOT_FOUND,
             responseBody = Json.obj()
           )
@@ -732,6 +769,45 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       val oldInvitationOpt: Option[TestHalResponseInvitation] =
         (contentAsJson(oldInvitationResult) \ "_embedded").as[TestHalResponseInvitations].invitations.headOption
       oldInvitationOpt.map(_.status) shouldBe Some(DeAuthorised.toString)
+
+      invitation.service match {
+        case Service.MtdIt if client.isAltItsaClient =>
+          verifyFriendlyNameChangeRequestSent()
+          verifyCheckRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
+          verifyDeleteRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
+          verifyStubLookupInvitationsWasSent(
+            s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Partialauth"
+          )
+          verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Partialauth")
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+
+        case Service.MtdIt =>
+          verifyFriendlyNameChangeRequestSent()
+          verifyCheckRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
+          verifyDeleteRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
+          verifyStubLookupInvitationsWasSent(s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted")
+          verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Accepted")
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+        case Service.MtdItSupp =>
+          verifyFriendlyNameChangeRequestSent()
+          verifyCheckRelationshipWasSent(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
+          verifyDeleteRelationshipWasSent(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
+          verifyStubLookupInvitationsWasSent(
+            s"?arn=${arn.value}&services=${Service.MtdIt.id}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted"
+          )
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+        case Service.Cbc if invitation.clientId.typeId == CbcIdType.id =>
+          verifyFriendlyNameChangeRequestSent()
+          verifyQueryKnownFactsRequestSent()
+        case Service.PersonalIncomeRecord =>
+        case _ =>
+          verifyFriendlyNameChangeRequestSent()
+          verifyCheckRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
+          verifyDeleteRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
+          verifyStubLookupInvitationsWasSent(s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=Accepted")
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+
+      }
 
     }
 

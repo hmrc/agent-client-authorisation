@@ -140,16 +140,16 @@ trait TestDataSupport {
   val pillar2Client: TestClient[PlrId] = TestClient(business, "Corp Ltd", Pillar2, PlrIdType, "PLRID", plrId, plrId, PlrId("XAPLR2222222222"))
 
   val uiClients = List(
-//    itsaClient,
-    irvClient
-//    vatClient,
-//    trustClient,
-//    trustNTClient,
-//    cgtClient,
-//    pptClient,
-//    cbcClient,
-//    cbcNonUkClient,
-//    itsaSuppClient
+    itsaClient,
+    irvClient,
+    vatClient,
+    trustClient,
+    trustNTClient,
+    cgtClient,
+    pptClient,
+    cbcClient,
+    cbcNonUkClient,
+    itsaSuppClient
   )
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
 

@@ -397,7 +397,7 @@ class AgencyInvitationsControllerSpec
 
       when(mockRelationshipsConnector.lookupInvitation(eqs(mtdSaPendingInvitationId.value))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(None))
-      
+
       when(
         invitationsService
           .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier])
