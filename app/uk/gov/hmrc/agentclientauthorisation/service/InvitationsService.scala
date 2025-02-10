@@ -191,15 +191,6 @@ class InvitationsService @Inject() (
     }
   }
 
-//  private def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit ec: ExecutionContext) =
-//    Future
-//      .sequence(
-//        existingInvitations.filterNot(i => i.firstEvent() == invitation.firstEvent()).collect {
-//          case invite if invite.status == Accepted | invite.status == PartialAuth =>
-//            invitationsRepository.setRelationshipEnded(invite, "Client")
-//        }
-//      )
-
   private def deauthExistingRelationshipForItsaForTheSameAgent(
     invitation: Invitation
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
