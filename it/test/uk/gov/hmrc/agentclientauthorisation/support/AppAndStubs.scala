@@ -64,6 +64,8 @@ trait AppAndStubs extends StartAndStopWireMock with GuiceOneServerPerSuite with 
       "microservice.services.des.port"                                       -> wiremockPort,
       "microservice.services.if.host"                                        -> wiremockHost,
       "microservice.services.if.port"                                        -> wiremockPort,
+      "microservice.services.eis.host"                                       -> wiremockHost,
+      "microservice.services.eis.port"                                       -> wiremockPort,
       "microservice.services.ni-exemption-registration.host"                 -> wiremockHost,
       "microservice.services.ni-exemption-registration.port"                 -> wiremockPort,
       "microservice.services.email.host"                                     -> wiremockHost,

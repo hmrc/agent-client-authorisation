@@ -17,10 +17,6 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
-import uk.gov.hmrc.agentmtdidentifiers.model.{ClientIdentifier, Service}
-
-import scala.util.Try
 
 case class AuthorisationRequest(clientId: String, suppliedClientIdType: String, clientName: String, service: String, clientType: Option[String])
 

@@ -59,8 +59,7 @@ class AgencyInvitationsController @Inject() (
   authConnector: AuthConnector,
   citizenDetailsConnector: CitizenDetailsConnector,
   agentCacheProvider: AgentCacheProvider,
-  relationshipsConnector: RelationshipsConnector,
-  invitationsTransitionalService: InvitationsTransitionalService
+  relationshipsConnector: RelationshipsConnector
 )(implicit metrics: Metrics, cc: ControllerComponents, futures: Futures, ec: ExecutionContext)
     extends AuthActions(metrics, appConfig, authConnector, cc) with HalWriter with AgentInvitationValidation with AgencyInvitationsHal {
 
@@ -275,7 +274,7 @@ class AgencyInvitationsController @Inject() (
   def getSentInvitation(givenArn: Arn, invitationId: InvitationId): Action[AnyContent] = onlyForAgents { implicit request => implicit arn =>
     forThisAgency(givenArn) {
       val invitationsWithOptLinks: Future[Option[Invitation]] = for {
-        invitation <- invitationsTransitionalService.findInvitation(invitationId)
+        invitation <- invitationsService.findInvitation(invitationId)
         invitationWithLink <- invitation match {
                                 case Some(invite: Invitation) =>
                                   (invite.clientType, invite.status) match {

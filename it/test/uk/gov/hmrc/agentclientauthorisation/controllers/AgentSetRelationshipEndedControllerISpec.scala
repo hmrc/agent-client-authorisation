@@ -67,7 +67,7 @@ class AgentSetRelationshipEndedControllerISpec extends BaseISpec {
       val invitation: Invitation = await(createInvitation(arn, testClient))
       await(invitationsRepo.update(invitation, Accepted, LocalDateTime.now()))
 
-      val payload = SetRelationshipEndedPayload(arn, testClient.clientId.value, testClient.service.id, None)
+      val payload = SetRelationshipEndedPayload(arn, testClient.clientId.value, testClient.service.id, Some("HMRC"))
 
       val response = controller.setRelationshipEnded()(request.withJsonBody(Json.toJson(payload)))
 

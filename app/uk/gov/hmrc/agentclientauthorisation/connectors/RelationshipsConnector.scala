@@ -24,8 +24,7 @@ import uk.gov.hmrc.agentclientauthorisation.UriPathEncoding.encodePathSegment
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.model.Invitation.acrReads
 import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
-import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, AuthorisationResponse}
-import uk.gov.hmrc.agentclientauthorisation.model.{ChangeInvitationStatusRequest, Invitation, InvitationStatus, InvitationStatusAction}
+import uk.gov.hmrc.agentclientauthorisation.model.{AuthorisationRequest, AuthorisationResponse, ChangeInvitationStatusRequest, DeAuthorised, Invitation, InvitationStatus, InvitationStatusAction}
 import uk.gov.hmrc.agentclientauthorisation.repository.AgentReferenceRecord
 import uk.gov.hmrc.agentclientauthorisation.util.HttpAPIMonitor
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
@@ -199,6 +198,7 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
         services.map(svc => "services" -> svc.id) ++
         clientIds.map(id => "clientIds" -> id) ++
         status.fold[List[(String, String)]](List.empty)(statusValue => List("status" -> statusValue.toString))
+
     monitor("ConsumedAPI-AgentClientRelationships-LookupInvitations-GET") {
       http.GET[HttpResponse](url, queryParams).map { response =>
         response.status match {
@@ -228,6 +228,28 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     monitor(s"ConsumedAPI-AgentClientRelationships-ChangeStatusById-PUT") {
       http.PUT[String, HttpResponse](changeACRInvitationStatusByIdUrl(invitationId, invitationStatusAction), "")
     }
+
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] = {
+    val arn = encodePathSegment(invitation.arn.value)
+    val service = encodePathSegment(invitation.service.id)
+    val suppliedClientId = encodePathSegment(invitation.suppliedClientId.value)
+    val url = s"$baseUrl/agent-client-relationships/transitional/change-invitation-status/arn/$arn/service/$service/client/$suppliedClientId"
+    val payload = Json.toJson(ChangeInvitationStatusRequest(invitationStatus = DeAuthorised, endedBy = Some(endedBy)))
+
+    monitor("ConsumedAPI-AgentClientRelationships-ChangeInvitationStatus-PUT") {
+      http.PUT[JsValue, HttpResponse](url, payload).map { response =>
+        response.status match {
+          case NO_CONTENT => ()
+          case NOT_FOUND  => throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
+          case status =>
+            throw UpstreamErrorResponse.apply(s"PUT of '$url' returned $status. Response body: '${response.body}'", response.status)
+        }
+      }
+    }
+  }
 
   private def trustRelationshipUrl(invitation: Invitation): String =
     invitation.service.enrolmentKey match {

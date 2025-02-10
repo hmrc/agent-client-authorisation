@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentclientauthorisation.model
 
 import org.bson.types.ObjectId
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import uk.gov.hmrc.agentclientauthorisation.repository.InvitationRecordFormat.detailsForEmailKey
 import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.MtdIt
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, ClientIdentifier, InvitationId, Service}
@@ -25,8 +27,6 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
-import play.api.libs.functional.syntax._
-import uk.gov.hmrc.agentclientauthorisation.repository.InvitationRecordFormat.{arnClientServiceStateKey, arnClientStateKey, createArnClientServiceStateKeys, createdKey, detailsForEmailKey, statusKey, toArnClientStateKey}
 
 case class Invitation(
   _id: ObjectId = ObjectId.get(),
