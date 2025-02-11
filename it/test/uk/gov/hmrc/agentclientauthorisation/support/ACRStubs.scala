@@ -49,6 +49,42 @@ trait ACRStubs {
         )
     )
 
+  def givenCheckRelationship(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier) =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(201)
+        )
+    )
+
+  def givenCheckRelationshipFails(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier) =
+    stubFor(
+      get(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(502)
+        )
+    )
+
+  def givenDeleteRelationship(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier) =
+    stubFor(
+      delete(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(201)
+        )
+    )
+
+  def givenDeleteRelationshipFails(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier) =
+    stubFor(
+      delete(urlEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(502)
+        )
+    )
+
   def givenClientRelationships(arn: Arn, service: String) =
     stubFor(
       get(urlEqualTo(s"/agent-client-relationships/client/relationships/active"))
@@ -76,6 +112,46 @@ trait ACRStubs {
       verify(
         1,
         putRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}")
+        )
+      )
+    }
+
+  def verifyCheckRelationshipNotSent(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier): Unit =
+    eventually {
+      verify(
+        0,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}")
+        )
+      )
+    }
+
+  def verifyCheckRelationshipWasSent(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier): Unit =
+    eventually {
+      verify(
+        1,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}")
+        )
+      )
+    }
+
+  def verifyDeleteRelationshipNotSent(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier): Unit =
+    eventually {
+      verify(
+        0,
+        deleteRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}")
+        )
+      )
+    }
+
+  def verifyDeleteRelationshipWasSent(arn: Arn, service: String, identifierKey: String, taxIdentifier: TaxIdentifier): Unit =
+    eventually {
+      verify(
+        1,
+        deleteRequestedFor(
           urlPathEqualTo(s"/agent-client-relationships/agent/${arn.value}/service/$service/client/$identifierKey/${taxIdentifier.value}")
         )
       )
@@ -240,7 +316,7 @@ trait ACRStubs {
                          |  "clientName": "$withClientName",
                          |  "status": "Pending",
                          |  "clientType": "${expectedInvitation.clientType.getOrElse("personal")}",
-                         |  "expiryDate": "2025-03-31",
+                         |  "expiryDate": "${expectedInvitation.expiryDate}",
                          |  "created": "2025-03-10T00:00:00Z",
                          |  "lastUpdated": "2025-03-10T00:00:00Z"
                          |}""".stripMargin)
@@ -255,6 +331,26 @@ trait ACRStubs {
             .withStatus(404)
         )
     )
+
+  def verifyAcrInvitationFound(invitationId: String, count: Int = 1): Unit =
+    eventually {
+      verify(
+        count,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId")
+        )
+      )
+    }
+
+  def verifyAcrInvitationNotFound(invitationId: String): Unit =
+    eventually {
+      verify(
+        0,
+        getRequestedFor(
+          urlPathEqualTo(s"/agent-client-relationships/lookup-invitation/$invitationId")
+        )
+      )
+    }
 
   def stubFetchAgentReferenceById(uid: String, response: Option[AgentReferenceRecord]): StubMapping =
     stubFor(
@@ -289,6 +385,26 @@ trait ACRStubs {
             .withBody(responseBody.toString())
         )
     )
+
+  def verifyStubLookupInvitationsNotSent(expectedQueryParams: String): Unit =
+    eventually {
+      verify(
+        0,
+        getRequestedFor(
+          urlEqualTo(s"/agent-client-relationships/lookup-invitations$expectedQueryParams")
+        )
+      )
+    }
+
+  def verifyStubLookupInvitationsWasSent(expectedQueryParams: String): Unit =
+    eventually {
+      verify(
+        1,
+        getRequestedFor(
+          urlEqualTo(s"/agent-client-relationships/lookup-invitations$expectedQueryParams")
+        )
+      )
+    }
 
   def stubCreateInvitationCall(arn: String, responseStatus: Int, responseBody: String): StubMapping =
     stubFor(

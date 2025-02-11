@@ -97,7 +97,7 @@ trait TestDataSupport {
   val strideRoles = Seq(STRIDE_ROLE, NEW_STRIDE_ROLE, ALT_STRIDE_ROLE)
 
   val tpd: TypeOfPersonDetails = TypeOfPersonDetails("Individual", Left(IndividualName("firstName", "lastName")))
-  val tpdBus: TypeOfPersonDetails = TypeOfPersonDetails("Organisation", Right(OrganisationName("Trustee")))
+  val tpdBus: TypeOfPersonDetails = TypeOfPersonDetails("Trustee", Right(OrganisationName("Trustee")))
 
   val cgtAddressDetails: CgtAddressDetails =
     CgtAddressDetails("line1", Some("line2"), Some("line2"), Some("line2"), "GB", Some("postcode"))
@@ -139,7 +139,18 @@ trait TestDataSupport {
     TestClient(business, "Overseas Corp Ltd", CbcNonUk, CbcIdType, "cbcId", cbcId, cbcId, CbcId("XXCBC0001773647"))
   val pillar2Client: TestClient[PlrId] = TestClient(business, "Corp Ltd", Pillar2, PlrIdType, "PLRID", plrId, plrId, PlrId("XAPLR2222222222"))
 
-  val uiClients = List(itsaClient, irvClient, vatClient, trustClient, trustNTClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
+  val uiClients = List(
+    itsaClient,
+    irvClient,
+    vatClient,
+    trustClient,
+    trustNTClient,
+    cgtClient,
+    pptClient,
+    cbcClient,
+    cbcNonUkClient,
+    itsaSuppClient
+  )
   val strideSupportedClient = List(itsaClient, vatClient, trustClient, cgtClient, pptClient, cbcClient, cbcNonUkClient, itsaSuppClient)
 
   val apiClients = List(itsaClient, vatClient, itsaSuppClient)

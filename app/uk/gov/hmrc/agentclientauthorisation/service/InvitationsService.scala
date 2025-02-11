@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentclientauthorisation.service
 
 import org.apache.pekko.Done
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, NO_CONTENT}
 import uk.gov.hmrc.agentclientauthorisation._
 import uk.gov.hmrc.agentclientauthorisation.audit.AuditService
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
@@ -31,7 +32,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{MtdIt, MtdItSupp}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
@@ -43,7 +44,6 @@ case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: S
 
 import scala.concurrent.{ExecutionContext, Future}
 
-// scalastyle:off number.of.methods
 @Singleton
 class InvitationsService @Inject() (
   invitationsRepository: InvitationsRepository,
@@ -150,61 +150,46 @@ class InvitationsService @Inject() (
     }
   }
 
-  private def getExistingInvitations(invitation: Invitation): Future[List[Invitation]] = {
+  private def getExistingInvitations(invitation: Invitation)(implicit hc: HeaderCarrier): Future[List[Invitation]] = {
     val itsaInvitationStatus = if (invitation.clientId == invitation.suppliedClientId) PartialAuth else Accepted
     invitation.service match {
       case Service.MtdItSupp =>
         // get MtdItSupp or MtdIt main invitations for the same agent only
-        invitationsRepository
-          .findInvitationsBy(
-            arn = Some(invitation.arn),
-            services = Seq(Service.MtdIt, Service.MtdItSupp),
-            clientId = Some(invitation.clientId.value),
-            status = Some(itsaInvitationStatus),
-            within30Days = appConfig.acrMongoActivated
-          )
+        findInvitationsBy(
+          arn = Some(invitation.arn),
+          services = Seq(Service.MtdIt, Service.MtdItSupp),
+          clientId = Some(invitation.clientId.value),
+          status = Some(itsaInvitationStatus)
+        )
           .fallbackTo(successful(Nil))
 
       case Service.MtdIt =>
         for {
           // get MtdItSupp invitations for the same agent
-          mtdItSuppInvitationForSameAgent <- invitationsRepository.findInvitationsBy(
+          mtdItSuppInvitationForSameAgent <- findInvitationsBy(
                                                arn = Some(invitation.arn),
                                                services = Seq(Service.MtdItSupp),
                                                clientId = Some(invitation.clientId.value),
-                                               status = Some(itsaInvitationStatus),
-                                               within30Days = appConfig.acrMongoActivated
+                                               status = Some(itsaInvitationStatus)
                                              )
           // get all MtdIt main invitations for all agents
-          mtdItMainInvitationsForAllAgents <- invitationsRepository.findInvitationsBy(
+          mtdItMainInvitationsForAllAgents <- findInvitationsBy(
                                                 services = Seq(Service.MtdIt),
                                                 clientId = Some(invitation.clientId.value),
-                                                status = Some(itsaInvitationStatus),
-                                                within30Days = appConfig.acrMongoActivated
+                                                status = Some(itsaInvitationStatus)
                                               )
         } yield (Nil ++ mtdItSuppInvitationForSameAgent ++ mtdItMainInvitationsForAllAgents)
 
       case _ =>
         // get all invitations for service for all agents
-        invitationsRepository
-          .findInvitationsBy(
-            services = Seq(invitation.service),
-            clientId = Some(invitation.clientId.value),
-            status = Some(Accepted),
-            within30Days = appConfig.acrMongoActivated
-          )
+        findInvitationsBy(
+          services = Seq(invitation.service),
+          clientId = Some(invitation.clientId.value),
+          status = Some(Accepted)
+        )
           .fallbackTo(successful(Nil))
     }
   }
-
-  private def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit ec: ExecutionContext) =
-    Future
-      .sequence(
-        existingInvitations.filterNot(i => i.firstEvent() == invitation.firstEvent()).collect {
-          case invite if invite.status == Accepted | invite.status == PartialAuth =>
-            invitationsRepository.setRelationshipEnded(invite, "Client")
-        }
-      )
 
   private def deauthExistingRelationshipForItsaForTheSameAgent(
     invitation: Invitation
@@ -234,7 +219,7 @@ class InvitationsService @Inject() (
       }
     } else Future.unit
 
-  def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext): Future[Invitation] = {
+  def acceptInvitationStatus(invitation: Invitation)(implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Invitation] = {
     val acceptedDate = currentTime()
     changeInvitationStatus(invitation, model.Accepted, acceptedDate)
   }
@@ -285,13 +270,11 @@ class InvitationsService @Inject() (
     } yield invitation
   }
 
-  def setRelationshipEnded(invitation: Invitation, endedBy: String): Future[Invitation] =
-    for {
-      updatedInvitation <- invitationsRepository.setRelationshipEnded(invitation, endedBy)
-    } yield {
-      logger info s"""Invitation with id: "${invitation._id.toString}" has been flagged as isRelationshipEnded = true"""
-      updatedInvitation
-    }
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
+    if (invitation.fromAcr)
+      relationshipsConnector.setRelationshipEnded(invitation, endedBy)
+    else
+      invitationsRepository.setRelationshipEnded(invitation, endedBy).map(_ => ())
 
   def rejectInvitation(invitation: Invitation)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Invitation] =
     for {
@@ -304,12 +287,61 @@ class InvitationsService @Inject() (
   def findInvitation(invitationId: InvitationId)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Option[Invitation]] =
     if (appConfig.acrMongoActivated) {
       relationshipsConnector.lookupInvitation(invitationId.value).flatMap {
-        case Some(invitation) => Future.successful(Some(invitation))
+        case Some(invitation) => Future.successful(Some(invitation.copy(fromAcr = true)))
         case None             => invitationsRepository.findByInvitationId(invitationId)
       }
     } else {
       invitationsRepository.findByInvitationId(invitationId)
     }
+
+  def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: LocalDateTime = currentTime())(implicit
+    ec: ExecutionContext,
+    hc: HeaderCarrier
+  ): Future[Invitation] =
+    if (invitation.status == Pending || invitation.status == PartialAuth) {
+      if (appConfig.acrMongoActivated && invitation.fromAcr) {
+        for {
+          invitation <- relationshipsConnector
+                          .changeACRInvitationStatusById(invitation.invitationId.value, InvitationStatusAction.fromInvitationStatus(status))
+                          .flatMap { response =>
+                            response.status match {
+                              case NO_CONTENT =>
+                                relationshipsConnector.lookupInvitation(invitation.invitationId.value).flatMap {
+                                  case Some(invitation) =>
+                                    logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
+                                    Future.successful(invitation.copy(fromAcr = true))
+                                  case None =>
+                                    Future.failed(
+                                      new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                                    )
+                                }
+                              case NOT_FOUND => Future.failed(new Exception(s"Invitation ${invitation.invitationId.value} not found"))
+                              case _ =>
+                                Future.failed(
+                                  new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                                )
+                            }
+                          }
+          detailsForEmail <- emailService.createDetailsForEmail(invitation.arn, invitation.clientId, invitation.service)
+        } yield invitation.copy(detailsForEmail = Some(detailsForEmail))
+      } else {
+        invitationsRepository.update(invitation, status, timestamp) map { invitation =>
+          logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
+          invitation
+        }
+      }
+    } else Future failed invalidTransition(invitation, status)
+
+  def deauthExistingInvitations(existingInvitations: Seq[Invitation], invitation: Invitation)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] =
+    Future
+      .sequence(existingInvitations.filterNot(i => i.firstEvent() == invitation.firstEvent()).collect {
+        case invite if invite.status == Accepted | invite.status == PartialAuth =>
+          setRelationshipEnded(invite, "Client")
+      })
+      .map(_ => ())
 
   def findLatestInvitationByClientId(clientId: String, within30Days: Boolean): Future[Option[Invitation]] =
     invitationsRepository.findLatestInvitationByClientId(clientId, within30Days)
@@ -321,8 +353,8 @@ class InvitationsService @Inject() (
       acrInvitations <-
         if (appConfig.acrMongoActivated)
           relationshipsConnector.lookupInvitations(None, services, Seq(clientId.value), status)
-        else
-          Future.successful(Nil)
+        else Future.successful(Nil)
+
       acaInvitations <-
         invitationsRepository.findInvitationsBy(
           arn = None,
@@ -332,6 +364,7 @@ class InvitationsService @Inject() (
           createdOnOrAfter = None,
           within30Days = appConfig.acrMongoActivated
         )
+
     } yield acrInvitations ++ acaInvitations
 
   def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
@@ -417,16 +450,6 @@ class InvitationsService @Inject() (
         logger.info(s"invitation expired id:${invitation.invitationId.value}")
         emailService.sendExpiredEmail(invitation)
       }
-
-  private def changeInvitationStatus(invitation: Invitation, status: InvitationStatus, timestamp: LocalDateTime = currentTime())(implicit
-    ec: ExecutionContext
-  ): Future[Invitation] =
-    if (invitation.status == Pending || invitation.status == PartialAuth) {
-      invitationsRepository.update(invitation, status, timestamp) map { invitation =>
-        logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
-        invitation
-      }
-    } else Future failed invalidTransition(invitation, status)
 
   private def invalidTransition(invitation: Invitation, toStatus: InvitationStatus) =
     StatusUpdateFailure(

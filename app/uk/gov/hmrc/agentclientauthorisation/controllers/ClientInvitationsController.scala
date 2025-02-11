@@ -69,8 +69,7 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
   def getInvitation(clientIdType: String, clientId: String, invitationId: InvitationId): Action[AnyContent] =
     validateClientId(clientIdType, clientId) match {
       case Right((service, taxIdentifier)) =>
-        onlyForClients(service, getType(clientIdType)) { _ => implicit authTaxId =>
-          implicit val hc: HeaderCarrier = HeaderCarrier()
+        onlyForClients(service, getType(clientIdType)) { implicit request => implicit authTaxId =>
           getInvitation(ClientIdentifier(taxIdentifier), invitationId)
         }
 
@@ -148,8 +147,9 @@ class ClientInvitationsController @Inject() (appConfig: AppConfig, invitationsSe
     }
 
   private def getInvitation[T <: TaxIdentifier](clientId: ClientIdentifier[T], invitationId: InvitationId)(implicit
-    hc: HeaderCarrier,
-    authTaxId: ClientIdentifier[T]
+    ec: ExecutionContext,
+    authTaxId: ClientIdentifier[T],
+    hc: HeaderCarrier
   ): Future[Result] =
     forThisClient(clientId) {
       invitationsService.findInvitation(invitationId).map {

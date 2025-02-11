@@ -229,6 +229,28 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
       http.PUT[String, HttpResponse](changeACRInvitationStatusByIdUrl(invitationId, invitationStatusAction), "")
     }
 
+  def setRelationshipEnded(invitation: Invitation, endedBy: String)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] = {
+    val arn = encodePathSegment(invitation.arn.value)
+    val service = encodePathSegment(invitation.service.id)
+    val suppliedClientId = encodePathSegment(invitation.suppliedClientId.value)
+    val url = s"$baseUrl/agent-client-relationships/transitional/change-invitation-status/arn/$arn/service/$service/client/$suppliedClientId"
+    val payload = Json.toJson(ChangeInvitationStatusRequest(invitationStatus = DeAuthorised, endedBy = Some(endedBy)))
+
+    monitor("ConsumedAPI-AgentClientRelationships-ChangeInvitationStatus-PUT") {
+      http.PUT[JsValue, HttpResponse](url, payload).map { response =>
+        response.status match {
+          case NO_CONTENT => ()
+          case NOT_FOUND  => throw new Exception(s"Invitation ${invitation.invitationId.value} not found")
+          case status =>
+            throw UpstreamErrorResponse.apply(s"PUT of '$url' returned $status. Response body: '${response.body}'", response.status)
+        }
+      }
+    }
+  }
+
   private def trustRelationshipUrl(invitation: Invitation): String =
     invitation.service.enrolmentKey match {
       case Service.HMRCTERSORG =>

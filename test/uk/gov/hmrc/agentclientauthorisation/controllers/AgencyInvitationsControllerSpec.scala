@@ -162,7 +162,7 @@ class AgencyInvitationsControllerSpec
           .thenReturn(Future.successful(false))
         when(invitationsService.findLatestInvitationByClientId(any[String], any[Boolean]))
           .thenReturn(Future.successful(Some(invitationActive)))
-        when(invitationsService.setRelationshipEnded(any[Invitation], any[String]))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[HeaderCarrier], any[ExecutionContext]))
           .thenReturn(Future.successful(invitationActive))
         when(
           invitationsService.create(
@@ -174,7 +174,7 @@ class AgencyInvitationsControllerSpec
             any[Option[String]]
           )(any[HeaderCarrier], any[ExecutionContext])
         ).thenReturn(Future successful invitationActive)
-        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
+        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
           .thenReturn(Future successful invitationActive)
 
         val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
@@ -244,7 +244,7 @@ class AgencyInvitationsControllerSpec
         when(appConfig.acrMongoActivated).thenReturn(false)
         when(invitationsService.findLatestInvitationByClientId(any[String], any[Boolean]))
           .thenReturn(Future.successful(Some(invitationActive)))
-        when(invitationsService.setRelationshipEnded(any[Invitation], any[String]))
+        when(invitationsService.setRelationshipEnded(any[Invitation], any[String])(any[HeaderCarrier], any[ExecutionContext]))
           .thenReturn(Future.successful(invitationActive))
         when(
           invitationsService.create(
@@ -256,7 +256,7 @@ class AgencyInvitationsControllerSpec
             any[Option[String]]
           )(any[HeaderCarrier], any[ExecutionContext])
         ).thenReturn(Future successful invitationActive)
-        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext]))
+        when(invitationsService.acceptInvitationStatus(any[Invitation])(any[ExecutionContext], any[HeaderCarrier]))
           .thenReturn(Future successful invitationActive)
 
         val response = await(controller.replaceUrnInvitationWithUtr(urn, utr)(FakeRequest()))
@@ -397,7 +397,7 @@ class AgencyInvitationsControllerSpec
 
       when(mockRelationshipsConnector.lookupInvitation(eqs(mtdSaPendingInvitationId.value))(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Future.successful(None))
-      
+
       when(
         invitationsService
           .findInvitation(any[InvitationId])(any[ExecutionContext], any[HeaderCarrier])
