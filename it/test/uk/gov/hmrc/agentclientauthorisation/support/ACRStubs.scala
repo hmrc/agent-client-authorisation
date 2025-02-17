@@ -314,6 +314,8 @@ trait ACRStubs {
                          |  "suppliedClientId": "${expectedInvitation.suppliedClientId.value}",
                          |  "suppliedClientIdType": "${expectedInvitation.suppliedClientId.typeId}",
                          |  "clientName": "$withClientName",
+                         |  "agencyName": "${expectedInvitation.detailsForEmail.map(_.agencyName).getOrElse("")}",
+                         |  "agencyEmail": "${expectedInvitation.detailsForEmail.map(_.agencyEmail).getOrElse("")}",
                          |  "status": "Pending",
                          |  "clientType": "${expectedInvitation.clientType.getOrElse("personal")}",
                          |  "expiryDate": "${expectedInvitation.expiryDate}",

@@ -17,24 +17,23 @@
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.scalatest.concurrent.Eventually.eventually
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.agentclientauthorisation.connectors.SimpleCbcSubscription
-import uk.gov.hmrc.agentclientauthorisation.model.{Invitation, InvitationStatusAction, _}
+import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
+import uk.gov.hmrc.agentclientauthorisation.model._
 import uk.gov.hmrc.agentclientauthorisation.repository.{InvitationsRepository, InvitationsRepositoryImpl}
 import uk.gov.hmrc.agentclientauthorisation.support._
 import uk.gov.hmrc.agentclientauthorisation.util.DateUtils
 import uk.gov.hmrc.agentmtdidentifiers.model.Service._
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.TaxIdentifier
-import uk.gov.hmrc.agentclientauthorisation.model.InvitationStatusAction.unapply
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.Future
 
+//scalastyle:off
 class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStubs with EmailStub with PlatformAnalyticsStubs {
 
   override protected def additionalConfiguration: Map[String, Any] =
@@ -187,16 +186,6 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
         )
     )
 
-  def verifyPptSubscriptionWithNameWasSent(pptRef: PptRef): Unit =
-    eventually {
-      verify(
-        1,
-        getRequestedFor(
-          urlEqualTo(s"/plastic-packaging-tax/subscriptions/PPT/${pptRef.value}/display")
-        )
-      )
-    }
-
   def givenCbcSubscription(tradingName: String): StrideAuthStubs = {
     stubFor(
       post(urlEqualTo(s"/dac6/dct50d/v1"))
@@ -235,16 +224,6 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
     )
     this
   }
-
-  def verifyCbcSubscriptionWasSent(): Unit =
-    eventually {
-      verify(
-        1,
-        postRequestedFor(
-          urlEqualTo(s"/dac6/dct50d/v1")
-        )
-      )
-    }
 
   def verifyQueryKnownFactsRequestSent(): Unit =
     eventually {
@@ -320,11 +299,13 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       "invitationId"         -> "123",
       "arn"                  -> "TARN0000001",
       "service"              -> "HMRC-MTD-IT-SUPP",
-      "clientId"             -> "AB123456A",
-      "clientIdType"         -> "ni",
-      "suppliedClientId"     -> "ABCDEF123456789",
-      "suppliedClientIdType" -> "MTDITID",
+      "clientId"             -> "ABCDEF123456789",
+      "clientIdType"         -> "MTDITID",
+      "suppliedClientId"     -> "AB123456A",
+      "suppliedClientIdType" -> "ni",
       "clientName"           -> "Macrosoft",
+      "agencyName"           -> "TestAgent",
+      "agencyEmail"          -> "agent@email.com",
       "status"               -> "Accepted",
       "relationshipEndedBy"  -> "Me",
       "clientType"           -> "personal",
@@ -342,6 +323,8 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       "suppliedClientId"     -> s"${invitation.suppliedClientId.value}",
       "suppliedClientIdType" -> s"$suppliedClientIdType",
       "clientName"           -> s"$clientName",
+      "agencyName"           -> s"${invitation.detailsForEmail.map(_.agencyName).getOrElse("")}",
+      "agencyEmail"          -> s"${invitation.detailsForEmail.map(_.agencyEmail).getOrElse("")}",
       "status"               -> s"$status",
       "relationshipEndedBy"  -> "Me",
       "clientType"           -> "personal",
@@ -361,7 +344,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
         createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service)
       if (!client.isAltItsaClient)
         givenCreateRelationship(arn, client.service.id, if (client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
-//      givenEmailSent(emailInfo)
+      givenEmailSent(emailInfo)
       anAfiRelationshipIsCreatedWith(arn, client.clientId)
       givenPlatformAnalyticsRequestSent(true)
       givenGroupIdIsKnownForArn(arn, "some-group-id")
@@ -405,7 +388,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = Service.MtdItSupp.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -433,8 +416,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       val result: Result = await(controller.acceptInvitation(client.urlIdentifier, client.clientId.value, invitation.invitationId)(request))
       status(result) shouldBe 204
       verifyAnalyticsRequestSent(1)
-      // TODO WG - eoes not work - fix it
-//      verifyEmailRequestWasSentWithEmailInformation(1, emailInfo)
+      verifyEmailRequestWasSentWithEmailInformation(1, emailInfo)
 
       invitation.service match {
         case Service.MtdIt if client.isAltItsaClient =>
@@ -445,7 +427,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
             s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Partialauth"
           )
           verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Partialauth")
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.suppliedClientId.value)
 
         case Service.MtdIt =>
           verifyFriendlyNameChangeRequestSent()
@@ -453,7 +435,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyDeleteRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
           verifyStubLookupInvitationsWasSent(s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted")
           verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Accepted")
-          verifyACRChangeStatusSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+          verifyACRChangeStatusSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.suppliedClientId.value)
         case Service.MtdItSupp =>
           verifyFriendlyNameChangeRequestSent()
           verifyCheckRelationshipWasSent(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
@@ -461,7 +443,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyStubLookupInvitationsWasSent(
             s"?arn=${arn.value}&services=${Service.MtdIt.id}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted"
           )
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.suppliedClientId.value)
         case Service.Cbc if invitation.clientId.typeId == CbcIdType.id =>
           verifyFriendlyNameChangeRequestSent()
           verifyQueryKnownFactsRequestSent()
@@ -471,7 +453,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyCheckRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
           verifyDeleteRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
           verifyStubLookupInvitationsWasSent(s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=Accepted")
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.suppliedClientId.value)
 
       }
     }
@@ -524,6 +506,10 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       val invitation: Invitation = createInvitation(arn, client)
       val acceptedStatus: InvitationStatus = if (client.isAltItsaClient) PartialAuth else Accepted
 
+      givenEmailSent(
+        createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service)
+      )
+
       if (!client.isAltItsaClient) {
         givenCreateRelationship(arn, client.service.id, if (client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
         givenClientRelationships(arn, client.service.id)
@@ -558,7 +544,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = Service.MtdItSupp.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -567,14 +553,16 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           stubLookupInvitations(
             expectedQueryParams = s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=$acceptedStatus",
             responseStatus = OK,
-            responseBody = Json.arr(acrJson2(oldMainItsaWithOtherAgent, client.clientIdType.id, "ni", client.clientName, acceptedStatus.toString))
+            responseBody = Json.arr(
+              acrJson2(oldMainItsaWithOtherAgent, client.clientIdType.id, "ni", client.clientName, acceptedStatus.toString)
+            )
           )
 
           // if there is deauth supp
           givenACRChangeStatusSuccess(
             arn = arn2,
             service = client.service.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -596,7 +584,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = Service.MtdIt.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -614,7 +602,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = client.service.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -634,7 +622,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = client.service.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
 
@@ -651,7 +639,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           givenACRChangeStatusSuccess(
             arn = arn,
             service = client.service.id,
-            clientId = client.clientId.value,
+            clientId = client.suppliedClientId.value,
             changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, Some("Client"))
           )
       }
@@ -674,6 +662,10 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
 
       // Create new invitation
       val invitation: Invitation = createInvitation(arn, client)
+
+      givenEmailSent(
+        createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_accepted_authorisation_request", client.service)
+      )
 
       if (!client.isAltItsaClient) {
         givenCreateRelationship(arn, client.service.id, if (client.urlIdentifier == "UTR") "SAUTR" else client.urlIdentifier, client.clientId)
@@ -810,7 +802,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
             s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Partialauth"
           )
           verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Partialauth")
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.suppliedClientId.value)
 
         case Service.MtdIt =>
           verifyFriendlyNameChangeRequestSent()
@@ -818,7 +810,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyDeleteRelationshipWasSent(arn, Service.MtdItSupp.id, client.urlIdentifier, client.clientId)
           verifyStubLookupInvitationsWasSent(s"?arn=${arn.value}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted")
           verifyStubLookupInvitationsWasSent(s"?services=${Service.MtdIt.id}&clientIds=${client.clientId.value}&status=Accepted")
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = Service.MtdItSupp.id, clientId = client.suppliedClientId.value)
         case Service.MtdItSupp =>
           verifyFriendlyNameChangeRequestSent()
           verifyCheckRelationshipWasSent(arn, Service.MtdIt.id, client.urlIdentifier, client.clientId)
@@ -826,7 +818,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyStubLookupInvitationsWasSent(
             s"?arn=${arn.value}&services=${Service.MtdIt.id}&services=${Service.MtdItSupp.id}&clientIds=${client.clientId.value}&status=Accepted"
           )
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.suppliedClientId.value)
         case Service.Cbc if invitation.clientId.typeId == CbcIdType.id =>
           verifyFriendlyNameChangeRequestSent()
           verifyQueryKnownFactsRequestSent()
@@ -836,7 +828,7 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
           verifyCheckRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
           verifyDeleteRelationshipNotSent(arn, client.service.id, client.urlIdentifier, client.clientId)
           verifyStubLookupInvitationsWasSent(s"?services=${client.service.id}&clientIds=${client.clientId.value}&status=Accepted")
-          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.clientId.value)
+          verifyACRChangeStatusWasNOTSent(arn = arn, service = client.service.id, clientId = client.suppliedClientId.value)
 
       }
 
@@ -877,10 +869,9 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
     s"reject via $journey ${client.urlIdentifier} ${client.service.id} ACR invitation for ${client.clientId.value} as expected with ${if (forStride) "stride"
       else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
       val invitation: Invitation = createInvitation(arn, client)
-      // TODO WG - fix emails
-//      givenEmailSent(
-//        createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_rejected_authorisation_request", client.service)
-//      )
+      givenEmailSent(
+        createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_rejected_authorisation_request", client.service)
+      )
       givenPlatformAnalyticsRequestSent(true)
       givenAcrInvitationFound(arn, invitation.invitationId.value, invitation, client.clientName)
       givenACRChangeStatusByIdSuccess(invitationId = invitation.invitationId.value, action = unapply(InvitationStatusAction.Reject))
@@ -897,18 +888,15 @@ class ClientInvitationsControllerAcrISpec extends BaseISpec with RelationshipStu
       verifyAcrInvitationFound(invitation.invitationId.value, 2)
       verifyACRChangeStatusByIdSent(invitationId = invitation.invitationId.value, action = unapply(InvitationStatusAction.Reject))
       verifyAnalyticsRequestSent(1)
-      if (invitation.service == Service.Cbc || invitation.service == Service.CbcNonUk)
-        verifyCbcSubscriptionWasSent()
-
-      if (invitation.service == Service.Ppt)
-        verifyPptSubscriptionWithNameWasSent(pptRef)
 
     }
 
     s"reject via $journey ${client.urlIdentifier} ${client.service.id} ACA invitation for ${client.clientId.value} as expected with ${if (forStride) "stride"
       else "client"}" in new LoggedInUser(forStride, forBussiness) with AddEmailSupportStub {
       val invitation: Invitation = await(createACAInvitation(arn, client))
-
+      givenEmailSent(
+        createEmailInfo(dfe(client.clientName), DateUtils.displayDate(invitation.expiryDate), "client_rejected_authorisation_request", client.service)
+      )
       givenPlatformAnalyticsRequestSent(true)
       givenAcrInvitationNotFound(invitation.invitationId.value)
 

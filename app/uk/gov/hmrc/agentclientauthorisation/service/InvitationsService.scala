@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.ClientIdentifier.ClientId
 import uk.gov.hmrc.agentmtdidentifiers.model.Service.{MtdIt, MtdItSupp}
 import uk.gov.hmrc.agentmtdidentifiers.model._
 import uk.gov.hmrc.domain.{Nino, TaxIdentifier}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
@@ -109,7 +109,7 @@ class InvitationsService @Inject() (
   ): Future[Invitation] =
     for {
       detailsForEmail <- emailService.createDetailsForEmail(arn, clientId, service)
-      authorisationRequest = AuthorisationRequest(clientId.value, suppliedClientId.typeId, detailsForEmail.clientName, service.id, clientType)
+      authorisationRequest = AuthorisationRequest(suppliedClientId.value, suppliedClientId.typeId, detailsForEmail.clientName, service.id, clientType)
       acrInvitationId <- relationshipsConnector.sendAuthorisationRequest(arn.value, authorisationRequest)
       startDate = Instant.now().atZone(ZoneOffset.UTC).toLocalDateTime
       expiryDate = startDate.plusSeconds(appConfig.invitationExpiringDuration.toSeconds).toLocalDate
@@ -300,30 +300,27 @@ class InvitationsService @Inject() (
   ): Future[Invitation] =
     if (invitation.status == Pending || invitation.status == PartialAuth) {
       if (appConfig.acrMongoActivated && invitation.fromAcr) {
-        for {
-          invitation <- relationshipsConnector
-                          .changeACRInvitationStatusById(invitation.invitationId.value, InvitationStatusAction.fromInvitationStatus(status))
-                          .flatMap { response =>
-                            response.status match {
-                              case NO_CONTENT =>
-                                relationshipsConnector.lookupInvitation(invitation.invitationId.value).flatMap {
-                                  case Some(invitation) =>
-                                    logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
-                                    Future.successful(invitation.copy(fromAcr = true))
-                                  case None =>
-                                    Future.failed(
-                                      new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
-                                    )
-                                }
-                              case NOT_FOUND => Future.failed(new Exception(s"Invitation ${invitation.invitationId.value} not found"))
-                              case _ =>
-                                Future.failed(
-                                  new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
-                                )
-                            }
-                          }
-          detailsForEmail <- emailService.createDetailsForEmail(invitation.arn, invitation.clientId, invitation.service)
-        } yield invitation.copy(detailsForEmail = Some(detailsForEmail))
+        relationshipsConnector
+          .changeACRInvitationStatusById(invitation.invitationId.value, InvitationStatusAction.fromInvitationStatus(status))
+          .flatMap { response =>
+            response.status match {
+              case NO_CONTENT =>
+                relationshipsConnector.lookupInvitation(invitation.invitationId.value).flatMap {
+                  case Some(invitation) =>
+                    logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""
+                    Future.successful(invitation)
+                  case None =>
+                    Future.failed(
+                      new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                    )
+                }
+              case NOT_FOUND => Future.failed(new Exception(s"Invitation ${invitation.invitationId.value} not found"))
+              case _ =>
+                Future.failed(
+                  new Exception(s"Invitation ${invitation.invitationId.value} update to the new status $status has failed")
+                )
+            }
+          }
       } else {
         invitationsRepository.update(invitation, status, timestamp) map { invitation =>
           logger info s"""Invitation with id: "${invitation._id.toString}" has been $status"""

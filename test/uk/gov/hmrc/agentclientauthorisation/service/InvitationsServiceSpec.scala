@@ -209,7 +209,7 @@ class InvitationsServiceSpec extends UnitSpec with ResettingMockitoSugar with Te
         )
 
         val authorisationRequest = AuthorisationRequest(
-          invitation.clientId.value,
+          invitation.suppliedClientId.value,
           invitation.suppliedClientId.typeId,
           detailsForEmail.clientName,
           regime.id,
