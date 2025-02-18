@@ -88,6 +88,8 @@ object Invitation {
         (__ \ "suppliedClientId").read[String] and
         (__ \ "suppliedClientIdType").read[String] and
         (__ \ "clientName").read[String] and
+        (__ \ "agencyName").read[String] and
+        (__ \ "agencyEmail").read[String] and
         (__ \ "status").read[InvitationStatus] and
         (__ \ "relationshipEndedBy").readNullable[String] and
         (__ \ "clientType").readNullable[String] and
@@ -103,7 +105,9 @@ object Invitation {
         clientIdType,
         suppliedClientId,
         suppliedClientIdType,
-        _,
+        clientName,
+        agencyName,
+        agencyEmail,
         status,
         relationshipEndedBy,
         clientType,
@@ -119,7 +123,7 @@ object Invitation {
           clientId = ClientIdentifier(clientId, clientIdType),
           suppliedClientId = ClientIdentifier(suppliedClientId, suppliedClientIdType),
           expiryDate = expiryDate,
-          detailsForEmail = None,
+          detailsForEmail = Some(DetailsForEmail(agencyEmail, agencyName, clientName)),
           isRelationshipEnded = relationshipEndedBy.isDefined,
           relationshipEndedBy = relationshipEndedBy,
           events = List(

@@ -42,7 +42,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
     clientId = clientId,
     suppliedClientId = suppliedClientId,
     expiryDate = LocalDate.now(),
-    detailsForEmail = None,
+    detailsForEmail = Some(DetailsForEmail("test@email.com", "TestAgent", "Macrosoft")),
     clientActionUrl = None,
     events = List.empty
   )
@@ -423,6 +423,8 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       "suppliedClientId"     -> "234567890",
       "suppliedClientIdType" -> "vrn",
       "clientName"           -> "Macrosoft",
+      "agencyName"           -> "TestAgent",
+      "agencyEmail"          -> "agent@email.com",
       "status"               -> "Accepted",
       "relationshipEndedBy"  -> "Me",
       "clientType"           -> "personal",
@@ -439,7 +441,7 @@ class RelationshipsConnectorISpec extends UnitSpec with AppAndStubs with ACRStub
       clientId = ClientIdentifier("123456789", "vrn"),
       suppliedClientId = ClientIdentifier("234567890", "vrn"),
       expiryDate = LocalDate.parse("2020-01-01"),
-      detailsForEmail = None,
+      detailsForEmail = Some(DetailsForEmail("agent@email.com", "TestAgent", "Macrosoft")),
       isRelationshipEnded = true,
       relationshipEndedBy = Some("Me"),
       events = List(
