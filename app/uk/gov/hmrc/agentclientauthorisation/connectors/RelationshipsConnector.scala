@@ -197,7 +197,7 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
     val queryParams: List[(String, String)] =
       arn.fold[List[(String, String)]](List.empty)(a => List("arn" -> a.value)) ++
         services.map(svc => "services" -> svc.id) ++
-        clientIds.map(id => "clientIds" -> id) ++
+        clientIds.map(id => "clientIds" -> id.replaceAll(" ", "")) ++
         status.fold[List[(String, String)]](List.empty)(statusValue => List("status" -> statusValue.toString))
     monitor("ConsumedAPI-AgentClientRelationships-LookupInvitations-GET") {
       http.GET[HttpResponse](url, queryParams).map { response =>
