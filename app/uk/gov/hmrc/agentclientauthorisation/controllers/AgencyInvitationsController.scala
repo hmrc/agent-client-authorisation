@@ -21,7 +21,7 @@ import org.mongodb.scala.MongoException
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Futures
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
+import play.api.mvc._
 import uk.gov.hmrc.agentclientauthorisation.config.AppConfig
 import uk.gov.hmrc.agentclientauthorisation.connectors._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults._
@@ -46,6 +46,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// scalastyle:off number.of.methods
 @Singleton
 class AgencyInvitationsController @Inject() (
   appConfig: AppConfig,
@@ -148,41 +149,16 @@ class AgencyInvitationsController @Inject() (
     Action.async { implicit request =>
       request.body.asJson.map(_.validate[SetRelationshipEndedPayload]) match {
         case Some(JsSuccess(payload, _)) =>
-          if (appConfig.acrMongoActivated) {
-            relationshipsConnector
-              .changeACRInvitationStatus(
-                arn = payload.arn,
-                service = payload.service,
-                clientId = payload.clientId,
-                changeInvitationStatusRequest = ChangeInvitationStatusRequest(invitationStatus = DeAuthorised, endedBy = payload.endedBy)
-              )
-              .flatMap { response =>
-                response.status match {
-                  case NO_CONTENT => Future.successful(NoContent)
-                  case NOT_FOUND  => changeACAInvitationStatus(payload.arn, payload.clientId, payload.service, payload.endedBy)
-                  case other =>
-                    logger.error(s"unexpected error during 'setRelationshipEnded.changeACRInvitationStatus', statusCode=$other")
-                    Future.successful(Status(other))
-                }
-              }
-
-          } else changeACAInvitationStatus(payload.arn, payload.clientId, payload.service, payload.endedBy)
-
-        case Some(JsError(e)) => Future successful genericBadRequest(e.mkString)
-        case None             => Future successful genericBadRequest("No JSON found in request body")
+          invitationsService
+            .findInvitationAndEndRelationship(payload.arn, payload.clientId, toListOfServices(Some(payload.service)), payload.endedBy)
+            .map {
+              case true  => NoContent
+              case false => InvitationNotFound
+            }
+        case Some(JsError(e)) => Future.successful(genericBadRequest(e.mkString))
+        case None             => Future.successful(genericBadRequest("No JSON found in request body"))
       }
     }
-
-  private def changeACAInvitationStatus(arn: Arn, clientId: String, service: String, endedBy: Option[String])(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[Result] =
-    invitationsService
-      .findInvitationAndEndRelationship(arn, clientId, toListOfServices(Some(service)), endedBy)
-      .map {
-        case true  => NoContent
-        case false => InvitationNotFound
-      }
 
   private def changeACAInvitationStatusById(invitationId: InvitationId, givenArn: Arn)(implicit
     ec: ExecutionContext,

@@ -212,15 +212,6 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
   }
 
   // Transitional
-  def changeACRInvitationStatus(arn: Arn, service: String, clientId: String, changeInvitationStatusRequest: ChangeInvitationStatusRequest)(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[HttpResponse] =
-    monitor(s"ConsumedAPI-AgentClientRelationships-ChangeStatus-PUT") {
-      http
-        .PUT[ChangeInvitationStatusRequest, HttpResponse](changeACRInvitationStatusUrl(arn, service, clientId), changeInvitationStatusRequest)
-    }
-
   def changeACRInvitationStatusById(invitationId: String, invitationStatusAction: InvitationStatusAction)(implicit
     hc: HeaderCarrier,
     ec: ExecutionContext

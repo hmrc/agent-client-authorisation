@@ -255,7 +255,6 @@ class InvitationsService @Inject() (
       else if (hasAcr) logger.warn(s"[ACATransition] User only has ACR invitations")
     }
 
-
   def findInvitationsInfoBy(
     arn: Arn,
     clientIds: Seq[(String, String, String)],
@@ -268,7 +267,7 @@ class InvitationsService @Inject() (
                           relationshipsConnector.lookupInvitations(Some(arn), services, clientIdValues, status).map(_.map(toInvitationInfo))
                         } else Future.successful(List.empty[InvitationInfo])
       acaInvitations <- invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
-      _ <- Future.successful(transitionalLogging(acrInvitations.nonEmpty, acaInvitations.nonEmpty))
+      _              <- Future.successful(transitionalLogging(acrInvitations.nonEmpty, acaInvitations.nonEmpty))
     } yield (acrInvitations ++ acaInvitations).sortBy(_.expiryDate)
 
   def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
