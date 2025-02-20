@@ -44,6 +44,7 @@ case class StatusUpdateFailure(currentStatus: InvitationStatus, failureReason: S
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// scalastyle:off number.of.methods
 @Singleton
 class InvitationsService @Inject() (
   invitationsRepository: InvitationsRepository,
@@ -247,6 +248,14 @@ class InvitationsService @Inject() (
     }
   }
 
+  private def transitionalLogging(hasAcr: Boolean, hasAca: Boolean): Unit =
+    if (appConfig.acrMongoActivated) {
+      if (hasAca && hasAcr) logger.warn(s"[ACATransition] User has both ACA and ACR invitations")
+      else if (hasAca) logger.warn(s"[ACATransition] User only has ACA invitations")
+      else if (hasAcr) logger.warn(s"[ACATransition] User only has ACR invitations")
+    }
+
+
   def findInvitationsInfoBy(
     arn: Arn,
     clientIds: Seq[(String, String, String)],
@@ -259,7 +268,8 @@ class InvitationsService @Inject() (
                           relationshipsConnector.lookupInvitations(Some(arn), services, clientIdValues, status).map(_.map(toInvitationInfo))
                         } else Future.successful(List.empty[InvitationInfo])
       acaInvitations <- invitationsRepository.findInvitationInfoBy(arn, clientIds, status)
-    } yield acrInvitations ++ acaInvitations
+      _ <- Future.successful(transitionalLogging(acrInvitations.nonEmpty, acaInvitations.nonEmpty))
+    } yield (acrInvitations ++ acaInvitations).sortBy(_.expiryDate)
 
   def cancelInvitation(invitation: Invitation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Invitation] = {
     val nextStatus = if (invitation.status == PartialAuth) DeAuthorised else Cancelled
@@ -361,8 +371,8 @@ class InvitationsService @Inject() (
           createdOnOrAfter = None,
           within30Days = appConfig.acrMongoActivated
         )
-
-    } yield acrInvitations ++ acaInvitations
+      _ <- Future.successful(transitionalLogging(acrInvitations.nonEmpty, acaInvitations.nonEmpty))
+    } yield (acrInvitations ++ acaInvitations).sortBy(_.expiryDate)
 
   def updateAltItsaForNino(clientId: ClientId, service: Service)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] =
     if (appConfig.altItsaEnabled && clientId.typeId == NinoType.id)
@@ -390,7 +400,8 @@ class InvitationsService @Inject() (
         createdOnOrAfter,
         appConfig.acrMongoActivated
       )
-  } yield acrInvitations ++ acaInvitations
+    _ <- Future.successful(transitionalLogging(acrInvitations.nonEmpty, acaInvitations.nonEmpty))
+  } yield (acrInvitations ++ acaInvitations).sortBy(_.expiryDate)
 
   private def findInvitationsInfoBy(
     arn: Option[Arn] = None,
