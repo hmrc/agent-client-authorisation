@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentclientauthorisation.controllers
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.agentclientauthorisation.controllers.ErrorResults.InvitationNotFound
@@ -55,6 +55,24 @@ class AgentSetRelationshipEndedWithACRControllerISpec extends BaseISpec {
       None
     )
 
+  def acrJson(testClient: TestClient[_]): JsObject = Json.obj(
+    "invitationId"         -> "123",
+    "arn"                  -> arn.value,
+    "service"              -> testClient.service.id,
+    "clientId"             -> testClient.clientId.value,
+    "clientIdType"         -> testClient.service.supportedClientIdType.id,
+    "suppliedClientId"     -> testClient.suppliedClientId.value,
+    "suppliedClientIdType" -> testClient.service.supportedSuppliedClientIdType.id,
+    "clientName"           -> "testName",
+    "agencyName"           -> "testAgentName",
+    "agencyEmail"          -> "agent@email.com",
+    "status"               -> "Accepted",
+    "clientType"           -> testClient.clientType.value,
+    "expiryDate"           -> "2020-01-01",
+    "created"              -> "2020-02-02T00:00:00Z",
+    "lastUpdated"          -> "2020-03-03T00:00:00Z"
+  )
+
   trait StubSetup {
     givenAuditConnector()
     givenAuthorisedAsAgent(arn)
@@ -65,26 +83,30 @@ class AgentSetRelationshipEndedWithACRControllerISpec extends BaseISpec {
     val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
 
     s"return 204 when an ${testClient.service} invitation is successfully updated in ACR" in new StubSetup {
+      stubLookupInvitations(
+        expectedQueryParams = s"?arn=${arn.value}&services=${testClient.service.id}&clientIds=${testClient.suppliedClientId.value}",
+        responseStatus = OK,
+        responseBody = Json.arr(acrJson(testClient))
+      )
 
       givenACRChangeStatusSuccess(
         arn = arn,
         service = testClient.service.id,
-        clientId = testClient.clientId.value,
+        clientId = testClient.suppliedClientId.value,
         changeInvitationStatusRequest = ChangeInvitationStatusRequest(DeAuthorised, None)
       )
 
-      val payload = SetRelationshipEndedPayload(arn, testClient.clientId.value, testClient.service.id, None)
+      val payload = SetRelationshipEndedPayload(arn, testClient.suppliedClientId.value, testClient.service.id, None)
 
       val response = controller.setRelationshipEnded()(request.withJsonBody(Json.toJson(payload)))
 
       status(response) shouldBe 204
 
-      verifyACRChangeStatusSent(arn, testClient.service.id, testClient.clientId.value)
+      verifyACRChangeStatusSent(arn, testClient.service.id, testClient.suppliedClientId.value)
     }
   }
 
   "PUT /invitations/set-relationship-ended" should {
-
     uiClients.foreach { client =>
       runSuccessfulSetRelationshipEnded(client)
     }
@@ -109,21 +131,4 @@ class AgentSetRelationshipEndedWithACRControllerISpec extends BaseISpec {
 
     await(response) shouldBe InvitationNotFound
   }
-
-  "return status 400 Bad Request when clientId is incorrect" in {
-    val request = FakeRequest("PUT", "/invitations/set-relationship-ended")
-
-    givenACRChangeStatusBadRequest(arn = arn, clientId = "FAKE", service = "HMRC-MTD-IT")
-
-    givenAuditConnector()
-
-    val response = controller.setRelationshipEnded()(request.withJsonBody(Json.parse(s"""{
-                                                                                        |"arn": "${arn.value}",
-                                                                                        |"clientId": "FAKE",
-                                                                                        |"service": "HMRC-MTD-IT"
-                                                                                        |}""".stripMargin)))
-
-    status(response) shouldBe 400
-  }
-
 }
