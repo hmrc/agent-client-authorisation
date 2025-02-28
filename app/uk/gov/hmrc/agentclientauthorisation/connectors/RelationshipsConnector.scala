@@ -177,7 +177,7 @@ class RelationshipsConnector @Inject() (appConfig: AppConfig, http: HttpClient, 
 
   def replaceUrnWithUtr(urn: String, utr: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val url = s"$baseUrl/agent-client-relationships/invitations/trusts-enrolment-orchestrator/$urn/update"
-    val json = Json.toJson("utr" -> utr)
+    val json = Json.obj("utr" -> utr)
     monitor("ConsumedAPI-AgentClientRelationships-ReplaceUrnWithUtr-POST") {
       http.POST[JsValue, HttpResponse](url, json).map { response =>
         response.status match {
