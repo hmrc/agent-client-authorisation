@@ -228,7 +228,7 @@ class AgencyInvitationsController @Inject() (
         invitations <- invitationsService
                          .findInvitationsBy(Some(arn), csvServices, clientId, status, createdOnOrAfter)
 
-        agentInvitationUrlDetails <- agentLinkService.getAgentInvitationUrlDetails(givenArn)
+        agentInvitationUrlDetails <- if (invitations.nonEmpty) agentLinkService.getAgentInvitationUrlDetails(givenArn) else Future.successful("", "")
 
         invitationsWithLink = invitations.filter(_.arn == givenArn).map { invite =>
                                 (invite.clientType, invite.status) match {
