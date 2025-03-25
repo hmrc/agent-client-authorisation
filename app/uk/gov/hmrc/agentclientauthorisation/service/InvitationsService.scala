@@ -116,7 +116,7 @@ class InvitationsService @Inject() (
       expiryDate = startDate.plusSeconds(appConfig.invitationExpiringDuration.toSeconds).toLocalDate
       acaInvitationModel = Invitation
                              .createNew(arn, clientType, service, clientId, suppliedClientId, Some(detailsForEmail), startDate, expiryDate, None)
-                             .copy(invitationId = InvitationId(acrInvitationId))
+                             .copy(invitationId = InvitationId(acrInvitationId), fromAcr = true)
     } yield {
       logger.info(s"""Created invitation with ACR id: "${acaInvitationModel.invitationId.value}".""")
       acaInvitationModel

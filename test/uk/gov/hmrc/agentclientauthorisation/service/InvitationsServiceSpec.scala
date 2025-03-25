@@ -205,7 +205,8 @@ class InvitationsServiceSpec extends UnitSpec with ResettingMockitoSugar with Te
         val expected = invitation.copy(
           invitationId = InvitationId(invitationId),
           events = List(StatusChangeEvent(LocalDateTime.now, Pending)),
-          expiryDate = LocalDate.now.plusDays(21)
+          expiryDate = LocalDate.now.plusDays(21),
+          fromAcr = true
         )
 
         val authorisationRequest = AuthorisationRequest(
