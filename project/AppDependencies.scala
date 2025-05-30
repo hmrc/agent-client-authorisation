@@ -2,19 +2,19 @@ import play.sbt.PlayImport.ws
 import sbt._
 
 object AppDependencies {
-  private val mongoVer = "1.9.0"
-  private val bootstrapVer = "8.6.0"
-  private val pekkoVersion = "1.0.2"
+  private val mongoVer = "2.6.0"
+  private val bootstrapVer = "9.12.0"
+  private val pekkoVersion = "1.0.3"
 
   val compile = Seq(
     ws,
     "uk.gov.hmrc"        %% "bootstrap-backend-play-30" % bootstrapVer,
     "uk.gov.hmrc.mongo"  %% "hmrc-mongo-play-30"        % mongoVer,
     "uk.gov.hmrc"        %% "play-hal-play-30"          % "4.0.0",
-    "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "2.1.0",
+    "uk.gov.hmrc"        %% "agent-mtd-identifiers"     % "2.2.0",
     "com.github.blemale" %% "scaffeine"                 % "5.2.1",
     "com.google.guava"   %  "guava"                     % "33.2.1-jre",
-    "org.typelevel"      %% "cats-core"                 % "2.12.0"
+    "org.typelevel"      %% "cats-core"                 % "2.13.0"
   )
 
   val test = Seq(
